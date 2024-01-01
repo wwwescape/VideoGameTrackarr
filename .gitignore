@@ -1,0 +1,5 @@
+/build
+/server/covers/*
+!/server/covers/.gitkeep 
+/node_modules
+/server/db/videoGamerTrackarr.db
