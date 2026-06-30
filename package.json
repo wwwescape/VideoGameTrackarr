@@ -1,52 +1,32 @@
 {
-    "name": "VideoGameTrackarr",
+    "name": "videogametrackarr",
     "version": "1.0.0",
-    "description": "A web app to track your video game collection",
-    "main": "index.js",
+    "description": "A self-hosted web application to track your video game collection",
+    "private": true,
+    "workspaces": [
+        "frontend"
+    ],
     "scripts": {
-        "start": "react-scripts start",
-        "build": "react-scripts build",
-        "test": "react-scripts test",
-        "eject": "react-scripts eject"
+        "start": "npm run start -w frontend",
+        "build": "npm run build -w frontend",
+        "preview": "npm run preview -w frontend",
+        "lint": "npm run lint -w frontend && npm run lint:e2e",
+        "lint:e2e": "eslint e2e playwright.config.ts --ext .ts",
+        "typecheck": "npm run typecheck -w frontend && tsc -p tsconfig.json --noEmit",
+        "test": "npm run test -w frontend",
+        "test:coverage": "npm run test:coverage -w frontend",
+        "test:e2e": "playwright test",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
-    "dependencies": {
-        "@emotion/react": "^11.11.3",
-        "@emotion/styled": "^11.11.0",
-        "@fontsource/roboto": "^5.0.8",
-        "@mui/icons-material": "^5.15.2",
-        "@mui/lab": "^5.0.0-alpha.158",
-        "@mui/material": "^5.15.2",
-        "@mui/styles": "^5.15.2",
-        "@mui/x-date-pickers": "^6.18.6",
-        "axios": "^0.24.0",
-        "body-parser": "^1.20.2",
-        "cors": "^2.8.5",
-        "express": "^4.18.2",
-        "lodash": "^4.17.21",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "react-router-dom": "^6.21.1",
-        "react-scripts": "^5.0.1",
-        "react-toastify": "^9.1.3",
-        "react-virtualized": "^9.22.5",
-        "sqlite3": "^5.1.6"
-    },
-    "eslintConfig": {
-        "extends": [
-            "react-app",
-            "react-app/jest"
-        ]
-    },
-    "browserslist": {
-        "production": [
-            ">0.2%",
-            "not dead",
-            "not op_mini all"
-        ],
-        "development": [
-            "last 1 chrome version",
-            "last 1 firefox version",
-            "last 1 safari version"
-        ]
+    "devDependencies": {
+        "@playwright/test": "^1.61.0",
+        "@types/node": "^20.14.0",
+        "@typescript-eslint/eslint-plugin": "^7.18.0",
+        "@typescript-eslint/parser": "^7.18.0",
+        "eslint": "^8.56.0",
+        "eslint-config-prettier": "^9.1.0",
+        "prettier": "^3.2.5",
+        "typescript": "^5.5.4"
     }
 }

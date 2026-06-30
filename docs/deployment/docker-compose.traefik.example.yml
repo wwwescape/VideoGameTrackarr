@@ -1,0 +1,25 @@
+# Example Traefik labels for the `app` service, for anyone who already runs Traefik as
+# their reverse proxy instead of the Nginx example alongside this file. Traefik is
+# label-driven rather than file-driven, so this is a docker-compose *override* snippet, not
+# a standalone config — merge these into the `app` service in your own compose setup
+# (e.g. via `docker compose -f docker-compose.yml -f this-file.yml up -d`), assuming Traefik
+# itself is already running and attached to the same Docker network.
+#
+# Replace your-domain.example and the certresolver name with your own. Like the Nginx
+# example, this fronts one origin (the app serves both API and built frontend from the
+# same FastAPI process), so there's only one router/service pair.
+
+services:
+  app:
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.videogametrackarr.rule=Host(`your-domain.example`)"
+      - "traefik.http.routers.videogametrackarr.entrypoints=websecure"
+      - "traefik.http.routers.videogametrackarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.videogametrackarr.loadbalancer.server.port=8000"
+
+networks:
+  traefik:
+    external: true

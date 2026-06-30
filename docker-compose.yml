@@ -1,0 +1,37 @@
+services:
+  app:
+    # Builds from source by default. If you've cut a tagged release (see
+    # .github/workflows/release.yml — git tag v1.2.0 && git push origin v1.2.0), a
+    # pre-built image is published too; swap this `build:` block for e.g.
+    # `image: ghcr.io/<owner>/<repo>:1.2.0` to deploy that instead of building locally.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file:
+      - .env
+    # Named volumes, not bind mounts — survive `docker compose down`/image rebuilds/
+    # upgrades; only `docker compose down -v` removes them. Paths must match
+    # DEFAULT_SQLITE_PATH/UPLOADS_DIR in backend/app/core/config.py.
+    volumes:
+      - db-data:/app/backend/db
+      - uploads-data:/app/backend/uploads
+    restart: unless-stopped
+
+  # Optional shared response cache (see backend/app/services/cache.py) — only useful if you
+  # run more than one app replica; a single instance already gets an in-process cache for
+  # free with no extra service to run. Disabled by default; enable explicitly with:
+  #   docker compose --profile redis up -d
+  # and set REDIS_URL=redis://redis:6379/0 in your .env.
+  redis:
+    image: redis:7-alpine
+    profiles: ["redis"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  db-data:
+  uploads-data:
+  redis-data:

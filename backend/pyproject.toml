@@ -1,0 +1,32 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# alembic/versions/* is generated code (regenerated via `alembic revision --autogenerate`),
+# not hand-maintained — lint it the way Alembic writes it, not the way we'd write it.
+exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    # FastAPI's dependency-injection pattern is `param: T = Depends(...)` by design.
+    "B008",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+addopts = "--cov=app --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+# A floor, not a target - actual coverage is ~98% across this codebase already (the
+# project's established practice is a test alongside every feature, not testing added
+# after the fact to hit a number). Set below the current level so it catches a real
+# regression (e.g. a sizeable new untested module) without being so tight that routine,
+# already-covered-elsewhere changes trip it.
+fail_under = 90
+# Protocol method stubs (see app/services/cache.py's CacheBackend) are type-only
+# declarations, never executed - excluding them avoids a false "uncovered" signal there.
+exclude_also = ["\\.\\.\\.$"]
