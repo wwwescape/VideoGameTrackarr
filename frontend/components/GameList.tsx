@@ -115,6 +115,9 @@ const GameList = () => {
           zIndex: 1,
           bgcolor: "background.default",
           pb: 2.5,
+          // Once scrolled content locks under this sticky header, the bottom edge needs to
+          // read as an intentional floating panel rather than content abruptly disappearing.
+          boxShadow: "0 4px 8px -4px rgba(0, 0, 0, 0.2)",
         }}
       >
         <GamesSubNav />
@@ -151,34 +154,40 @@ const GameList = () => {
           onCompare={handleCompare}
         />
       </Box>
-      {isLoading ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>
-      ) : isSearching ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>Searching...</Paper>
-      ) : visibleGames.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>
-          {isSearchActive
-            ? "No games found"
-            : filter !== "all"
-              ? "No games match this filter"
-              : "Please add some games"}
-        </Paper>
-      ) : (
-        <VirtualGameGrid
-          items={visibleGames}
-          getKey={(game) => game.id}
-          renderItem={(game) => (
-            <GameCard
-              game={game}
-              context="list"
-              contextFunction={() => handleGameClick(game)}
-              selectable={selectionMode}
-              selected={selectedIds.has(game.id)}
-              onToggleSelect={() => toggleSelected(game.id)}
-            />
-          )}
-        />
-      )}
+      {/* Contains z-index in here to its own stacking context — otherwise MUI's
+          shrunk-label z-index (1, same as the sticky header above) ties with the sticky
+          box's and falls back to DOM order, letting a floating label paint on top of the
+          sticky header instead of staying hidden behind it. */}
+      <Box sx={{ isolation: "isolate" }}>
+        {isLoading ? (
+          <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>
+        ) : isSearching ? (
+          <Paper sx={{ p: 3, textAlign: "center" }}>Searching...</Paper>
+        ) : visibleGames.length === 0 ? (
+          <Paper sx={{ p: 3, textAlign: "center" }}>
+            {isSearchActive
+              ? "No games found"
+              : filter !== "all"
+                ? "No games match this filter"
+                : "Please add some games"}
+          </Paper>
+        ) : (
+          <VirtualGameGrid
+            items={visibleGames}
+            getKey={(game) => game.id}
+            renderItem={(game) => (
+              <GameCard
+                game={game}
+                context="list"
+                contextFunction={() => handleGameClick(game)}
+                selectable={selectionMode}
+                selected={selectedIds.has(game.id)}
+                onToggleSelect={() => toggleSelected(game.id)}
+              />
+            )}
+          />
+        )}
+      </Box>
     </>
   );
 };

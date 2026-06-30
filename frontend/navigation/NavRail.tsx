@@ -6,6 +6,9 @@ import { navDestinations } from "./destinations";
 
 export const NAV_RAIL_WIDTH = 80;
 
+// Matches AppShell's non-compact Toolbar height — NavRail only renders when !isCompact.
+const APP_BAR_HEIGHT = 64;
+
 const NavRail = () => {
   const location = useLocation();
 
@@ -15,10 +18,19 @@ const NavRail = () => {
       sx={{
         width: NAV_RAIL_WIDTH,
         flexShrink: 0,
-        "& .MuiDrawer-paper": { width: NAV_RAIL_WIDTH, boxSizing: "border-box", border: "none" },
+        "& .MuiDrawer-paper": {
+          width: NAV_RAIL_WIDTH,
+          boxSizing: "border-box",
+          border: "none",
+          // Start below the fixed AppBar and cap height to the rest of the viewport, so if
+          // nav content overflows, it gets its own scrollbar confined to this region —
+          // instead of scrolling content up underneath the (higher z-index) AppBar, where
+          // it'd be invisible rather than just scrolled past.
+          top: APP_BAR_HEIGHT,
+          height: `calc(100% - ${APP_BAR_HEIGHT}px)`,
+        },
       }}
     >
-      <Box sx={{ height: (theme) => theme.mixins.toolbar.minHeight }} />
       <Box component="nav" aria-label="Primary" sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5, pt: 2 }}>
         {navDestinations.map((destination) => {
           const isSelected = location.pathname === destination.to;

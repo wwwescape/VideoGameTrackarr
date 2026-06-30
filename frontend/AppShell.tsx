@@ -71,7 +71,7 @@ const AppShell = () => {
         <Toolbar>
           <Box
             component="img"
-            src="/icon-master.svg"
+            src="/VideoGameTrackarr.svg"
             alt=""
             sx={{ height: 44, width: 44, mr: 1.5 }}
           />

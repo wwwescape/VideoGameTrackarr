@@ -6,6 +6,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ExtensionOffIcon from "@mui/icons-material/ExtensionOff";
 import GamesIcon from "@mui/icons-material/Games";
+import InfoIcon from "@mui/icons-material/Info";
 import InsightsIcon from "@mui/icons-material/Insights";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import MemoryIcon from "@mui/icons-material/Memory";
@@ -60,4 +61,5 @@ export const navDestinations: NavDestination[] = [
     ],
   },
   { to: "/settings", label: "Settings", icon: <SettingsIcon /> },
+  { to: "/about", label: "About", icon: <InfoIcon /> },
 ];
