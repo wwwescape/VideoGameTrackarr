@@ -134,3 +134,5 @@ export const dashboardCrumbs: CrumbsFn = () => [{ label: "Dashboard" }];
 export const compareCrumbs: CrumbsFn = () => [{ label: "Compare Games" }];
 
 export const settingsCrumbs: CrumbsFn = () => [{ label: "Settings" }];
+
+export const aboutCrumbs: CrumbsFn = () => [{ label: "About" }];

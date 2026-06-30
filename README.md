@@ -189,3 +189,9 @@ P5:
 ## License
 
 GPL-3.0 — see `LICENSE`.
+
+## Support
+
+If you find VideoGameTrackarr useful, consider buying me a coffee:
+
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="40" />](https://buymeacoffee.com/wwwescape)

@@ -21,6 +21,7 @@ import MissingDlcPage from "./components/MissingDlcPage";
 import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import SeriesPage from "./components/SeriesPage";
+import About from "./components/About";
 import Settings from "./components/Settings";
 import {
   accessoryCrumbs,
@@ -37,6 +38,7 @@ import {
   editDeviceCrumbs,
   editGameCrumbs,
   franchiseCrumbs,
+  aboutCrumbs,
   gameDetailCrumbs,
   gamesCrumbs,
   hardwareCrumbs,
@@ -112,6 +114,7 @@ const router = createBrowserRouter([
           },
           { path: "/compare", element: <ComparePage />, handle: { crumbs: compareCrumbs } },
           { path: "/settings", element: <Settings />, handle: { crumbs: settingsCrumbs } },
+          { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
         ],
       },
     ],
