@@ -1,9 +1,10 @@
 services:
   app:
     # Builds from source by default. If you've cut a tagged release (see
-    # .github/workflows/release.yml — git tag v1.2.0 && git push origin v1.2.0), a
-    # pre-built image is published too; swap this `build:` block for e.g.
-    # `image: ghcr.io/<owner>/<repo>:1.2.0` to deploy that instead of building locally.
+    # .github/workflows/release.yml — git tag v1.0.0 && git push origin v1.0.0), pre-built
+    # images are published too; swap this `build:` block for e.g.
+    # `image: docker.io/wwwescape/videogametrackarr:1.0.0` (or the `ghcr.io/<owner>/<repo>`
+    # equivalent) to deploy that instead of building locally.
     build:
       context: .
       dockerfile: Dockerfile

@@ -1,4 +1,8 @@
-# VideoGameTrackarr
+<p align="center">
+  <img src="frontend/public/icon-master.svg" alt="VideoGameTrackarr logo" width="120" />
+</p>
+
+<h1 align="center">VideoGameTrackarr</h1>
 
 A self-hosted web app for tracking your video game collection: what you own, what you want,
 what you're playing, and how it's going.
@@ -147,9 +151,11 @@ git tag v1.2.0
 git push origin v1.2.0
 ```
 
-That tag push builds and publishes a Docker image to GHCR (tagged with that version and
-`latest`) and creates a GitHub Release with auto-generated notes — see
-`.github/workflows/release.yml`.
+That tag push builds and publishes a Docker image to both GHCR
+(`ghcr.io/<owner>/<repo>`) and Docker Hub (`docker.io/wwwescape/videogametrackarr`) —
+tagged with that version and `latest` — and creates a GitHub Release with auto-generated
+notes. See `.github/workflows/release.yml`; publishing to Docker Hub needs the
+`DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` repository secrets set.
 
 ## Project layout
 

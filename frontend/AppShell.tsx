@@ -69,6 +69,12 @@ const AppShell = () => {
       </Link>
       <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
         <Toolbar>
+          <Box
+            component="img"
+            src="/icon-master.svg"
+            alt=""
+            sx={{ height: 44, width: 44, mr: 1.5 }}
+          />
           <Typography variant="h6" component="div" noWrap sx={{ minWidth: 0, flexGrow: 1 }}>
             VideoGameTrackarr
           </Typography>

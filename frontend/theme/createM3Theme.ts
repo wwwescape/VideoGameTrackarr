@@ -99,6 +99,12 @@ export function createM3Theme(mode: ColorMode, contrast: ContrastLevel): Theme {
       MuiPaper: {
         styleOverrides: { root: { borderRadius: m3ShapeScale.medium } },
       },
+      // AppBar is Paper-based under the hood, so without this it inherits the same
+      // rounded corners as cards/dialogs — wrong for a fixed, full-width top bar with
+      // nothing to round against; it just exposes the page background behind the cutout.
+      MuiAppBar: {
+        styleOverrides: { root: { borderRadius: 0 } },
+      },
       MuiDialog: {
         styleOverrides: { paper: { borderRadius: m3ShapeScale.extraLarge } },
       },
