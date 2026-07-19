@@ -200,9 +200,6 @@ sending a PR.
 
 ## TODO
 
-P1:
-- [ ] Design a logo and app icon for VideoGameTrackarr.
-
 P2:
 - [ ] Source reference images for predefined devices and accessories.
 - [ ] Investigate possible integrations with Steam, HowLongToBeat.com, and others.
