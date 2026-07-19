@@ -12,6 +12,7 @@ interface ConfirmDialogProps {
   description: ReactNode;
   confirmLabel: string;
   confirmColor?: "primary" | "error";
+  confirmDisabled?: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -24,6 +25,7 @@ const ConfirmDialog = ({
   description,
   confirmLabel,
   confirmColor = "primary",
+  confirmDisabled = false,
   onClose,
   onConfirm,
 }: ConfirmDialogProps) => (
@@ -36,7 +38,7 @@ const ConfirmDialog = ({
       <Button onClick={onClose} color="primary">
         Cancel
       </Button>
-      <Button onClick={onConfirm} color={confirmColor} variant="contained">
+      <Button onClick={onConfirm} color={confirmColor} variant="contained" disabled={confirmDisabled}>
         {confirmLabel}
       </Button>
     </DialogActions>

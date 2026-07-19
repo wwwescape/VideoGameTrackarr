@@ -1,5 +1,6 @@
 import io
 import json
+import time
 from pathlib import Path
 
 from app.models.catalog import Game, GameCategory
@@ -18,6 +19,19 @@ from app.models.library import (
 def _upload_backup(client, payload: dict):
     raw = json.dumps(payload).encode("utf-8")
     return client.post("/api/import/backup", files={"file": ("backup.json", io.BytesIO(raw), "application/json")})
+
+
+def _wait_for_restore_completion(client, timeout: float = 5.0) -> dict:
+    # Restore now runs on a background thread (see app/services/restore_job.py) so the POST
+    # returns as soon as the job starts, not once it finishes — tests poll the status
+    # endpoint the same way the frontend does.
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        body = client.get("/api/import/backup/status").json()
+        if body["status"] != "running":
+            return body
+        time.sleep(0.02)
+    raise AssertionError("Restore did not finish within the test timeout")
 
 
 def test_export_backup_requires_auth(client):
@@ -120,8 +134,10 @@ def test_restore_backup_replaces_existing_data(auth_client, db_session, seed_gam
     seed_game_id = seed_game.id
     response = _upload_backup(auth_client, snake_payload)
 
-    assert response.status_code == 200
-    body = response.json()
+    assert response.status_code == 202
+    status_body = _wait_for_restore_completion(auth_client)
+    assert status_body["status"] == "completed"
+    body = status_body["result"]
     assert body["restoredGames"] == 1
     assert body["restoredLibraryItems"] == 1
     assert body["safetySnapshotPath"]
@@ -171,7 +187,9 @@ def test_restore_backup_restores_hardware_sections(auth_client, db_session):
 
     response = _upload_backup(auth_client, payload)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
+    status_body = _wait_for_restore_completion(auth_client)
+    assert status_body["status"] == "completed"
 
     manufacturer = db_session.query(Manufacturer).filter_by(id=10).one()
     assert manufacturer.name == "Sony"
@@ -180,20 +198,28 @@ def test_restore_backup_restores_hardware_sections(auth_client, db_session):
     user_device = db_session.query(UserDevice).filter_by(id=60).one()
     assert user_device.status.value == "owned"
 
-    Path(response.json()["safetySnapshotPath"]).unlink()
+    Path(status_body["result"]["safetySnapshotPath"]).unlink()
 
 
 def test_restore_backup_writes_a_safety_snapshot_of_prior_data(auth_client, seed_game):
+    # Captured before the restore, same as seed_game_id in the test above: the background
+    # job (see app/services/restore_job.py) opens its own session, separate from
+    # db_session/seed_game's — once that session deletes and commits the row, seed_game's
+    # still-expired ORM attributes would try (and fail) to reload from a row that's gone.
+    seed_game_name = seed_game.name
+
     response = _upload_backup(
         auth_client,
         {"version": 1, "exported_at": "now", "games": [], "library_items": []},
     )
 
-    assert response.status_code == 200
-    snapshot_path = response.json()["safetySnapshotPath"]
+    assert response.status_code == 202
+    status_body = _wait_for_restore_completion(auth_client)
+    assert status_body["status"] == "completed"
+    snapshot_path = status_body["result"]["safetySnapshotPath"]
 
     snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
-    assert any(g["name"] == seed_game.name for g in snapshot["games"])
+    assert any(g["name"] == seed_game_name for g in snapshot["games"])
 
     Path(snapshot_path).unlink()
 
@@ -211,3 +237,38 @@ def test_restore_backup_rejects_missing_required_fields(auth_client):
     response = _upload_backup(auth_client, {"games": []})
 
     assert response.status_code == 400
+
+
+def test_restore_status_requires_auth(client):
+    response = client.get("/api/import/backup/status")
+
+    assert response.status_code == 401
+
+
+def test_restore_status_defaults_to_idle(auth_client):
+    response = auth_client.get("/api/import/backup/status")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "idle"
+    assert body["result"] is None
+    assert body["error"] is None
+
+
+def test_acknowledge_restore_status_requires_auth(client):
+    response = client.post("/api/import/backup/status/acknowledge")
+
+    assert response.status_code == 401
+
+
+def test_acknowledge_restore_status_resets_a_completed_job(auth_client):
+    response = _upload_backup(auth_client, {"version": 1, "exported_at": "now", "games": []})
+    assert response.status_code == 202
+    status_body = _wait_for_restore_completion(auth_client)
+    assert status_body["status"] == "completed"
+    Path(status_body["result"]["safetySnapshotPath"]).unlink()
+
+    ack_response = auth_client.post("/api/import/backup/status/acknowledge")
+    assert ack_response.status_code == 204
+
+    assert auth_client.get("/api/import/backup/status").json()["status"] == "idle"

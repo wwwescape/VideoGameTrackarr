@@ -8,9 +8,11 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
     verify_password,
 )
 from app.models.system import RefreshToken, User
+from app.services.exceptions import ConflictError
 
 
 class AuthError(Exception):
@@ -21,6 +23,21 @@ def authenticate_user(db: Session, username: str, password: str) -> User:
     user = db.query(User).filter(User.username == username).first()
     if user is None or not verify_password(password, user.password_hash):
         raise AuthError("Invalid username or password")
+    return user
+
+
+def create_initial_admin(db: Session, username: str, password: str) -> User:
+    """Provisions the very first user account from the web setup flow. Re-checks
+    emptiness here (not just at the route layer) so this can never become a backdoor
+    register endpoint once an admin already exists — see app/api/routes/auth.py's /setup
+    docstring for why a public register endpoint is deliberately not otherwise offered."""
+    if db.query(User).count() > 0:
+        raise ConflictError("Setup has already been completed.")
+
+    user = User(username=username, password_hash=hash_password(password))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user
 
 

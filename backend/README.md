@@ -55,8 +55,12 @@ shape is same-origin (see the root README's "Deploy with Docker").
 
 ## Auth
 
-There's no public registration endpoint by design — this is a single-admin-account
-instance, so the only way to create or reset the login is the CLI:
+This is a single-admin-account instance with no general public registration endpoint. The
+first admin account is created from the web UI itself: when the `users` table is empty,
+`GET /api/auth/setup-status` reports `setupRequired: true` and the frontend shows a
+create-admin form at `/login` instead of the sign-in form, backed by `POST /api/auth/setup`
+(rejected with 409 once a user already exists). If you get locked out afterward, the CLI
+still works to reset the password or recreate the admin account:
 
 ```
 python -m scripts.create_admin --username admin

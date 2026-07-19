@@ -13,6 +13,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
+import RestoreGuard from "./components/RestoreGuard";
 import { useLogout } from "./hooks/useAuth";
 import BottomNavBar, { BOTTOM_NAV_HEIGHT } from "./navigation/BottomNavBar";
 import Breadcrumbs, { BREADCRUMBS_HEIGHT } from "./navigation/Breadcrumbs";
@@ -48,6 +49,7 @@ const AppShell = () => {
 
   return (
     <Box sx={{ display: "flex" }}>
+      <RestoreGuard />
       <Link
         href="#main-content"
         sx={{

@@ -1,6 +1,15 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { exportBackupBlob, exportCsvBlob, exportHardwareCsvBlob, restoreBackup } from "../api/importExport";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  acknowledgeRestoreStatus,
+  exportBackupBlob,
+  exportCsvBlob,
+  exportHardwareCsvBlob,
+  fetchRestoreStatus,
+  restoreBackup,
+} from "../api/importExport";
 import { downloadBlob } from "../utils/download";
+
+export const restoreStatusQueryKey = ["restore", "status"] as const;
 
 export function useExportCsv() {
   return useMutation({
@@ -29,8 +38,39 @@ export function useRestoreBackup() {
     // whenever the network happens to return — 'always' runs (or fails) immediately instead.
     networkMode: "always",
     onSuccess: () => {
-      // A restore replaces the entire dataset at once - everything cached is stale.
-      queryClient.invalidateQueries();
+      // The restore has only just started (202) — its eventual result isn't known yet, so
+      // just make sure the status poller below picks up "running" right away instead of
+      // waiting for its next interval tick.
+      queryClient.invalidateQueries({ queryKey: restoreStatusQueryKey });
+    },
+  });
+}
+
+// Polled from RestoreGuard (mounted once in AppShell) for as long as the authenticated app
+// is open, so an in-progress restore is detected on first load too — not just right after
+// this tab's own restoreBackup call — which is what makes the blocking overlay survive a
+// refresh, a route change, or the tab being closed and reopened mid-restore.
+export function useRestoreStatus() {
+  return useQuery({
+    queryKey: restoreStatusQueryKey,
+    queryFn: fetchRestoreStatus,
+    refetchInterval: 3000,
+    // The app's offline persister (offline/queryPersistence.ts) rehydrates queries from
+    // IndexedDB on load, and the global default staleTime is 30s — without overriding it
+    // here, a page refresh could briefly show a stale cached "idle" (persisted from before
+    // this session) instead of immediately refetching real status, letting the blocking
+    // overlay flash absent right when it matters most.
+    staleTime: 0,
+    refetchIntervalInBackground: true,
+  });
+}
+
+export function useAcknowledgeRestoreStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: acknowledgeRestoreStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: restoreStatusQueryKey });
     },
   });
 }

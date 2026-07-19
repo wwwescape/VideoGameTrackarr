@@ -75,7 +75,6 @@ optional with sane defaults).
 ```
 cd backend
 alembic upgrade head
-python -m scripts.create_admin --username admin   # there's no public registration; this is the only way in
 ```
 
 ## Run (development)
@@ -91,8 +90,10 @@ npm start
 ```
 
 The frontend runs on `http://localhost:3000` (Vite) and talks to the backend on
-`http://localhost:8000` (FastAPI) — CORS is pre-configured for this pair. Log in with the
-admin account you created above.
+`http://localhost:8000` (FastAPI) — CORS is pre-configured for this pair. Since the `users`
+table starts empty, visiting the app shows a create-admin form instead of the login form —
+fill it in once and you're signed in. (If you ever get locked out afterward, `python -m
+scripts.create_admin --username admin` from `backend/` resets the password.)
 
 ## Test
 
@@ -139,10 +140,13 @@ Then run:
 
 ```
 docker compose up -d
-docker compose exec app python -m scripts.create_admin --username admin   # there's no public registration; this is the only way in
 ```
 
-Then open `http://localhost:8000` in your browser!
+Then open `http://localhost:8000` in your browser — with no admin account yet, you'll land
+on a create-admin form instead of login. Fill it in once and you're signed in (there's no
+public registration beyond that first-run form). If you ever get locked out afterward,
+`docker compose exec app python -m scripts.create_admin --username admin` resets the
+password.
 
 Migrations run automatically on container start. Both the SQLite database and uploaded
 cover/accessory images live in the named volumes above, so they survive `docker compose

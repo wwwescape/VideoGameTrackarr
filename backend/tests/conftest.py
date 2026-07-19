@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_igdb_client
+from app.api.deps import get_db, get_igdb_client, get_session_factory
 from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.core.security import hash_password
@@ -19,6 +19,7 @@ from app.models import Base
 from app.models.catalog import Game, GameCategory, Platform, Region
 from app.models.hardware import Accessory, AccessoryType, Device, DeviceType, HardwarePlatform, Manufacturer
 from app.models.system import User
+from app.services import restore_job
 from app.services.cache import InMemoryTTLCache
 from app.services.igdb_client import IGDBClient
 
@@ -32,6 +33,15 @@ def _reset_rate_limiter():
     # storage is process-global, not per-test.
     limiter.reset()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_restore_job():
+    # Same leak-across-tests problem as the rate limiter above: restore_job's state is a
+    # process-global singleton (see app/services/restore_job.py), not per-test.
+    restore_job.reset_for_tests()
+    yield
+    restore_job.reset_for_tests()
 
 
 @pytest.fixture()
@@ -48,9 +58,17 @@ def client(db_session):
     def _override_get_db():
         yield db_session
 
+    # The restore background job (app/services/restore_job.py) opens its own session after
+    # the request returns, via this factory — pointing it at the same tmp_path engine as
+    # db_session keeps a restore test's background thread off the app's real database.
+    def _override_get_session_factory():
+        return lambda: Session(bind=db_session.bind)
+
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_session_factory] = _override_get_session_factory
     yield TestClient(app)
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_session_factory, None)
 
 
 @pytest.fixture()

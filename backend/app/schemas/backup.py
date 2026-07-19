@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.base import CamelModel
@@ -215,3 +217,11 @@ class BackupRestoreResult(CamelModel):
     restored_games: int
     restored_library_items: int
     safety_snapshot_path: str
+
+
+class RestoreStatusResponse(CamelModel):
+    status: Literal["idle", "running", "completed", "failed"]
+    started_at: str | None
+    finished_at: str | None
+    result: BackupRestoreResult | None
+    error: str | None

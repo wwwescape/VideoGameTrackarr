@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -18,6 +18,16 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def get_session_factory() -> Callable[[], Session]:
+    """A callable that opens a *new* Session, for code that outlives a single request (e.g.
+    the restore background job in app/services/restore_job.py) — the request-scoped
+    Session from get_db() is closed as soon as the route returns, before any background
+    thread it kicked off gets to use it. Overridden in tests the same way get_db is, so a
+    background thread's session lands on the test's tmp_path engine rather than the app's
+    real configured one."""
+    return SessionLocal
 
 
 def get_current_user(

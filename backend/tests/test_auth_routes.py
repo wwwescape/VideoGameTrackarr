@@ -101,3 +101,60 @@ def test_access_token_rejected_at_refresh_endpoint(client, test_user):
     response = client.post("/api/auth/refresh", json={"refreshToken": access_token})
 
     assert response.status_code == 401
+
+
+def test_setup_status_reports_required_when_no_users(client):
+    response = client.get("/api/auth/setup-status")
+
+    assert response.status_code == 200
+    assert response.json() == {"setupRequired": True}
+
+
+def test_setup_status_reports_not_required_once_a_user_exists(client, test_user):
+    response = client.get("/api/auth/setup-status")
+
+    assert response.status_code == 200
+    assert response.json() == {"setupRequired": False}
+
+
+def test_setup_creates_first_user_and_logs_in(client):
+    response = client.post("/api/auth/setup", json={"username": "admin", "password": "a-strong-password"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tokenType"] == "bearer"
+    assert body["accessToken"]
+    assert body["refreshToken"]
+
+    assert client.get("/api/auth/setup-status").json() == {"setupRequired": False}
+
+    me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {body['accessToken']}"})
+    assert me.status_code == 200
+    assert me.json()["username"] == "admin"
+
+
+def test_setup_rejected_once_a_user_already_exists(client, test_user):
+    response = client.post("/api/auth/setup", json={"username": "someone-else", "password": "a-strong-password"})
+
+    assert response.status_code == 409
+
+
+def test_setup_rejects_short_password(client):
+    response = client.post("/api/auth/setup", json={"username": "admin", "password": "short"})
+
+    assert response.status_code == 422
+
+
+def test_setup_rejects_short_username(client):
+    response = client.post("/api/auth/setup", json={"username": "ab", "password": "a-strong-password"})
+
+    assert response.status_code == 422
+
+
+def test_setup_rate_limited_after_five_attempts(client):
+    for _ in range(5):
+        client.post("/api/auth/setup", json={"username": "admin", "password": "a-strong-password"})
+
+    response = client.post("/api/auth/setup", json={"username": "admin", "password": "a-strong-password"})
+
+    assert response.status_code == 429

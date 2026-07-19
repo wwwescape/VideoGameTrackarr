@@ -9,7 +9,13 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { toast } from "react-toastify";
 import ConfirmDialog from "./ConfirmDialog";
-import { useExportBackup, useExportCsv, useExportHardwareCsv, useRestoreBackup } from "../hooks/useImportExport";
+import {
+  useExportBackup,
+  useExportCsv,
+  useExportHardwareCsv,
+  useRestoreBackup,
+  useRestoreStatus,
+} from "../hooks/useImportExport";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
 const DataManagementSection = () => {
@@ -17,6 +23,8 @@ const DataManagementSection = () => {
   const exportHardwareCsv = useExportHardwareCsv();
   const exportBackup = useExportBackup();
   const restoreBackup = useRestoreBackup();
+  const restoreStatus = useRestoreStatus();
+  const restoreInProgress = restoreBackup.isPending || restoreStatus.data?.status === "running";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
@@ -50,14 +58,15 @@ const DataManagementSection = () => {
   const handleRestoreConfirmed = async () => {
     if (!pendingFile) return;
     try {
-      const result = await restoreBackup.mutateAsync(pendingFile);
-      toast.success(
-        `Restored ${result.restoredGames} game(s). A safety copy of what was there before was saved server-side.`,
-        TOAST_OPTIONS
-      );
+      // This only resolves once the restore *starts* (202) - it no longer carries a
+      // result to toast, since the job hasn't finished yet. A failure caught here means
+      // the job never started (bad file, already-running restore, etc); once it's running,
+      // RestoreGuard (mounted in AppShell) owns showing progress, success, and any
+      // in-job failure.
+      await restoreBackup.mutateAsync(pendingFile);
     } catch (error) {
-      console.error("Error restoring backup:", error);
-      toast.error("Error restoring backup. Please try again.", TOAST_OPTIONS);
+      console.error("Error starting restore:", error);
+      toast.error("Could not start the restore. Please try again.", TOAST_OPTIONS);
     } finally {
       setPendingFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -99,13 +108,20 @@ const DataManagementSection = () => {
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           Restore
         </Typography>
-        <Button component="label" variant="outlined" color="error" startIcon={<RestoreIcon />}>
+        <Button
+          component="label"
+          variant="outlined"
+          color="error"
+          startIcon={<RestoreIcon />}
+          disabled={restoreInProgress}
+        >
           Restore from backup
           <input
             ref={fileInputRef}
             type="file"
             accept=".json,application/json"
             hidden
+            disabled={restoreInProgress}
             onChange={(event) => setPendingFile(event.target.files?.[0] ?? null)}
           />
         </Button>
@@ -122,6 +138,7 @@ const DataManagementSection = () => {
         description={`This will permanently replace your entire library with the contents of "${pendingFile?.name}". A safety snapshot of what's there now will be saved on the server first, but this action itself cannot be undone from here.`}
         confirmLabel="Replace my library"
         confirmColor="error"
+        confirmDisabled={restoreInProgress}
         onClose={() => {
           setPendingFile(null);
           if (fileInputRef.current) fileInputRef.current.value = "";

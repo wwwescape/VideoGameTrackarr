@@ -240,6 +240,16 @@ export interface BackupRestoreResult {
   safetySnapshotPath: string;
 }
 
+export type RestoreJobStatus = "idle" | "running" | "completed" | "failed";
+
+export interface RestoreStatus {
+  status: RestoreJobStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  result: BackupRestoreResult | null;
+  error: string | null;
+}
+
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
 export type RatingBoard = "esrb" | "pegi" | "cero" | "usk" | "grac" | "classind" | "acb" | "iarc";
@@ -330,6 +340,10 @@ export interface AuthTokens {
 export interface CurrentUser {
   id: number;
   username: string;
+}
+
+export interface SetupStatus {
+  setupRequired: boolean;
 }
 
 export interface NamedLookup {
