@@ -1,13 +1,11 @@
 services:
   app:
-    # Builds from source by default. If you've cut a tagged release (see
-    # .github/workflows/release.yml — git tag v1.0.0 && git push origin v1.0.0), pre-built
-    # images are published too; swap this `build:` block for e.g.
-    # `image: docker.io/wwwescape/videogametrackarr:1.0.0` (or the
-    # `ghcr.io/wwwescape/videogametrackarr:1.0.0` equivalent) to deploy that instead.
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # Pulls the published image by default. To build from source instead (e.g. testing a
+    # local change before it's released), swap this `image:` line for:
+    #   build:
+    #     context: .
+    #     dockerfile: Dockerfile
+    image: wwwescape/videogametrackarr:latest
     ports:
       - "${APP_PORT:-8000}:8000"
     env_file:

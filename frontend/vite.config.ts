@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["VideoGameTrackarr.svg"],
+      includeAssets: ["icon-master.svg"],
       manifest: {
         name: "VideoGameTrackarr",
         short_name: "VGT",

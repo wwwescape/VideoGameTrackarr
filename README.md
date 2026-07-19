@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/public/VideoGameTrackarr.svg" alt="VideoGameTrackarr logo" width="120" />
+  <img src="frontend/public/icon-master.svg" alt="VideoGameTrackarr logo" width="120" />
 </p>
 
 <h1 align="center">VideoGameTrackarr</h1>
@@ -106,36 +106,64 @@ see `e2e/README.md`. It's a manual pre-release check, not something CI runs auto
 so it needs a bit of one-time setup against a scratch copy of your database before running
 `npm run test:e2e`.
 
-## Deploy with Docker
+## Deploy with Docker Compose
 
-A single container builds the frontend and serves it from the same FastAPI process as the
-API (one origin, no separate frontend container/proxy split needed):
+The published image bundles the frontend and backend into a single container — one origin,
+no separate frontend container or proxy split needed.
+
+Create `docker-compose.yml`:
+
+```yaml
+services:
+  app:
+    image: wwwescape/videogametrackarr:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - db-data:/app/backend/db
+      - uploads-data:/app/backend/uploads
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads-data:
+```
+
+Create a `.env` file next to it (see `.env.example`) with `IGDB_CLIENT_ID`,
+`IGDB_CLIENT_SECRET`, and `JWT_SECRET_KEY` filled in.
+
+Then run:
 
 ```
-cp .env.example .env   # fill in IGDB_CLIENT_ID/IGDB_CLIENT_SECRET/JWT_SECRET_KEY
-docker compose up -d --build
-docker compose exec app python -m scripts.create_admin --username admin
+docker compose up -d
+docker compose exec app python -m scripts.create_admin --username admin   # there's no public registration; this is the only way in
 ```
 
-The app is then at `http://localhost:8000` (override with `APP_PORT` in `.env`). Migrations
-run automatically on container start. Both the SQLite database and uploaded cover/accessory
-images live in named volumes (`db-data` → `/app/backend/db`, `uploads-data` →
-`/app/backend/uploads`), so they survive `docker compose down`/recreates and upgrades —
-only `docker compose down -v` removes them. Reverse proxy examples (Nginx, Traefik) for
-fronting this with your own TLS/domain are in `docs/deployment/`. An optional shared Redis
-cache can be enabled with `docker compose --profile redis up -d`; without it, each instance
-just uses its own in-process cache, which is fine for one replica.
+Then open `http://localhost:8000` in your browser!
+
+Migrations run automatically on container start. Both the SQLite database and uploaded
+cover/accessory images live in the named volumes above, so they survive `docker compose
+down`/recreates and upgrades — only `docker compose down -v` removes them.
+
+This repo's own [docker-compose.yml](docker-compose.yml) is the same setup with a couple
+extras: a comment showing how to build from source instead of pulling the image, and an
+optional shared Redis cache (`docker compose --profile redis up -d`) that's only useful if
+you run more than one replica — a single instance already gets an in-process cache for free.
+Reverse proxy examples (Nginx, Traefik) for fronting this with your own TLS/domain are in
+`docs/deployment/`.
 
 ## Upgrading
 
 Schema changes ship as Alembic migrations, applied automatically — there's no separate
 upgrade step beyond getting the new code running:
 
-- **Docker**: `git pull && docker compose up -d --build` (or `docker compose pull && docker
-  compose up -d` if you're running a published `ghcr.io` image tag instead of building from
-  source). The entrypoint runs `alembic upgrade head` before the app starts, every time the
-  container starts. Your data (database + uploads) is untouched — it lives in the named
-  volumes described above, not in the container itself.
+- **Docker**: `docker compose pull && docker compose up -d` (or `git pull && docker compose
+  up -d --build` if you've switched `docker-compose.yml` to build from source instead of
+  pulling the published image). The entrypoint runs `alembic upgrade head` before the app
+  starts, every time the container starts. Your data (database + uploads) is untouched — it
+  lives in the named volumes described above, not in the container itself.
 - **Bare metal**: `git pull`, reinstall dependencies if `requirements.txt`/`package.json`
   changed (`pip install -r requirements-dev.txt`, `npm install`), then run `cd backend &&
   alembic upgrade head` before starting the app again.

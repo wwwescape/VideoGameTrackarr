@@ -5,5 +5,5 @@ export default defineConfig({
     preset: "2023",
   },
   preset: minimal2023Preset,
-  images: ["public/VideoGameTrackarr.svg"],
+  images: ["public/icon-master.svg"],
 });
