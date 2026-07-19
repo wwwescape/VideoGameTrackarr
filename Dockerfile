@@ -31,7 +31,11 @@ RUN mkdir -p db uploads \
     && chmod +x docker-entrypoint.sh \
     && useradd --create-home --uid 1000 appuser \
     && chown -R appuser:appuser /app
-USER appuser
+
+# Stays root here — chown of db/uploads doesn't reliably survive a QEMU-emulated
+# cross-arch build (see .github/workflows/release.yml's linux/arm64 build), so
+# docker-entrypoint.sh re-chowns those two dirs at container start instead, then drops to
+# appuser itself before exec'ing the app.
 
 EXPOSE 8000
 

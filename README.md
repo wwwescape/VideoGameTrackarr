@@ -117,6 +117,7 @@ Create `docker-compose.yml`:
 services:
   app:
     image: wwwescape/videogametrackarr:latest
+    container_name: videogametrackarr
     ports:
       - "8000:8000"
     env_file:

@@ -6,6 +6,7 @@ services:
     #     context: .
     #     dockerfile: Dockerfile
     image: wwwescape/videogametrackarr:latest
+    container_name: videogametrackarr
     ports:
       - "${APP_PORT:-8000}:8000"
     env_file:
