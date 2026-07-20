@@ -30,6 +30,7 @@ export function useCreateAccessory() {
     mutationFn: createAccessory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accessories"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
     },
   });
 }
@@ -40,6 +41,7 @@ export function useUpdateAccessory(accessoryId: number) {
     mutationFn: (input: Partial<AccessoryInput>) => updateAccessory(accessoryId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accessories"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
     },
   });
 }
@@ -50,6 +52,7 @@ export function useDeleteAccessory() {
     mutationFn: deleteAccessory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accessories"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
     },
   });
 }
