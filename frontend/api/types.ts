@@ -372,6 +372,7 @@ export interface HardwareReferenceEntry {
   discontinued: boolean;
   compatibility: string | null;
   summary: string | null;
+  imageUrl: string | null;
 }
 
 // Nested "rich data" block on Device/Accessory detail responses — only the fields not
@@ -384,6 +385,7 @@ export interface HardwareReferenceSummary {
   discontinued: boolean;
   compatibility: string | null;
   summary: string | null;
+  imageUrl: string | null;
 }
 
 export interface DeviceSummary {
@@ -401,6 +403,7 @@ export interface DeviceSummary {
   colorId: number | null;
   colorName: string | null;
   ratingBoard: RatingBoard | null;
+  imageUrl: string | null;
   owned: boolean;
   wishlisted: boolean;
   ownedQuantity: number;

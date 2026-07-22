@@ -49,7 +49,7 @@ const ReleaseCalendarSection = ({ scope }: ReleaseCalendarSectionProps) => {
               <HardwareCard
                 name={item.device.officialName}
                 subtitle={[item.device.manufacturerName, item.device.hardwarePlatformName].filter(Boolean).join(" · ")}
-                imageUrl={null}
+                imageUrl={item.device.imageUrl}
                 owned={item.device.owned}
                 wishlisted={item.device.wishlisted}
                 ownedQuantity={item.device.ownedQuantity}

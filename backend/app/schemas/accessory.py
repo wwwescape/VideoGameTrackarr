@@ -6,6 +6,7 @@ from app.schemas.device import LinkedAccessoryResponse
 from app.schemas.hardware_reference import HardwareReferenceSummary, hardware_reference_summary_from_orm
 from app.schemas.tag import TagResponse, tag_from_orm
 from app.schemas.user_accessory import UserAccessoryCreateRequest
+from app.services.hardware_reference_image_service import resolve_image_url
 
 
 class CompatiblePlatformResponse(CamelModel):
@@ -66,7 +67,14 @@ def _accessory_fields(accessory: Accessory, with_status: AccessoryWithStatus) ->
         "color_id": accessory.color_id,
         "color_name": accessory.color.name if accessory.color else None,
         "rating_board": accessory.rating_board,
-        "image_url": accessory.image_url,
+        # Own upload (custom accessories) wins if present, otherwise fall back to the linked
+        # HardwareReferenceEntry's curated image (predefined accessories).
+        "image_url": accessory.image_url
+        or (
+            resolve_image_url(accessory.hardware_reference_entry.official_name)
+            if accessory.hardware_reference_entry
+            else None
+        ),
         "summary": accessory.summary,
         "owned": with_status.owned,
         "wishlisted": with_status.wishlisted,

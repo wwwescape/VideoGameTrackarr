@@ -33,7 +33,7 @@ from app.api.routes import (
     tags,
     uploads,
 )
-from app.core.config import REPO_ROOT, UPLOADS_DIR, get_settings
+from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DIR, get_settings
 from app.core.limiter import limiter
 from app.core.logging import configure_logging
 from app.services.exceptions import ConflictError, NotFoundError
@@ -126,6 +126,16 @@ app.include_router(uploads.router)
 # than committed to the repo, so it needs to exist before StaticFiles will mount it.
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+
+# Curated HardwareReferenceEntry product shots — checked into the repo (see
+# HARDWARE_REFERENCE_IMAGES_DIR), but still created defensively so StaticFiles can mount it
+# even before any images have been added.
+HARDWARE_REFERENCE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+app.mount(
+    "/static/hardware-reference",
+    StaticFiles(directory=HARDWARE_REFERENCE_IMAGES_DIR),
+    name="hardware-reference-images",
+)
 
 # Serves the built frontend (npm run build's output) from the same origin as the API.
 # Guarded by existence so a backend-only dev run (frontend served separately by Vite on

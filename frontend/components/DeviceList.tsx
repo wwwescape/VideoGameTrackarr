@@ -70,7 +70,7 @@ const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
             <HardwareCard
               name={item.officialName}
               subtitle={[item.manufacturerName, item.hardwarePlatformName].filter(Boolean).join(" · ")}
-              imageUrl={null}
+              imageUrl={item.imageUrl}
               owned={item.owned}
               wishlisted={item.wishlisted}
               ownedQuantity={item.ownedQuantity}

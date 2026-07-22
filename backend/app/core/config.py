@@ -7,6 +7,10 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_DIR.parent
 DEFAULT_SQLITE_PATH = BACKEND_DIR / "db" / "videogametrackarr.db"
 UPLOADS_DIR = BACKEND_DIR / "uploads"
+# Curated product shots for HardwareReferenceEntry rows — checked into the repo (unlike
+# UPLOADS_DIR, which is gitignored runtime storage), one file per SKU. See the seed migration
+# that backfills HardwareReferenceEntry.image_url for the naming convention.
+HARDWARE_REFERENCE_IMAGES_DIR = BACKEND_DIR / "static" / "hardware-reference"
 
 
 class Settings(BaseSettings):

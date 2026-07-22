@@ -80,13 +80,10 @@ const DeviceDetails = () => {
         <Stack spacing={2}>
           <HardwareCoverCard
             name={device.officialName}
-            imageUrl={null}
+            imageUrl={device.imageUrl}
             owned={device.owned}
             wishlisted={device.wishlisted}
           />
-          <Typography variant="body2" color="text.secondary" align="center">
-            Coming Soon!
-          </Typography>
           <Stack spacing={1.5}>
             <Button
               variant="contained"

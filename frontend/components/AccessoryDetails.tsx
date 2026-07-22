@@ -89,11 +89,6 @@ const AccessoryDetails = () => {
             owned={accessory.owned}
             wishlisted={accessory.wishlisted}
           />
-          {!isCustom ? (
-            <Typography variant="body2" color="text.secondary" align="center">
-              Coming Soon!
-            </Typography>
-          ) : null}
           <Stack spacing={1.5}>
             <Button
               variant="contained"

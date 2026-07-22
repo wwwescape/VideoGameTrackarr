@@ -5,6 +5,7 @@ from app.schemas.base import CamelModel
 from app.schemas.hardware_reference import HardwareReferenceSummary, hardware_reference_summary_from_orm
 from app.schemas.tag import TagResponse, tag_from_orm
 from app.schemas.user_device import UserDeviceCreateRequest
+from app.services.hardware_reference_image_service import resolve_image_url
 
 
 class DeviceSummaryResponse(CamelModel):
@@ -24,6 +25,9 @@ class DeviceSummaryResponse(CamelModel):
     color_id: int | None
     color_name: str | None
     rating_board: RatingBoard | None
+    # Curated product shot from the linked HardwareReferenceEntry, if any — Device has no
+    # image of its own since every Device today comes from the predefined reference cascade.
+    image_url: str | None
     # Computed fresh per request (EXISTS/scalar-subquery against user_devices), never a
     # stored counter — see DeviceWithStatus.
     owned: bool
@@ -62,6 +66,11 @@ def _device_fields(device: Device, with_status: DeviceWithStatus) -> dict:
         "color_id": device.color_id,
         "color_name": device.color.name if device.color else None,
         "rating_board": device.rating_board,
+        "image_url": (
+            resolve_image_url(device.hardware_reference_entry.official_name)
+            if device.hardware_reference_entry
+            else None
+        ),
         "owned": with_status.owned,
         "wishlisted": with_status.wishlisted,
         "owned_quantity": with_status.owned_quantity,

@@ -1,5 +1,6 @@
 from app.models.hardware import HardwareReferenceEntry
 from app.schemas.base import CamelModel
+from app.services.hardware_reference_image_service import resolve_image_url
 
 
 class HardwareReferenceEntryResponse(CamelModel):
@@ -16,6 +17,7 @@ class HardwareReferenceEntryResponse(CamelModel):
     discontinued: bool
     compatibility: str | None
     summary: str | None
+    image_url: str | None
 
 
 def hardware_reference_entry_from_orm(entry: HardwareReferenceEntry) -> HardwareReferenceEntryResponse:
@@ -33,6 +35,7 @@ def hardware_reference_entry_from_orm(entry: HardwareReferenceEntry) -> Hardware
         discontinued=entry.discontinued,
         compatibility=entry.compatibility,
         summary=entry.summary,
+        image_url=resolve_image_url(entry.official_name),
     )
 
 
@@ -48,6 +51,7 @@ class HardwareReferenceSummary(CamelModel):
     discontinued: bool
     compatibility: str | None
     summary: str | None
+    image_url: str | None
 
 
 def hardware_reference_summary_from_orm(entry: HardwareReferenceEntry) -> HardwareReferenceSummary:
@@ -59,4 +63,5 @@ def hardware_reference_summary_from_orm(entry: HardwareReferenceEntry) -> Hardwa
         discontinued=entry.discontinued,
         compatibility=entry.compatibility,
         summary=entry.summary,
+        image_url=resolve_image_url(entry.official_name),
     )
