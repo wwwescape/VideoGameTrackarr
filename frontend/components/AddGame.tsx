@@ -14,6 +14,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { GameCategory, GameSummary } from "../api/types";
@@ -46,6 +47,7 @@ function isAddableCategory(category: GameCategory | null): boolean {
 }
 
 const AddGame = () => {
+  const { t } = useTranslation();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [mode, setMode] = useState<AddMode>("igdb");
   const navigate = useNavigate();
@@ -73,7 +75,7 @@ const AddGame = () => {
       navigate(`/game/${gameIdentifier(game)}`);
     } catch (error) {
       console.error("Error adding game:", error);
-      toast.error("Error adding game. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.add.addGameError"), TOAST_OPTIONS);
     }
   };
 
@@ -91,10 +93,10 @@ const AddGame = () => {
       )}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Add Game
+          {t("games.add.pageTitle")}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Search IGDB and add titles to your local tracker.
+          {t("games.add.pageSubtitle")}
         </Typography>
       </Box>
       <Box sx={{ width: "100%", typography: "body1" }}>
@@ -104,20 +106,20 @@ const AddGame = () => {
           onChange={(event) => setMode(event.target.value as AddMode)}
           sx={{ mb: 2 }}
         >
-          <FormControlLabel value="igdb" control={<Radio />} label="From IGDB" />
-          <FormControlLabel value="manual" control={<Radio />} label="Manually" />
+          <FormControlLabel value="igdb" control={<Radio />} label={t("games.add.fromIgdbLabel")} />
+          <FormControlLabel value="manual" control={<Radio />} label={t("games.add.manuallyLabel")} />
         </RadioGroup>
         <SimpleTabPanel value="igdb" activeValue={mode} sx={{ px: 0, py: 2 }}>
           <Grid container spacing={2}>
             <Grid size={12}>
               <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
                 <TextField
-                  label="Search games on IGDB"
+                  label={t("games.add.searchLabel")}
                   variant="outlined"
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
-                  placeholder="Enter game name"
-                  helperText='Know the exact IGDB id? Search "igdb:<id>" (e.g. igdb:3542) to jump straight to it.'
+                  placeholder={t("games.add.searchPlaceholder")}
+                  helperText={t("games.add.searchHelperText")}
                   slotProps={{
                     input: {
                       startAdornment: (
@@ -138,18 +140,15 @@ const AddGame = () => {
             </Grid>
             <Grid size={12}>
               {igdbNotConfigured ? (
-                <Paper sx={{ p: 3, textAlign: "center" }}>
-                  IGDB isn&apos;t configured on this server. Set IGDB_CLIENT_ID and IGDB_CLIENT_SECRET in
-                  its .env file.
-                </Paper>
+                <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.igdbNotConfigured")}</Paper>
               ) : isSearching ? (
-                <Paper sx={{ p: 3, textAlign: "center" }}>Searching...</Paper>
+                <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.searching")}</Paper>
               ) : !isSearchActive ? (
-                <Paper sx={{ p: 3, textAlign: "center" }}>Please search for some games</Paper>
+                <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.pleaseSearchGames")}</Paper>
               ) : !searchResults || searchResults.length === 0 ? (
-                <Paper sx={{ p: 3, textAlign: "center" }}>No games found</Paper>
+                <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.noGamesFound")}</Paper>
               ) : idSearchCategoryBlocked ? (
-                <Paper sx={{ p: 3, textAlign: "center" }}>This category cannot be added</Paper>
+                <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.categoryCannotBeAdded")}</Paper>
               ) : (
                 <VirtualGameGrid
                   items={searchResults}

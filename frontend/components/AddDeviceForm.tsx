@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
@@ -28,11 +29,6 @@ interface StatusOption {
   label: string;
 }
 
-const STATUS_OPTIONS: StatusOption[] = [
-  { value: "owned", label: "Owned" },
-  { value: "wishlist", label: "Wishlist" },
-];
-
 interface ConditionOption {
   value: HardwareCondition;
   label: string;
@@ -48,12 +44,8 @@ interface RatingBoardOption {
   label: string;
 }
 
-const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
-  { value: null, label: "None" },
-  ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
-];
-
 const AddDeviceForm = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const createDevice = useCreateDevice();
   const { data: storageVariants } = useStorageVariants();
@@ -73,6 +65,16 @@ const AddDeviceForm = () => {
   const [condition, setCondition] = useState<HardwareCondition | null>(null);
   const [notes, setNotes] = useState("");
 
+  const STATUS_OPTIONS: StatusOption[] = [
+    { value: "owned", label: t("hardware.deviceForm.statusOwned") },
+    { value: "wishlist", label: t("hardware.deviceForm.statusWishlist") },
+  ];
+
+  const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
+    { value: null, label: t("common.none") },
+    ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
+  ];
+
   useEffect(() => {
     if (!nameTouched) {
       setOfficialName(predefined.suggestedOfficialName);
@@ -87,7 +89,7 @@ const AddDeviceForm = () => {
       !predefined.deviceType.trim() ||
       !officialName.trim()
     ) {
-      toast.error("Brand, console, variant, and official name are required.", TOAST_OPTIONS);
+      toast.error(t("hardware.addDevice.validationError"), TOAST_OPTIONS);
       return;
     }
     try {
@@ -110,11 +112,11 @@ const AddDeviceForm = () => {
           notes: notes.trim() || null,
         },
       });
-      toast.success("Device added!", TOAST_OPTIONS);
+      toast.success(t("hardware.addDevice.addedSuccess"), TOAST_OPTIONS);
       navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`);
     } catch (error) {
       console.error("Error adding device:", error);
-      toast.error("Error adding device. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.addDevice.addError"), TOAST_OPTIONS);
     }
   };
 
@@ -131,7 +133,7 @@ const AddDeviceForm = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Official name"
+            label={t("hardware.deviceForm.officialNameLabel")}
             required
             fullWidth
             value={officialName}
@@ -139,29 +141,45 @@ const AddDeviceForm = () => {
               setOfficialName(event.target.value);
               setNameTouched(true);
             }}
-            helperText="Auto-filled from your selections — edit if you want to tweak it"
+            helperText={t("hardware.addDevice.officialNameHelperText")}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Edition" fullWidth disabled value="" helperText="Coming Soon!" />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Model number" fullWidth value={model} onChange={(event) => setModel(event.target.value)} />
+          <TextField
+            label={t("hardware.deviceForm.editionLabel")}
+            fullWidth
+            disabled
+            value=""
+            helperText={t("hardware.deviceForm.comingSoonHelperText")}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Serial number"
+            label={t("hardware.deviceForm.modelNumberLabel")}
+            fullWidth
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <TextField
+            label={t("hardware.deviceForm.serialNumberLabel")}
             fullWidth
             value={serialNumber}
             onChange={(event) => setSerialNumber(event.target.value)}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <FreeSoloLookupField label="Color" options={colors ?? []} value={color} onChange={setColor} />
+          <FreeSoloLookupField
+            label={t("hardware.deviceForm.colorLabel")}
+            options={colors ?? []}
+            value={color}
+            onChange={setColor}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <FreeSoloLookupField
-            label="Storage"
+            label={t("hardware.deviceForm.storageLabel")}
             options={storageVariants ?? []}
             value={storageVariant}
             onChange={setStorageVariant}
@@ -169,7 +187,7 @@ const AddDeviceForm = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Revision"
+            label={t("hardware.deviceForm.revisionLabel")}
             fullWidth
             value={revision}
             onChange={(event) => setRevision(event.target.value)}
@@ -177,7 +195,7 @@ const AddDeviceForm = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<RatingBoardOption>
-            label="Ratings Board"
+            label={t("hardware.deviceForm.ratingsBoardLabel")}
             fullWidth
             options={RATING_BOARD_OPTIONS}
             value={RATING_BOARD_OPTIONS.find((option) => option.value === ratingBoard) ?? null}
@@ -190,7 +208,7 @@ const AddDeviceForm = () => {
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             type="number"
-            label="Price"
+            label={t("hardware.deviceForm.priceLabel")}
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
@@ -199,7 +217,7 @@ const AddDeviceForm = () => {
         <Grid size={{ xs: 12, sm: 6 }} />
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<StatusOption>
-            label="Status"
+            label={t("hardware.deviceForm.statusLabel")}
             fullWidth
             options={STATUS_OPTIONS}
             value={STATUS_OPTIONS.find((option) => option.value === status) ?? null}
@@ -218,7 +236,7 @@ const AddDeviceForm = () => {
         {status === "owned" ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <AutocompleteSelect<ConditionOption>
-              label="Condition"
+              label={t("hardware.deviceForm.conditionLabel")}
               fullWidth
               options={CONDITION_OPTIONS}
               value={CONDITION_OPTIONS.find((option) => option.value === condition) ?? null}
@@ -232,7 +250,7 @@ const AddDeviceForm = () => {
         )}
         <Grid size={12}>
           <TextField
-            label="Notes"
+            label={t("hardware.deviceForm.notesLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -242,7 +260,7 @@ const AddDeviceForm = () => {
         </Grid>
         <Grid size={12}>
           <Button variant="contained" onClick={() => void handleSubmit()} disabled={createDevice.isPending}>
-            Add Device
+            {t("hardware.addDevice.submitButton")}
           </Button>
         </Grid>
       </Grid>

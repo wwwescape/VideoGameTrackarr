@@ -10,6 +10,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useCreatePlaySession, useDeletePlaySession, usePlaySessions } from "../hooks/usePlaySessions";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -26,6 +27,7 @@ function formatDuration(minutes: number | null): string {
 }
 
 const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
+  const { t } = useTranslation();
   const { data: sessions } = usePlaySessions(gameId);
   const [startedAt, setStartedAt] = useState("");
   const [endedAt, setEndedAt] = useState("");
@@ -35,7 +37,7 @@ const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
 
   const handleAdd = async () => {
     if (!startedAt) {
-      toast.error("A start time is required to log a session.", TOAST_OPTIONS);
+      toast.error(t("playSessions.startRequiredError"), TOAST_OPTIONS);
       return;
     }
     try {
@@ -49,7 +51,7 @@ const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
       setNotes("");
     } catch (error) {
       console.error("Error logging play session:", error);
-      toast.error("Error logging play session. Please try again.", TOAST_OPTIONS);
+      toast.error(t("playSessions.addError"), TOAST_OPTIONS);
     }
   };
 
@@ -58,19 +60,19 @@ const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
       await deleteSession.mutateAsync(sessionId);
     } catch (error) {
       console.error("Error deleting play session:", error);
-      toast.error("Error deleting play session. Please try again.", TOAST_OPTIONS);
+      toast.error(t("playSessions.deleteError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <>
-      <CardHeader title="Play sessions" subheader="Log individual sessions if you want a finer-grained history" />
+      <CardHeader title={t("playSessions.title")} subheader={t("playSessions.subtitle")} />
       <CardContent>
         <Stack spacing={1.5}>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
-                label="Started"
+                label={t("playSessions.startedLabel")}
                 type="datetime-local"
                 fullWidth
                 value={startedAt}
@@ -80,7 +82,7 @@ const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
-                label="Ended"
+                label={t("playSessions.endedLabel")}
                 type="datetime-local"
                 fullWidth
                 value={endedAt}
@@ -89,16 +91,21 @@ const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Notes" fullWidth value={notes} onChange={(event) => setNotes(event.target.value)} />
+              <TextField
+                label={t("playSessions.notesLabel")}
+                fullWidth
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+              />
             </Grid>
           </Grid>
           <Button variant="contained" onClick={handleAdd} disabled={createSession.isPending} sx={{ alignSelf: "flex-start" }}>
-            Log session
+            {t("playSessions.logButton")}
           </Button>
 
           {!sessions || sessions.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              No sessions logged yet.
+              {t("playSessions.noSessions")}
             </Typography>
           ) : (
             sessions.map((session) => (
@@ -114,7 +121,7 @@ const PlaySessionsSection = ({ gameId }: PlaySessionsSectionProps) => {
                       {session.notes ? ` · ${session.notes}` : ""}
                     </Typography>
                   </Stack>
-                  <Tooltip title="Delete">
+                  <Tooltip title={t("common.delete")}>
                     <IconButton size="small" onClick={() => handleDelete(session.id)}>
                       <DeleteIcon fontSize="small" />
                     </IconButton>

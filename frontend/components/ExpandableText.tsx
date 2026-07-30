@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 
 interface ExpandableTextProps {
   text: string;
@@ -13,6 +14,7 @@ interface ExpandableTextProps {
 // character-count threshold — font size and column width vary too much for that to be
 // reliable across screen sizes.
 const ExpandableText = ({ text, collapsedLines = 4 }: ExpandableTextProps) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
@@ -50,7 +52,7 @@ const ExpandableText = ({ text, collapsedLines = 4 }: ExpandableTextProps) => {
       </Typography>
       {isClamped ? (
         <Button size="small" onClick={() => setExpanded((prev) => !prev)} sx={{ mt: 0.5, px: 0, minWidth: 0 }}>
-          {expanded ? "Read less" : "Read more"}
+          {expanded ? t("expandableText.showLess") : t("expandableText.showMore")}
         </Button>
       ) : null}
     </>

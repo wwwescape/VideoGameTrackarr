@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDeleteGame, useGames } from "../hooks/useGames";
@@ -19,6 +20,7 @@ import VirtualGameGrid from "./VirtualGameGrid";
 const MIN_SEARCH_LENGTH = 4;
 
 const GameList = () => {
+  const { t } = useTranslation();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filter, setFilter] = useState<GameFilter>("all");
   const [selectionMode, setSelectionMode] = useState(false);
@@ -100,7 +102,7 @@ const GameList = () => {
     setSelectionMode(false);
     setSelectedIds(new Set());
     showUndoToast(
-      `${itemsToRemove.length} game${itemsToRemove.length > 1 ? "s" : ""} removed from your library`,
+      t("games.list.gamesRemovedToast", { count: itemsToRemove.length }),
       undo,
       delayMs
     );
@@ -124,10 +126,10 @@ const GameList = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 3 }}>
           <Box>
             <Typography variant="h4" component="h1" gutterBottom>
-              Games
+              {t("games.list.pageTitle")}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Search and browse your collection, wishlist, and tracked addons.
+              {t("games.list.pageSubtitle")}
             </Typography>
           </Box>
           <Button
@@ -136,7 +138,7 @@ const GameList = () => {
             onClick={() => navigate("/games/add")}
             sx={{ flexShrink: 0 }}
           >
-            Add Game
+            {t("games.list.addGameButton")}
           </Button>
         </Box>
         <GameListToolbar
@@ -160,16 +162,16 @@ const GameList = () => {
           sticky header instead of staying hidden behind it. */}
       <Box sx={{ isolation: "isolate" }}>
         {isLoading ? (
-          <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>
+          <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
         ) : isSearching ? (
-          <Paper sx={{ p: 3, textAlign: "center" }}>Searching...</Paper>
+          <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.list.searching")}</Paper>
         ) : visibleGames.length === 0 ? (
           <Paper sx={{ p: 3, textAlign: "center" }}>
             {isSearchActive
-              ? "No games found"
+              ? t("games.list.noGamesFound")
               : filter !== "all"
-                ? "No games match this filter"
-                : "Please add some games"}
+                ? t("games.list.noGamesMatchFilter")
+                : t("games.list.pleaseAddGames")}
           </Paper>
         ) : (
           <VirtualGameGrid

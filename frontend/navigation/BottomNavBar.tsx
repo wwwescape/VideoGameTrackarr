@@ -2,13 +2,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import BottomNavigation from "@mui/material/BottomNavigation";
 import BottomNavigationAction from "@mui/material/BottomNavigationAction";
 import Paper from "@mui/material/Paper";
-import { navDestinations } from "./destinations";
+import { useTranslation } from "react-i18next";
+import { getNavDestinations } from "./destinations";
 
 export const BOTTOM_NAV_HEIGHT = 64;
 
 const BottomNavBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const navDestinations = getNavDestinations(t);
 
   return (
     <Paper

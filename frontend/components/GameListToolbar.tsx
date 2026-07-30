@@ -15,13 +15,14 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 
 export type GameFilter = "all" | "owned" | "wishlist";
 
-const FILTER_OPTIONS: { value: GameFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "owned", label: "Owned" },
-  { value: "wishlist", label: "Wishlist" },
+const FILTER_OPTIONS: { value: GameFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "games.listToolbar.filterAll" },
+  { value: "owned", labelKey: "games.listToolbar.filterOwned" },
+  { value: "wishlist", labelKey: "games.listToolbar.filterWishlist" },
 ];
 
 interface GameListToolbarProps {
@@ -56,18 +57,24 @@ const GameListToolbar = ({
   onBulkDelete,
   onCompare,
 }: GameListToolbarProps) => {
+  const { t } = useTranslation();
+
   if (selectionMode) {
     return (
       <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-          <IconButton onClick={onExitSelectionMode} aria-label="Exit selection mode">
+          <IconButton onClick={onExitSelectionMode} aria-label={t("games.listToolbar.exitSelectionModeAriaLabel")}>
             <CloseIcon />
           </IconButton>
           <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-            {selectedCount} selected
+            {t("games.listToolbar.selectedCount", { count: selectedCount })}
           </Typography>
-          <Tooltip title="Select all">
-            <IconButton onClick={onSelectAllVisible} aria-label="Select all visible games" disabled={visibleCount === 0}>
+          <Tooltip title={t("games.listToolbar.selectAllTooltip")}>
+            <IconButton
+              onClick={onSelectAllVisible}
+              aria-label={t("games.listToolbar.selectAllAriaLabel")}
+              disabled={visibleCount === 0}
+            >
               <DoneAllIcon />
             </IconButton>
           </Tooltip>
@@ -77,7 +84,7 @@ const GameListToolbar = ({
             disabled={selectedCount < 2}
             onClick={onCompare}
           >
-            Compare
+            {t("games.listToolbar.compareButton")}
           </Button>
           <Button
             color="error"
@@ -86,7 +93,7 @@ const GameListToolbar = ({
             disabled={selectedCount === 0}
             onClick={onBulkDelete}
           >
-            Remove
+            {t("common.remove")}
           </Button>
         </Stack>
       </Paper>
@@ -98,11 +105,11 @@ const GameListToolbar = ({
       <Stack spacing={1.5}>
         <Stack direction="row" spacing={1}>
           <TextField
-            label="Search games"
+            label={t("games.listToolbar.searchLabel")}
             variant="outlined"
             value={searchKeyword}
             onChange={(event) => onSearchKeywordChange(event.target.value)}
-            placeholder="Enter game name"
+            placeholder={t("games.listToolbar.searchPlaceholder")}
             slotProps={{
               input: {
                 startAdornment: (
@@ -119,8 +126,12 @@ const GameListToolbar = ({
             }}
             fullWidth
           />
-          <Tooltip title="Select games">
-            <IconButton onClick={onEnterSelectionMode} aria-label="Select games" sx={{ alignSelf: "center" }}>
+          <Tooltip title={t("games.listToolbar.selectGames")}>
+            <IconButton
+              onClick={onEnterSelectionMode}
+              aria-label={t("games.listToolbar.selectGames")}
+              sx={{ alignSelf: "center" }}
+            >
               <CheckBoxOutlineBlankIcon />
             </IconButton>
           </Tooltip>
@@ -129,7 +140,7 @@ const GameListToolbar = ({
           {FILTER_OPTIONS.map((option) => (
             <Chip
               key={option.value}
-              label={option.label}
+              label={t(option.labelKey)}
               color={filter === option.value ? "primary" : "default"}
               variant={filter === option.value ? "filled" : "outlined"}
               onClick={() => onFilterChange(option.value)}

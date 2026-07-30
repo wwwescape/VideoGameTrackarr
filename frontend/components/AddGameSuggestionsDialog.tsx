@@ -10,6 +10,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGames, useImportGame } from "../hooks/useGames";
@@ -32,6 +33,7 @@ interface AddGameSuggestionsDialogProps {
 // a bare-bones custom record. Mirrors LinkToIgdbDialog's layout, but suggestions import a
 // brand new game rather than linking an existing one.
 const AddGameSuggestionsDialog = ({ open, name, onContinueManually, onClose }: AddGameSuggestionsDialogProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState(name);
   const importGameMutation = useImportGame();
@@ -53,25 +55,24 @@ const AddGameSuggestionsDialog = ({ open, name, onContinueManually, onClose }: A
   const handleImport = async (igdbId: number) => {
     try {
       const game = await importGameMutation.mutateAsync(igdbId);
-      toast.success("Game added!", TOAST_OPTIONS);
+      toast.success(t("games.suggestionsDialog.addSuccess"), TOAST_OPTIONS);
       onClose();
       navigate(`/game/${gameIdentifier(game)}`);
     } catch (error) {
       console.error("Error adding game:", error);
-      toast.error("Error adding game. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.suggestionsDialog.addError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Is this game already on IGDB?</DialogTitle>
+      <DialogTitle>{t("games.suggestionsDialog.title")}</DialogTitle>
       <DialogContent sx={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Typography color="text.secondary" sx={{ mb: 2, flexShrink: 0 }}>
-          Adding from IGDB gets you cover art, genres, platforms, and more for free. Double-check before adding
-          &quot;{name}&quot; as a custom game.
+          {t("games.suggestionsDialog.description", { name })}
         </Typography>
         <TextField
-          label="Search IGDB"
+          label={t("games.suggestionsDialog.searchLabel")}
           fullWidth
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -85,15 +86,15 @@ const AddGameSuggestionsDialog = ({ open, name, onContinueManually, onClose }: A
             otherwise stop this from ever shrinking smaller than its content. */}
         <Box sx={{ flexGrow: 1, flexShrink: 1, minHeight: 0, maxHeight: 420, overflowY: "auto", my: 2 }}>
           {igdbNotConfigured ? (
-            <Typography color="text.secondary">IGDB isn&apos;t configured on this server.</Typography>
+            <Typography color="text.secondary">{t("games.suggestionsDialog.notConfigured")}</Typography>
           ) : isFetching ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
               <CircularProgress size={28} />
             </Box>
           ) : !isSearchActive ? (
-            <Typography color="text.secondary">Keep typing to search IGDB.</Typography>
+            <Typography color="text.secondary">{t("games.suggestionsDialog.keepTyping")}</Typography>
           ) : suggestions.length === 0 ? (
-            <Typography color="text.secondary">No matches found.</Typography>
+            <Typography color="text.secondary">{t("games.suggestionsDialog.noMatches")}</Typography>
           ) : (
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 1.5 }}>
               {suggestions.map((result) => {
@@ -115,10 +116,10 @@ const AddGameSuggestionsDialog = ({ open, name, onContinueManually, onClose }: A
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={importGameMutation.isPending}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button variant="contained" onClick={onContinueManually} disabled={importGameMutation.isPending}>
-          Continue to add game manually
+          {t("games.suggestionsDialog.continueManuallyButton")}
         </Button>
       </DialogActions>
     </Dialog>

@@ -6,13 +6,8 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import { useTranslation } from "react-i18next";
 import type { HardwareStatusFilter } from "./HardwareListToolbar";
-
-const STATUS_OPTIONS: { value: HardwareStatusFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "owned", label: "Owned" },
-  { value: "wishlist", label: "Wishlist" },
-];
 
 interface HardwareSearchBarProps {
   searchKeyword: string;
@@ -30,43 +25,53 @@ const HardwareSearchBar = ({
   onSearchKeywordChange,
   status,
   onStatusChange,
-}: HardwareSearchBarProps) => (
-  <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
-    <Stack spacing={1.5}>
-      <TextField
-        label="Search"
-        variant="outlined"
-        value={searchKeyword}
-        onChange={(event) => onSearchKeywordChange(event.target.value)}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon style={{ cursor: "pointer" }} />
-              </InputAdornment>
-            ),
-            endAdornment: searchKeyword && (
-              <InputAdornment position="end" onClick={() => onSearchKeywordChange("")}>
-                <ClearIcon style={{ cursor: "pointer" }} />
-              </InputAdornment>
-            ),
-          },
-        }}
-        fullWidth
-      />
-      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-        {STATUS_OPTIONS.map((option) => (
-          <Chip
-            key={option.value}
-            label={option.label}
-            color={status === option.value ? "primary" : "default"}
-            variant={status === option.value ? "filled" : "outlined"}
-            onClick={() => onStatusChange(option.value)}
-          />
-        ))}
-      </Box>
-    </Stack>
-  </Paper>
-);
+}: HardwareSearchBarProps) => {
+  const { t } = useTranslation();
+
+  const statusOptions: { value: HardwareStatusFilter; label: string }[] = [
+    { value: "all", label: t("hardware.searchBar.statusAll") },
+    { value: "owned", label: t("hardware.detailsShared.statusOwned") },
+    { value: "wishlist", label: t("hardware.detailsShared.statusWishlist") },
+  ];
+
+  return (
+    <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
+      <Stack spacing={1.5}>
+        <TextField
+          label={t("common.search")}
+          variant="outlined"
+          value={searchKeyword}
+          onChange={(event) => onSearchKeywordChange(event.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon style={{ cursor: "pointer" }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchKeyword && (
+                <InputAdornment position="end" onClick={() => onSearchKeywordChange("")}>
+                  <ClearIcon style={{ cursor: "pointer" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+          fullWidth
+        />
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {statusOptions.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              color={status === option.value ? "primary" : "default"}
+              variant={status === option.value ? "filled" : "outlined"}
+              onClick={() => onStatusChange(option.value)}
+            />
+          ))}
+        </Box>
+      </Stack>
+    </Paper>
+  );
+};
 
 export default HardwareSearchBar;

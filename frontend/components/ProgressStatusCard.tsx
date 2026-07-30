@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "@mui/material/Button";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
@@ -7,6 +7,7 @@ import Rating from "@mui/material/Rating";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameProgress, PlayStatus } from "../api/types";
 import { useUpdateGameProgress } from "../hooks/useProgress";
@@ -17,14 +18,6 @@ interface PlayStatusOption {
   value: PlayStatus;
   label: string;
 }
-
-const PLAY_STATUS_OPTIONS: PlayStatusOption[] = [
-  { value: "none", label: "Not started" },
-  { value: "backlog", label: "Backlog" },
-  { value: "playing", label: "Playing" },
-  { value: "completed", label: "Completed" },
-  { value: "abandoned", label: "Abandoned" },
-];
 
 interface ProgressStatusCardProps {
   gameId: number;
@@ -54,8 +47,20 @@ function toFormState(progress: GameProgress): FormState {
 }
 
 const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState<FormState>(() => toFormState(progress));
   const updateProgress = useUpdateGameProgress(gameId);
+
+  const playStatusOptions: PlayStatusOption[] = useMemo(
+    () => [
+      { value: "none", label: t("progressStatus.statusOptions.none") },
+      { value: "backlog", label: t("progressStatus.statusOptions.backlog") },
+      { value: "playing", label: t("progressStatus.statusOptions.playing") },
+      { value: "completed", label: t("progressStatus.statusOptions.completed") },
+      { value: "abandoned", label: t("progressStatus.statusOptions.abandoned") },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     setForm(toFormState(progress));
@@ -64,7 +69,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
   const handleSave = async () => {
     const playtimeMinutes = Number(form.playtimeMinutes);
     if (!Number.isFinite(playtimeMinutes) || playtimeMinutes < 0) {
-      toast.error("Playtime must be a non-negative number of minutes.", TOAST_OPTIONS);
+      toast.error(t("progressStatus.playtimeError"), TOAST_OPTIONS);
       return;
     }
 
@@ -78,24 +83,24 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
         completedAt: form.completedAt || null,
         lastPlayedAt: form.lastPlayedAt || null,
       });
-      toast.success("Progress saved!", TOAST_OPTIONS);
+      toast.success(t("progressStatus.saveSuccess"), TOAST_OPTIONS);
     } catch (error) {
       console.error("Error saving progress:", error);
-      toast.error("Error saving progress. Please try again.", TOAST_OPTIONS);
+      toast.error(t("progressStatus.saveError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <>
-      <CardHeader title="Progress" subheader="Status, playtime, and your own rating/review" />
+      <CardHeader title={t("progressStatus.title")} subheader={t("progressStatus.subtitle")} />
       <CardContent>
         <Grid container spacing={2.5}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <AutocompleteSelect<PlayStatusOption>
-              label="Status"
+              label={t("progressStatus.statusLabel")}
               fullWidth
-              options={PLAY_STATUS_OPTIONS}
-              value={PLAY_STATUS_OPTIONS.find((option) => option.value === form.playStatus) ?? null}
+              options={playStatusOptions}
+              value={playStatusOptions.find((option) => option.value === form.playStatus) ?? null}
               getOptionLabel={(option) => option.label}
               isOptionEqualToValue={(option, val) => option.value === val.value}
               disableClearable
@@ -104,7 +109,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label="Playtime (minutes)"
+              label={t("progressStatus.playtimeLabel")}
               type="number"
               fullWidth
               value={form.playtimeMinutes}
@@ -112,7 +117,9 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
               slotProps={{ htmlInput: { min: 0 } }}
               helperText={
                 Number.isFinite(Number(form.playtimeMinutes))
-                  ? `≈ ${(Number(form.playtimeMinutes) / 60).toFixed(1)} hours`
+                  ? t("progressStatus.playtimeHelperText", {
+                      hours: (Number(form.playtimeMinutes) / 60).toFixed(1),
+                    })
                   : undefined
               }
             />
@@ -120,7 +127,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
           <Grid size={{ xs: 12, sm: 6 }}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", height: "100%" }}>
               <Typography component="legend" variant="body2" color="text.secondary">
-                Your rating
+                {t("progressStatus.ratingLabel")}
               </Typography>
               <Rating
                 value={form.rating !== null ? form.rating / 2 : null}
@@ -128,14 +135,14 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
                 onChange={(_event, value) => setForm((prev) => ({ ...prev, rating: value !== null ? value * 2 : null }))}
               />
               <Typography variant="body2" color="text.secondary">
-                {form.rating !== null ? `${form.rating}/10` : "Unrated"}
+                {form.rating !== null ? t("progressStatus.ratingValue", { rating: form.rating }) : t("progressStatus.unrated")}
               </Typography>
             </Stack>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }} />
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
-              label="Started"
+              label={t("progressStatus.startedLabel")}
               type="date"
               fullWidth
               value={form.startedAt}
@@ -145,7 +152,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
-              label="Completed"
+              label={t("progressStatus.completedLabel")}
               type="date"
               fullWidth
               value={form.completedAt}
@@ -155,7 +162,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
-              label="Last played"
+              label={t("progressStatus.lastPlayedLabel")}
               type="date"
               fullWidth
               value={form.lastPlayedAt}
@@ -165,7 +172,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
           </Grid>
           <Grid size={12}>
             <TextField
-              label="Review"
+              label={t("progressStatus.reviewLabel")}
               fullWidth
               multiline
               minRows={3}
@@ -175,7 +182,7 @@ const ProgressStatusCard = ({ gameId, progress }: ProgressStatusCardProps) => {
           </Grid>
           <Grid size={12}>
             <Button variant="contained" onClick={handleSave} disabled={updateProgress.isPending}>
-              Save progress
+              {t("progressStatus.saveButton")}
             </Button>
           </Grid>
         </Grid>

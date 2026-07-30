@@ -5,6 +5,7 @@ import CardMedia from "@mui/material/CardMedia";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
 import OwnershipBadges from "./OwnershipBadges";
 
@@ -20,6 +21,7 @@ interface HardwareCoverCardProps {
 // convention for product shots) rather than GameCoverCard's 3:4 poster ratio.
 const HardwareCoverCard = ({ name, imageUrl, owned, wishlisted }: HardwareCoverCardProps) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Card
@@ -59,7 +61,7 @@ const HardwareCoverCard = ({ name, imageUrl, owned, wishlisted }: HardwareCoverC
               }}
             >
               <ImageNotSupportedOutlinedIcon fontSize="large" />
-              <Typography variant="body2">No Image Available</Typography>
+              <Typography variant="body2">{t("hardware.coverCard.noImageAvailable")}</Typography>
             </Box>
           )}
         </Box>

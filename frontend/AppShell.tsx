@@ -10,6 +10,7 @@ import { useTheme } from "@mui/material/styles";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
@@ -26,6 +27,7 @@ import { useColorMode } from "./theme/ColorModeProvider";
 // (expanded/desktop, icons+labels side panel) — picked by breakpoint, not a user toggle.
 // The old mini-variant collapsible drawer (M2-style, manually opened/closed) is gone.
 const AppShell = () => {
+  const { t } = useTranslation();
   const { mode, toggleColorMode } = useColorMode();
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down("sm"));
@@ -67,7 +69,7 @@ const AppShell = () => {
           },
         }}
       >
-        Skip to main content
+        {t("appShell.skipToMainContent")}
       </Link>
       <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
         <Toolbar>
@@ -83,13 +85,13 @@ const AppShell = () => {
           <OfflineStatusIndicator />
           <FormControlLabel
             control={<Switch checked={mode === "dark"} onChange={toggleColorMode} />}
-            label="Dark Mode"
+            label={t("appShell.darkMode")}
             sx={{
               mr: 1,
               ".MuiFormControlLabel-label": { display: { xs: "none", sm: "block" } },
             }}
           />
-          <IconButton color="inherit" onClick={handleLogout} title="Log out" aria-label="Log out">
+          <IconButton color="inherit" onClick={handleLogout} title={t("common.logOut")} aria-label={t("common.logOut")}>
             <LogoutIcon />
           </IconButton>
         </Toolbar>

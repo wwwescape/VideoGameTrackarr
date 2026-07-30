@@ -5,6 +5,7 @@ import CardMedia from "@mui/material/CardMedia";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
 import type { GameDetail } from "../api/types";
 import OwnershipBadges from "./OwnershipBadges";
@@ -14,6 +15,7 @@ interface GameCoverCardProps {
 }
 
 const GameCoverCard = ({ game }: GameCoverCardProps) => {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   return (
@@ -63,7 +65,7 @@ const GameCoverCard = ({ game }: GameCoverCardProps) => {
               }}
             >
               <ImageNotSupportedOutlinedIcon fontSize="large" />
-              <Typography variant="body2">No Image Available</Typography>
+              <Typography variant="body2">{t("games.coverCard.noImageAvailable")}</Typography>
             </Box>
           )}
         </Box>

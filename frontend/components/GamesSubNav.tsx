@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
+import { useTranslation } from "react-i18next";
 
 const SUB_NAV_ITEMS = [
-  { to: "/games", label: "All Games" },
-  { to: "/games/add", label: "Add Game" },
-  { to: "/games/collections", label: "Collections" },
-  { to: "/games/series", label: "Series" },
+  { to: "/games", labelKey: "games.subNav.allGames" },
+  { to: "/games/add", labelKey: "games.subNav.addGame" },
+  { to: "/games/collections", labelKey: "games.subNav.collections" },
+  { to: "/games/series", labelKey: "games.subNav.series" },
 ] as const;
 
 // Route-driven segmented control shown atop Games/Collections/Series — these pages form
@@ -14,6 +15,7 @@ const SUB_NAV_ITEMS = [
 // breakpoint (NavDrawer/NavRail/BottomNavBar no longer list Collections/Series directly).
 const GamesSubNav = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   return (
     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
@@ -24,7 +26,7 @@ const GamesSubNav = () => {
             key={item.to}
             component={Link}
             to={item.to}
-            label={item.label}
+            label={t(item.labelKey)}
             clickable
             color={isSelected ? "primary" : "default"}
             variant={isSelected ? "filled" : "outlined"}

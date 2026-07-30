@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import AccessoryList from "./AccessoryList";
 import DeviceList from "./DeviceList";
@@ -13,6 +14,7 @@ import HardwareSubNav from "./HardwareSubNav";
 import type { HardwareStatusFilter } from "./HardwareListToolbar";
 
 const HardwarePage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [status, setStatus] = useState<HardwareStatusFilter>("all");
@@ -40,18 +42,18 @@ const HardwarePage = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 3 }}>
           <Box>
             <Typography variant="h4" component="h1" gutterBottom>
-              Hardware
+              {t("hardware.page.title")}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Track owned and wishlisted consoles, handhelds, and accessories.
+              {t("hardware.page.subtitle")}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/hardware/device/add")}>
-              Add Device
+              {t("hardware.page.addDeviceButton")}
             </Button>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/hardware/accessory/add")}>
-              Add Accessory
+              {t("hardware.page.addAccessoryButton")}
             </Button>
           </Stack>
         </Box>
@@ -78,14 +80,14 @@ const HardwarePage = () => {
       >
         <Box>
           <Typography variant="h5" component="h2" gutterBottom>
-            Devices
+            {t("hardware.page.devicesHeading")}
           </Typography>
           <DeviceList searchKeyword={debouncedKeyword} status={status} />
         </Box>
 
         <Box>
           <Typography variant="h5" component="h2" gutterBottom>
-            Accessories
+            {t("hardware.page.accessoriesHeading")}
           </Typography>
           <AccessoryList searchKeyword={debouncedKeyword} status={status} />
         </Box>

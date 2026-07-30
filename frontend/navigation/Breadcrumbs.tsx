@@ -4,6 +4,7 @@ import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import type { Crumb, RouteHandle } from "./breadcrumbConfig";
 
 export const BREADCRUMBS_HEIGHT = 40;
@@ -23,8 +24,9 @@ interface BreadcrumbsProps {
 // Each matched route (root -> leaf) may contribute its own crumb trail via handle.crumbs;
 // only leaf page routes define one, so this is normally just the current route's trail.
 const Breadcrumbs = ({ top, left }: BreadcrumbsProps) => {
+  const { t } = useTranslation();
   const matches = useMatches() as UIMatch<unknown, RouteHandle | undefined>[];
-  const crumbs: Crumb[] = matches.flatMap((match) => match.handle?.crumbs(match.params) ?? []);
+  const crumbs: Crumb[] = matches.flatMap((match) => match.handle?.crumbs(match.params, t) ?? []);
 
   if (crumbs.length === 0) {
     return null;

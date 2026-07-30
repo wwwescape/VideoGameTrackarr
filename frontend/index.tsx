@@ -7,10 +7,12 @@ import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
+import "./i18n";
 import { offlinePersistOptions } from "./offline/queryPersistence";
 import router from "./router";
 import { ColorModeProvider } from "./theme/ColorModeProvider";
 import { CurrencyProvider } from "./theme/CurrencyProvider";
+import { LanguageProvider } from "./theme/LanguageProvider";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -41,7 +43,9 @@ createRoot(rootElement).render(
     >
       <ColorModeProvider>
         <CurrencyProvider>
-          <RouterProvider router={router} />
+          <LanguageProvider>
+            <RouterProvider router={router} />
+          </LanguageProvider>
         </CurrencyProvider>
       </ColorModeProvider>
     </PersistQueryClientProvider>

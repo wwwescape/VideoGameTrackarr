@@ -11,6 +11,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
@@ -40,6 +41,7 @@ const NoteRow = ({
   onUpdate: (noteId: number, body: string) => Promise<unknown>;
   onDelete: (noteId: number) => Promise<unknown>;
 }) => {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(note.body);
 
@@ -50,7 +52,7 @@ const NoteRow = ({
       setEditing(false);
     } catch (error) {
       console.error("Error updating note:", error);
-      toast.error("Error updating note. Please try again.", TOAST_OPTIONS);
+      toast.error(t("notes.updateError"), TOAST_OPTIONS);
     }
   };
 
@@ -59,7 +61,7 @@ const NoteRow = ({
       await onDelete(note.id);
     } catch (error) {
       console.error("Error deleting note:", error);
-      toast.error("Error deleting note. Please try again.", TOAST_OPTIONS);
+      toast.error(t("notes.deleteError"), TOAST_OPTIONS);
     }
   };
 
@@ -70,10 +72,10 @@ const NoteRow = ({
           <TextField multiline minRows={2} fullWidth value={draft} onChange={(event) => setDraft(event.target.value)} autoFocus />
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
             <Button size="small" onClick={() => { setDraft(note.body); setEditing(false); }}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button size="small" variant="contained" onClick={handleSave}>
-              Save
+              {t("common.save")}
             </Button>
           </Stack>
         </Stack>
@@ -87,12 +89,12 @@ const NoteRow = ({
               {new Date(note.updatedAt).toLocaleString()}
             </Typography>
           </Box>
-          <Tooltip title="Edit">
+          <Tooltip title={t("common.edit")}>
             <IconButton size="small" onClick={() => setEditing(true)}>
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete">
+          <Tooltip title={t("common.delete")}>
             <IconButton size="small" onClick={handleDelete}>
               <DeleteIcon fontSize="small" />
             </IconButton>
@@ -111,9 +113,11 @@ const NotesSection = ({
   onUpdate,
   onDelete,
   isCreating,
-  subheader = "Spoiler-free tips, where you left off, anything worth remembering",
+  subheader,
 }: NotesSectionProps) => {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState("");
+  const resolvedSubheader = subheader ?? t("notes.defaultSubheader");
 
   const handleAdd = async () => {
     if (!draft.trim()) return;
@@ -122,18 +126,18 @@ const NotesSection = ({
       setDraft("");
     } catch (error) {
       console.error("Error adding note:", error);
-      toast.error("Error adding note. Please try again.", TOAST_OPTIONS);
+      toast.error(t("notes.addError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <>
-      <CardHeader title="Notes" subheader={subheader} />
+      <CardHeader title={t("notes.title")} subheader={resolvedSubheader} />
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1}>
             <TextField
-              placeholder="Add a note..."
+              placeholder={t("notes.addPlaceholder")}
               fullWidth
               multiline
               minRows={1}
@@ -141,12 +145,12 @@ const NotesSection = ({
               onChange={(event) => setDraft(event.target.value)}
             />
             <Button variant="contained" onClick={() => void handleAdd()} disabled={!draft.trim() || isCreating}>
-              Add
+              {t("common.add")}
             </Button>
           </Stack>
           {!notes || notes.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              No notes yet.
+              {t("notes.empty")}
             </Typography>
           ) : (
             notes.map((note) => <NoteRow key={note.id} note={note} onUpdate={onUpdate} onDelete={onDelete} />)

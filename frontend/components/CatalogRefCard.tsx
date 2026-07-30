@@ -3,6 +3,7 @@ import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
+import { useTranslation } from "react-i18next";
 
 interface CatalogRefCardProps {
   name: string;
@@ -13,6 +14,7 @@ interface CatalogRefCardProps {
 // A compact, imageless counterpart to GameCard — for tiles that link out to a whole
 // collection/franchise rather than a single game.
 const CatalogRefCard = ({ name, gameCount, onClick }: CatalogRefCardProps) => {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   return (
@@ -35,7 +37,9 @@ const CatalogRefCard = ({ name, gameCount, onClick }: CatalogRefCardProps) => {
             <strong>{name}</strong>
           </Typography>
           <Typography variant="caption" color="text.secondary" component="div">
-            {gameCount} {gameCount === 1 ? "game" : "games"}
+            {t(gameCount === 1 ? "catalog.refCard.gameCountSingular" : "catalog.refCard.gameCountPlural", {
+              count: gameCount,
+            })}
           </Typography>
         </CardContent>
       </CardActionArea>

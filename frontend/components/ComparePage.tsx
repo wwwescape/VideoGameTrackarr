@@ -9,17 +9,10 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import type { GameDetail } from "../api/types";
 import { useGamesByIds } from "../hooks/useGames";
 import { getReleaseYear } from "../utils/utils";
-
-const PLAY_STATUS_LABEL: Record<string, string> = {
-  none: "Not started",
-  backlog: "Backlog",
-  playing: "Playing",
-  completed: "Completed",
-  abandoned: "Abandoned",
-};
 
 function companiesFor(game: GameDetail, role: string): string {
   const names = game.companies.filter((company) => company.role === role).map((company) => company.name);
@@ -35,6 +28,14 @@ function formatPlaytime(minutes: number): string {
 }
 
 const ComparePage = () => {
+  const { t } = useTranslation();
+  const PLAY_STATUS_LABEL: Record<string, string> = {
+    none: t("games.compare.playStatusNotStarted"),
+    backlog: t("games.compare.playStatusBacklog"),
+    playing: t("games.compare.playStatusPlaying"),
+    completed: t("games.compare.playStatusCompleted"),
+    abandoned: t("games.compare.playStatusAbandoned"),
+  };
   const [searchParams] = useSearchParams();
   const ids = (searchParams.get("ids") ?? "").split(",").filter((value) => value.length > 0);
 
@@ -44,23 +45,23 @@ const ComparePage = () => {
   if (ids.length < 2) {
     return (
       <Typography variant="body2" color="text.secondary">
-        Select two or more games from your library to compare them here.
+        {t("games.compare.selectPrompt")}
       </Typography>
     );
   }
 
   if (isLoading) {
-    return <Typography color="text.secondary">Loading comparison...</Typography>;
+    return <Typography color="text.secondary">{t("games.compare.loading")}</Typography>;
   }
 
   return (
     <>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Compare Games
+          {t("games.compare.title")}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Side-by-side comparison of {loadedGames.length} games from your library.
+          {t("games.compare.subtitle", { count: loadedGames.length })}
         </Typography>
       </Box>
       <TableContainer component={Paper}>
@@ -84,17 +85,17 @@ const ComparePage = () => {
           <TableBody>
             <TableRow>
               <TableCell component="th" scope="row">
-                Release year
+                {t("games.compare.columnHeaderReleaseYear")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
-                  {getReleaseYear(game.firstReleaseDate) ?? "Unknown"}
+                  {getReleaseYear(game.firstReleaseDate) ?? t("common.unknown")}
                 </TableCell>
               ))}
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Genres
+                {t("games.compare.columnHeaderGenres")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
@@ -104,7 +105,7 @@ const ComparePage = () => {
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Developer
+                {t("games.compare.columnHeaderDeveloper")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
@@ -114,7 +115,7 @@ const ComparePage = () => {
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Publisher
+                {t("games.compare.columnHeaderPublisher")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
@@ -124,7 +125,7 @@ const ComparePage = () => {
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Platforms
+                {t("games.compare.columnHeaderPlatforms")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
@@ -134,17 +135,17 @@ const ComparePage = () => {
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Library status
+                {t("games.compare.columnHeaderLibraryStatus")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
-                  {game.owned ? "Owned" : game.wishlisted ? "Wishlisted" : "-"}
+                  {game.owned ? t("games.compare.owned") : game.wishlisted ? t("games.compare.wishlisted") : "-"}
                 </TableCell>
               ))}
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Play status
+                {t("games.compare.columnHeaderPlayStatus")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
@@ -154,7 +155,7 @@ const ComparePage = () => {
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Playtime logged
+                {t("games.compare.columnHeaderPlaytimeLogged")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">
@@ -164,7 +165,7 @@ const ComparePage = () => {
             </TableRow>
             <TableRow>
               <TableCell component="th" scope="row">
-                Your rating
+                {t("games.compare.columnHeaderYourRating")}
               </TableCell>
               {loadedGames.map((game) => (
                 <TableCell key={game.id} align="center">

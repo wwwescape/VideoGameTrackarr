@@ -8,33 +8,42 @@ import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import { Trans, useTranslation } from "react-i18next";
 import { useCurrentUser, useLogout } from "../hooks/useAuth";
 import { useColorMode } from "../theme/ColorModeProvider";
 import { useCurrency } from "../theme/CurrencyProvider";
+import { useLanguage } from "../theme/LanguageProvider";
 import { getCurrencySymbol, SUPPORTED_CURRENCIES, type CurrencyOption } from "../utils/currency";
+import { SUPPORTED_LANGUAGES, type LanguageOption } from "../utils/language";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
 
 // IGDB credentials are .env-only (backend/app/core/config.py) — there's no API to set
 // them from the UI, so this page is just account info + logout.
 const Settings = () => {
+  const { t } = useTranslation();
   const { data: currentUser } = useCurrentUser();
   const logoutMutation = useLogout();
   const { mode, contrast, toggleColorMode, toggleContrast } = useColorMode();
   const { currency, setCurrency } = useCurrency();
+  const { language, setLanguage } = useLanguage();
 
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Settings
+        {t("settings.title")}
       </Typography>
       <Card sx={{ maxWidth: 640 }}>
         <CardContent>
           <Typography variant="subtitle1" gutterBottom>
-            Account
+            {t("settings.account.heading")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Signed in as <strong>{currentUser?.username ?? "..."}</strong>.
+            <Trans
+              i18nKey="settings.account.signedInAs"
+              values={{ username: currentUser?.username ?? "..." }}
+              components={{ 1: <strong /> }}
+            />
           </Typography>
           <Button
             variant="outlined"
@@ -43,35 +52,50 @@ const Settings = () => {
             sx={{ mt: 2 }}
             onClick={() => logoutMutation.mutate()}
           >
-            Log out
+            {t("common.logOut")}
           </Button>
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="subtitle1" gutterBottom>
-            Display
+            {t("settings.display.heading")}
           </Typography>
           <FormControlLabel
             control={<Switch checked={mode === "dark"} onChange={toggleColorMode} />}
-            label="Dark mode"
+            label={t("settings.display.darkMode")}
           />
           <FormControlLabel
             control={<Switch checked={contrast === "high"} onChange={toggleContrast} />}
-            label="High contrast"
+            label={t("settings.display.highContrast")}
             sx={{ display: "block" }}
           />
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="subtitle1" gutterBottom>
-            Currency
+            {t("settings.language.heading")}
+          </Typography>
+          <AutocompleteSelect<LanguageOption>
+            label={t("settings.language.label")}
+            options={SUPPORTED_LANGUAGES}
+            value={SUPPORTED_LANGUAGES.find((option) => option.code === language) ?? null}
+            getOptionLabel={(option) => option.name}
+            isOptionEqualToValue={(option, val) => option.code === val.code}
+            disableClearable
+            onChange={(newValue) => setLanguage(newValue!.code)}
+            sx={{ minWidth: 280 }}
+          />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="subtitle1" gutterBottom>
+            {t("settings.currency.heading")}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            Used to label MSRP, purchase price, and collection value — this changes how
-            amounts are displayed, not a live exchange rate or conversion.
+            {t("settings.currency.description")}
           </Typography>
           <AutocompleteSelect<CurrencyOption>
-            label="Currency"
+            label={t("settings.currency.label")}
             options={SUPPORTED_CURRENCIES}
             value={SUPPORTED_CURRENCIES.find((option) => option.code === currency) ?? null}
             getOptionLabel={(option) => `${option.name} (${getCurrencySymbol(option.code)})`}
@@ -84,18 +108,17 @@ const Settings = () => {
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="subtitle1" gutterBottom>
-            Data
+            {t("settings.data.heading")}
           </Typography>
           <DataManagementSection />
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="subtitle1" gutterBottom>
-            IGDB credentials
+            {t("settings.igdb.heading")}
           </Typography>
           <Alert severity="info">
-            IGDB credentials are configured via this server&apos;s <code>.env</code> file
-            (<code>IGDB_CLIENT_ID</code> / <code>IGDB_CLIENT_SECRET</code>), not through the app.
+            <Trans i18nKey="settings.igdb.description" components={{ 1: <code />, 3: <code />, 5: <code /> }} />
           </Alert>
         </CardContent>
       </Card>

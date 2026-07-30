@@ -7,6 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
 import type { GameCompany, GameDetail, IgdbReleaseRegion } from "../api/types";
 import { gameIdentifier } from "../utils/identifiers";
@@ -18,27 +19,28 @@ interface GameAboutSectionProps {
   game: GameDetail;
 }
 
-const COMPANY_ROLE_LABEL: Record<string, string> = {
-  developer: "Developed by",
-  publisher: "Published by",
-  porting: "Ported by",
-  supporting: "Additional work by",
-};
-
-const RELEASE_REGION_LABEL: Record<IgdbReleaseRegion, string> = {
-  europe: "Europe",
-  north_america: "North America",
-  australia: "Australia",
-  new_zealand: "New Zealand",
-  japan: "Japan",
-  china: "China",
-  asia: "Asia",
-  worldwide: "Worldwide",
-};
-
 const GameAboutSection = ({ game }: GameAboutSectionProps) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isAddonGame = isAddon(game);
+
+  const companyRoleLabel: Record<string, string> = {
+    developer: t("games.about.companyRoleDeveloper"),
+    publisher: t("games.about.companyRolePublisher"),
+    porting: t("games.about.companyRolePorting"),
+    supporting: t("games.about.companyRoleSupporting"),
+  };
+
+  const releaseRegionLabel: Record<IgdbReleaseRegion, string> = {
+    europe: t("games.about.regionEurope"),
+    north_america: t("games.about.regionNorthAmerica"),
+    australia: t("games.about.regionAustralia"),
+    new_zealand: t("games.about.regionNewZealand"),
+    japan: t("games.about.regionJapan"),
+    china: t("games.about.regionChina"),
+    asia: t("games.about.regionAsia"),
+    worldwide: t("games.about.regionWorldwide"),
+  };
 
   const companiesByRole = game.companies.reduce<Record<string, GameCompany[]>>((acc, company) => {
     (acc[company.role] ??= []).push(company);
@@ -51,19 +53,24 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
     <>
       <CardContent>
         {game.igdbId === null ? (
-          <Tooltip title="Added by hand, not linked to an IGDB entry — use Link to IGDB under the poster to link it.">
-            <Chip label="Custom" size="small" variant="outlined" sx={{ mb: 1 }} />
+          <Tooltip title={t("games.about.customTooltip")}>
+            <Chip label={t("games.about.customLabel")} size="small" variant="outlined" sx={{ mb: 1 }} />
           </Tooltip>
         ) : null}
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
           <Typography variant="h4" component="h1" sx={{ lineHeight: 1.15 }}>
             {game.name}{" "}
             <Typography variant="subtitle2" color="text.secondary" component="span">
-              ({getReleaseYear(game.firstReleaseDate) ?? "Unknown"})
+              ({getReleaseYear(game.firstReleaseDate) ?? t("common.unknown")})
             </Typography>
           </Typography>
           {game.rating !== null ? (
-            <Chip label={`IGDB Rating: ${Math.round(game.rating)}/100`} size="small" variant="outlined" color="primary" />
+            <Chip
+              label={t("games.about.igdbRatingLabel", { rating: Math.round(game.rating) })}
+              size="small"
+              variant="outlined"
+              color="primary"
+            />
           ) : null}
         </Stack>
         {game.edition ? (
@@ -76,7 +83,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
             {getAddonType(game)}
             {game.parentGameId !== null ? (
               <>
-                {" for "}
+                {t("games.about.forConnector")}
                 <Link
                   to={`/game/${gameIdentifier({ slug: game.parentGameSlug, uuid: game.parentGameUuid!, name: game.parentGameName! })}`}
                   style={{ color: theme.palette.text.primary }}
@@ -86,7 +93,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
               </>
             ) : game.displayParentGameId !== null ? (
               <>
-                {" for "}
+                {t("games.about.forConnector")}
                 <Link
                   to={`/game/${gameIdentifier({ slug: game.displayParentGameSlug, uuid: game.displayParentGameUuid!, name: game.displayParentGameName! })}`}
                   style={{ color: theme.palette.text.primary }}
@@ -96,9 +103,9 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
               </>
             ) : game.externalParentName ? (
               <>
-                {" for "}
+                {t("games.about.forConnector")}
                 {game.externalParentIgdbUrl ? (
-                  <Tooltip title="Not in your library — opens the original's IGDB page">
+                  <Tooltip title={t("games.about.externalParentTooltip")}>
                     <a
                       href={game.externalParentIgdbUrl}
                       target="_blank"
@@ -119,7 +126,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
         {Object.entries(companiesByRole).map(([role, companies]) => (
           <Stack key={role} direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.5 }}>
             <Typography variant="body2" color="text.secondary" component="span">
-              {COMPANY_ROLE_LABEL[role] ?? role}:
+              {companyRoleLabel[role] ?? role}:
             </Typography>
             {companies.map((company, index) => (
               <Stack key={company.id} direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
@@ -148,7 +155,9 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
         ))}
         {game.platforms.length > 0 ? (
           <Typography variant="body2" color="text.secondary" component="div">
-            Available on: {game.platforms.map((platform) => platform.name).join(", ")}
+            {t("games.about.availableOnLabel", {
+              platforms: game.platforms.map((platform) => platform.name).join(", "),
+            })}
           </Typography>
         ) : null}
 
@@ -160,7 +169,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
             {game.franchises.map((franchise) => (
               <Chip
                 key={`franchise-${franchise.id}`}
-                label={`Series: ${franchise.name}`}
+                label={t("games.about.seriesLabel", { name: franchise.name })}
                 size="small"
                 component={Link}
                 to={`/games/series/${franchise.slug ?? ""}`}
@@ -170,7 +179,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
             {game.collections.map((collection) => (
               <Chip
                 key={`collection-${collection.id}`}
-                label={`Collection: ${collection.name}`}
+                label={t("games.about.collectionLabel", { name: collection.name })}
                 size="small"
                 component={Link}
                 to={`/games/collections/${collection.slug ?? ""}`}
@@ -187,9 +196,9 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
                 key={releaseDate.id}
                 size="small"
                 variant="outlined"
-                label={`${releaseDate.platformName ?? "Unknown platform"}: ${releaseDate.human ?? "TBD"}${
-                  releaseDate.releaseRegion ? ` (${RELEASE_REGION_LABEL[releaseDate.releaseRegion]})` : ""
-                }`}
+                label={`${releaseDate.platformName ?? t("games.about.unknownPlatform")}: ${
+                  releaseDate.human ?? t("games.about.tbd")
+                }${releaseDate.releaseRegion ? ` (${releaseRegionLabel[releaseDate.releaseRegion]})` : ""}`}
               />
             ))}
           </Stack>
@@ -202,7 +211,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
           <Divider />
           <CardContent>
             <Typography variant="subtitle2" gutterBottom>
-              Storyline
+              {t("games.about.storylineTitle")}
             </Typography>
             <ExpandableText text={game.storyline as string} />
           </CardContent>
@@ -220,7 +229,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
         <>
           <Divider />
           <CardContent>
-            <ScreenshotGallery urls={game.artworkUrls} altPrefix={game.name} title="Artwork" />
+            <ScreenshotGallery urls={game.artworkUrls} altPrefix={game.name} title={t("games.about.artworkTitle")} />
           </CardContent>
         </>
       ) : null}
@@ -229,7 +238,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
           <Divider />
           <CardContent>
             <Typography variant="subtitle2" gutterBottom>
-              Videos
+              {t("games.about.videosTitle")}
             </Typography>
             <Stack spacing={0.5}>
               {game.videos.map((video) => (
@@ -240,7 +249,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
                   rel="noreferrer"
                   style={{ color: theme.palette.primary.main }}
                 >
-                  {video.name ?? "Watch on YouTube"}
+                  {video.name ?? t("games.about.watchOnYoutube")}
                 </a>
               ))}
             </Stack>
@@ -250,9 +259,9 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
       <Divider />
       <CardContent>
         {game.igdbUrl && (
-          <Tooltip title="View more details on IGDB.com">
+          <Tooltip title={t("games.about.viewOnIgdb")}>
             <a href={game.igdbUrl} target="_blank" rel="noreferrer" style={{ color: theme.palette.text.primary }}>
-              <img src={igdbLogo} alt="View more details on IGDB.com" style={{ width: "64px" }} />
+              <img src={igdbLogo} alt={t("games.about.viewOnIgdb")} style={{ width: "64px" }} />
             </a>
           </Tooltip>
         )}

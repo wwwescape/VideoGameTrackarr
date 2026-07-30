@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
+import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import GameCard from "./GameCard";
 import VirtualGameGrid from "./VirtualGameGrid";
@@ -19,14 +20,15 @@ interface GameAddonsSectionProps {
 const ADDON_DISPLAY_CATEGORIES = new Set<GameSummary["category"]>(["dlc_addon", "expansion", "pack"]);
 
 const GameAddonsSection = ({ addons, onAddonClick }: GameAddonsSectionProps) => {
+  const { t } = useTranslation();
   const displayedAddons = (addons ?? []).filter((addon) => ADDON_DISPLAY_CATEGORIES.has(addon.category));
 
   return (
     <>
-      <CardHeader title="Addons" subheader="DLC, expansions, and packs for this game" />
+      <CardHeader title={t("games.addons.title")} subheader={t("games.addons.subheader")} />
       <CardContent>
         {displayedAddons.length === 0 ? (
-          <Box sx={{ p: 2 }}>No addons found</Box>
+          <Box sx={{ p: 2 }}>{t("games.addons.empty")}</Box>
         ) : (
           <VirtualGameGrid
             items={displayedAddons}

@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast, type ToastContentProps } from "react-toastify";
 
 interface UndoToastContentProps extends Partial<ToastContentProps> {
@@ -8,23 +9,26 @@ interface UndoToastContentProps extends Partial<ToastContentProps> {
   onUndo: () => void;
 }
 
-const UndoToastContent = ({ message, onUndo, closeToast }: UndoToastContentProps) => (
-  <Stack direction="row" spacing={2} sx={{ alignItems: "center", width: "100%" }}>
-    <Typography variant="body2" sx={{ flexGrow: 1 }}>
-      {message}
-    </Typography>
-    <Button
-      size="small"
-      color="inherit"
-      onClick={() => {
-        onUndo();
-        closeToast?.();
-      }}
-    >
-      Undo
-    </Button>
-  </Stack>
-);
+const UndoToastContent = ({ message, onUndo, closeToast }: UndoToastContentProps) => {
+  const { t } = useTranslation();
+  return (
+    <Stack direction="row" spacing={2} sx={{ alignItems: "center", width: "100%" }}>
+      <Typography variant="body2" sx={{ flexGrow: 1 }}>
+        {message}
+      </Typography>
+      <Button
+        size="small"
+        color="inherit"
+        onClick={() => {
+          onUndo();
+          closeToast?.();
+        }}
+      >
+        {t("undo.undoButton")}
+      </Button>
+    </Stack>
+  );
+};
 
 // A toast offering a single grace-period "Undo" — pairs with useUndoableAction, whose
 // `delayMs` should match `autoClose` here so the toast's lifetime communicates the actual

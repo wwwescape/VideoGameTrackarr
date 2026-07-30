@@ -5,6 +5,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { deleteLibraryItem } from "../api/library";
 import type { LibraryItem } from "../api/types";
@@ -14,9 +15,12 @@ import { gameIdentifier } from "../utils/identifiers";
 import { showUndoToast } from "./UndoToast";
 import VirtualList from "./VirtualList";
 
-const STATUS_LABEL: Record<string, string> = { owned: "Owned", wishlist: "Wishlist" };
-
 const DuplicateLibraryItemsSection = () => {
+  const { t } = useTranslation();
+  const STATUS_LABEL: Record<string, string> = {
+    owned: t("insights.duplicates.statusOwned"),
+    wishlist: t("insights.duplicates.statusWishlist"),
+  };
   const { data: groups } = useDuplicateLibraryItems();
   const queryClient = useQueryClient();
 
@@ -31,7 +35,7 @@ const DuplicateLibraryItemsSection = () => {
 
   const handleDelete = (item: LibraryItem) => {
     const { undo } = schedule([item]);
-    showUndoToast("Duplicate entry removed", undo, 5000);
+    showUndoToast(t("insights.duplicates.removedToast"), undo, 5000);
   };
 
   const visibleGroups = (groups ?? [])
@@ -41,7 +45,7 @@ const DuplicateLibraryItemsSection = () => {
   if (visibleGroups.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No duplicate library entries found.
+        {t("insights.duplicates.noneFound")}
       </Typography>
     );
   }
@@ -65,11 +69,11 @@ const DuplicateLibraryItemsSection = () => {
             {group.items.map((item) => (
               <Stack key={item.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                 <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {STATUS_LABEL[item.status]} · {item.platformName ?? "Any platform"} ·{" "}
-                  {item.regionName ?? "Any region"}
+                  {STATUS_LABEL[item.status]} · {item.platformName ?? t("insights.duplicates.anyPlatform")} ·{" "}
+                  {item.regionName ?? t("insights.duplicates.anyRegion")}
                   {item.edition ? ` · ${item.edition}` : ""}
                 </Typography>
-                <Tooltip title="Remove this entry">
+                <Tooltip title={t("insights.duplicates.removeEntryTooltip")}>
                   <IconButton size="small" onClick={() => handleDelete(item)}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>

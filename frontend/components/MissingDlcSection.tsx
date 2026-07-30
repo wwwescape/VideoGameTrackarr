@@ -2,19 +2,21 @@ import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
+import { useTranslation } from "react-i18next";
 import { useMissingDlc } from "../hooks/useInsights";
 import { gameIdentifier } from "../utils/identifiers";
 import GameCard from "./GameCard";
 import VirtualList from "./VirtualList";
 
 const MissingDlcSection = () => {
+  const { t } = useTranslation();
   const { data: entries } = useMissingDlc();
   const navigate = useNavigate();
 
   if (!entries || entries.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No missing DLC found — you have everything that&apos;s been imported for the games you own.
+        {t("insights.missingDlc.noneFound")}
       </Typography>
     );
   }

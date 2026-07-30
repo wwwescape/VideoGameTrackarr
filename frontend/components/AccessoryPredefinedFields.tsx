@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
+import { useTranslation } from "react-i18next";
 import { useHardwareReferenceEntries } from "../hooks/useHardwareReference";
 import AutocompleteSelect from "./AutocompleteSelect";
 
@@ -27,6 +28,7 @@ function unique(values: (string | null)[]): string[] {
 // editable Official Name/Model Number fields, since it needs to interleave them with other
 // form fields in a specific row layout.
 const AccessoryPredefinedFields = ({ onChange }: AccessoryPredefinedFieldsProps) => {
+  const { t } = useTranslation();
   const { data: entries } = useHardwareReferenceEntries("Accessory");
 
   const [manufacturer, setManufacturer] = useState("");
@@ -53,13 +55,13 @@ const AccessoryPredefinedFields = ({ onChange }: AccessoryPredefinedFieldsProps)
     <Grid container spacing={2.5}>
       <Grid size={{ xs: 12, sm: 4 }}>
         <AutocompleteSelect<string>
-          label="Brand"
+          label={t("hardware.accessoryForm.brandLabel")}
           fullWidth
           required
           options={unique(allEntries.map((entry) => entry.brand))}
           value={manufacturer || null}
           getOptionLabel={(option) => option}
-          helperText="More brands coming soon!"
+          helperText={t("hardware.accessoryPredefinedFields.brandHelperText")}
           onChange={(newValue) => {
             setManufacturer(newValue ?? "");
             setPlatform("");
@@ -69,7 +71,7 @@ const AccessoryPredefinedFields = ({ onChange }: AccessoryPredefinedFieldsProps)
       </Grid>
       <Grid size={{ xs: 12, sm: 4 }}>
         <AutocompleteSelect<string>
-          label="Console"
+          label={t("hardware.accessoryPredefinedFields.consoleLabel")}
           fullWidth
           required
           options={unique(brandEntries.map((entry) => entry.generation))}
@@ -84,7 +86,7 @@ const AccessoryPredefinedFields = ({ onChange }: AccessoryPredefinedFieldsProps)
       </Grid>
       <Grid size={{ xs: 12, sm: 4 }}>
         <AutocompleteSelect<string>
-          label="Accessory"
+          label={t("hardware.accessoryPredefinedFields.accessoryLabel")}
           fullWidth
           required
           options={unique(platformEntries.map((entry) => entry.officialName))}

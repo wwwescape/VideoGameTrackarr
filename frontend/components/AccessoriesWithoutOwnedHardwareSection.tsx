@@ -1,17 +1,19 @@
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAccessoriesWithoutOwnedHardware } from "../hooks/useInsights";
 import { hardwareIdentifier } from "../utils/identifiers";
 import VirtualList from "./VirtualList";
 
 const AccessoriesWithoutOwnedHardwareSection = () => {
+  const { t } = useTranslation();
   const { data: accessories } = useAccessoriesWithoutOwnedHardware();
 
   if (!accessories || accessories.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No accessories found — every owned accessory is linked to hardware you own.
+        {t("hardware.accessoriesWithoutOwnedHardware.empty")}
       </Typography>
     );
   }

@@ -4,22 +4,18 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import type { PlayStatus } from "../api/types";
 import { useDashboardStats } from "../hooks/useDashboard";
 
-const PLAY_STATUS_LABELS: Record<PlayStatus, string> = {
-  none: "Not started",
-  backlog: "Backlog",
-  playing: "Playing",
-  completed: "Completed",
-  abandoned: "Abandoned",
-};
-
-function formatPlaytime(minutes: number): string {
+function formatPlaytime(minutes: number, t: TFunction): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
-  if (hours === 0) return `${remainder}m`;
-  return remainder === 0 ? `${hours}h` : `${hours}h ${remainder}m`;
+  if (hours === 0) return t("games.stats.playtimeMinutesShort", { minutes: remainder });
+  return remainder === 0
+    ? t("games.stats.playtimeHoursShort", { hours })
+    : t("games.stats.playtimeHoursMinutesShort", { hours, minutes: remainder });
 }
 
 interface StatCardProps {
@@ -42,10 +38,19 @@ const StatCard = ({ label, value }: StatCardProps) => (
 // release calendar. "Recently added"/"Recently played" aren't relocated alongside it; Insights
 // isn't a card-browsing page, so they're just gone, not moved.
 const GameStatsSection = () => {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useDashboardStats();
 
+  const playStatusLabels: Record<PlayStatus, string> = {
+    none: t("games.stats.playStatusNotStarted"),
+    backlog: t("games.stats.playStatusBacklog"),
+    playing: t("games.stats.playStatusPlaying"),
+    completed: t("games.stats.playStatusCompleted"),
+    abandoned: t("games.stats.playStatusAbandoned"),
+  };
+
   if (isLoading) {
-    return <Typography color="text.secondary">Loading stats...</Typography>;
+    return <Typography color="text.secondary">{t("games.stats.loading")}</Typography>;
   }
 
   if (!stats) {
@@ -61,19 +66,25 @@ const GameStatsSection = () => {
     <Stack spacing={3}>
       <Grid container spacing={2}>
         <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Owned" value={String(stats.totalOwned)} />
+          <StatCard label={t("games.stats.ownedLabel")} value={String(stats.totalOwned)} />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Wishlisted" value={String(stats.totalWishlisted)} />
+          <StatCard label={t("games.stats.wishlistedLabel")} value={String(stats.totalWishlisted)} />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Total tracked" value={String(stats.totalTracked)} />
+          <StatCard label={t("games.stats.totalTrackedLabel")} value={String(stats.totalTracked)} />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Playtime logged" value={formatPlaytime(stats.totalPlaytimeMinutes)} />
+          <StatCard
+            label={t("games.stats.playtimeLoggedLabel")}
+            value={formatPlaytime(stats.totalPlaytimeMinutes, t)}
+          />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Average rating" value={stats.averageRating === null ? "-" : stats.averageRating.toFixed(1)} />
+          <StatCard
+            label={t("games.stats.averageRatingLabel")}
+            value={stats.averageRating === null ? "-" : stats.averageRating.toFixed(1)}
+          />
         </Grid>
       </Grid>
 
@@ -83,13 +94,16 @@ const GameStatsSection = () => {
             {Object.keys(stats.playStatusBreakdown).length > 0 && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  By play status
+                  {t("games.stats.byPlayStatusTitle")}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {Object.entries(stats.playStatusBreakdown).map(([status, count]) => (
                     <Chip
                       key={status}
-                      label={`${PLAY_STATUS_LABELS[status as PlayStatus]}: ${count}`}
+                      label={t("games.stats.breakdownCountLabel", {
+                        name: playStatusLabels[status as PlayStatus],
+                        count,
+                      })}
                       variant="outlined"
                     />
                   ))}
@@ -99,11 +113,15 @@ const GameStatsSection = () => {
             {stats.platformBreakdown.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  By platform
+                  {t("games.stats.byPlatformTitle")}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {stats.platformBreakdown.map((entry) => (
-                    <Chip key={entry.name} label={`${entry.name}: ${entry.count}`} variant="outlined" />
+                    <Chip
+                      key={entry.name}
+                      label={t("games.stats.breakdownCountLabel", { name: entry.name, count: entry.count })}
+                      variant="outlined"
+                    />
                   ))}
                 </Box>
               </Box>
@@ -111,11 +129,15 @@ const GameStatsSection = () => {
             {stats.genreBreakdown.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  By genre
+                  {t("games.stats.byGenreTitle")}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {stats.genreBreakdown.map((entry) => (
-                    <Chip key={entry.name} label={`${entry.name}: ${entry.count}`} variant="outlined" />
+                    <Chip
+                      key={entry.name}
+                      label={t("games.stats.breakdownCountLabel", { name: entry.name, count: entry.count })}
+                      variant="outlined"
+                    />
                   ))}
                 </Box>
               </Box>

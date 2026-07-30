@@ -2,7 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import Typography from "@mui/material/Typography";
-import { navDestinations } from "./destinations";
+import { useTranslation } from "react-i18next";
+import { getNavDestinations } from "./destinations";
 
 export const NAV_RAIL_WIDTH = 80;
 
@@ -11,6 +12,8 @@ const APP_BAR_HEIGHT = 64;
 
 const NavRail = () => {
   const location = useLocation();
+  const { t } = useTranslation();
+  const navDestinations = getNavDestinations(t);
 
   return (
     <Drawer

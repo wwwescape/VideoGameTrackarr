@@ -7,6 +7,7 @@ import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import ConfirmDialog from "./ConfirmDialog";
 import {
@@ -19,6 +20,7 @@ import {
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
 const DataManagementSection = () => {
+  const { t } = useTranslation();
   const exportCsv = useExportCsv();
   const exportHardwareCsv = useExportHardwareCsv();
   const exportBackup = useExportBackup();
@@ -33,7 +35,7 @@ const DataManagementSection = () => {
       await exportCsv.mutateAsync();
     } catch (error) {
       console.error("Error exporting CSV:", error);
-      toast.error("Error exporting CSV. Please try again.", TOAST_OPTIONS);
+      toast.error(t("settings.dataManagement.exportCsvError"), TOAST_OPTIONS);
     }
   };
 
@@ -42,7 +44,7 @@ const DataManagementSection = () => {
       await exportHardwareCsv.mutateAsync();
     } catch (error) {
       console.error("Error exporting hardware CSV:", error);
-      toast.error("Error exporting hardware CSV. Please try again.", TOAST_OPTIONS);
+      toast.error(t("settings.dataManagement.exportHardwareCsvError"), TOAST_OPTIONS);
     }
   };
 
@@ -51,7 +53,7 @@ const DataManagementSection = () => {
       await exportBackup.mutateAsync();
     } catch (error) {
       console.error("Error exporting backup:", error);
-      toast.error("Error exporting backup. Please try again.", TOAST_OPTIONS);
+      toast.error(t("settings.dataManagement.exportBackupError"), TOAST_OPTIONS);
     }
   };
 
@@ -66,7 +68,7 @@ const DataManagementSection = () => {
       await restoreBackup.mutateAsync(pendingFile);
     } catch (error) {
       console.error("Error starting restore:", error);
-      toast.error("Could not start the restore. Please try again.", TOAST_OPTIONS);
+      toast.error(t("settings.dataManagement.restoreStartError"), TOAST_OPTIONS);
     } finally {
       setPendingFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -77,11 +79,11 @@ const DataManagementSection = () => {
     <Stack spacing={2.5}>
       <Box>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Export
+          {t("settings.dataManagement.exportHeading")}
         </Typography>
         <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap" }}>
           <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportCsv} disabled={exportCsv.isPending}>
-            Library (CSV)
+            {t("settings.dataManagement.exportLibraryCsv")}
           </Button>
           <Button
             variant="outlined"
@@ -89,7 +91,7 @@ const DataManagementSection = () => {
             onClick={handleExportHardwareCsv}
             disabled={exportHardwareCsv.isPending}
           >
-            Hardware (CSV)
+            {t("settings.dataManagement.exportHardwareCsv")}
           </Button>
           <Button
             variant="outlined"
@@ -97,7 +99,7 @@ const DataManagementSection = () => {
             onClick={handleExportBackup}
             disabled={exportBackup.isPending}
           >
-            Full backup (JSON)
+            {t("settings.dataManagement.exportFullBackup")}
           </Button>
         </Stack>
       </Box>
@@ -106,7 +108,7 @@ const DataManagementSection = () => {
 
       <Box>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Restore
+          {t("settings.dataManagement.restoreHeading")}
         </Typography>
         <Button
           component="label"
@@ -115,7 +117,7 @@ const DataManagementSection = () => {
           startIcon={<RestoreIcon />}
           disabled={restoreInProgress}
         >
-          Restore from backup
+          {t("settings.dataManagement.restoreButton")}
           <input
             ref={fileInputRef}
             type="file"
@@ -126,17 +128,15 @@ const DataManagementSection = () => {
           />
         </Button>
         <Alert severity="warning" sx={{ mt: 1.5 }}>
-          Restoring replaces your entire library with the contents of the backup file. A safety
-          snapshot of the current data is saved on the server first, but this still isn&apos;t
-          something to do by accident.
+          {t("settings.dataManagement.restoreWarning")}
         </Alert>
       </Box>
 
       <ConfirmDialog
         open={Boolean(pendingFile)}
-        title="Restore from backup?"
-        description={`This will permanently replace your entire library with the contents of "${pendingFile?.name}". A safety snapshot of what's there now will be saved on the server first, but this action itself cannot be undone from here.`}
-        confirmLabel="Replace my library"
+        title={t("settings.dataManagement.restoreConfirmTitle")}
+        description={t("settings.dataManagement.restoreConfirmDescription", { fileName: pendingFile?.name })}
+        confirmLabel={t("settings.dataManagement.restoreConfirmButton")}
         confirmColor="error"
         confirmDisabled={restoreInProgress}
         onClose={() => {

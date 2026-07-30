@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -32,11 +33,6 @@ interface StatusOption {
   label: string;
 }
 
-const STATUS_OPTIONS: StatusOption[] = [
-  { value: "owned", label: "Owned" },
-  { value: "wishlist", label: "Wishlist" },
-];
-
 interface ConditionOption {
   value: HardwareCondition;
   label: string;
@@ -52,11 +48,6 @@ interface RatingBoardOption {
   label: string;
 }
 
-const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
-  { value: null, label: "None" },
-  ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
-];
-
 function unique(values: (string | null)[]): string[] {
   return Array.from(new Set(values.filter((value): value is string => !!value))).sort();
 }
@@ -71,6 +62,7 @@ interface EditAccessoryFormProps {
 // EditDevicePage.tsx locks Brand/Console/Variant. Custom accessories keep those identity
 // fields editable, since they were never resolved from the reference cascade to begin with.
 const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const updateAccessory = useUpdateAccessory(accessory.id);
   const addUserAccessory = useAddUserAccessory(accessory.id);
@@ -112,6 +104,16 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
   const isSubmitting =
     updateAccessory.isPending || addUserAccessory.isPending || updateUserAccessory.isPending;
 
+  const STATUS_OPTIONS: StatusOption[] = [
+    { value: "owned", label: t("hardware.accessoryForm.statusOwned") },
+    { value: "wishlist", label: t("hardware.accessoryForm.statusWishlist") },
+  ];
+
+  const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
+    { value: null, label: t("common.none") },
+    ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
+  ];
+
   const handleImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -121,13 +123,13 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
       setImageUrl(url);
     } catch (error) {
       console.error("Error uploading accessory image:", error);
-      toast.error("Error uploading accessory image. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.accessoryForm.imageUploadError"), TOAST_OPTIONS);
     }
   };
 
   const handleSubmit = async () => {
     if (!officialName.trim() || (!isPredefined && (!manufacturer.trim() || !accessoryType.trim()))) {
-      toast.error("Brand, accessory type, and official name are required.", TOAST_OPTIONS);
+      toast.error(t("hardware.accessoryForm.requiredFieldsCustom"), TOAST_OPTIONS);
       return;
     }
     try {
@@ -157,11 +159,11 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
       } else {
         await addUserAccessory.mutateAsync(ownershipInput);
       }
-      toast.success("Accessory updated.", TOAST_OPTIONS);
+      toast.success(t("hardware.editAccessory.updateSuccess"), TOAST_OPTIONS);
       navigate(`/hardware/accessory/${hardwareIdentifier(officialName.trim(), accessory.uuid)}`);
     } catch (error) {
       console.error("Error updating accessory:", error);
-      toast.error("Error updating accessory. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.editAccessory.updateError"), TOAST_OPTIONS);
     }
   };
 
@@ -173,11 +175,16 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             <Grid size={12}>
               <Grid container spacing={2.5}>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField label="Brand" fullWidth disabled value={accessory.manufacturerName} />
+                  <TextField
+                    label={t("hardware.accessoryForm.brandLabel")}
+                    fullWidth
+                    disabled
+                    value={accessory.manufacturerName}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
-                    label="Console"
+                    label={t("hardware.editAccessory.consoleLabel")}
                     fullWidth
                     disabled
                     value={accessory.compatiblePlatforms[0]?.name ?? ""}
@@ -185,7 +192,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
-                    label="Accessory"
+                    label={t("hardware.editAccessory.accessoryReadOnlyLabel")}
                     fullWidth
                     disabled
                     value={accessory.hardwareReference?.artefact ?? ""}
@@ -195,23 +202,29 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Official name"
+                label={t("hardware.accessoryForm.officialNameLabel")}
                 required
                 fullWidth
                 value={officialName}
                 onChange={(event) => setOfficialName(event.target.value)}
-                helperText="Auto-filled from your selections — edit if you want to tweak it"
+                helperText={t("hardware.accessoryForm.officialNameHelperText")}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Edition" fullWidth disabled value="" helperText="Coming Soon!" />
+              <TextField
+                label={t("hardware.accessoryForm.editionLabel")}
+                fullWidth
+                disabled
+                value=""
+                helperText={t("hardware.accessoryForm.editionComingSoonHelperText")}
+              />
             </Grid>
           </>
         ) : (
           <>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FreeSoloLookupField
-                label="Brand"
+                label={t("hardware.accessoryForm.brandLabel")}
                 options={manufacturers ?? []}
                 value={manufacturer}
                 onChange={setManufacturer}
@@ -220,7 +233,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <AutocompleteSelect<string>
-                label="Accessory type"
+                label={t("hardware.accessoryForm.accessoryTypeLabel")}
                 fullWidth
                 required
                 options={unique([
@@ -234,7 +247,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Official name"
+                label={t("hardware.accessoryForm.officialNameLabel")}
                 required
                 fullWidth
                 value={officialName}
@@ -243,20 +256,20 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Edition"
+                label={t("hardware.accessoryForm.editionLabel")}
                 fullWidth
                 value={edition}
                 onChange={(event) => setEdition(event.target.value)}
-                helperText='Optional, e.g. "Spider-Man 2 Limited Edition"'
+                helperText={t("hardware.accessoryForm.editionHelperText")}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Release year"
+                label={t("hardware.accessoryForm.releaseYearLabel")}
                 fullWidth
                 value={releaseYear}
                 onChange={(event) => setReleaseYear(event.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="e.g. 1998"
+                placeholder={t("hardware.accessoryForm.releaseYearPlaceholder")}
                 slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 4 } }}
               />
             </Grid>
@@ -268,7 +281,9 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
                   startIcon={uploadAccessoryImage.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
                   disabled={uploadAccessoryImage.isPending}
                 >
-                  {imageUrl ? "Replace accessory image" : "Upload accessory image"}
+                  {imageUrl
+                    ? t("hardware.accessoryForm.replaceImageButton")
+                    : t("hardware.accessoryForm.uploadImageButton")}
                   <input
                     type="file"
                     accept="image/*"
@@ -281,10 +296,14 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
                     <Box
                       component="img"
                       src={resolveAssetUrl(imageUrl) ?? undefined}
-                      alt="Accessory preview"
+                      alt={t("hardware.accessoryForm.imagePreviewAlt")}
                       sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
                     />
-                    <IconButton size="small" aria-label="Remove accessory image" onClick={() => setImageUrl("")}>
+                    <IconButton
+                      size="small"
+                      aria-label={t("hardware.accessoryForm.removeImageAriaLabel")}
+                      onClick={() => setImageUrl("")}
+                    >
                       <CloseIcon fontSize="small" />
                     </IconButton>
                   </>
@@ -293,7 +312,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             </Grid>
             <Grid size={12}>
               <TextField
-                label="Summary"
+                label={t("hardware.accessoryForm.summaryLabel")}
                 fullWidth
                 multiline
                 minRows={3}
@@ -315,8 +334,8 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Linked devices"
-                helperText="Which specific console(s) does this come with or belong to?"
+                label={t("hardware.accessoryForm.linkedDevicesLabel")}
+                helperText={t("hardware.accessoryForm.linkedDevicesHelperText")}
               />
             )}
           />
@@ -332,30 +351,40 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Linked accessories"
-                helperText="Other accessories this one is associated with — e.g. a case for a specific controller"
+                label={t("hardware.accessoryForm.linkedAccessoriesLabel")}
+                helperText={t("hardware.accessoryForm.linkedAccessoriesHelperText")}
               />
             )}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Model number" fullWidth value={model} onChange={(event) => setModel(event.target.value)} />
+          <TextField
+            label={t("hardware.accessoryForm.modelNumberLabel")}
+            fullWidth
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Serial number"
+            label={t("hardware.accessoryForm.serialNumberLabel")}
             fullWidth
             value={serialNumber}
             onChange={(event) => setSerialNumber(event.target.value)}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <FreeSoloLookupField label="Color" options={colors ?? []} value={color} onChange={setColor} />
+          <FreeSoloLookupField
+            label={t("hardware.accessoryForm.colorLabel")}
+            options={colors ?? []}
+            value={color}
+            onChange={setColor}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }} />
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Revision"
+            label={t("hardware.accessoryForm.revisionLabel")}
             fullWidth
             value={revision}
             onChange={(event) => setRevision(event.target.value)}
@@ -363,7 +392,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<RatingBoardOption>
-            label="Ratings Board"
+            label={t("hardware.accessoryForm.ratingsBoardLabel")}
             fullWidth
             options={RATING_BOARD_OPTIONS}
             value={RATING_BOARD_OPTIONS.find((option) => option.value === ratingBoard) ?? null}
@@ -376,7 +405,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             type="number"
-            label="Price"
+            label={t("hardware.accessoryForm.priceLabel")}
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
@@ -385,7 +414,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         <Grid size={{ xs: 12, sm: 6 }} />
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<StatusOption>
-            label="Status"
+            label={t("hardware.accessoryForm.statusLabel")}
             fullWidth
             options={STATUS_OPTIONS}
             value={STATUS_OPTIONS.find((option) => option.value === status) ?? null}
@@ -404,7 +433,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         {status === "owned" ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <AutocompleteSelect<ConditionOption>
-              label="Condition"
+              label={t("hardware.accessoryForm.conditionLabel")}
               fullWidth
               options={CONDITION_OPTIONS}
               value={CONDITION_OPTIONS.find((option) => option.value === condition) ?? null}
@@ -418,7 +447,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         )}
         <Grid size={12}>
           <TextField
-            label="Notes"
+            label={t("hardware.accessoryForm.notesLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -429,7 +458,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         <Grid size={12}>
           <Stack direction="row" spacing={1.5}>
             <Button variant="contained" onClick={() => void handleSubmit()} disabled={isSubmitting}>
-              Save Changes
+              {t("hardware.editAccessory.saveButton")}
             </Button>
             <Button
               variant="text"
@@ -438,7 +467,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
               }
               disabled={isSubmitting}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </Stack>
         </Grid>
@@ -448,13 +477,14 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
 };
 
 const EditAccessoryPage = () => {
+  const { t } = useTranslation();
   const { identifier } = useParams<{ identifier: string }>();
 
   const { data: accessory, isLoading: isAccessoryLoading } = useAccessoryItem(identifier);
   const { data: ownershipRows, isLoading: isOwnershipLoading } = useUserAccessoryList(accessory?.id ?? NaN);
 
   if (isAccessoryLoading || isOwnershipLoading || !accessory) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>;
+    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
   }
 
   const primaryOwnership = ownershipRows?.find((row) => row.status === "owned") ?? ownershipRows?.[0] ?? null;
@@ -463,7 +493,7 @@ const EditAccessoryPage = () => {
     <>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Edit Accessory
+          {t("hardware.editAccessory.title")}
         </Typography>
       </Box>
       <EditAccessoryForm accessory={accessory} primaryOwnership={primaryOwnership} />

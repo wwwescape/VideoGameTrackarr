@@ -6,7 +6,8 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import { navDestinations } from "./destinations";
+import { useTranslation } from "react-i18next";
+import { getNavDestinations } from "./destinations";
 
 export const NAV_DRAWER_WIDTH = 240;
 
@@ -15,6 +16,8 @@ const APP_BAR_HEIGHT = 64;
 
 const NavDrawer = () => {
   const location = useLocation();
+  const { t } = useTranslation();
+  const navDestinations = getNavDestinations(t);
 
   return (
     <Drawer

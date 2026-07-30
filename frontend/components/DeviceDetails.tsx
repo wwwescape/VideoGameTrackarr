@@ -12,6 +12,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import ConfirmDialog from "./ConfirmDialog";
 import FieldRow from "./FieldRow";
 import HardwareCoverCard from "./HardwareCoverCard";
@@ -35,6 +36,7 @@ import { TOAST_OPTIONS } from "../utils/toastOptions";
 const sectionCardSx = { borderRadius: 2, overflow: "hidden" } as const;
 
 const DeviceDetails = () => {
+  const { t } = useTranslation();
   const { identifier } = useParams<{ identifier: string }>();
   const navigate = useNavigate();
 
@@ -55,7 +57,7 @@ const DeviceDetails = () => {
   const deleteNote = useDeleteDeviceNote(deviceId);
 
   if (isLoading || !device) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>;
+    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
   }
 
   // A device can technically have multiple owned/wishlisted UserDevice rows, but Add Device
@@ -66,11 +68,11 @@ const DeviceDetails = () => {
   const handleDelete = async () => {
     try {
       await deleteDevice.mutateAsync(deviceId);
-      toast.success("Device removed.", TOAST_OPTIONS);
+      toast.success(t("hardware.deviceDetails.removeSuccess"), TOAST_OPTIONS);
       navigate("/hardware");
     } catch (error) {
       console.error("Error deleting device:", error);
-      toast.error("Error deleting device. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.deviceDetails.removeError"), TOAST_OPTIONS);
     }
   };
 
@@ -91,7 +93,7 @@ const DeviceDetails = () => {
               onClick={() => navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}/edit`)}
               fullWidth
             >
-              Edit Device
+              {t("hardware.deviceDetails.editButton")}
             </Button>
             <Button
               variant="contained"
@@ -100,7 +102,7 @@ const DeviceDetails = () => {
               onClick={() => setDeleteConfirmOpen(true)}
               fullWidth
             >
-              Remove Device
+              {t("hardware.deviceDetails.removeButton")}
             </Button>
           </Stack>
         </Stack>
@@ -120,9 +122,9 @@ const DeviceDetails = () => {
                 ) : null}
               </Typography>
               <Stack spacing={0.5} sx={{ mt: 1 }}>
-                <FieldRow label="Brand" value={device.manufacturerName} />
-                <FieldRow label="Console" value={device.hardwarePlatformName} />
-                <FieldRow label="Variant" value={device.hardwareReference?.artefact} />
+                <FieldRow label={t("hardware.detailsShared.brandLabel")} value={device.manufacturerName} />
+                <FieldRow label={t("hardware.deviceDetails.consoleLabel")} value={device.hardwarePlatformName} />
+                <FieldRow label={t("hardware.deviceDetails.variantLabel")} value={device.hardwareReference?.artefact} />
               </Stack>
               {device.hardwareReference?.summary ? (
                 <>
@@ -134,13 +136,13 @@ const DeviceDetails = () => {
               ) : null}
               <Divider sx={{ my: 1.5 }} />
               <Stack spacing={0.5}>
-                <FieldRow label="Model Number" value={device.model} />
-                <FieldRow label="Serial Number" value={primaryOwnership?.serialNumber} />
-                <FieldRow label="Color" value={device.colorName} />
-                <FieldRow label="Storage" value={device.storageVariantName} />
-                <FieldRow label="Revision" value={device.revision} />
+                <FieldRow label={t("hardware.detailsShared.modelNumberLabel")} value={device.model} />
+                <FieldRow label={t("hardware.detailsShared.serialNumberLabel")} value={primaryOwnership?.serialNumber} />
+                <FieldRow label={t("hardware.detailsShared.colorLabel")} value={device.colorName} />
+                <FieldRow label={t("hardware.deviceDetails.storageLabel")} value={device.storageVariantName} />
+                <FieldRow label={t("hardware.detailsShared.revisionLabel")} value={device.revision} />
                 <FieldRow
-                  label="Ratings Board"
+                  label={t("hardware.detailsShared.ratingsBoardLabel")}
                   value={device.ratingBoard ? RATING_BOARD_LABELS[device.ratingBoard] : null}
                 />
               </Stack>
@@ -148,12 +150,12 @@ const DeviceDetails = () => {
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Price" />
+            <CardHeader title={t("hardware.detailsShared.priceTitle")} />
             <CardContent>
               <Typography variant="body2">
                 {primaryOwnership?.purchasePrice != null
                   ? formatCurrency(primaryOwnership.purchasePrice, currency)
-                  : "Not set"}
+                  : t("hardware.detailsShared.priceNotSet")}
               </Typography>
             </CardContent>
           </Card>
@@ -163,7 +165,7 @@ const DeviceDetails = () => {
               tags={device.tags}
               onAttach={(tagId) => attachTag.mutateAsync(tagId)}
               onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-              subheader="Organize your own way — modded, for sale, project console, whatever fits"
+              subheader={t("hardware.detailsShared.tagsSubheader")}
             />
           </Card>
 
@@ -171,7 +173,7 @@ const DeviceDetails = () => {
             <NotesSection
               notes={deviceNotes}
               isCreating={createNote.isPending}
-              subheader="Maintenance history, where you bought it, anything worth remembering"
+              subheader={t("hardware.detailsShared.notesSubheader")}
               onCreate={(body) => createNote.mutateAsync(body)}
               onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
               onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
@@ -179,28 +181,35 @@ const DeviceDetails = () => {
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Your inventory" />
+            <CardHeader title={t("hardware.detailsShared.inventoryTitle")} />
             <CardContent>
               {primaryOwnership ? (
                 <Stack spacing={0.5}>
-                  <FieldRow label="Status" value={primaryOwnership.status === "owned" ? "Owned" : "Wishlist"} />
                   <FieldRow
-                    label="Condition"
+                    label={t("hardware.detailsShared.statusLabel")}
+                    value={
+                      primaryOwnership.status === "owned"
+                        ? t("hardware.detailsShared.statusOwned")
+                        : t("hardware.detailsShared.statusWishlist")
+                    }
+                  />
+                  <FieldRow
+                    label={t("hardware.detailsShared.conditionLabel")}
                     value={primaryOwnership.condition ? CONDITION_LABELS[primaryOwnership.condition] : null}
                   />
                 </Stack>
               ) : (
-                <Typography color="text.secondary">Not tracked yet.</Typography>
+                <Typography color="text.secondary">{t("hardware.detailsShared.inventoryNotTracked")}</Typography>
               )}
             </CardContent>
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Linked Accessories" />
+            <CardHeader title={t("hardware.detailsShared.linkedAccessoriesTitle")} />
             <CardContent>
               {device.linkedAccessories.length === 0 ? (
                 <Typography color="text.secondary">
-                  No accessories linked yet — link one from the Accessory&apos;s own Add/Edit form.
+                  {t("hardware.deviceDetails.noLinkedAccessories")}
                 </Typography>
               ) : (
                 <Stack spacing={1.5}>
@@ -227,9 +236,9 @@ const DeviceDetails = () => {
 
       <ConfirmDialog
         open={deleteConfirmOpen}
-        title="Delete this device?"
-        description={`This permanently removes "${device.officialName}" and its inventory/tag/note records.`}
-        confirmLabel="Delete"
+        title={t("hardware.deviceDetails.deleteConfirmTitle")}
+        description={t("hardware.deviceDetails.deleteConfirmDescription", { name: device.officialName })}
+        confirmLabel={t("common.delete")}
         confirmColor="error"
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDelete}

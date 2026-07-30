@@ -1,0 +1,750 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "remove": "Remove",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "loading": "Loading...",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No",
+    "required": "Required",
+    "optional": "Optional",
+    "retry": "Retry",
+    "none": "None",
+    "unknown": "Unknown",
+    "logOut": "Log out"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "games": "Games",
+    "addGame": "Add Game",
+    "collections": "Collections",
+    "series": "Series",
+    "hardware": "Hardware",
+    "addDevice": "Add Device",
+    "addAccessory": "Add Accessory",
+    "insights": "Insights",
+    "duplicates": "Duplicates",
+    "missingDlc": "Missing DLC",
+    "orphanedAccessories": "Orphaned Accessories",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "breadcrumbs": {
+    "edit": "Edit",
+    "compareGames": "Compare Games"
+  },
+  "appShell": {
+    "skipToMainContent": "Skip to main content",
+    "darkMode": "Dark Mode"
+  },
+  "dialogs": {
+    "message": {
+      "ok": "OK"
+    },
+    "libraryItem": {
+      "platformLabel": "Platform",
+      "regionLabel": "Region",
+      "ratingBoardLabel": "Rating Board",
+      "formatLabel": "Format",
+      "formatPhysical": "Physical",
+      "formatDigital": "Digital",
+      "formatIso": "ISO",
+      "formatRom": "ROM",
+      "formatAbandonware": "Abandonware",
+      "formatOther": "Other",
+      "digitalStorefrontLabel": "Digital Storefront",
+      "priceLabel": "Price"
+    }
+  },
+  "restore": {
+    "completedToast": "Restored {{count}} game(s). A safety copy of what was there before was saved server-side.",
+    "inProgressTitle": "Have patience while restore is in progress.",
+    "inProgressSubtitle": "This may take several minutes depending on the size of the restore.",
+    "failedTitle": "Restore failed",
+    "unknownError": "An unknown error occurred.",
+    "dismissButton": "Dismiss"
+  },
+  "undo": {
+    "undoButton": "Undo"
+  },
+  "offline": {
+    "wentOfflineToast": "You're offline. Changes will be saved and synced automatically once you're back online.",
+    "backOnlineToast": "Back online — your pending changes have synced.",
+    "offline": "Offline",
+    "changesPending_one": "Offline · {{count}} change pending",
+    "changesPending_other": "Offline · {{count}} changes pending",
+    "syncingChanges_one": "Syncing {{count}} change...",
+    "syncingChanges_other": "Syncing {{count}} changes..."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": {
+      "heading": "Account",
+      "signedInAs": "Signed in as <1>{{username}}</1>."
+    },
+    "display": {
+      "heading": "Display",
+      "darkMode": "Dark mode",
+      "highContrast": "High contrast"
+    },
+    "language": {
+      "heading": "Language",
+      "label": "Language"
+    },
+    "currency": {
+      "heading": "Currency",
+      "description": "Used to label MSRP, purchase price, and collection value — this changes how amounts are displayed, not a live exchange rate or conversion.",
+      "label": "Currency"
+    },
+    "data": {
+      "heading": "Data"
+    },
+    "dataManagement": {
+      "exportHeading": "Export",
+      "exportLibraryCsv": "Library (CSV)",
+      "exportHardwareCsv": "Hardware (CSV)",
+      "exportFullBackup": "Full backup (JSON)",
+      "restoreHeading": "Restore",
+      "restoreButton": "Restore from backup",
+      "restoreWarning": "Restoring replaces your entire library with the contents of the backup file. A safety snapshot of the current data is saved on the server first, but this still isn't something to do by accident.",
+      "restoreConfirmTitle": "Restore from backup?",
+      "restoreConfirmDescription": "This will permanently replace your entire library with the contents of \"{{fileName}}\". A safety snapshot of what's there now will be saved on the server first, but this action itself cannot be undone from here.",
+      "restoreConfirmButton": "Replace my library",
+      "exportCsvError": "Error exporting CSV. Please try again.",
+      "exportHardwareCsvError": "Error exporting hardware CSV. Please try again.",
+      "exportBackupError": "Error exporting backup. Please try again.",
+      "restoreStartError": "Could not start the restore. Please try again."
+    },
+    "igdb": {
+      "heading": "IGDB credentials",
+      "description": "IGDB credentials are configured via this server's <1>.env</1> file (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), not through the app."
+    }
+  },
+  "auth": {
+    "brand": "VideoGameTrackarr",
+    "login": {
+      "subtitle": "Sign in to your collection.",
+      "invalidCredentials": "Invalid username or password.",
+      "username": "Username",
+      "password": "Password",
+      "signingIn": "Signing in...",
+      "signIn": "Sign in"
+    },
+    "setupAdmin": {
+      "subtitle": "No admin account exists yet — create one to get started.",
+      "createFailed": "Could not create the admin account. It may have already been set up — try signing in instead.",
+      "username": "Username",
+      "password": "Password",
+      "passwordHelper": "At least 8 characters",
+      "confirmPassword": "Confirm password",
+      "passwordsMismatch": "Passwords don't match",
+      "creatingAccount": "Creating account...",
+      "createAccount": "Create admin account"
+    }
+  },
+  "games": {
+    "gameForm": {
+      "officialNameLabel": "Official Name",
+      "categoryLabel": "Category",
+      "releaseDateLabel": "Release date",
+      "uploadCoverButton": "Upload cover image",
+      "replaceCoverButton": "Replace cover image",
+      "coverPreviewAlt": "Cover preview",
+      "removeCoverAriaLabel": "Remove cover image",
+      "developedByLabel": "Developed by",
+      "publishedByLabel": "Published by",
+      "editionLabel": "Edition",
+      "editionHelperText": "Optional, e.g. \"Game of the Year Edition\"",
+      "availableOnLabel": "Available on",
+      "summaryLabel": "Summary",
+      "storylineLabel": "Storyline",
+      "notesLabel": "Notes",
+      "linkedGameLabel": "Linked Game",
+      "linkedGameHelperText": "Which game is this an addon of?",
+      "officialNameRequiredError": "Official Name is required.",
+      "linkedGameRequiredError": "Linked Game is required for this category.",
+      "uploadCoverError": "Error uploading cover image. Please try again."
+    },
+    "edit": {
+      "pageTitle": "Edit Game",
+      "notEditableMessage": "This game cannot be edited. All information comes from IGDB.",
+      "notesHelperText": "Adds a new note alongside any existing ones — manage existing notes from the game's own Notes section.",
+      "saveChangesButton": "Save Changes",
+      "updateSuccessToast": "Game updated!",
+      "updateErrorToast": "Error updating game. Please try again."
+    },
+    "manualForm": {
+      "addGameButton": "Add game",
+      "addSuccessToast": "Game added!",
+      "addErrorToast": "Error adding game. Please try again."
+    },
+    "compare": {
+      "selectPrompt": "Select two or more games from your library to compare them here.",
+      "loading": "Loading comparison...",
+      "title": "Compare Games",
+      "subtitle": "Side-by-side comparison of {{count}} games from your library.",
+      "columnHeaderReleaseYear": "Release year",
+      "columnHeaderGenres": "Genres",
+      "columnHeaderDeveloper": "Developer",
+      "columnHeaderPublisher": "Publisher",
+      "columnHeaderPlatforms": "Platforms",
+      "columnHeaderLibraryStatus": "Library status",
+      "columnHeaderPlayStatus": "Play status",
+      "columnHeaderPlaytimeLogged": "Playtime logged",
+      "columnHeaderYourRating": "Your rating",
+      "owned": "Owned",
+      "wishlisted": "Wishlisted",
+      "playStatusNotStarted": "Not started",
+      "playStatusBacklog": "Backlog",
+      "playStatusPlaying": "Playing",
+      "playStatusCompleted": "Completed",
+      "playStatusAbandoned": "Abandoned"
+    },
+    "list": {
+      "pageTitle": "Games",
+      "pageSubtitle": "Search and browse your collection, wishlist, and tracked addons.",
+      "addGameButton": "Add Game",
+      "searching": "Searching...",
+      "noGamesFound": "No games found",
+      "noGamesMatchFilter": "No games match this filter",
+      "pleaseAddGames": "Please add some games",
+      "gamesRemovedToast_one": "{{count}} game removed from your library",
+      "gamesRemovedToast_other": "{{count}} games removed from your library"
+    },
+    "listToolbar": {
+      "exitSelectionModeAriaLabel": "Exit selection mode",
+      "selectedCount": "{{count}} selected",
+      "selectAllTooltip": "Select all",
+      "selectAllAriaLabel": "Select all visible games",
+      "compareButton": "Compare",
+      "searchLabel": "Search games",
+      "searchPlaceholder": "Enter game name",
+      "selectGames": "Select games",
+      "filterAll": "All",
+      "filterOwned": "Owned",
+      "filterWishlist": "Wishlist"
+    },
+    "card": {
+      "playStatusBacklog": "Backlog",
+      "playStatusPlaying": "Playing",
+      "playStatusCompleted": "Completed",
+      "playStatusAbandoned": "Abandoned",
+      "noCover": "No cover",
+      "unknownYear": "Unknown year",
+      "addedButton": "Added",
+      "selectAriaLabel": "Select {{name}}",
+      "deselectAriaLabel": "Deselect {{name}}",
+      "nameYearTooltip": "{{name}} ({{year}})"
+    },
+    "subNav": {
+      "allGames": "All Games",
+      "addGame": "Add Game",
+      "collections": "Collections",
+      "series": "Series"
+    },
+    "add": {
+      "pageTitle": "Add Game",
+      "pageSubtitle": "Search IGDB and add titles to your local tracker.",
+      "addGameError": "Error adding game. Please try again.",
+      "fromIgdbLabel": "From IGDB",
+      "manuallyLabel": "Manually",
+      "searchLabel": "Search games on IGDB",
+      "searchPlaceholder": "Enter game name",
+      "searchHelperText": "Know the exact IGDB id? Search \"igdb:<id>\" (e.g. igdb:3542) to jump straight to it.",
+      "igdbNotConfigured": "IGDB isn't configured on this server. Set IGDB_CLIENT_ID and IGDB_CLIENT_SECRET in its .env file.",
+      "searching": "Searching...",
+      "pleaseSearchGames": "Please search for some games",
+      "noGamesFound": "No games found",
+      "categoryCannotBeAdded": "This category cannot be added"
+    },
+    "suggestionsDialog": {
+      "title": "Is this game already on IGDB?",
+      "description": "Adding from IGDB gets you cover art, genres, platforms, and more for free. Double-check before adding \"{{name}}\" as a custom game.",
+      "searchLabel": "Search IGDB",
+      "notConfigured": "IGDB isn't configured on this server.",
+      "keepTyping": "Keep typing to search IGDB.",
+      "noMatches": "No matches found.",
+      "continueManuallyButton": "Continue to add game manually",
+      "addSuccess": "Game added!",
+      "addError": "Error adding game. Please try again."
+    },
+    "collectionPage": {
+      "kindLabel": "Collection"
+    },
+    "collectionsPage": {
+      "title": "Collections",
+      "description": "IGDB collections with at least one game in your library.",
+      "emptyMessage": "No collections yet — they show up here once you've imported a game that belongs to one."
+    },
+    "seriesDetailPage": {
+      "kindLabel": "Series"
+    },
+    "seriesPage": {
+      "title": "Series",
+      "description": "Game series (IGDB franchises) with at least one game in your library.",
+      "emptyMessage": "No series yet — they show up here once you've imported a game that belongs to one."
+    },
+    "about": {
+      "companyRoleDeveloper": "Developed by",
+      "companyRolePublisher": "Published by",
+      "companyRolePorting": "Ported by",
+      "companyRoleSupporting": "Additional work by",
+      "regionEurope": "Europe",
+      "regionNorthAmerica": "North America",
+      "regionAustralia": "Australia",
+      "regionNewZealand": "New Zealand",
+      "regionJapan": "Japan",
+      "regionChina": "China",
+      "regionAsia": "Asia",
+      "regionWorldwide": "Worldwide",
+      "customTooltip": "Added by hand, not linked to an IGDB entry — use Link to IGDB under the poster to link it.",
+      "customLabel": "Custom",
+      "igdbRatingLabel": "IGDB Rating: {{rating}}/100",
+      "forConnector": " for ",
+      "externalParentTooltip": "Not in your library — opens the original's IGDB page",
+      "availableOnLabel": "Available on: {{platforms}}",
+      "seriesLabel": "Series: {{name}}",
+      "collectionLabel": "Collection: {{name}}",
+      "unknownPlatform": "Unknown platform",
+      "tbd": "TBD",
+      "storylineTitle": "Storyline",
+      "artworkTitle": "Artwork",
+      "videosTitle": "Videos",
+      "watchOnYoutube": "Watch on YouTube",
+      "viewOnIgdb": "View more details on IGDB.com"
+    },
+    "actions": {
+      "removeSuccessToast": "Game removed from your library!",
+      "removeErrorToast": "Error removing game. Please try again.",
+      "resyncAddonSuccessToast": "Addon resynced successfully!",
+      "resyncGameSuccessToast": "Game resynced successfully!",
+      "igdbNotConfiguredError": "IGDB isn't configured on this server.",
+      "resyncAddonErrorToast": "Error resyncing addon. Please try again.",
+      "resyncGameErrorToast": "Error resyncing game. Please try again.",
+      "resyncAddonButton": "Resync Addon",
+      "resyncGameButton": "Resync Game",
+      "resyncConfirmTitle": "Confirm Resync",
+      "resyncAddonConfirmDescription": "Are you sure you want to resync this addon? This re-fetches the parent game's metadata from IGDB, which refreshes this addon along with the rest of its siblings.",
+      "resyncGameConfirmDescription": "Are you sure you want to resync this game? This re-fetches its metadata from IGDB.",
+      "resyncConfirmLabel": "Resync",
+      "editGameButton": "Edit Game",
+      "linkToIgdbButton": "Link to IGDB",
+      "removeGameButton": "Remove Game",
+      "removeConfirmTitle": "Confirm Removal",
+      "removeConfirmDescription": "Are you sure you want to remove \"{{name}}\"? This permanently deletes it along with all of its addons (DLC, expansions, packs), collection/wishlist entries, progress, and notes. This cannot be undone."
+    },
+    "addons": {
+      "title": "Addons",
+      "subheader": "DLC, expansions, and packs for this game",
+      "empty": "No addons found"
+    },
+    "coverCard": {
+      "noImageAvailable": "No Image Available"
+    },
+    "library": {
+      "formatPhysical": "Physical",
+      "formatDigital": "Digital",
+      "formatIso": "ISO",
+      "formatRom": "ROM",
+      "formatAbandonware": "Abandonware",
+      "formatOther": "Other",
+      "platformColumn": "Platform",
+      "regionColumn": "Region",
+      "formatColumn": "Format",
+      "moveColumn": "Move",
+      "collectionPhrase": "collection",
+      "wishlistPhrase": "wishlist",
+      "removedFromToast_one": "Entry removed from your {{phrase}}",
+      "removedFromToast_other": "Entries removed from your {{phrase}}",
+      "moveSuccessToast": "Game moved to your {{phrase}} successfully!",
+      "moveErrorToast": "Error moving game to your {{phrase}}. Please try again.",
+      "updateSuccessToast": "Game updated in your {{phrase}} successfully!",
+      "addSuccessToast": "Game added to your {{phrase}} successfully!",
+      "saveErrorToast": "Error saving game in your {{phrase}}. Please try again.",
+      "title": "Your library",
+      "subheader": "Collection and wishlist entries across platforms and regions",
+      "collectionTableName": "Collection",
+      "wishlistTableName": "Wishlist",
+      "updateDialogTitle": "Update game in your {{phrase}}",
+      "addDialogTitle": "Add game to your {{phrase}}",
+      "updateLabel": "Update"
+    },
+    "stats": {
+      "playStatusNotStarted": "Not started",
+      "playStatusBacklog": "Backlog",
+      "playStatusPlaying": "Playing",
+      "playStatusCompleted": "Completed",
+      "playStatusAbandoned": "Abandoned",
+      "loading": "Loading stats...",
+      "ownedLabel": "Owned",
+      "wishlistedLabel": "Wishlisted",
+      "totalTrackedLabel": "Total tracked",
+      "playtimeLoggedLabel": "Playtime logged",
+      "averageRatingLabel": "Average rating",
+      "playtimeMinutesShort": "{{minutes}}m",
+      "playtimeHoursShort": "{{hours}}h",
+      "playtimeHoursMinutesShort": "{{hours}}h {{minutes}}m",
+      "byPlayStatusTitle": "By play status",
+      "byPlatformTitle": "By platform",
+      "byGenreTitle": "By genre",
+      "breakdownCountLabel": "{{name}}: {{count}}"
+    }
+  },
+  "insights": {
+    "dashboard": {
+      "gamesCalendarHeading": "Games Release Calendar",
+      "hardwareCalendarHeading": "Hardware Release Calendar"
+    },
+    "page": {
+      "gamesHeading": "Games",
+      "hardwareHeading": "Hardware"
+    },
+    "subNav": {
+      "overview": "Overview"
+    },
+    "duplicates": {
+      "statusOwned": "Owned",
+      "statusWishlist": "Wishlist",
+      "noneFound": "No duplicate library entries found.",
+      "removedToast": "Duplicate entry removed",
+      "anyPlatform": "Any platform",
+      "anyRegion": "Any region",
+      "removeEntryTooltip": "Remove this entry"
+    },
+    "missingDlc": {
+      "noneFound": "No missing DLC found — you have everything that's been imported for the games you own."
+    }
+  },
+  "catalog": {
+    "browseGrid": {
+      "importedOnlyNotice": "Only games you've already imported show up here.",
+      "emptyMessage": "No locally-known games in this {{kind}} yet."
+    },
+    "refCard": {
+      "gameCountSingular": "{{count}} game",
+      "gameCountPlural": "{{count}} games"
+    }
+  },
+  "hardware": {
+    "accessoryForm": {
+      "brandLabel": "Brand",
+      "accessoryTypeLabel": "Accessory type",
+      "officialNameLabel": "Official name",
+      "officialNameHelperText": "Auto-filled from your selections — edit if you want to tweak it",
+      "editionLabel": "Edition",
+      "editionComingSoonHelperText": "Coming Soon!",
+      "editionHelperText": "Optional, e.g. \"Spider-Man 2 Limited Edition\"",
+      "releaseYearLabel": "Release year",
+      "releaseYearPlaceholder": "e.g. 1998",
+      "replaceImageButton": "Replace accessory image",
+      "uploadImageButton": "Upload accessory image",
+      "imagePreviewAlt": "Accessory preview",
+      "removeImageAriaLabel": "Remove accessory image",
+      "summaryLabel": "Summary",
+      "linkedDevicesLabel": "Linked devices",
+      "linkedDevicesHelperText": "Which specific console(s) does this come with or belong to?",
+      "linkedAccessoriesLabel": "Linked accessories",
+      "linkedAccessoriesHelperText": "Other accessories this one is associated with — e.g. a case for a specific controller",
+      "modelNumberLabel": "Model number",
+      "serialNumberLabel": "Serial number",
+      "colorLabel": "Color",
+      "revisionLabel": "Revision",
+      "ratingsBoardLabel": "Ratings Board",
+      "priceLabel": "Price",
+      "statusLabel": "Status",
+      "statusOwned": "Owned",
+      "statusWishlist": "Wishlist",
+      "conditionLabel": "Condition",
+      "notesLabel": "Notes",
+      "imageUploadError": "Error uploading accessory image. Please try again.",
+      "requiredFieldsCustom": "Brand, accessory type, and official name are required."
+    },
+    "addAccessory": {
+      "predefinedModeLabel": "Predefined",
+      "customModeLabel": "Custom",
+      "requiredFieldsPredefined": "Brand, console, accessory, and official name are required.",
+      "addSuccess": "Accessory added!",
+      "addError": "Error adding accessory. Please try again.",
+      "submitButton": "Add Accessory"
+    },
+    "editAccessory": {
+      "title": "Edit Accessory",
+      "consoleLabel": "Console",
+      "accessoryReadOnlyLabel": "Accessory",
+      "saveButton": "Save Changes",
+      "updateSuccess": "Accessory updated.",
+      "updateError": "Error updating accessory. Please try again."
+    },
+    "detailsShared": {
+      "brandLabel": "Brand",
+      "modelNumberLabel": "Model Number",
+      "serialNumberLabel": "Serial Number",
+      "colorLabel": "Color",
+      "revisionLabel": "Revision",
+      "ratingsBoardLabel": "Ratings Board",
+      "priceTitle": "Price",
+      "priceNotSet": "Not set",
+      "tagsSubheader": "Organize your own way — modded, for sale, project console, whatever fits",
+      "notesSubheader": "Maintenance history, where you bought it, anything worth remembering",
+      "inventoryTitle": "Your inventory",
+      "statusLabel": "Status",
+      "statusOwned": "Owned",
+      "statusWishlist": "Wishlist",
+      "conditionLabel": "Condition",
+      "inventoryNotTracked": "Not tracked yet.",
+      "linkedAccessoriesTitle": "Linked Accessories"
+    },
+    "accessoryDetails": {
+      "removeSuccess": "Accessory removed.",
+      "removeError": "Error deleting accessory. Please try again.",
+      "editButton": "Edit Accessory",
+      "removeButton": "Remove Accessory",
+      "customTooltip": "Added by hand, not linked to a reference catalog entry.",
+      "customLabel": "Custom",
+      "linkedDevicesTitle": "Linked Devices",
+      "noLinkedDevices": "No devices linked yet.",
+      "noLinkedAccessories": "No accessories linked yet.",
+      "deleteConfirmTitle": "Delete this accessory?",
+      "deleteConfirmDescription": "This permanently removes \"{{name}}\" and its inventory/tag/note records."
+    },
+    "deviceDetails": {
+      "removeSuccess": "Device removed.",
+      "removeError": "Error deleting device. Please try again.",
+      "editButton": "Edit Device",
+      "removeButton": "Remove Device",
+      "consoleLabel": "Console",
+      "variantLabel": "Variant",
+      "storageLabel": "Storage",
+      "noLinkedAccessories": "No accessories linked yet — link one from the Accessory's own Add/Edit form.",
+      "deleteConfirmTitle": "Delete this device?",
+      "deleteConfirmDescription": "This permanently removes \"{{name}}\" and its inventory/tag/note records."
+    },
+    "deviceForm": {
+      "officialNameLabel": "Official name",
+      "editionLabel": "Edition",
+      "comingSoonHelperText": "Coming Soon!",
+      "modelNumberLabel": "Model number",
+      "serialNumberLabel": "Serial number",
+      "colorLabel": "Color",
+      "storageLabel": "Storage",
+      "revisionLabel": "Revision",
+      "ratingsBoardLabel": "Ratings Board",
+      "priceLabel": "Price",
+      "statusLabel": "Status",
+      "conditionLabel": "Condition",
+      "notesLabel": "Notes",
+      "statusOwned": "Owned",
+      "statusWishlist": "Wishlist"
+    },
+    "addDevice": {
+      "validationError": "Brand, console, variant, and official name are required.",
+      "addedSuccess": "Device added!",
+      "addError": "Error adding device. Please try again.",
+      "officialNameHelperText": "Auto-filled from your selections — edit if you want to tweak it",
+      "submitButton": "Add Device"
+    },
+    "editDevice": {
+      "pageTitle": "Edit Device",
+      "brandLabel": "Brand",
+      "consoleLabel": "Console",
+      "variantLabel": "Variant",
+      "validationError": "Official name is required.",
+      "updatedSuccess": "Device updated.",
+      "updateError": "Error updating device. Please try again.",
+      "submitButton": "Save Changes"
+    },
+    "accessoryPredefinedFields": {
+      "brandHelperText": "More brands coming soon!",
+      "consoleLabel": "Console",
+      "accessoryLabel": "Accessory"
+    },
+    "devicePredefinedFields": {
+      "brandLabel": "Brand",
+      "brandHelperText": "More brands coming soon!",
+      "consoleLabel": "Console",
+      "variantLabel": "Variant"
+    },
+    "addAccessoryPage": {
+      "title": "Add Accessory"
+    },
+    "addDevicePage": {
+      "title": "Add Device"
+    },
+    "accessoriesWithoutOwnedHardware": {
+      "empty": "No accessories found — every owned accessory is linked to hardware you own."
+    },
+    "card": {
+      "noImage": "No image"
+    },
+    "coverCard": {
+      "noImageAvailable": "No Image Available"
+    },
+    "listToolbar": {
+      "sortOptionName": "Name",
+      "sortOptionReleaseDate": "Release date",
+      "allOption": "All",
+      "manufacturerLabel": "Manufacturer",
+      "platformLabel": "Platform",
+      "sortByLabel": "Sort by"
+    },
+    "page": {
+      "title": "Hardware",
+      "subtitle": "Track owned and wishlisted consoles, handhelds, and accessories.",
+      "addDeviceButton": "Add Device",
+      "addAccessoryButton": "Add Accessory",
+      "devicesHeading": "Devices",
+      "accessoriesHeading": "Accessories"
+    },
+    "searchBar": {
+      "statusAll": "All"
+    },
+    "stats": {
+      "ownedConsoles": "Owned consoles",
+      "ownedAccessories": "Owned accessories",
+      "wishlistHardware": "Wishlist hardware",
+      "collectionValue": "Collection value",
+      "byManufacturer": "By manufacturer",
+      "byPlatform": "By platform"
+    },
+    "subNav": {
+      "allHardware": "All Hardware",
+      "addDevice": "Add Device",
+      "addAccessory": "Add Accessory"
+    },
+    "accessoryList": {
+      "typeLabel": "Accessory type",
+      "emptyState": "No accessories found."
+    },
+    "deviceList": {
+      "typeLabel": "Device type",
+      "emptyState": "No devices found."
+    }
+  },
+  "notes": {
+    "title": "Notes",
+    "defaultSubheader": "Spoiler-free tips, where you left off, anything worth remembering",
+    "addPlaceholder": "Add a note...",
+    "empty": "No notes yet.",
+    "addError": "Error adding note. Please try again.",
+    "updateError": "Error updating note. Please try again.",
+    "deleteError": "Error deleting note. Please try again."
+  },
+  "igdb": {
+    "dialogTitle": "Link to IGDB",
+    "searchLabel": "Search IGDB",
+    "notConfigured": "IGDB isn't configured on this server.",
+    "keepTyping": "Keep typing to search IGDB.",
+    "noMatches": "No matches found.",
+    "idFieldLabel": "IGDB ID",
+    "idFieldHelperText": "Know the exact IGDB id? Link to it directly.",
+    "linkButton": "Link",
+    "parentNeededTitle": "Parent game needed",
+    "parentNeededDescription": "\"{{name}}\" (IGDB #{{id}}) needs to be added first. Add it now, along with all of its addons?",
+    "proceedButton": "Proceed",
+    "cannotLinkTitle": "Can't link to IGDB",
+    "cannotLinkMessage": "This category cannot be added.",
+    "alreadyInLibraryError": "That IGDB game is already in your library.",
+    "linkError": "Error linking to IGDB. Please try again.",
+    "linkedSuccess": "Game linked to IGDB!",
+    "invalidIdError": "Enter a valid IGDB ID.",
+    "idNotFoundError": "No IGDB game found with id \"{{id}}\".",
+    "idLookupError": "Error looking up that IGDB ID. Please try again.",
+    "parentAddedSuccess": "Parent game and addon added!",
+    "addParentError": "Error adding parent game. Please try again."
+  },
+  "about": {
+    "title": "About",
+    "appName": "VideoGameTrackarr",
+    "description": "A self-hosted web app for tracking your video game collection: what you own, what you want, what you're playing, and how it's going.",
+    "sourceCode": "Source code",
+    "reportIssue": "Report an issue or request a feature",
+    "licenseLabel": "License:",
+    "licenseName": "GPL-3.0",
+    "authorLabel": "Author:",
+    "authorName": "Eric P Pereira",
+    "creditsHeading": "Credits",
+    "igdbLogoAlt": "IGDB",
+    "igdbCredits": "Game data and cover art are provided by <1>IGDB.com</1>.",
+    "buyMeACoffeeAlt": "Buy Me A Coffee"
+  },
+  "table": {
+    "selectAllAriaLabel": "select all rows",
+    "sortedDescending": "sorted descending",
+    "sortedAscending": "sorted ascending",
+    "selectedCount": "{{count}} selected",
+    "noRecords": "No records",
+    "moveToCollection": "Move to collection",
+    "moveToWishlist": "Move to wishlist"
+  },
+  "expandableText": {
+    "showLess": "Read less",
+    "showMore": "Read more"
+  },
+  "ownershipBadges": {
+    "wishlistTooltip": "On your wishlist",
+    "ownedTooltip": "In your collection"
+  },
+  "releaseCalendar": {
+    "loading": "Loading release calendar...",
+    "empty": "No upcoming releases — wishlist an unreleased {{itemType}} to see it here.",
+    "itemTypeGame": "game",
+    "itemTypeHardware": "piece of hardware"
+  },
+  "screenshotGallery": {
+    "title": "Screenshots",
+    "alt": "{{prefix}} screenshot {{index}}"
+  },
+  "tags": {
+    "title": "Tags",
+    "defaultSubheader": "Organize your own way — co-op, speedrun, backlog priority, whatever fits",
+    "addLabel": "Add a tag",
+    "searchPlaceholder": "Type to search or create",
+    "attachError": "Error attaching tag. Please try again.",
+    "createError": "Error creating tag. Please try again.",
+    "detachError": "Error removing tag. Please try again."
+  },
+  "playSessions": {
+    "title": "Play sessions",
+    "subtitle": "Log individual sessions if you want a finer-grained history",
+    "startedLabel": "Started",
+    "endedLabel": "Ended",
+    "notesLabel": "Notes",
+    "logButton": "Log session",
+    "noSessions": "No sessions logged yet.",
+    "startRequiredError": "A start time is required to log a session.",
+    "addError": "Error logging play session. Please try again.",
+    "deleteError": "Error deleting play session. Please try again."
+  },
+  "progressStatus": {
+    "title": "Progress",
+    "subtitle": "Status, playtime, and your own rating/review",
+    "statusLabel": "Status",
+    "playtimeLabel": "Playtime (minutes)",
+    "playtimeHelperText": "≈ {{hours}} hours",
+    "ratingLabel": "Your rating",
+    "ratingValue": "{{rating}}/10",
+    "unrated": "Unrated",
+    "startedLabel": "Started",
+    "completedLabel": "Completed",
+    "lastPlayedLabel": "Last played",
+    "reviewLabel": "Review",
+    "saveButton": "Save progress",
+    "playtimeError": "Playtime must be a non-negative number of minutes.",
+    "saveSuccess": "Progress saved!",
+    "saveError": "Error saving progress. Please try again.",
+    "statusOptions": {
+      "none": "Not started",
+      "backlog": "Backlog",
+      "playing": "Playing",
+      "completed": "Completed",
+      "abandoned": "Abandoned"
+    }
+  }
+}

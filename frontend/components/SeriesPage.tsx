@@ -1,17 +1,19 @@
+import { useTranslation } from "react-i18next";
 import { useFranchises } from "../hooks/useCatalogBrowse";
 import CatalogIndexGrid from "./CatalogIndexGrid";
 import GamesSubNav from "./GamesSubNav";
 
 const SeriesPage = () => {
+  const { t } = useTranslation();
   const { data: franchises, isLoading } = useFranchises();
 
   return (
     <>
       <GamesSubNav />
       <CatalogIndexGrid
-        title="Series"
-        description="Game series (IGDB franchises) with at least one game in your library."
-        emptyMessage="No series yet — they show up here once you've imported a game that belongs to one."
+        title={t("games.seriesPage.title")}
+        description={t("games.seriesPage.description")}
+        emptyMessage={t("games.seriesPage.emptyMessage")}
         entries={franchises}
         isLoading={isLoading}
         getHref={(entry) => `/games/series/${entry.slug ?? ""}`}

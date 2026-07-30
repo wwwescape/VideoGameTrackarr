@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import type { CatalogRefSummary } from "../api/types";
 import CatalogRefCard from "./CatalogRefCard";
 import VirtualGameGrid from "./VirtualGameGrid";
@@ -28,6 +29,7 @@ interface CatalogIndexGridProps {
 // Shared by CollectionsPage and SeriesPage — same "index of catalog refs, each linking to
 // its own browse page" shape, just a different data source and link target.
 const CatalogIndexGrid = ({ title, description, emptyMessage, entries, isLoading, getHref }: CatalogIndexGridProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -41,7 +43,7 @@ const CatalogIndexGrid = ({ title, description, emptyMessage, entries, isLoading
         </Typography>
       </Box>
       {isLoading ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
       ) : !entries || entries.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>{emptyMessage}</Paper>
       ) : (

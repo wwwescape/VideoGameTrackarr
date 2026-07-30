@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -44,11 +45,6 @@ interface StatusOption {
   label: string;
 }
 
-const STATUS_OPTIONS: StatusOption[] = [
-  { value: "owned", label: "Owned" },
-  { value: "wishlist", label: "Wishlist" },
-];
-
 interface ConditionOption {
   value: HardwareCondition;
   label: string;
@@ -64,16 +60,12 @@ interface RatingBoardOption {
   label: string;
 }
 
-const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
-  { value: null, label: "None" },
-  ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
-];
-
 function unique(values: (string | null)[]): string[] {
   return Array.from(new Set(values.filter((value): value is string => !!value))).sort();
 }
 
 const AddAccessoryForm = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const createAccessory = useCreateAccessory();
   const uploadAccessoryImage = useUploadAccessoryImage();
@@ -114,6 +106,16 @@ const AddAccessoryForm = () => {
 
   const isPredefined = mode === "predefined";
 
+  const STATUS_OPTIONS: StatusOption[] = [
+    { value: "owned", label: t("hardware.accessoryForm.statusOwned") },
+    { value: "wishlist", label: t("hardware.accessoryForm.statusWishlist") },
+  ];
+
+  const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
+    { value: null, label: t("common.none") },
+    ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
+  ];
+
   useEffect(() => {
     if (isPredefined && !nameTouched) {
       setOfficialName(predefined.suggestedOfficialName);
@@ -130,7 +132,7 @@ const AddAccessoryForm = () => {
       setImageUrl(url);
     } catch (error) {
       console.error("Error uploading accessory image:", error);
-      toast.error("Error uploading accessory image. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.accessoryForm.imageUploadError"), TOAST_OPTIONS);
     }
   };
 
@@ -140,11 +142,11 @@ const AddAccessoryForm = () => {
 
     if (isPredefined) {
       if (!resolvedManufacturer.trim() || predefined.compatiblePlatforms.length === 0 || !resolvedAccessoryType.trim() || !officialName.trim()) {
-        toast.error("Brand, console, accessory, and official name are required.", TOAST_OPTIONS);
+        toast.error(t("hardware.addAccessory.requiredFieldsPredefined"), TOAST_OPTIONS);
         return;
       }
     } else if (!resolvedManufacturer.trim() || !resolvedAccessoryType.trim() || !officialName.trim()) {
-      toast.error("Brand, accessory type, and official name are required.", TOAST_OPTIONS);
+      toast.error(t("hardware.accessoryForm.requiredFieldsCustom"), TOAST_OPTIONS);
       return;
     }
     try {
@@ -172,19 +174,19 @@ const AddAccessoryForm = () => {
           notes: notes.trim() || null,
         },
       });
-      toast.success("Accessory added!", TOAST_OPTIONS);
+      toast.success(t("hardware.addAccessory.addSuccess"), TOAST_OPTIONS);
       navigate(`/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`);
     } catch (error) {
       console.error("Error adding accessory:", error);
-      toast.error("Error adding accessory. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.addAccessory.addError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
       <RadioGroup row value={mode} onChange={(event) => setMode(event.target.value as AddMode)} sx={{ mb: 2 }}>
-        <FormControlLabel value="predefined" control={<Radio />} label="Predefined" />
-        <FormControlLabel value="custom" control={<Radio />} label="Custom" />
+        <FormControlLabel value="predefined" control={<Radio />} label={t("hardware.addAccessory.predefinedModeLabel")} />
+        <FormControlLabel value="custom" control={<Radio />} label={t("hardware.addAccessory.customModeLabel")} />
       </RadioGroup>
 
       <Grid container spacing={2.5}>
@@ -200,7 +202,7 @@ const AddAccessoryForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Official name"
+                label={t("hardware.accessoryForm.officialNameLabel")}
                 required
                 fullWidth
                 value={officialName}
@@ -208,18 +210,24 @@ const AddAccessoryForm = () => {
                   setOfficialName(event.target.value);
                   setNameTouched(true);
                 }}
-                helperText="Auto-filled from your selections — edit if you want to tweak it"
+                helperText={t("hardware.accessoryForm.officialNameHelperText")}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Edition" fullWidth disabled value="" helperText="Coming Soon!" />
+              <TextField
+                label={t("hardware.accessoryForm.editionLabel")}
+                fullWidth
+                disabled
+                value=""
+                helperText={t("hardware.accessoryForm.editionComingSoonHelperText")}
+              />
             </Grid>
           </>
         ) : (
           <>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FreeSoloLookupField
-                label="Brand"
+                label={t("hardware.accessoryForm.brandLabel")}
                 options={manufacturers ?? []}
                 value={manufacturer}
                 onChange={setManufacturer}
@@ -228,7 +236,7 @@ const AddAccessoryForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <AutocompleteSelect<string>
-                label="Accessory type"
+                label={t("hardware.accessoryForm.accessoryTypeLabel")}
                 fullWidth
                 required
                 options={unique([
@@ -242,7 +250,7 @@ const AddAccessoryForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Official name"
+                label={t("hardware.accessoryForm.officialNameLabel")}
                 required
                 fullWidth
                 value={officialName}
@@ -251,20 +259,20 @@ const AddAccessoryForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Edition"
+                label={t("hardware.accessoryForm.editionLabel")}
                 fullWidth
                 value={edition}
                 onChange={(event) => setEdition(event.target.value)}
-                helperText='Optional, e.g. "Spider-Man 2 Limited Edition"'
+                helperText={t("hardware.accessoryForm.editionHelperText")}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Release year"
+                label={t("hardware.accessoryForm.releaseYearLabel")}
                 fullWidth
                 value={releaseYear}
                 onChange={(event) => setReleaseYear(event.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="e.g. 1998"
+                placeholder={t("hardware.accessoryForm.releaseYearPlaceholder")}
                 slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 4 } }}
               />
             </Grid>
@@ -276,7 +284,9 @@ const AddAccessoryForm = () => {
                   startIcon={uploadAccessoryImage.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
                   disabled={uploadAccessoryImage.isPending}
                 >
-                  {imageUrl ? "Replace accessory image" : "Upload accessory image"}
+                  {imageUrl
+                    ? t("hardware.accessoryForm.replaceImageButton")
+                    : t("hardware.accessoryForm.uploadImageButton")}
                   <input
                     type="file"
                     accept="image/*"
@@ -289,10 +299,14 @@ const AddAccessoryForm = () => {
                     <Box
                       component="img"
                       src={resolveAssetUrl(imageUrl) ?? undefined}
-                      alt="Accessory preview"
+                      alt={t("hardware.accessoryForm.imagePreviewAlt")}
                       sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
                     />
-                    <IconButton size="small" aria-label="Remove accessory image" onClick={() => setImageUrl("")}>
+                    <IconButton
+                      size="small"
+                      aria-label={t("hardware.accessoryForm.removeImageAriaLabel")}
+                      onClick={() => setImageUrl("")}
+                    >
                       <CloseIcon fontSize="small" />
                     </IconButton>
                   </>
@@ -301,7 +315,7 @@ const AddAccessoryForm = () => {
             </Grid>
             <Grid size={12}>
               <TextField
-                label="Summary"
+                label={t("hardware.accessoryForm.summaryLabel")}
                 fullWidth
                 multiline
                 minRows={3}
@@ -323,8 +337,8 @@ const AddAccessoryForm = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Linked devices"
-                helperText="Which specific console(s) does this come with or belong to?"
+                label={t("hardware.accessoryForm.linkedDevicesLabel")}
+                helperText={t("hardware.accessoryForm.linkedDevicesHelperText")}
               />
             )}
           />
@@ -340,30 +354,40 @@ const AddAccessoryForm = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Linked accessories"
-                helperText="Other accessories this one is associated with — e.g. a case for a specific controller"
+                label={t("hardware.accessoryForm.linkedAccessoriesLabel")}
+                helperText={t("hardware.accessoryForm.linkedAccessoriesHelperText")}
               />
             )}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Model number" fullWidth value={model} onChange={(event) => setModel(event.target.value)} />
+          <TextField
+            label={t("hardware.accessoryForm.modelNumberLabel")}
+            fullWidth
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Serial number"
+            label={t("hardware.accessoryForm.serialNumberLabel")}
             fullWidth
             value={serialNumber}
             onChange={(event) => setSerialNumber(event.target.value)}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <FreeSoloLookupField label="Color" options={colors ?? []} value={color} onChange={setColor} />
+          <FreeSoloLookupField
+            label={t("hardware.accessoryForm.colorLabel")}
+            options={colors ?? []}
+            value={color}
+            onChange={setColor}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }} />
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Revision"
+            label={t("hardware.accessoryForm.revisionLabel")}
             fullWidth
             value={revision}
             onChange={(event) => setRevision(event.target.value)}
@@ -371,7 +395,7 @@ const AddAccessoryForm = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<RatingBoardOption>
-            label="Ratings Board"
+            label={t("hardware.accessoryForm.ratingsBoardLabel")}
             fullWidth
             options={RATING_BOARD_OPTIONS}
             value={RATING_BOARD_OPTIONS.find((option) => option.value === ratingBoard) ?? null}
@@ -384,7 +408,7 @@ const AddAccessoryForm = () => {
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             type="number"
-            label="Price"
+            label={t("hardware.accessoryForm.priceLabel")}
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
@@ -393,7 +417,7 @@ const AddAccessoryForm = () => {
         <Grid size={{ xs: 12, sm: 6 }} />
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<StatusOption>
-            label="Status"
+            label={t("hardware.accessoryForm.statusLabel")}
             fullWidth
             options={STATUS_OPTIONS}
             value={STATUS_OPTIONS.find((option) => option.value === status) ?? null}
@@ -412,7 +436,7 @@ const AddAccessoryForm = () => {
         {status === "owned" ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <AutocompleteSelect<ConditionOption>
-              label="Condition"
+              label={t("hardware.accessoryForm.conditionLabel")}
               fullWidth
               options={CONDITION_OPTIONS}
               value={CONDITION_OPTIONS.find((option) => option.value === condition) ?? null}
@@ -426,7 +450,7 @@ const AddAccessoryForm = () => {
         )}
         <Grid size={12}>
           <TextField
-            label="Notes"
+            label={t("hardware.accessoryForm.notesLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -436,7 +460,7 @@ const AddAccessoryForm = () => {
         </Grid>
         <Grid size={12}>
           <Button variant="contained" onClick={() => void handleSubmit()} disabled={createAccessory.isPending}>
-            Add Accessory
+            {t("hardware.addAccessory.submitButton")}
           </Button>
         </Grid>
       </Grid>

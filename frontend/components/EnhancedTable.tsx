@@ -23,6 +23,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTranslation } from "react-i18next";
 
 export interface HeadCell {
   id: string;
@@ -89,6 +90,7 @@ const EnhancedTableHead = ({
   onRequestSort,
   headCells,
 }: EnhancedTableHeadProps) => {
+  const { t } = useTranslation();
   const createSortHandler = (property: string) => (event: React.MouseEvent) => {
     onRequestSort(event, property);
   };
@@ -102,7 +104,7 @@ const EnhancedTableHead = ({
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
-            slotProps={{ input: { "aria-label": "select all rows" } }}
+            slotProps={{ input: { "aria-label": t("table.selectAllAriaLabel") } }}
             disabled={!(rowCount > 0)}
           />
         </TableCell>
@@ -121,7 +123,7 @@ const EnhancedTableHead = ({
               <strong>{headCell.disableHeader ? "" : headCell.label}</strong>
               {orderBy === headCell.id ? (
                 <Box component="span" sx={visuallyHidden}>
-                  {order === "desc" ? "sorted descending" : "sorted ascending"}
+                  {order === "desc" ? t("table.sortedDescending") : t("table.sortedAscending")}
                 </Box>
               ) : null}
             </TableSortLabel>
@@ -149,6 +151,7 @@ const EnhancedTableToolbar = ({
   onDeleteClick,
   selected,
 }: EnhancedTableToolbarProps) => {
+  const { t } = useTranslation();
   const handleAddClick = () => {
     onAddClick?.(tableName.toLowerCase());
   };
@@ -169,7 +172,7 @@ const EnhancedTableToolbar = ({
     >
       {numSelected > 0 ? (
         <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1" component="div">
-          {numSelected} selected
+          {t("table.selectedCount", { count: numSelected })}
         </Typography>
       ) : (
         <>
@@ -181,13 +184,13 @@ const EnhancedTableToolbar = ({
       )}
 
       {numSelected > 0 ? (
-        <Tooltip title="Delete">
+        <Tooltip title={t("common.delete")}>
           <IconButton onClick={handleDeleteClick}>
             <DeleteIcon />
           </IconButton>
         </Tooltip>
       ) : (
-        <Tooltip title="Add">
+        <Tooltip title={t("common.add")}>
           <IconButton onClick={handleAddClick}>
             <AddIcon />
           </IconButton>
@@ -220,6 +223,7 @@ const EnhancedTable = ({
   onEditClick,
   moveDirection,
 }: EnhancedTableProps) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [order, setOrder] = useState<Order>("asc");
@@ -301,7 +305,7 @@ const EnhancedTable = ({
         {isMobile ? (
           <Stack spacing={1.5} sx={{ p: 1.5, pt: 0 }}>
             {visibleRows.length === 0 ? (
-              <Box sx={{ py: 2, textAlign: "center", color: "text.secondary" }}>No records</Box>
+              <Box sx={{ py: 2, textAlign: "center", color: "text.secondary" }}>{t("table.noRecords")}</Box>
             ) : (
               visibleRows.map((row) => {
                 const isItemSelected = isSelected(row.id);
@@ -329,17 +333,19 @@ const EnhancedTable = ({
                         </Box>
                       ))}
                       <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end", pt: 0.5 }}>
-                        <Tooltip title={moveDirection === "up" ? "Move to collection" : "Move to wishlist"}>
+                        <Tooltip
+                          title={moveDirection === "up" ? t("table.moveToCollection") : t("table.moveToWishlist")}
+                        >
                           <IconButton onClick={(event) => handleMove(event, row.id)}>
                             {moveDirection === "up" ? <MoveUpIcon /> : <MoveDownIcon />}
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Edit">
+                        <Tooltip title={t("common.edit")}>
                           <IconButton onClick={(event) => handleEdit(event, row.id)}>
                             <EditIcon />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete">
+                        <Tooltip title={t("common.delete")}>
                           <IconButton onClick={(event) => handleDelete(event, row.id)}>
                             <DeleteIcon />
                           </IconButton>
@@ -394,24 +400,24 @@ const EnhancedTable = ({
                           {cell.id === "move" ? (
                             <IconButton onClick={(event) => handleMove(event, row.id)}>
                               {moveDirection === "up" ? (
-                                <Tooltip title="Move to collection">
+                                <Tooltip title={t("table.moveToCollection")}>
                                   <MoveUpIcon />
                                 </Tooltip>
                               ) : (
-                                <Tooltip title="Move to wishlist">
+                                <Tooltip title={t("table.moveToWishlist")}>
                                   <MoveDownIcon />
                                 </Tooltip>
                               )}
                             </IconButton>
                           ) : cell.id === "edit" ? (
                             <IconButton onClick={(event) => handleEdit(event, row.id)}>
-                              <Tooltip title="Edit">
+                              <Tooltip title={t("common.edit")}>
                                 <EditIcon />
                               </Tooltip>
                             </IconButton>
                           ) : cell.id === "delete" ? (
                             <IconButton onClick={(event) => handleDelete(event, row.id)}>
-                              <Tooltip title="Delete">
+                              <Tooltip title={t("common.delete")}>
                                 <DeleteIcon />
                               </Tooltip>
                             </IconButton>

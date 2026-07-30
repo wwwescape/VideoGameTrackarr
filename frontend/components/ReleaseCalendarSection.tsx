@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { useReleaseCalendar } from "../hooks/useDashboard";
 import { gameIdentifier, hardwareIdentifier } from "../utils/identifiers";
 import GameCard from "./GameCard";
@@ -11,11 +12,12 @@ interface ReleaseCalendarSectionProps {
 }
 
 const ReleaseCalendarSection = ({ scope }: ReleaseCalendarSectionProps) => {
+  const { t } = useTranslation();
   const { data, isLoading } = useReleaseCalendar();
   const navigate = useNavigate();
 
   if (isLoading) {
-    return <Typography color="text.secondary">Loading release calendar...</Typography>;
+    return <Typography color="text.secondary">{t("releaseCalendar.loading")}</Typography>;
   }
 
   const releases = (data ?? []).filter((item) => (scope === "games" ? item.kind === "game" : item.kind !== "game"));
@@ -23,8 +25,9 @@ const ReleaseCalendarSection = ({ scope }: ReleaseCalendarSectionProps) => {
   if (releases.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No upcoming releases — wishlist an unreleased {scope === "games" ? "game" : "piece of hardware"} to see it
-        here.
+        {t("releaseCalendar.empty", {
+          itemType: scope === "games" ? t("releaseCalendar.itemTypeGame") : t("releaseCalendar.itemTypeHardware"),
+        })}
       </Typography>
     );
   }

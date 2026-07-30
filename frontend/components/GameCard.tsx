@@ -11,17 +11,18 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import DoneIcon from "@mui/icons-material/Done";
+import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
 import type { GameCategory, PlayStatus } from "../api/types";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import OwnershipBadges from "./OwnershipBadges";
 
-const PLAY_STATUS_LABELS: Record<PlayStatus, string> = {
+const PLAY_STATUS_LABEL_KEYS: Record<PlayStatus, string> = {
   none: "",
-  backlog: "Backlog",
-  playing: "Playing",
-  completed: "Completed",
-  abandoned: "Abandoned",
+  backlog: "games.card.playStatusBacklog",
+  playing: "games.card.playStatusPlaying",
+  completed: "games.card.playStatusCompleted",
+  abandoned: "games.card.playStatusAbandoned",
 };
 
 const PLAY_STATUS_COLORS: Record<PlayStatus, "default" | "info" | "success" | "error"> = {
@@ -63,6 +64,7 @@ interface GameCardProps {
 
 const GameCard = ({ game, context, contextFunction, selectable, selected, onToggleSelect }: GameCardProps) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const showsBadges = (context === "list" || context === "addon") && !selectable;
   const isClickable = context === "list" || context === "addon" || context === "added";
   const releaseYear = getReleaseYear(game.firstReleaseDate);
@@ -100,7 +102,11 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
             event.stopPropagation();
             onToggleSelect?.();
           }}
-          aria-label={selected ? `Deselect ${game.name}` : `Select ${game.name}`}
+          aria-label={
+            selected
+              ? t("games.card.deselectAriaLabel", { name: game.name })
+              : t("games.card.selectAriaLabel", { name: game.name })
+          }
           sx={{
             position: "absolute",
             top: 4,
@@ -114,7 +120,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
         />
       ) : null}
 
-      <Tooltip title={`${game.name} (${releaseYear ?? "?"})`}>
+      <Tooltip title={t("games.card.nameYearTooltip", { name: game.name, year: releaseYear ?? "?" })}>
         <Box
           onClick={handleCardActivate}
           sx={{
@@ -146,7 +152,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
                 textAlign: "center",
               }}
             >
-              <Typography variant="caption">No cover</Typography>
+              <Typography variant="caption">{t("games.card.noCover")}</Typography>
             </Box>
           )}
         </Box>
@@ -155,7 +161,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
       <OwnershipBadges owned={showsBadges && Boolean(game.owned)} wishlisted={showsBadges && Boolean(game.wishlisted)} />
 
       <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
-        <Tooltip title={`${game.name} (${releaseYear ?? "?"})`}>
+        <Tooltip title={t("games.card.nameYearTooltip", { name: game.name, year: releaseYear ?? "?" })}>
           <Typography
             variant="subtitle2"
             component="div"
@@ -170,7 +176,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
           </Typography>
         </Tooltip>
         <Typography variant="caption" color="text.secondary" component="div">
-          {releaseYear ?? "Unknown year"}
+          {releaseYear ?? t("games.card.unknownYear")}
         </Typography>
         {/* Always rendered, even for plain main games — keeping every card's text block the
             same height is what keeps a mixed-category row's bottom edges lined up (the
@@ -190,7 +196,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
           // which is what broke row alignment again as soon as a "Completed"/etc. chip
           // showed up on only some cards in a row.
           <Chip
-            label={game.playStatus && game.playStatus !== "none" ? PLAY_STATUS_LABELS[game.playStatus] : " "}
+            label={game.playStatus && game.playStatus !== "none" ? t(PLAY_STATUS_LABEL_KEYS[game.playStatus]) : " "}
             color={game.playStatus && game.playStatus !== "none" ? PLAY_STATUS_COLORS[game.playStatus] : "default"}
             size="small"
             sx={{ mt: 0.75, visibility: game.playStatus && game.playStatus !== "none" ? "visible" : "hidden" }}
@@ -208,7 +214,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
                 disableRipple
                 disableElevation
               >
-                Added
+                {t("games.card.addedButton")}
               </AddedGameButton>
             ) : (
               <Button
@@ -219,7 +225,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
                 startIcon={<AddIcon />}
                 onClick={contextFunction}
               >
-                Add
+                {t("common.add")}
               </Button>
             )}
           </>

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import { useTranslation } from "react-i18next";
 import { useAccessoryList } from "../hooks/useAccessories";
 import { useAccessoryTypes, useHardwarePlatforms, useManufacturers } from "../hooks/useHardwareLookups";
 import { hardwareIdentifier } from "../utils/identifiers";
@@ -15,6 +16,7 @@ interface AccessoryListProps {
 }
 
 const AccessoryList = ({ searchKeyword, status }: AccessoryListProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [sort, setSort] = useState<HardwareSort>("name");
   const [manufacturerId, setManufacturerId] = useState<number | "">("");
@@ -52,7 +54,7 @@ const AccessoryList = ({ searchKeyword, status }: AccessoryListProps) => {
         manufacturerOptions={manufacturers ?? []}
         manufacturerId={manufacturerId}
         onManufacturerChange={setManufacturerId}
-        typeLabel="Accessory type"
+        typeLabel={t("hardware.accessoryList.typeLabel")}
         typeOptions={accessoryTypes ?? []}
         typeId={accessoryTypeId}
         onTypeChange={setAccessoryTypeId}
@@ -61,9 +63,9 @@ const AccessoryList = ({ searchKeyword, status }: AccessoryListProps) => {
         onPlatformChange={setHardwarePlatformId}
       />
       {isLoading ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
       ) : sortedAccessories.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>No accessories found.</Paper>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("hardware.accessoryList.emptyState")}</Paper>
       ) : (
         <VirtualGameGrid
           items={sortedAccessories}

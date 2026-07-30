@@ -9,6 +9,7 @@ import Backdrop from "@mui/material/Backdrop";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameCategory } from "../api/types";
 import { useDeleteGame, useResyncGame } from "../hooks/useGames";
@@ -43,6 +44,7 @@ const GameActionButtons = ({
   resyncGameId,
   onGameRemoved,
 }: GameActionButtonsProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const deleteGameMutation = useDeleteGame();
   const resyncGameMutation = useResyncGame(resyncGameId);
@@ -55,11 +57,11 @@ const GameActionButtons = ({
     try {
       await deleteGameMutation.mutateAsync(gameId);
       setRemoveGameDialogOpen(false);
-      toast.success("Game removed from your library!", TOAST_OPTIONS);
+      toast.success(t("games.actions.removeSuccessToast"), TOAST_OPTIONS);
       onGameRemoved();
     } catch (error) {
       console.error("Error removing game:", error);
-      toast.error("Error removing game. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.actions.removeErrorToast"), TOAST_OPTIONS);
     }
   };
 
@@ -67,12 +69,17 @@ const GameActionButtons = ({
     try {
       await resyncGameMutation.mutateAsync();
       setResyncGameDialogOpen(false);
-      toast.success(`${hasParentGame ? "Addon" : "Game"} resynced successfully!`, TOAST_OPTIONS);
+      toast.success(
+        hasParentGame ? t("games.actions.resyncAddonSuccessToast") : t("games.actions.resyncGameSuccessToast"),
+        TOAST_OPTIONS
+      );
     } catch (error) {
       console.error("Error resyncing game:", error);
       const message = isAxiosError(error) && error.response?.status === 503
-        ? "IGDB isn't configured on this server."
-        : `Error resyncing ${hasParentGame ? "addon" : "game"}. Please try again.`;
+        ? t("games.actions.igdbNotConfiguredError")
+        : hasParentGame
+          ? t("games.actions.resyncAddonErrorToast")
+          : t("games.actions.resyncGameErrorToast");
       toast.error(message, TOAST_OPTIONS);
     }
   };
@@ -94,17 +101,17 @@ const GameActionButtons = ({
               onClick={() => setResyncGameDialogOpen(true)}
               fullWidth
             >
-              {hasParentGame ? "Resync Addon" : "Resync Game"}
+              {hasParentGame ? t("games.actions.resyncAddonButton") : t("games.actions.resyncGameButton")}
             </Button>
             <ConfirmDialog
               open={resyncGameDialogOpen}
-              title="Confirm Resync"
+              title={t("games.actions.resyncConfirmTitle")}
               description={
                 hasParentGame
-                  ? "Are you sure you want to resync this addon? This re-fetches the parent game's metadata from IGDB, which refreshes this addon along with the rest of its siblings."
-                  : "Are you sure you want to resync this game? This re-fetches its metadata from IGDB."
+                  ? t("games.actions.resyncAddonConfirmDescription")
+                  : t("games.actions.resyncGameConfirmDescription")
               }
-              confirmLabel="Resync"
+              confirmLabel={t("games.actions.resyncConfirmLabel")}
               onClose={() => setResyncGameDialogOpen(false)}
               onConfirm={handleResyncGame}
             />
@@ -117,7 +124,7 @@ const GameActionButtons = ({
               onClick={() => navigate(`/game/${gameIdentifier}/edit`)}
               fullWidth
             >
-              Edit Game
+              {t("games.actions.editGameButton")}
             </Button>
             <Button
               variant="contained"
@@ -126,7 +133,7 @@ const GameActionButtons = ({
               onClick={() => setLinkIgdbDialogOpen(true)}
               fullWidth
             >
-              Link to IGDB
+              {t("games.actions.linkToIgdbButton")}
             </Button>
             <LinkToIgdbDialog
               open={linkIgdbDialogOpen}
@@ -146,13 +153,13 @@ const GameActionButtons = ({
               onClick={() => setRemoveGameDialogOpen(true)}
               fullWidth
             >
-              Remove Game
+              {t("games.actions.removeGameButton")}
             </Button>
             <ConfirmDialog
               open={removeGameDialogOpen}
-              title="Confirm Removal"
-              description={`Are you sure you want to remove "${gameName}"? This permanently deletes it along with all of its addons (DLC, expansions, packs), collection/wishlist entries, progress, and notes. This cannot be undone.`}
-              confirmLabel="Delete"
+              title={t("games.actions.removeConfirmTitle")}
+              description={t("games.actions.removeConfirmDescription", { name: gameName })}
+              confirmLabel={t("common.delete")}
               confirmColor="error"
               onClose={() => setRemoveGameDialogOpen(false)}
               onConfirm={() => void handleRemoveGame()}

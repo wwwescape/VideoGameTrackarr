@@ -4,6 +4,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import { useTranslation } from "react-i18next";
 
 interface MessageDialogProps {
   open: boolean;
@@ -14,18 +15,21 @@ interface MessageDialogProps {
 
 // One-button info/error dialog — for cases like ConfirmDialog where there's nothing to
 // confirm, just a message to acknowledge.
-const MessageDialog = ({ open, title, message, onClose }: MessageDialogProps) => (
-  <Dialog open={open} onClose={onClose}>
-    <DialogTitle>{title}</DialogTitle>
-    <DialogContent>
-      <DialogContentText>{message}</DialogContentText>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} variant="contained">
-        OK
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
+const MessageDialog = ({ open, title, message, onClose }: MessageDialogProps) => {
+  const { t } = useTranslation();
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>
+        <DialogContentText>{message}</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="contained">
+          {t("dialogs.message.ok")}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default MessageDialog;

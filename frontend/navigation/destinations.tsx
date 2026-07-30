@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { TFunction } from "i18next";
 import AddIcon from "@mui/icons-material/Add";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import CollectionsIcon from "@mui/icons-material/Collections";
@@ -29,37 +30,41 @@ export interface NavDestination {
 
 // Single source of truth for the app's top-level destinations — shared by all three
 // responsive nav patterns (bottom bar / rail / drawer) so they can never drift apart.
-export const navDestinations: NavDestination[] = [
-  { to: "/", label: "Dashboard", icon: <DashboardIcon /> },
-  {
-    to: "/games",
-    label: "Games",
-    icon: <GamesIcon />,
-    subItems: [
-      { to: "/games/add", label: "Add Game", icon: <AddIcon /> },
-      { to: "/games/collections", label: "Collections", icon: <CollectionsIcon /> },
-      { to: "/games/series", label: "Series", icon: <AccountTreeIcon /> },
-    ],
-  },
-  {
-    to: "/hardware",
-    label: "Hardware",
-    icon: <MemoryIcon />,
-    subItems: [
-      { to: "/hardware/device/add", label: "Add Device", icon: <AddIcon /> },
-      { to: "/hardware/accessory/add", label: "Add Accessory", icon: <AddIcon /> },
-    ],
-  },
-  {
-    to: "/insights",
-    label: "Insights",
-    icon: <InsightsIcon />,
-    subItems: [
-      { to: "/insights/duplicates", label: "Duplicates", icon: <ContentCopyIcon /> },
-      { to: "/insights/missing-dlc", label: "Missing DLC", icon: <ExtensionOffIcon /> },
-      { to: "/insights/orphaned-accessories", label: "Orphaned Accessories", icon: <LinkOffIcon /> },
-    ],
-  },
-  { to: "/settings", label: "Settings", icon: <SettingsIcon /> },
-  { to: "/about", label: "About", icon: <InfoIcon /> },
-];
+// Takes `t` rather than being a static array so labels stay reactive to language changes;
+// call from inside a component with useTranslation()'s t.
+export function getNavDestinations(t: TFunction): NavDestination[] {
+  return [
+    { to: "/", label: t("nav.dashboard"), icon: <DashboardIcon /> },
+    {
+      to: "/games",
+      label: t("nav.games"),
+      icon: <GamesIcon />,
+      subItems: [
+        { to: "/games/add", label: t("nav.addGame"), icon: <AddIcon /> },
+        { to: "/games/collections", label: t("nav.collections"), icon: <CollectionsIcon /> },
+        { to: "/games/series", label: t("nav.series"), icon: <AccountTreeIcon /> },
+      ],
+    },
+    {
+      to: "/hardware",
+      label: t("nav.hardware"),
+      icon: <MemoryIcon />,
+      subItems: [
+        { to: "/hardware/device/add", label: t("nav.addDevice"), icon: <AddIcon /> },
+        { to: "/hardware/accessory/add", label: t("nav.addAccessory"), icon: <AddIcon /> },
+      ],
+    },
+    {
+      to: "/insights",
+      label: t("nav.insights"),
+      icon: <InsightsIcon />,
+      subItems: [
+        { to: "/insights/duplicates", label: t("nav.duplicates"), icon: <ContentCopyIcon /> },
+        { to: "/insights/missing-dlc", label: t("nav.missingDlc"), icon: <ExtensionOffIcon /> },
+        { to: "/insights/orphaned-accessories", label: t("nav.orphanedAccessories"), icon: <LinkOffIcon /> },
+      ],
+    },
+    { to: "/settings", label: t("nav.settings"), icon: <SettingsIcon /> },
+    { to: "/about", label: t("nav.about"), icon: <InfoIcon /> },
+  ];
+}

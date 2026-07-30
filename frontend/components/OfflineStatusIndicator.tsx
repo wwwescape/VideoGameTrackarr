@@ -3,6 +3,7 @@ import CloudOffIcon from "@mui/icons-material/CloudOff";
 import SyncIcon from "@mui/icons-material/Sync";
 import Chip from "@mui/material/Chip";
 import { useMutationState } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -13,6 +14,7 @@ import { TOAST_OPTIONS } from "../utils/toastOptions";
 // feedback at all until whenever connectivity happens to return, possibly much later. One
 // app-wide transition toast here covers every mutation site without touching each of them.
 const OfflineStatusIndicator = () => {
+  const { t } = useTranslation();
   const isOnline = useOnlineStatus();
   const pausedMutationCount = useMutationState({
     filters: { predicate: (mutation) => mutation.state.isPaused },
@@ -23,28 +25,29 @@ const OfflineStatusIndicator = () => {
 
   useEffect(() => {
     if (wasOnline.current && !isOnline) {
-      toast.warning(
-        "You're offline. Changes will be saved and synced automatically once you're back online.",
-        TOAST_OPTIONS
-      );
+      toast.warning(t("offline.wentOfflineToast"), TOAST_OPTIONS);
     }
     wasOnline.current = isOnline;
-  }, [isOnline]);
+  }, [isOnline, t]);
 
   useEffect(() => {
     if (pausedMutationCount > 0) {
       hadPendingSync.current = true;
     } else if (hadPendingSync.current) {
       hadPendingSync.current = false;
-      toast.success("Back online — your pending changes have synced.", TOAST_OPTIONS);
+      toast.success(t("offline.backOnlineToast"), TOAST_OPTIONS);
     }
-  }, [pausedMutationCount]);
+  }, [pausedMutationCount, t]);
 
   if (!isOnline) {
     return (
       <Chip
         icon={<CloudOffIcon />}
-        label={pausedMutationCount > 0 ? `Offline · ${pausedMutationCount} change${pausedMutationCount > 1 ? "s" : ""} pending` : "Offline"}
+        label={
+          pausedMutationCount > 0
+            ? t("offline.changesPending", { count: pausedMutationCount })
+            : t("offline.offline")
+        }
         color="warning"
         size="small"
         sx={{ mr: 1 }}
@@ -56,7 +59,7 @@ const OfflineStatusIndicator = () => {
     return (
       <Chip
         icon={<SyncIcon />}
-        label={`Syncing ${pausedMutationCount} change${pausedMutationCount > 1 ? "s" : ""}...`}
+        label={t("offline.syncingChanges", { count: pausedMutationCount })}
         color="info"
         size="small"
         sx={{ mr: 1 }}

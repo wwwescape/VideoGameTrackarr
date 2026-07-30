@@ -15,6 +15,7 @@ import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { resolveAssetUrl } from "../api/client";
 import type { GameCategory, GameSummary } from "../api/types";
@@ -22,6 +23,7 @@ import { useCompanies } from "../hooks/useCompanies";
 import { useCreateManualGame, useGames } from "../hooks/useGames";
 import { usePlatforms } from "../hooks/usePlatforms";
 import { useUploadCover } from "../hooks/useUploads";
+import { useLanguage } from "../theme/LanguageProvider";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AddGameSuggestionsDialog from "./AddGameSuggestionsDialog";
@@ -50,6 +52,8 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 const ADDON_TYPE_CATEGORIES: GameCategory[] = ["dlc_addon", "expansion", "pack"];
 
 const ManualGameForm = () => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const createManualGame = useCreateManualGame();
   const uploadCover = useUploadCover();
@@ -87,7 +91,7 @@ const ManualGameForm = () => {
       setCoverUrl(url);
     } catch (error) {
       console.error("Error uploading cover image:", error);
-      toast.error("Error uploading cover image. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.gameForm.uploadCoverError"), TOAST_OPTIONS);
     }
   };
 
@@ -107,21 +111,21 @@ const ManualGameForm = () => {
         notes: notes.trim() || null,
         parentGameId: showParentGameField ? parentGame?.id ?? null : null,
       });
-      toast.success("Game added!", TOAST_OPTIONS);
+      toast.success(t("games.manualForm.addSuccessToast"), TOAST_OPTIONS);
       navigate(`/game/${gameIdentifier(game)}`);
     } catch (error) {
       console.error("Error adding game manually:", error);
-      toast.error("Error adding game. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.manualForm.addErrorToast"), TOAST_OPTIONS);
     }
   };
 
   const handleAddGameClick = () => {
     if (!name.trim()) {
-      toast.error("Official Name is required.", TOAST_OPTIONS);
+      toast.error(t("games.gameForm.officialNameRequiredError"), TOAST_OPTIONS);
       return;
     }
     if (parentGameRequired && !parentGame) {
-      toast.error("Linked Game is required for this category.", TOAST_OPTIONS);
+      toast.error(t("games.gameForm.linkedGameRequiredError"), TOAST_OPTIONS);
       return;
     }
     // One last check that this isn't already on IGDB before creating a bare-bones custom
@@ -134,7 +138,7 @@ const ManualGameForm = () => {
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, sm: 8 }}>
           <TextField
-            label="Official Name"
+            label={t("games.gameForm.officialNameLabel")}
             required
             fullWidth
             value={name}
@@ -143,7 +147,7 @@ const ManualGameForm = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
           <AutocompleteSelect<CategoryOption>
-            label="Category"
+            label={t("games.gameForm.categoryLabel")}
             fullWidth
             required
             options={CATEGORY_OPTIONS}
@@ -159,9 +163,9 @@ const ManualGameForm = () => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={language}>
             <DatePicker
-              label="Release date"
+              label={t("games.gameForm.releaseDateLabel")}
               value={releaseDate}
               onChange={(value) => setReleaseDate(value)}
               maxDate={dayjs().add(50, "year")}
@@ -177,7 +181,7 @@ const ManualGameForm = () => {
               startIcon={uploadCover.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
               disabled={uploadCover.isPending}
             >
-              {coverUrl ? "Replace cover image" : "Upload cover image"}
+              {coverUrl ? t("games.gameForm.replaceCoverButton") : t("games.gameForm.uploadCoverButton")}
               <input
                 type="file"
                 accept="image/*"
@@ -190,10 +194,14 @@ const ManualGameForm = () => {
                 <Box
                   component="img"
                   src={resolveAssetUrl(coverUrl) ?? undefined}
-                  alt="Cover preview"
+                  alt={t("games.gameForm.coverPreviewAlt")}
                   sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
                 />
-                <IconButton size="small" aria-label="Remove cover image" onClick={() => setCoverUrl("")}>
+                <IconButton
+                  size="small"
+                  aria-label={t("games.gameForm.removeCoverAriaLabel")}
+                  onClick={() => setCoverUrl("")}
+                >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </>
@@ -207,7 +215,7 @@ const ManualGameForm = () => {
             options={(companies ?? []).map((company) => company.name)}
             value={developedBy}
             onChange={(_event, newValue) => setDevelopedBy(newValue)}
-            renderInput={(params) => <TextField {...params} label="Developed by" />}
+            renderInput={(params) => <TextField {...params} label={t("games.gameForm.developedByLabel")} />}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -217,16 +225,16 @@ const ManualGameForm = () => {
             options={(companies ?? []).map((company) => company.name)}
             value={publishedBy}
             onChange={(_event, newValue) => setPublishedBy(newValue)}
-            renderInput={(params) => <TextField {...params} label="Published by" />}
+            renderInput={(params) => <TextField {...params} label={t("games.gameForm.publishedByLabel")} />}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Edition"
+            label={t("games.gameForm.editionLabel")}
             fullWidth
             value={edition}
             onChange={(event) => setEdition(event.target.value)}
-            helperText='Optional, e.g. "Game of the Year Edition"'
+            helperText={t("games.gameForm.editionHelperText")}
           />
         </Grid>
         <Grid size={12}>
@@ -236,12 +244,12 @@ const ManualGameForm = () => {
             options={(platforms ?? []).map((platform) => platform.name)}
             value={platformNames}
             onChange={(_event, newValue) => setPlatformNames(newValue)}
-            renderInput={(params) => <TextField {...params} label="Available on" />}
+            renderInput={(params) => <TextField {...params} label={t("games.gameForm.availableOnLabel")} />}
           />
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Summary"
+            label={t("games.gameForm.summaryLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -251,7 +259,7 @@ const ManualGameForm = () => {
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Storyline"
+            label={t("games.gameForm.storylineLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -261,7 +269,7 @@ const ManualGameForm = () => {
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Notes"
+            label={t("games.gameForm.notesLabel")}
             fullWidth
             multiline
             minRows={2}
@@ -280,9 +288,9 @@ const ManualGameForm = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Linked Game"
+                  label={t("games.gameForm.linkedGameLabel")}
                   required={parentGameRequired}
-                  helperText="Which game is this an addon of?"
+                  helperText={t("games.gameForm.linkedGameHelperText")}
                 />
               )}
             />
@@ -290,7 +298,7 @@ const ManualGameForm = () => {
         ) : null}
         <Grid size={12}>
           <Button variant="contained" onClick={handleAddGameClick} disabled={createManualGame.isPending}>
-            Add game
+            {t("games.manualForm.addGameButton")}
           </Button>
         </Grid>
       </Grid>

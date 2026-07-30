@@ -12,6 +12,7 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { searchIgdb } from "../api/igdb";
 import type { GameCategory, IgdbSearchResult } from "../api/types";
@@ -52,6 +53,7 @@ interface ParentNeeded {
 }
 
 const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: LinkToIgdbDialogProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState(gameName);
   const [manualIgdbId, setManualIgdbId] = useState("");
@@ -93,15 +95,15 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
     console.error("Error linking game to IGDB:", error);
     const message =
       isAxiosError(error) && error.response?.status === 409
-        ? "That IGDB game is already in your library."
-        : "Error linking to IGDB. Please try again.";
+        ? t("igdb.alreadyInLibraryError")
+        : t("igdb.linkError");
     toast.error(message, TOAST_OPTIONS);
   };
 
   const handleLink = async (igdbId: number) => {
     try {
       await linkGameToIgdb.mutateAsync(igdbId);
-      toast.success("Game linked to IGDB!", TOAST_OPTIONS);
+      toast.success(t("igdb.linkedSuccess"), TOAST_OPTIONS);
       onClose();
     } catch (error) {
       handleLinkError(error);
@@ -139,20 +141,20 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
   const handleManualLink = async () => {
     const igdbId = Number(manualIgdbId);
     if (!Number.isInteger(igdbId) || igdbId <= 0) {
-      toast.error("Enter a valid IGDB ID.", TOAST_OPTIONS);
+      toast.error(t("igdb.invalidIdError"), TOAST_OPTIONS);
       return;
     }
     setIsResolvingManualId(true);
     try {
       const results = await searchIgdb(`igdb:${igdbId}`);
       if (results.length === 0) {
-        toast.error(`No IGDB game found with id "${igdbId}".`, TOAST_OPTIONS);
+        toast.error(t("igdb.idNotFoundError", { id: igdbId }), TOAST_OPTIONS);
         return;
       }
       resolveAndLink(results[0]);
     } catch (error) {
       console.error("Error looking up IGDB id:", error);
-      toast.error("Error looking up that IGDB ID. Please try again.", TOAST_OPTIONS);
+      toast.error(t("igdb.idLookupError"), TOAST_OPTIONS);
     } finally {
       setIsResolvingManualId(false);
     }
@@ -162,23 +164,23 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
     if (!parentNeeded) return;
     try {
       const game = await linkViaParent.mutateAsync(parentNeeded.addonIgdbId);
-      toast.success("Parent game and addon added!", TOAST_OPTIONS);
+      toast.success(t("igdb.parentAddedSuccess"), TOAST_OPTIONS);
       setParentNeeded(null);
       onClose();
       navigate(`/addon/${gameIdentifier(game)}`);
     } catch (error) {
       console.error("Error adding parent game:", error);
-      toast.error("Error adding parent game. Please try again.", TOAST_OPTIONS);
+      toast.error(t("igdb.addParentError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle>Link to IGDB</DialogTitle>
+        <DialogTitle>{t("igdb.dialogTitle")}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <TextField
-            label="Search IGDB"
+            label={t("igdb.searchLabel")}
             fullWidth
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -193,15 +195,15 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
               (i.e. exactly what shoved the id field/actions out of a shorter viewport). */}
           <Box sx={{ flexGrow: 1, flexShrink: 1, minHeight: 0, maxHeight: 420, overflowY: "auto", my: 2 }}>
             {igdbNotConfigured ? (
-              <Typography color="text.secondary">IGDB isn&apos;t configured on this server.</Typography>
+              <Typography color="text.secondary">{t("igdb.notConfigured")}</Typography>
             ) : isFetching ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
                 <CircularProgress size={28} />
               </Box>
             ) : !isSearchActive ? (
-              <Typography color="text.secondary">Keep typing to search IGDB.</Typography>
+              <Typography color="text.secondary">{t("igdb.keepTyping")}</Typography>
             ) : suggestions.length === 0 ? (
-              <Typography color="text.secondary">No matches found.</Typography>
+              <Typography color="text.secondary">{t("igdb.noMatches")}</Typography>
             ) : (
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 1.5 }}>
                 {suggestions.map((result) => (
@@ -220,11 +222,11 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
 
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", flexShrink: 0, mt: 2 }}>
             <TextField
-              label="IGDB ID"
+              label={t("igdb.idFieldLabel")}
               value={manualIgdbId}
               onChange={(event) => setManualIgdbId(event.target.value)}
               disabled={isPending}
-              helperText="Know the exact IGDB id? Link to it directly."
+              helperText={t("igdb.idFieldHelperText")}
             />
             <Button
               variant="outlined"
@@ -232,33 +234,33 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
               disabled={isPending || !manualIgdbId.trim()}
               sx={{ mt: 1 }}
             >
-              Link
+              {t("igdb.linkButton")}
             </Button>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose} disabled={isPending}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         </DialogActions>
       </Dialog>
 
       <ConfirmDialog
         open={parentNeeded !== null}
-        title="Parent game needed"
+        title={t("igdb.parentNeededTitle")}
         description={
           parentNeeded
-            ? `"${parentNeeded.parentName}" (IGDB #${parentNeeded.parentIgdbId}) needs to be added first. Add it now, along with all of its addons?`
+            ? t("igdb.parentNeededDescription", { name: parentNeeded.parentName, id: parentNeeded.parentIgdbId })
             : ""
         }
-        confirmLabel="Proceed"
+        confirmLabel={t("igdb.proceedButton")}
         onClose={() => setParentNeeded(null)}
         onConfirm={() => void handleProceedWithParent()}
       />
       <MessageDialog
         open={cannotBeAddedOpen}
-        title="Can't link to IGDB"
-        message="This category cannot be added."
+        title={t("igdb.cannotLinkTitle")}
+        message={t("igdb.cannotLinkMessage")}
         onClose={() => setCannotBeAddedOpen(false)}
       />
     </>

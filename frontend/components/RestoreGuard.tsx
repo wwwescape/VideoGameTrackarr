@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useAcknowledgeRestoreStatus, useRestoreStatus } from "../hooks/useImportExport";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -16,6 +17,7 @@ import type { RestoreJobStatus } from "../api/types";
 // mid-restore all land back on this same blocking overlay, driven entirely by server-side
 // job state rather than any client-side "am I mid-mutation" flag.
 const RestoreGuard = () => {
+  const { t } = useTranslation();
   const { data } = useRestoreStatus();
   const queryClient = useQueryClient();
   const acknowledgeMutation = useAcknowledgeRestoreStatus();
@@ -25,12 +27,12 @@ const RestoreGuard = () => {
     if (previousStatus.current === "running" && data?.status === "completed") {
       queryClient.invalidateQueries();
       toast.success(
-        `Restored ${data.result?.restoredGames ?? 0} game(s). A safety copy of what was there before was saved server-side.`,
+        t("restore.completedToast", { count: data.result?.restoredGames ?? 0 }),
         TOAST_OPTIONS
       );
     }
     previousStatus.current = data?.status;
-  }, [data?.status, data?.result, queryClient]);
+  }, [data?.status, data?.result, queryClient, t]);
 
   if (!data || data.status === "idle" || data.status === "completed") {
     return null;
@@ -51,20 +53,18 @@ const RestoreGuard = () => {
         <>
           <CircularProgress color="inherit" />
           <Typography variant="h6" sx={{ textAlign: "center" }}>
-            Have patience while restore is in progress.
+            {t("restore.inProgressTitle")}
           </Typography>
-          <Typography sx={{ textAlign: "center" }}>
-            This may take several minutes depending on the size of the restore.
-          </Typography>
+          <Typography sx={{ textAlign: "center" }}>{t("restore.inProgressSubtitle")}</Typography>
         </>
       ) : (
         <Paper sx={{ p: 3, maxWidth: 420, color: "text.primary" }}>
           <Typography variant="h6" color="error" gutterBottom>
-            Restore failed
+            {t("restore.failedTitle")}
           </Typography>
-          <Typography sx={{ mb: 2 }}>{data.error ?? "An unknown error occurred."}</Typography>
+          <Typography sx={{ mb: 2 }}>{data.error ?? t("restore.unknownError")}</Typography>
           <Button variant="contained" fullWidth onClick={() => acknowledgeMutation.mutate()}>
-            Dismiss
+            {t("restore.dismissButton")}
           </Button>
         </Paper>
       )}

@@ -16,6 +16,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { resolveAssetUrl } from "../api/client";
 import type { GameCategory, GameDetail, GameSummary } from "../api/types";
@@ -23,6 +24,7 @@ import { useCompanies } from "../hooks/useCompanies";
 import { useGame, useGames, useUpdateManualGame } from "../hooks/useGames";
 import { usePlatforms } from "../hooks/usePlatforms";
 import { useUploadCover } from "../hooks/useUploads";
+import { useLanguage } from "../theme/LanguageProvider";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
@@ -54,6 +56,8 @@ interface EditGameFormProps {
 // editable here, only ever set once at creation — and there's no "check IGDB first"
 // suggestions step, since that only guards against creating an accidental duplicate.
 const EditGameForm = ({ game }: EditGameFormProps) => {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const updateManualGame = useUpdateManualGame(game.id);
   const uploadCover = useUploadCover();
@@ -95,17 +99,17 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
       setCoverUrl(url);
     } catch (error) {
       console.error("Error uploading cover image:", error);
-      toast.error("Error uploading cover image. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.gameForm.uploadCoverError"), TOAST_OPTIONS);
     }
   };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      toast.error("Official Name is required.", TOAST_OPTIONS);
+      toast.error(t("games.gameForm.officialNameRequiredError"), TOAST_OPTIONS);
       return;
     }
     if (parentGameRequired && !parentGame) {
-      toast.error("Linked Game is required for this category.", TOAST_OPTIONS);
+      toast.error(t("games.gameForm.linkedGameRequiredError"), TOAST_OPTIONS);
       return;
     }
     try {
@@ -122,11 +126,11 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         notes: notes.trim() || null,
         parentGameId: showParentGameField ? parentGame?.id ?? null : null,
       });
-      toast.success("Game updated!", TOAST_OPTIONS);
+      toast.success(t("games.edit.updateSuccessToast"), TOAST_OPTIONS);
       navigate(`/game/${gameIdentifier({ slug: game.slug, uuid: game.uuid, name: name.trim() })}`);
     } catch (error) {
       console.error("Error updating game:", error);
-      toast.error("Error updating game. Please try again.", TOAST_OPTIONS);
+      toast.error(t("games.edit.updateErrorToast"), TOAST_OPTIONS);
     }
   };
 
@@ -135,7 +139,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, sm: 8 }}>
           <TextField
-            label="Official Name"
+            label={t("games.gameForm.officialNameLabel")}
             required
             fullWidth
             value={name}
@@ -144,7 +148,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
           <AutocompleteSelect<CategoryOption>
-            label="Category"
+            label={t("games.gameForm.categoryLabel")}
             fullWidth
             required
             disabled
@@ -157,9 +161,9 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={language}>
             <DatePicker
-              label="Release date"
+              label={t("games.gameForm.releaseDateLabel")}
               value={releaseDate}
               onChange={(value) => setReleaseDate(value)}
               maxDate={dayjs().add(50, "year")}
@@ -175,7 +179,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
               startIcon={uploadCover.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
               disabled={uploadCover.isPending}
             >
-              {coverUrl ? "Replace cover image" : "Upload cover image"}
+              {coverUrl ? t("games.gameForm.replaceCoverButton") : t("games.gameForm.uploadCoverButton")}
               <input type="file" accept="image/*" hidden onChange={(event) => void handleCoverFileChange(event)} />
             </Button>
             {coverUrl ? (
@@ -183,10 +187,14 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
                 <Box
                   component="img"
                   src={resolveAssetUrl(coverUrl) ?? undefined}
-                  alt="Cover preview"
+                  alt={t("games.gameForm.coverPreviewAlt")}
                   sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
                 />
-                <IconButton size="small" aria-label="Remove cover image" onClick={() => setCoverUrl("")}>
+                <IconButton
+                  size="small"
+                  aria-label={t("games.gameForm.removeCoverAriaLabel")}
+                  onClick={() => setCoverUrl("")}
+                >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </>
@@ -200,7 +208,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
             options={(companies ?? []).map((company) => company.name)}
             value={developedBy}
             onChange={(_event, newValue) => setDevelopedBy(newValue)}
-            renderInput={(params) => <TextField {...params} label="Developed by" />}
+            renderInput={(params) => <TextField {...params} label={t("games.gameForm.developedByLabel")} />}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -210,16 +218,16 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
             options={(companies ?? []).map((company) => company.name)}
             value={publishedBy}
             onChange={(_event, newValue) => setPublishedBy(newValue)}
-            renderInput={(params) => <TextField {...params} label="Published by" />}
+            renderInput={(params) => <TextField {...params} label={t("games.gameForm.publishedByLabel")} />}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Edition"
+            label={t("games.gameForm.editionLabel")}
             fullWidth
             value={edition}
             onChange={(event) => setEdition(event.target.value)}
-            helperText='Optional, e.g. "Game of the Year Edition"'
+            helperText={t("games.gameForm.editionHelperText")}
           />
         </Grid>
         <Grid size={12}>
@@ -229,12 +237,12 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
             options={(platforms ?? []).map((platform) => platform.name)}
             value={platformNames}
             onChange={(_event, newValue) => setPlatformNames(newValue)}
-            renderInput={(params) => <TextField {...params} label="Available on" />}
+            renderInput={(params) => <TextField {...params} label={t("games.gameForm.availableOnLabel")} />}
           />
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Summary"
+            label={t("games.gameForm.summaryLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -244,7 +252,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Storyline"
+            label={t("games.gameForm.storylineLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -254,13 +262,13 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Notes"
+            label={t("games.gameForm.notesLabel")}
             fullWidth
             multiline
             minRows={2}
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            helperText="Adds a new note alongside any existing ones — manage existing notes from the game's own Notes section."
+            helperText={t("games.edit.notesHelperText")}
           />
         </Grid>
         {showParentGameField ? (
@@ -274,9 +282,9 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Linked Game"
+                  label={t("games.gameForm.linkedGameLabel")}
                   required={parentGameRequired}
-                  helperText="Which game is this an addon of?"
+                  helperText={t("games.gameForm.linkedGameHelperText")}
                 />
               )}
             />
@@ -285,14 +293,14 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         <Grid size={12}>
           <Stack direction="row" spacing={1.5}>
             <Button variant="contained" onClick={() => void handleSubmit()} disabled={updateManualGame.isPending}>
-              Save Changes
+              {t("games.edit.saveChangesButton")}
             </Button>
             <Button
               variant="text"
               onClick={() => navigate(`/game/${gameIdentifier(game)}`)}
               disabled={updateManualGame.isPending}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </Stack>
         </Grid>
@@ -302,27 +310,24 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
 };
 
 const EditGamePage = () => {
+  const { t } = useTranslation();
   const { identifier } = useParams<{ identifier: string }>();
 
   const { data: game, isLoading } = useGame(identifier);
 
   if (isLoading || !game) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>;
+    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
   }
 
   if (game.igdbId !== null) {
-    return (
-      <Paper sx={{ p: 3, textAlign: "center" }}>
-        This game cannot be edited. All information comes from IGDB.
-      </Paper>
-    );
+    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.edit.notEditableMessage")}</Paper>;
   }
 
   return (
     <>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Edit Game
+          {t("games.edit.pageTitle")}
         </Typography>
       </Box>
       <EditGameForm game={game} />

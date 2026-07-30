@@ -14,6 +14,7 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import ConfirmDialog from "./ConfirmDialog";
 import FieldRow from "./FieldRow";
 import HardwareCoverCard from "./HardwareCoverCard";
@@ -37,6 +38,7 @@ import { TOAST_OPTIONS } from "../utils/toastOptions";
 const sectionCardSx = { borderRadius: 2, overflow: "hidden" } as const;
 
 const AccessoryDetails = () => {
+  const { t } = useTranslation();
   const { identifier } = useParams<{ identifier: string }>();
   const navigate = useNavigate();
 
@@ -57,7 +59,7 @@ const AccessoryDetails = () => {
   const deleteNote = useDeleteAccessoryNote(accessoryId);
 
   if (isLoading || !accessory) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>;
+    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
   }
 
   // An accessory can technically have multiple owned/wishlisted UserAccessory rows, but Add
@@ -71,11 +73,11 @@ const AccessoryDetails = () => {
   const handleDelete = async () => {
     try {
       await deleteAccessory.mutateAsync(accessoryId);
-      toast.success("Accessory removed.", TOAST_OPTIONS);
+      toast.success(t("hardware.accessoryDetails.removeSuccess"), TOAST_OPTIONS);
       navigate("/hardware");
     } catch (error) {
       console.error("Error deleting accessory:", error);
-      toast.error("Error deleting accessory. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.accessoryDetails.removeError"), TOAST_OPTIONS);
     }
   };
 
@@ -98,7 +100,7 @@ const AccessoryDetails = () => {
               }
               fullWidth
             >
-              Edit Accessory
+              {t("hardware.accessoryDetails.editButton")}
             </Button>
             <Button
               variant="contained"
@@ -107,7 +109,7 @@ const AccessoryDetails = () => {
               onClick={() => setDeleteConfirmOpen(true)}
               fullWidth
             >
-              Remove Accessory
+              {t("hardware.accessoryDetails.removeButton")}
             </Button>
           </Stack>
         </Stack>
@@ -118,8 +120,8 @@ const AccessoryDetails = () => {
           <Card sx={sectionCardSx}>
             <CardContent>
               {isCustom ? (
-                <Tooltip title="Added by hand, not linked to a reference catalog entry.">
-                  <Chip label="Custom" size="small" variant="outlined" sx={{ mb: 1 }} />
+                <Tooltip title={t("hardware.accessoryDetails.customTooltip")}>
+                  <Chip label={t("hardware.accessoryDetails.customLabel")} size="small" variant="outlined" sx={{ mb: 1 }} />
                 </Tooltip>
               ) : null}
               <Typography variant="h4" component="h1">
@@ -132,7 +134,7 @@ const AccessoryDetails = () => {
                 ) : null}
               </Typography>
               <Stack spacing={0.5} sx={{ mt: 1 }}>
-                <FieldRow label="Brand" value={accessory.manufacturerName} />
+                <FieldRow label={t("hardware.detailsShared.brandLabel")} value={accessory.manufacturerName} />
               </Stack>
               {summaryText ? (
                 <>
@@ -144,12 +146,12 @@ const AccessoryDetails = () => {
               ) : null}
               <Divider sx={{ my: 1.5 }} />
               <Stack spacing={0.5}>
-                <FieldRow label="Model Number" value={accessory.model} />
-                <FieldRow label="Serial Number" value={primaryOwnership?.serialNumber} />
-                <FieldRow label="Color" value={accessory.colorName} />
-                <FieldRow label="Revision" value={accessory.revision} />
+                <FieldRow label={t("hardware.detailsShared.modelNumberLabel")} value={accessory.model} />
+                <FieldRow label={t("hardware.detailsShared.serialNumberLabel")} value={primaryOwnership?.serialNumber} />
+                <FieldRow label={t("hardware.detailsShared.colorLabel")} value={accessory.colorName} />
+                <FieldRow label={t("hardware.detailsShared.revisionLabel")} value={accessory.revision} />
                 <FieldRow
-                  label="Ratings Board"
+                  label={t("hardware.detailsShared.ratingsBoardLabel")}
                   value={accessory.ratingBoard ? RATING_BOARD_LABELS[accessory.ratingBoard] : null}
                 />
               </Stack>
@@ -157,12 +159,12 @@ const AccessoryDetails = () => {
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Price" />
+            <CardHeader title={t("hardware.detailsShared.priceTitle")} />
             <CardContent>
               <Typography variant="body2">
                 {primaryOwnership?.purchasePrice != null
                   ? formatCurrency(primaryOwnership.purchasePrice, currency)
-                  : "Not set"}
+                  : t("hardware.detailsShared.priceNotSet")}
               </Typography>
             </CardContent>
           </Card>
@@ -172,7 +174,7 @@ const AccessoryDetails = () => {
               tags={accessory.tags}
               onAttach={(tagId) => attachTag.mutateAsync(tagId)}
               onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-              subheader="Organize your own way — modded, for sale, project console, whatever fits"
+              subheader={t("hardware.detailsShared.tagsSubheader")}
             />
           </Card>
 
@@ -180,7 +182,7 @@ const AccessoryDetails = () => {
             <NotesSection
               notes={accessoryNotes}
               isCreating={createNote.isPending}
-              subheader="Maintenance history, where you bought it, anything worth remembering"
+              subheader={t("hardware.detailsShared.notesSubheader")}
               onCreate={(body) => createNote.mutateAsync(body)}
               onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
               onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
@@ -188,27 +190,34 @@ const AccessoryDetails = () => {
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Your inventory" />
+            <CardHeader title={t("hardware.detailsShared.inventoryTitle")} />
             <CardContent>
               {primaryOwnership ? (
                 <Stack spacing={0.5}>
-                  <FieldRow label="Status" value={primaryOwnership.status === "owned" ? "Owned" : "Wishlist"} />
                   <FieldRow
-                    label="Condition"
+                    label={t("hardware.detailsShared.statusLabel")}
+                    value={
+                      primaryOwnership.status === "owned"
+                        ? t("hardware.detailsShared.statusOwned")
+                        : t("hardware.detailsShared.statusWishlist")
+                    }
+                  />
+                  <FieldRow
+                    label={t("hardware.detailsShared.conditionLabel")}
                     value={primaryOwnership.condition ? CONDITION_LABELS[primaryOwnership.condition] : null}
                   />
                 </Stack>
               ) : (
-                <Typography color="text.secondary">Not tracked yet.</Typography>
+                <Typography color="text.secondary">{t("hardware.detailsShared.inventoryNotTracked")}</Typography>
               )}
             </CardContent>
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Linked Devices" />
+            <CardHeader title={t("hardware.accessoryDetails.linkedDevicesTitle")} />
             <CardContent>
               {accessory.linkedDevices.length === 0 ? (
-                <Typography color="text.secondary">No devices linked yet.</Typography>
+                <Typography color="text.secondary">{t("hardware.accessoryDetails.noLinkedDevices")}</Typography>
               ) : (
                 <Stack spacing={1.5}>
                   {accessory.linkedDevices.map((linkedDevice) => (
@@ -229,10 +238,10 @@ const AccessoryDetails = () => {
           </Card>
 
           <Card sx={sectionCardSx}>
-            <CardHeader title="Linked Accessories" />
+            <CardHeader title={t("hardware.detailsShared.linkedAccessoriesTitle")} />
             <CardContent>
               {accessory.linkedAccessories.length === 0 ? (
-                <Typography color="text.secondary">No accessories linked yet.</Typography>
+                <Typography color="text.secondary">{t("hardware.accessoryDetails.noLinkedAccessories")}</Typography>
               ) : (
                 <Stack spacing={1.5}>
                   {accessory.linkedAccessories.map((linkedAccessory) => (
@@ -258,9 +267,9 @@ const AccessoryDetails = () => {
 
       <ConfirmDialog
         open={deleteConfirmOpen}
-        title="Delete this accessory?"
-        description={`This permanently removes "${accessory.officialName}" and its inventory/tag/note records.`}
-        confirmLabel="Delete"
+        title={t("hardware.accessoryDetails.deleteConfirmTitle")}
+        description={t("hardware.accessoryDetails.deleteConfirmDescription", { name: accessory.officialName })}
+        confirmLabel={t("common.delete")}
         confirmColor="error"
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDelete}

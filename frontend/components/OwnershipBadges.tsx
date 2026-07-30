@@ -3,6 +3,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
+import { useTranslation } from "react-i18next";
 
 interface OwnershipBadgesProps {
   owned: boolean;
@@ -18,6 +19,7 @@ const BADGE_SIZE = 30;
 // tried for "owned" but its chroma diverges from tertiary's enough in dark mode to look
 // like a mismatched pair.
 const OwnershipBadges = ({ owned, wishlisted }: OwnershipBadgesProps) => {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   return (
@@ -39,7 +41,7 @@ const OwnershipBadges = ({ owned, wishlisted }: OwnershipBadgesProps) => {
             boxShadow: theme.shadows[3],
           }}
         >
-          <Tooltip title="On your wishlist">
+          <Tooltip title={t("ownershipBadges.wishlistTooltip")}>
             <FavoriteIcon sx={{ fontSize: 17, color: theme.palette.m3.onTertiaryContainer }} />
           </Tooltip>
         </Box>
@@ -61,7 +63,7 @@ const OwnershipBadges = ({ owned, wishlisted }: OwnershipBadgesProps) => {
             boxShadow: theme.shadows[3],
           }}
         >
-          <Tooltip title="In your collection">
+          <Tooltip title={t("ownershipBadges.ownedTooltip")}>
             <CheckIcon sx={{ fontSize: 19, color: theme.palette.m3.onTertiaryContainer }} />
           </Tooltip>
         </Box>

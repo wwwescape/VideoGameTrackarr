@@ -7,10 +7,12 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { useLogin, useSetupStatus } from "../hooks/useAuth";
 import SetupAdmin from "./SetupAdmin";
 
 const LoginForm = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -31,19 +33,19 @@ const LoginForm = () => {
   return (
     <>
       <Typography variant="h5" component="h1" gutterBottom>
-        VideoGameTrackarr
+        {t("auth.brand")}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Sign in to your collection.
+        {t("auth.login.subtitle")}
       </Typography>
       {loginMutation.isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          Invalid username or password.
+          {t("auth.login.invalidCredentials")}
         </Alert>
       )}
       <Box component="form" onSubmit={handleSubmit}>
         <TextField
-          label="Username"
+          label={t("auth.login.username")}
           fullWidth
           margin="normal"
           value={username}
@@ -52,7 +54,7 @@ const LoginForm = () => {
           required
         />
         <TextField
-          label="Password"
+          label={t("auth.login.password")}
           type="password"
           fullWidth
           margin="normal"
@@ -61,7 +63,7 @@ const LoginForm = () => {
           required
         />
         <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }} disabled={loginMutation.isPending}>
-          {loginMutation.isPending ? "Signing in..." : "Sign in"}
+          {loginMutation.isPending ? t("auth.login.signingIn") : t("auth.login.signIn")}
         </Button>
       </Box>
     </>

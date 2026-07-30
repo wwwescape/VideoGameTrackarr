@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import { useTranslation } from "react-i18next";
 import { useDeviceList } from "../hooks/useDevice";
 import { useDeviceTypes, useHardwarePlatforms, useManufacturers } from "../hooks/useHardwareLookups";
 import { hardwareIdentifier } from "../utils/identifiers";
@@ -15,6 +16,7 @@ interface DeviceListProps {
 }
 
 const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [sort, setSort] = useState<HardwareSort>("name");
   const [manufacturerId, setManufacturerId] = useState<number | "">("");
@@ -50,7 +52,7 @@ const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
         manufacturerOptions={manufacturers ?? []}
         manufacturerId={manufacturerId}
         onManufacturerChange={setManufacturerId}
-        typeLabel="Device type"
+        typeLabel={t("hardware.deviceList.typeLabel")}
         typeOptions={deviceTypes ?? []}
         typeId={deviceTypeId}
         onTypeChange={setDeviceTypeId}
@@ -59,9 +61,9 @@ const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
         onPlatformChange={setHardwarePlatformId}
       />
       {isLoading ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
       ) : sortedDevices.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>No devices found.</Paper>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("hardware.deviceList.emptyState")}</Paper>
       ) : (
         <VirtualGameGrid
           items={sortedDevices}

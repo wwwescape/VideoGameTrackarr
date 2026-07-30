@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
+import { useTranslation } from "react-i18next";
 import { useHardwareReferenceEntries } from "../hooks/useHardwareReference";
 import AutocompleteSelect from "./AutocompleteSelect";
 
@@ -25,6 +26,7 @@ function unique(values: (string | null)[]): string[] {
 // change — the parent (AddDeviceForm) owns the actual editable Official Name field, since it
 // needs to interleave it with other form fields (Edition, etc.) in a specific row layout.
 const DevicePredefinedFields = ({ onChange }: DevicePredefinedFieldsProps) => {
+  const { t } = useTranslation();
   const { data: entries } = useHardwareReferenceEntries("Device");
 
   const [manufacturer, setManufacturer] = useState("");
@@ -51,13 +53,13 @@ const DevicePredefinedFields = ({ onChange }: DevicePredefinedFieldsProps) => {
     <Grid container spacing={2.5}>
       <Grid size={{ xs: 12, sm: 4 }}>
         <AutocompleteSelect<string>
-          label="Brand"
+          label={t("hardware.devicePredefinedFields.brandLabel")}
           fullWidth
           required
           options={unique(allEntries.map((entry) => entry.brand))}
           value={manufacturer || null}
           getOptionLabel={(option) => option}
-          helperText="More brands coming soon!"
+          helperText={t("hardware.devicePredefinedFields.brandHelperText")}
           onChange={(newValue) => {
             setManufacturer(newValue ?? "");
             setPlatform("");
@@ -67,7 +69,7 @@ const DevicePredefinedFields = ({ onChange }: DevicePredefinedFieldsProps) => {
       </Grid>
       <Grid size={{ xs: 12, sm: 4 }}>
         <AutocompleteSelect<string>
-          label="Console"
+          label={t("hardware.devicePredefinedFields.consoleLabel")}
           fullWidth
           required
           options={unique(brandEntries.map((entry) => entry.generation))}
@@ -82,7 +84,7 @@ const DevicePredefinedFields = ({ onChange }: DevicePredefinedFieldsProps) => {
       </Grid>
       <Grid size={{ xs: 12, sm: 4 }}>
         <AutocompleteSelect<string>
-          label="Variant"
+          label={t("hardware.devicePredefinedFields.variantLabel")}
           fullWidth
           required
           options={unique(platformEntries.map((entry) => entry.officialName))}

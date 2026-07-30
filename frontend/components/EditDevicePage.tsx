@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -23,11 +24,6 @@ interface StatusOption {
   label: string;
 }
 
-const STATUS_OPTIONS: StatusOption[] = [
-  { value: "owned", label: "Owned" },
-  { value: "wishlist", label: "Wishlist" },
-];
-
 interface ConditionOption {
   value: HardwareCondition;
   label: string;
@@ -43,11 +39,6 @@ interface RatingBoardOption {
   label: string;
 }
 
-const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
-  { value: null, label: "None" },
-  ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
-];
-
 interface EditDeviceFormProps {
   device: DeviceDetail;
   primaryOwnership: UserDevice | null;
@@ -57,6 +48,7 @@ interface EditDeviceFormProps {
 // every Device comes from the predefined Brand/Console/Variant cascade, so there is no
 // "custom" identity to re-resolve here, only the catalog/ownership details below it.
 const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const updateDevice = useUpdateDevice(device.id);
   const addUserDevice = useAddUserDevice(device.id);
@@ -78,9 +70,19 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
 
   const isSubmitting = updateDevice.isPending || addUserDevice.isPending || updateUserDevice.isPending;
 
+  const STATUS_OPTIONS: StatusOption[] = [
+    { value: "owned", label: t("hardware.deviceForm.statusOwned") },
+    { value: "wishlist", label: t("hardware.deviceForm.statusWishlist") },
+  ];
+
+  const RATING_BOARD_OPTIONS: RatingBoardOption[] = [
+    { value: null, label: t("common.none") },
+    ...Object.entries(RATING_BOARD_LABELS).map(([value, label]) => ({ value: value as RatingBoard, label })),
+  ];
+
   const handleSubmit = async () => {
     if (!officialName.trim()) {
-      toast.error("Official name is required.", TOAST_OPTIONS);
+      toast.error(t("hardware.editDevice.validationError"), TOAST_OPTIONS);
       return;
     }
     try {
@@ -104,11 +106,11 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
       } else {
         await addUserDevice.mutateAsync(ownershipInput);
       }
-      toast.success("Device updated.", TOAST_OPTIONS);
+      toast.success(t("hardware.editDevice.updatedSuccess"), TOAST_OPTIONS);
       navigate(`/hardware/device/${hardwareIdentifier(officialName.trim(), device.uuid)}`);
     } catch (error) {
       console.error("Error updating device:", error);
-      toast.error("Error updating device. Please try again.", TOAST_OPTIONS);
+      toast.error(t("hardware.editDevice.updateError"), TOAST_OPTIONS);
     }
   };
 
@@ -118,19 +120,29 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         <Grid size={12}>
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Brand" fullWidth disabled value={device.manufacturerName} />
+              <TextField label={t("hardware.editDevice.brandLabel")} fullWidth disabled value={device.manufacturerName} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Console" fullWidth disabled value={device.hardwarePlatformName ?? ""} />
+              <TextField
+                label={t("hardware.editDevice.consoleLabel")}
+                fullWidth
+                disabled
+                value={device.hardwarePlatformName ?? ""}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Variant" fullWidth disabled value={device.hardwareReference?.artefact ?? ""} />
+              <TextField
+                label={t("hardware.editDevice.variantLabel")}
+                fullWidth
+                disabled
+                value={device.hardwareReference?.artefact ?? ""}
+              />
             </Grid>
           </Grid>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Official name"
+            label={t("hardware.deviceForm.officialNameLabel")}
             required
             fullWidth
             value={officialName}
@@ -138,25 +150,41 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Edition" fullWidth disabled value="" helperText="Coming Soon!" />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Model number" fullWidth value={model} onChange={(event) => setModel(event.target.value)} />
+          <TextField
+            label={t("hardware.deviceForm.editionLabel")}
+            fullWidth
+            disabled
+            value=""
+            helperText={t("hardware.deviceForm.comingSoonHelperText")}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Serial number"
+            label={t("hardware.deviceForm.modelNumberLabel")}
+            fullWidth
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <TextField
+            label={t("hardware.deviceForm.serialNumberLabel")}
             fullWidth
             value={serialNumber}
             onChange={(event) => setSerialNumber(event.target.value)}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <FreeSoloLookupField label="Color" options={colors ?? []} value={color} onChange={setColor} />
+          <FreeSoloLookupField
+            label={t("hardware.deviceForm.colorLabel")}
+            options={colors ?? []}
+            value={color}
+            onChange={setColor}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <FreeSoloLookupField
-            label="Storage"
+            label={t("hardware.deviceForm.storageLabel")}
             options={storageVariants ?? []}
             value={storageVariant}
             onChange={setStorageVariant}
@@ -164,7 +192,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Revision"
+            label={t("hardware.deviceForm.revisionLabel")}
             fullWidth
             value={revision}
             onChange={(event) => setRevision(event.target.value)}
@@ -172,7 +200,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<RatingBoardOption>
-            label="Ratings Board"
+            label={t("hardware.deviceForm.ratingsBoardLabel")}
             fullWidth
             options={RATING_BOARD_OPTIONS}
             value={RATING_BOARD_OPTIONS.find((option) => option.value === ratingBoard) ?? null}
@@ -185,7 +213,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             type="number"
-            label="Price"
+            label={t("hardware.deviceForm.priceLabel")}
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
@@ -194,7 +222,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         <Grid size={{ xs: 12, sm: 6 }} />
         <Grid size={{ xs: 12, sm: 6 }}>
           <AutocompleteSelect<StatusOption>
-            label="Status"
+            label={t("hardware.deviceForm.statusLabel")}
             fullWidth
             options={STATUS_OPTIONS}
             value={STATUS_OPTIONS.find((option) => option.value === status) ?? null}
@@ -213,7 +241,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         {status === "owned" ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <AutocompleteSelect<ConditionOption>
-              label="Condition"
+              label={t("hardware.deviceForm.conditionLabel")}
               fullWidth
               options={CONDITION_OPTIONS}
               value={CONDITION_OPTIONS.find((option) => option.value === condition) ?? null}
@@ -227,7 +255,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         )}
         <Grid size={12}>
           <TextField
-            label="Notes"
+            label={t("hardware.deviceForm.notesLabel")}
             fullWidth
             multiline
             minRows={3}
@@ -238,14 +266,14 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         <Grid size={12}>
           <Stack direction="row" spacing={1.5}>
             <Button variant="contained" onClick={() => void handleSubmit()} disabled={isSubmitting}>
-              Save Changes
+              {t("hardware.editDevice.submitButton")}
             </Button>
             <Button
               variant="text"
               onClick={() => navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </Stack>
         </Grid>
@@ -255,13 +283,14 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
 };
 
 const EditDevicePage = () => {
+  const { t } = useTranslation();
   const { identifier } = useParams<{ identifier: string }>();
 
   const { data: device, isLoading: isDeviceLoading } = useDeviceItem(identifier);
   const { data: ownershipRows, isLoading: isOwnershipLoading } = useUserDeviceList(device?.id ?? NaN);
 
   if (isDeviceLoading || isOwnershipLoading || !device) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>Loading...</Paper>;
+    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
   }
 
   const primaryOwnership = ownershipRows?.find((row) => row.status === "owned") ?? ownershipRows?.[0] ?? null;
@@ -270,7 +299,7 @@ const EditDevicePage = () => {
     <>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Edit Device
+          {t("hardware.editDevice.pageTitle")}
         </Typography>
       </Box>
       <EditDeviceForm device={device} primaryOwnership={primaryOwnership} />

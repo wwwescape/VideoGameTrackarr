@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
+import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import { useAddons, useGame } from "../hooks/useGames";
 import { useLibraryItems } from "../hooks/useLibrary";
@@ -30,6 +31,7 @@ const SECTION_SCROLL_MARGIN_TOP = { xs: 104, sm: 112 };
 const sectionCardSx = { borderRadius: 2, overflow: "hidden", scrollMarginTop: SECTION_SCROLL_MARGIN_TOP } as const;
 
 const GameDetails = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { identifier } = useParams<{ identifier: string }>();
@@ -59,7 +61,7 @@ const GameDetails = () => {
   }, [location.hash, game]);
 
   if (!game) {
-    return <>Loading...</>;
+    return <>{t("common.loading")}</>;
   }
 
   // Whether removal/the Addons section make sense here is about the *relationship* (does

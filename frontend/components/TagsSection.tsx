@@ -5,6 +5,7 @@ import CardHeader from "@mui/material/CardHeader";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { Tag } from "../api/types";
 import { useCreateTag, useTags } from "../hooks/useTags";
@@ -19,12 +20,8 @@ interface TagsSectionProps {
 
 // Entity-agnostic — the parent owns how attach/detach are scoped (to a game, a device, ...).
 // Tag creation isn't entity-specific, so this still calls useCreateTag() directly.
-const TagsSection = ({
-  tags,
-  onAttach,
-  onDetach,
-  subheader = "Organize your own way — co-op, speedrun, backlog priority, whatever fits",
-}: TagsSectionProps) => {
+const TagsSection = ({ tags, onAttach, onDetach, subheader }: TagsSectionProps) => {
+  const { t } = useTranslation();
   const { data: allTags } = useTags();
   const createTag = useCreateTag();
   const [inputValue, setInputValue] = useState("");
@@ -37,7 +34,7 @@ const TagsSection = ({
       await onAttach(tag.id);
     } catch (error) {
       console.error("Error attaching tag:", error);
-      toast.error("Error attaching tag. Please try again.", TOAST_OPTIONS);
+      toast.error(t("tags.attachError"), TOAST_OPTIONS);
     }
   };
 
@@ -50,7 +47,7 @@ const TagsSection = ({
       setInputValue("");
     } catch (error) {
       console.error("Error creating tag:", error);
-      toast.error("Error creating tag. Please try again.", TOAST_OPTIONS);
+      toast.error(t("tags.createError"), TOAST_OPTIONS);
     }
   };
 
@@ -59,13 +56,13 @@ const TagsSection = ({
       await onDetach(tagId);
     } catch (error) {
       console.error("Error removing tag:", error);
-      toast.error("Error removing tag. Please try again.", TOAST_OPTIONS);
+      toast.error(t("tags.detachError"), TOAST_OPTIONS);
     }
   };
 
   return (
     <>
-      <CardHeader title="Tags" subheader={subheader} />
+      <CardHeader title={t("tags.title")} subheader={subheader ?? t("tags.defaultSubheader")} />
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
@@ -87,7 +84,9 @@ const TagsSection = ({
                 void handleSelect(value);
               }
             }}
-            renderInput={(params) => <TextField {...params} label="Add a tag" placeholder="Type to search or create" />}
+            renderInput={(params) => (
+              <TextField {...params} label={t("tags.addLabel")} placeholder={t("tags.searchPlaceholder")} />
+            )}
             sx={{ maxWidth: 360 }}
           />
         </Stack>

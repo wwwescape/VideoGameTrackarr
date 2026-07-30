@@ -6,6 +6,7 @@ import Chip from "@mui/material/Chip";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
 import OwnershipBadges from "./OwnershipBadges";
 
@@ -25,6 +26,7 @@ interface HardwareCardProps {
 // its own component rather than a GameCard reuse.
 const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuantity, onClick }: HardwareCardProps) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Card
@@ -72,7 +74,7 @@ const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuanti
               textAlign: "center",
             }}
           >
-            <Typography variant="caption">No image</Typography>
+            <Typography variant="caption">{t("hardware.card.noImage")}</Typography>
           </Box>
         )}
       </Box>
