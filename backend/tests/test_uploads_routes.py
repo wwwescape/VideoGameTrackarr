@@ -36,7 +36,7 @@ def test_upload_cover_saves_and_returns_url(auth_client):
     saved_path.unlink()
 
 
-def test_upload_cover_resizes_oversized_image(auth_client):
+def test_upload_cover_crops_to_target_size(auth_client):
     response = auth_client.post(
         "/api/uploads/covers",
         files={"file": ("cover.png", io.BytesIO(_image_bytes(size=(3000, 4000))), "image/png")},
@@ -46,8 +46,21 @@ def test_upload_cover_resizes_oversized_image(auth_client):
     url = response.json()["url"]
     saved_path = UPLOADS_DIR / "covers" / url.removeprefix("/uploads/covers/")
     with Image.open(saved_path) as saved:
-        assert saved.width <= 960
-        assert saved.height <= 1280
+        assert saved.size == (540, 720)
+    saved_path.unlink()
+
+
+def test_upload_cover_crops_undersized_image_to_target_size(auth_client):
+    response = auth_client.post(
+        "/api/uploads/covers",
+        files={"file": ("cover.png", io.BytesIO(_image_bytes(size=(100, 140))), "image/png")},
+    )
+
+    assert response.status_code == 201
+    url = response.json()["url"]
+    saved_path = UPLOADS_DIR / "covers" / url.removeprefix("/uploads/covers/")
+    with Image.open(saved_path) as saved:
+        assert saved.size == (540, 720)
     saved_path.unlink()
 
 
@@ -81,6 +94,7 @@ def test_upload_accessory_image_saves_and_returns_url(auth_client):
     assert saved_path.is_file()
     with Image.open(saved_path) as saved:
         assert saved.format == "JPEG"
+        assert saved.size == (400, 400)
     saved_path.unlink()
 
 

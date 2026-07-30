@@ -2,7 +2,7 @@ import uuid
 from io import BytesIO
 from pathlib import Path
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.core.config import UPLOADS_DIR
 
@@ -10,13 +10,18 @@ COVERS_DIR = UPLOADS_DIR / "covers"
 COVERS_URL_PREFIX = "/uploads/covers/"
 ACCESSORY_IMAGES_DIR = UPLOADS_DIR / "accessory-images"
 ACCESSORY_IMAGES_URL_PREFIX = "/uploads/accessory-images/"
-MAX_IMAGE_DIMENSIONS = (960, 1280)
+# Matches IGDB's t_720p cover size (see igdb_client.py) so uploaded covers render identically
+# to IGDB-sourced ones instead of relying on CSS object-fit to paper over a mismatched source.
+COVER_TARGET_SIZE = (540, 720)
+# Matches the curated hardware reference product shots (backend/static/hardware-reference).
+ACCESSORY_TARGET_SIZE = (400, 400)
 JPEG_QUALITY = 85
 
 
-def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str) -> str:
-    """Downscales an uploaded image to fit MAX_IMAGE_DIMENSIONS and re-encodes it as JPEG,
-    saving it under `directory` and returning the URL it's served at."""
+def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str, target_size: tuple[int, int]) -> str:
+    """Center-crops an uploaded image to fill target_size exactly (upscaling if the source is
+    smaller) and re-encodes it as JPEG, saving it under `directory` and returning the URL it's
+    served at."""
     try:
         image = Image.open(BytesIO(raw))
         image.load()
@@ -24,7 +29,7 @@ def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str) -> str:
         raise ValueError("Not a valid image file") from exc
 
     image = image.convert("RGB")
-    image.thumbnail(MAX_IMAGE_DIMENSIONS)
+    image = ImageOps.fit(image, target_size, method=Image.Resampling.LANCZOS)
 
     directory.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4()}.jpg"
@@ -33,11 +38,11 @@ def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str) -> str:
 
 
 def save_cover_image(raw: bytes) -> str:
-    return _save_optimized_image(raw, COVERS_DIR, COVERS_URL_PREFIX)
+    return _save_optimized_image(raw, COVERS_DIR, COVERS_URL_PREFIX, COVER_TARGET_SIZE)
 
 
 def save_accessory_image(raw: bytes) -> str:
-    return _save_optimized_image(raw, ACCESSORY_IMAGES_DIR, ACCESSORY_IMAGES_URL_PREFIX)
+    return _save_optimized_image(raw, ACCESSORY_IMAGES_DIR, ACCESSORY_IMAGES_URL_PREFIX, ACCESSORY_TARGET_SIZE)
 
 
 def delete_if_local_upload(url: str | None) -> None:
