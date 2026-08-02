@@ -4,7 +4,12 @@ from app.services import game_service, resync_jobs
 
 def _seed_games(db_session, count: int) -> list[Game]:
     games = [
-        Game(igdb_id=2000 + i, name=f"Resync Test Game {i}", slug=f"resync-test-game-{i}", category=GameCategory.MAIN_GAME)
+        Game(
+            igdb_id=2000 + i,
+            name=f"Resync Test Game {i}",
+            slug=f"resync-test-game-{i}",
+            category=GameCategory.MAIN_GAME,
+        )
         for i in range(count)
     ]
     db_session.add_all(games)
