@@ -6,12 +6,14 @@ import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import { Trans, useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
+import { useVersion } from "../hooks/useVersion";
 
 const REPO_URL = "https://github.com/wwwescape/VideoGameTrackarr";
 const BMC_URL = "https://buymeacoffee.com/wwwescape";
 
 const About = () => {
   const { t } = useTranslation();
+  const { data: version } = useVersion();
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -23,7 +25,19 @@ const About = () => {
           <Typography variant="subtitle1" gutterBottom>
             {t("about.appName")}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          {version && (
+            <Typography variant="body2" color="text.secondary">
+              {t("about.version", { version: version.currentVersion })}
+            </Typography>
+          )}
+          {version?.updateAvailable && (
+            <Typography variant="body2">
+              <Link href={version.releaseUrl ?? undefined} target="_blank" rel="noopener noreferrer">
+                {t("about.updateAvailable", { version: version.latestVersion })}
+              </Link>
+            </Typography>
+          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, mt: version ? 1.5 : 0 }}>
             {t("about.description")}
           </Typography>
           <Typography variant="body2">

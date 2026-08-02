@@ -33,6 +33,7 @@ from app.api.routes import (
     regions,
     tags,
     uploads,
+    version,
 )
 from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DIR, get_settings
 from app.core.limiter import limiter
@@ -135,6 +136,7 @@ app.include_router(hardware_stats.router)
 app.include_router(companies.router)
 app.include_router(uploads.router)
 app.include_router(jobs.router)
+app.include_router(version.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather
 # than committed to the repo, so it needs to exist before StaticFiles will mount it.

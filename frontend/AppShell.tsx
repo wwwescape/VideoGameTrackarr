@@ -15,6 +15,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
 import RestoreGuard from "./components/RestoreGuard";
+import UpdateAvailableChip from "./components/UpdateAvailableChip";
 import { useLogout } from "./hooks/useAuth";
 import BottomNavBar, { BOTTOM_NAV_HEIGHT } from "./navigation/BottomNavBar";
 import Breadcrumbs, { BREADCRUMBS_HEIGHT } from "./navigation/Breadcrumbs";
@@ -83,6 +84,7 @@ const AppShell = () => {
             VideoGameTrackarr
           </Typography>
           <OfflineStatusIndicator />
+          <UpdateAvailableChip />
           <FormControlLabel
             control={<Switch checked={mode === "dark"} onChange={toggleColorMode} />}
             label={t("appShell.darkMode")}

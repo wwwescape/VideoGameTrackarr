@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 from pathlib import Path
 
@@ -49,3 +50,16 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+@lru_cache
+def get_app_version() -> str:
+    """package.json's "version" is this app's single source of truth for its own displayed
+    version (see app/api/routes/version.py) — not a Settings field, since it isn't
+    env-configurable. Falls back to "0.0.0" rather than raising if the file is missing or
+    malformed, so a bad read never breaks startup or the version check that depends on it."""
+    try:
+        package_json = json.loads((REPO_ROOT / "package.json").read_text())
+        return str(package_json["version"])
+    except (OSError, ValueError, KeyError):
+        return "0.0.0"

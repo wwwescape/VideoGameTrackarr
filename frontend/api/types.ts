@@ -290,6 +290,13 @@ export interface JobSummary {
   schedule: JobSchedule;
 }
 
+export interface VersionInfo {
+  currentVersion: string;
+  latestVersion: string | null;
+  updateAvailable: boolean;
+  releaseUrl: string | null;
+}
+
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
 export type RatingBoard = "esrb" | "pegi" | "cero" | "usk" | "grac" | "classind" | "acb" | "iarc";

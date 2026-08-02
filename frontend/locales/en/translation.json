@@ -42,7 +42,8 @@
   },
   "appShell": {
     "skipToMainContent": "Skip to main content",
-    "darkMode": "Dark Mode"
+    "darkMode": "Dark Mode",
+    "updateAvailable": "New version available: {{version}}"
   },
   "dialogs": {
     "message": {
@@ -701,6 +702,8 @@
   "about": {
     "title": "About",
     "appName": "VideoGameTrackarr",
+    "version": "Version {{version}}",
+    "updateAvailable": "A new version is available: {{version}}",
     "description": "A self-hosted web app for tracking your video game collection: what you own, what you want, what you're playing, and how it's going.",
     "sourceCode": "Source code",
     "reportIssue": "Report an issue or request a feature",

@@ -42,7 +42,8 @@
   },
   "appShell": {
     "skipToMainContent": "Passer au contenu principal",
-    "darkMode": "Mode sombre"
+    "darkMode": "Mode sombre",
+    "updateAvailable": "Nouvelle version disponible : {{version}}"
   },
   "dialogs": {
     "message": {
@@ -701,6 +702,8 @@
   "about": {
     "title": "À propos",
     "appName": "VideoGameTrackarr",
+    "version": "Version {{version}}",
+    "updateAvailable": "Une nouvelle version est disponible : {{version}}",
     "description": "Une application web auto-hébergée pour suivre votre collection de jeux vidéo : ce que vous possédez, ce que vous voulez, à quoi vous jouez, et où vous en êtes.",
     "sourceCode": "Code source",
     "reportIssue": "Signaler un problème ou proposer une fonctionnalité",
