@@ -17,6 +17,7 @@ import { getCurrencySymbol, SUPPORTED_CURRENCIES, type CurrencyOption } from "..
 import { SUPPORTED_LANGUAGES, type LanguageOption } from "../utils/language";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
+import JobsSection from "./JobsSection";
 
 // IGDB credentials are .env-only (backend/app/core/config.py) — there's no API to set
 // them from the UI, so this page is just account info + logout.
@@ -111,6 +112,13 @@ const Settings = () => {
             {t("settings.data.heading")}
           </Typography>
           <DataManagementSection />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="subtitle1" gutterBottom>
+            {t("settings.jobs.heading")}
+          </Typography>
+          <JobsSection />
 
           <Divider sx={{ my: 3 }} />
 

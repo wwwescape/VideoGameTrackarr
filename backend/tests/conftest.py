@@ -19,11 +19,17 @@ from app.models import Base
 from app.models.catalog import Game, GameCategory, Platform, Region
 from app.models.hardware import Accessory, AccessoryType, Device, DeviceType, HardwarePlatform, Manufacturer
 from app.models.system import User
-from app.services import restore_job
+from app.services import job_definitions, job_registry, job_scheduler, restore_job
 from app.services.cache import InMemoryTTLCache
 from app.services.igdb_client import IGDBClient
 
 get_settings.cache_clear()
+
+# Registrations are process-lifetime (see job_registry.register's docstring), same as
+# app.include_router(...) calls in app/main.py — done once here, at conftest import time,
+# rather than per-test. Normally this happens inside app/main.py's lifespan, which the
+# `client` fixture below never triggers (TestClient(app) isn't used as a context manager).
+job_definitions.register_builtin_jobs()
 
 
 @pytest.fixture(autouse=True)
@@ -42,6 +48,22 @@ def _reset_restore_job():
     restore_job.reset_for_tests()
     yield
     restore_job.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _reset_job_registry():
+    # Same leak-across-tests problem as restore_job above, generalized to a per-job-id map
+    # (see app/services/job_registry.py) — resets run-state only, not registrations.
+    job_registry.reset_for_tests()
+    yield
+    job_registry.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _reset_job_scheduler():
+    job_scheduler.reset_for_tests()
+    yield
+    job_scheduler.reset_for_tests()
 
 
 @pytest.fixture()

@@ -168,6 +168,14 @@ def get_game_by_igdb_id(db: Session, igdb_id: int) -> Game | None:
     return db.scalars(select(Game).where(Game.igdb_id == igdb_id)).first()
 
 
+def list_igdb_linked_games(db: Session) -> list[tuple[int, str]]:
+    """(id, name) pairs for every game with an igdb_id — the set a bulk resync job (see
+    app/services/resync_collections_job.py) iterates. Manually-added games have no igdb_id
+    to resync from (see game_service.resync_game) and are excluded."""
+    stmt = select(Game.id, Game.name).where(Game.igdb_id.is_not(None)).order_by(Game.id)
+    return [(row[0], row[1]) for row in db.execute(stmt)]
+
+
 def list_addons(db: Session, parent_game_id: int) -> list[GameWithStatus]:
     stmt = (
         select(

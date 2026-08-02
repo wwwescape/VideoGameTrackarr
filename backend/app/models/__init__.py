@@ -38,6 +38,7 @@ from app.models.hardware import (  # noqa: F401
     UserAccessory,
     UserDevice,
 )
+from app.models.jobs import JobSchedule  # noqa: F401
 from app.models.library import (  # noqa: F401
     GameProgress,
     GameTag,

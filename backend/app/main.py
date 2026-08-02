@@ -25,6 +25,7 @@ from app.api.routes import (
     igdb,
     import_export,
     insights,
+    jobs,
     library,
     notes,
     platforms,
@@ -36,6 +37,8 @@ from app.api.routes import (
 from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DIR, get_settings
 from app.core.limiter import limiter
 from app.core.logging import configure_logging
+from app.db.session import SessionLocal
+from app.services import job_definitions, job_scheduler
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, IGDBCredentialsError
 
@@ -67,7 +70,17 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.igdb_client = IGDBClient()
+
+    job_definitions.register_builtin_jobs()
+    db = SessionLocal()
+    try:
+        job_scheduler.start(db, SessionLocal)
+    finally:
+        db.close()
+
     yield
+
+    job_scheduler.shutdown()
     await app.state.igdb_client.aclose()
 
 
@@ -121,6 +134,7 @@ app.include_router(accessories.router)
 app.include_router(hardware_stats.router)
 app.include_router(companies.router)
 app.include_router(uploads.router)
+app.include_router(jobs.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather
 # than committed to the repo, so it needs to exist before StaticFiles will mount it.

@@ -122,6 +122,45 @@
       "exportBackupError": "Error al exportar la copia de seguridad. Inténtalo de nuevo.",
       "restoreStartError": "No se pudo iniciar la restauración. Inténtalo de nuevo."
     },
+    "jobs": {
+      "heading": "Tareas",
+      "runNow": "Ejecutar ahora",
+      "dismiss": "Descartar",
+      "scheduleHeading": "Programación",
+      "scheduleEnabledLabel": "Ejecutar según una programación",
+      "cronExpressionLabel": "Expresión cron",
+      "cronExpressionHelp": "Cron estándar de 5 campos, p. ej. \"0 3 * * *\" para diario a las 3am.",
+      "saveSchedule": "Guardar programación",
+      "nextRun": "Próxima ejecución: {{date}}",
+      "neverScheduled": "Sin programar",
+      "resultSummary": "{{succeeded}} de {{total}} completados correctamente ({{failed}} fallidos)",
+      "runError": "No se pudo iniciar la tarea. Inténtalo de nuevo.",
+      "scheduleSaveError": "No se pudo guardar la programación. Comprueba la expresión cron e inténtalo de nuevo.",
+      "status": {
+        "idle": "Inactiva",
+        "running": "En ejecución",
+        "completed": "Completada",
+        "failed": "Fallida"
+      },
+      "jobs": {
+        "resyncAll": {
+          "name": "Resincronizar todo",
+          "description": "Vuelve a obtener los datos completos del catálogo de cada juego vinculado a IGDB (géneros, empresas, plataformas, contenido multimedia, colecciones, sagas) — restaura todo después de restaurar una copia de seguridad, ya que esta no conserva nada de ello."
+        },
+        "resyncGames": {
+          "name": "Resincronizar juegos",
+          "description": "Vuelve a obtener géneros, empresas, plataformas y contenido multimedia de cada juego vinculado a IGDB, sin tocar colecciones ni sagas."
+        },
+        "resyncCollections": {
+          "name": "Resincronizar colecciones",
+          "description": "Vuelve a obtener solo los datos de colecciones de cada juego vinculado a IGDB — restaura las colecciones después de restaurar una copia de seguridad, ya que esta no las conserva."
+        },
+        "resyncSeries": {
+          "name": "Resincronizar sagas",
+          "description": "Vuelve a obtener solo los datos de sagas de cada juego vinculado a IGDB — restaura las sagas después de restaurar una copia de seguridad, ya que esta no las conserva."
+        }
+      }
+    },
     "igdb": {
       "heading": "Credenciales de IGDB",
       "description": "Las credenciales de IGDB se configuran mediante el archivo <1>.env</1> de este servidor (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), no a través de la aplicación."

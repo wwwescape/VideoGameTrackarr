@@ -122,6 +122,45 @@
       "exportBackupError": "Error exporting backup. Please try again.",
       "restoreStartError": "Could not start the restore. Please try again."
     },
+    "jobs": {
+      "heading": "Jobs",
+      "runNow": "Run now",
+      "dismiss": "Dismiss",
+      "scheduleHeading": "Schedule",
+      "scheduleEnabledLabel": "Run on a schedule",
+      "cronExpressionLabel": "Cron expression",
+      "cronExpressionHelp": "Standard 5-field cron, e.g. \"0 3 * * *\" for daily at 3am.",
+      "saveSchedule": "Save schedule",
+      "nextRun": "Next run: {{date}}",
+      "neverScheduled": "Not scheduled",
+      "resultSummary": "{{succeeded}} of {{total}} succeeded ({{failed}} failed)",
+      "runError": "Could not start the job. Please try again.",
+      "scheduleSaveError": "Could not save the schedule. Check the cron expression and try again.",
+      "status": {
+        "idle": "Idle",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "jobs": {
+        "resyncAll": {
+          "name": "Resync everything",
+          "description": "Re-fetches every IGDB-linked game's full catalog data (genres, companies, platforms, media, Collections, Series) — restores everything after a backup restore, which doesn't carry any of it over."
+        },
+        "resyncGames": {
+          "name": "Resync Games",
+          "description": "Re-fetches genres, companies, platforms, and media for every IGDB-linked game, without touching Collections or Series."
+        },
+        "resyncCollections": {
+          "name": "Resync Collections",
+          "description": "Re-fetches only Collection data for every IGDB-linked game — restores Collections after a backup restore, which doesn't carry them over."
+        },
+        "resyncSeries": {
+          "name": "Resync Series",
+          "description": "Re-fetches only Series data for every IGDB-linked game — restores Series after a backup restore, which doesn't carry it over."
+        }
+      }
+    },
     "igdb": {
       "heading": "IGDB credentials",
       "description": "IGDB credentials are configured via this server's <1>.env</1> file (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), not through the app."

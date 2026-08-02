@@ -250,6 +250,46 @@ export interface RestoreStatus {
   error: string | null;
 }
 
+export type JobRunStatus = "idle" | "running" | "completed" | "failed";
+
+export interface ResyncJobFailure {
+  gameId: number;
+  gameName: string;
+  error: string;
+}
+
+// Shared by all four resync_* jobs (resync_all/resync_games/resync_collections/
+// resync_series) — they differ in which catalog fields get written per game, not in the
+// shape of their run result.
+export interface ResyncJobResult {
+  total: number;
+  succeeded: number;
+  failed: number;
+  failures: ResyncJobFailure[];
+}
+
+export interface JobRun {
+  status: JobRunStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  // Generic at the framework level — every job registered today happens to return
+  // ResyncJobResult, but a future job's result shape is unconstrained.
+  result: Record<string, unknown> | null;
+  error: string | null;
+}
+
+export interface JobSchedule {
+  enabled: boolean;
+  cronExpression: string | null;
+  nextRunAt: string | null;
+}
+
+export interface JobSummary {
+  id: string;
+  run: JobRun;
+  schedule: JobSchedule;
+}
+
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
 export type RatingBoard = "esrb" | "pegi" | "cero" | "usk" | "grac" | "classind" | "acb" | "iarc";

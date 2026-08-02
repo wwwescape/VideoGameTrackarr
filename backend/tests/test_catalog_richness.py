@@ -19,6 +19,8 @@ from app.models.catalog import (
     ReleaseDate,
     Screenshot,
 )
+from app.services import game_service
+from app.services.game_service import CatalogSyncScope
 from app.services.igdb_client import IGDB_API_BASE, IGDB_TOKEN_URL
 
 TOKEN_RESPONSE = httpx.Response(200, json={"access_token": "test-token", "expires_in": 3600})
@@ -245,3 +247,61 @@ def test_release_date_region_enum_maps_correctly():
     assert IgdbReleaseRegion.from_igdb_value(8) == IgdbReleaseRegion.WORLDWIDE
     assert IgdbReleaseRegion.from_igdb_value(None) is None
     assert IgdbReleaseRegion.from_igdb_value(99) is None
+
+
+def _mock_rich_payload_for(seed_game):
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/games").mock(
+        side_effect=[
+            httpx.Response(200, json=[_rich_payload(igdb_id=seed_game.igdb_id)]),
+            httpx.Response(200, json=[]),  # no addons
+        ]
+    )
+
+
+@respx.mock
+async def test_games_scope_resync_skips_franchises_and_collections(db_session, seed_game, igdb_client):
+    """Used by the resync_games bulk job (see app/services/resync_jobs.py) — writes
+    genres/companies/platforms/media but must leave Series (Franchise) and Collections
+    untouched, since those have their own dedicated jobs."""
+    _mock_rich_payload_for(seed_game)
+
+    await game_service.resync_game(db_session, igdb_client, seed_game.id, scope=CatalogSyncScope.GAMES)
+
+    assert db_session.query(GameGenre).filter_by(game_id=seed_game.id).count() == 1
+    assert db_session.query(GameCompany).filter_by(game_id=seed_game.id).count() == 2
+    assert db_session.query(GamePlatform).filter_by(game_id=seed_game.id).count() == 1
+    assert db_session.query(Screenshot).filter_by(game_id=seed_game.id).count() == 1
+    assert db_session.query(ReleaseDate).filter_by(game_id=seed_game.id).count() == 1
+    assert db_session.query(GameFranchise).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GameCollection).filter_by(game_id=seed_game.id).count() == 0
+
+
+@respx.mock
+async def test_collections_scope_resync_writes_only_collections(db_session, seed_game, igdb_client):
+    """Used by the resync_collections bulk job — writes only Collections, leaving genres/
+    companies/platforms/media/Series (Franchise) untouched."""
+    _mock_rich_payload_for(seed_game)
+
+    await game_service.resync_game(db_session, igdb_client, seed_game.id, scope=CatalogSyncScope.COLLECTIONS)
+
+    assert db_session.query(GameCollection).filter_by(game_id=seed_game.id).count() == 1
+    assert db_session.query(GameFranchise).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GameGenre).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GameCompany).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GamePlatform).filter_by(game_id=seed_game.id).count() == 0
+
+
+@respx.mock
+async def test_series_scope_resync_writes_only_franchises(db_session, seed_game, igdb_client):
+    """Used by the resync_series bulk job — writes only Series (Franchise), leaving
+    Collections/genres/companies/platforms/media untouched."""
+    _mock_rich_payload_for(seed_game)
+
+    await game_service.resync_game(db_session, igdb_client, seed_game.id, scope=CatalogSyncScope.SERIES)
+
+    assert db_session.query(GameFranchise).filter_by(game_id=seed_game.id).count() == 1
+    assert db_session.query(GameCollection).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GameGenre).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GameCompany).filter_by(game_id=seed_game.id).count() == 0
+    assert db_session.query(GamePlatform).filter_by(game_id=seed_game.id).count() == 0

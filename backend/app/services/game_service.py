@@ -1,3 +1,4 @@
+import enum
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -24,6 +25,19 @@ _COMPANY_ROLE_FLAGS = (
     ("porting", CompanyRole.PORTING),
     ("supporting", CompanyRole.SUPPORTING),
 )
+
+
+class CatalogSyncScope(enum.Enum):
+    """Which part(s) of _sync_catalog_richness a resync should write. Every interactive
+    caller (import/resync/link-to-igdb routes) uses the ALL default — only the bulk resync
+    jobs (see app/services/resync_jobs.py) narrow this, since IGDB always returns every
+    field together in one query regardless of scope (see GAME_FIELDS in igdb_client.py) —
+    narrowing only changes what gets written, not what gets fetched."""
+
+    ALL = "all"
+    GAMES = "games"  # genres, companies, platforms, media — the complement of COLLECTIONS/SERIES
+    COLLECTIONS = "collections"  # backend Collection = UI "Collections"
+    SERIES = "series"  # backend Franchise = UI "Series"
 
 # Only these categories represent content that extends an *existing* copy rather than
 # something independently ownable/playable — the only ones where nesting under a parent
@@ -71,7 +85,9 @@ def delete_game(db: Session, game_id: int) -> None:
     db.commit()
 
 
-async def import_game_from_igdb(db: Session, igdb_client: IGDBClient, igdb_id: int) -> GameWithStatus:
+async def import_game_from_igdb(
+    db: Session, igdb_client: IGDBClient, igdb_id: int, scope: CatalogSyncScope = CatalogSyncScope.ALL
+) -> GameWithStatus:
     """Imports (or re-syncs, if it already exists) a game and every game IGDB links back to
     it via parent_game. One commit for the whole operation — either the game and all its
     children land together, or none of them do."""
@@ -79,7 +95,7 @@ async def import_game_from_igdb(db: Session, igdb_client: IGDBClient, igdb_id: i
     if not igdb_games:
         raise NotFoundError(f"IGDB game {igdb_id} not found")
 
-    game = _upsert_from_igdb_payload(db, igdb_games[0])
+    game = _upsert_from_igdb_payload(db, igdb_games[0], scope=scope)
 
     # get_addons_by_parent_igdb_id only returns the hierarchical addon types (DLC/expansion/
     # pack) now — siblings a parent_game backlink also turns up (remasters, bundles,
@@ -90,13 +106,15 @@ async def import_game_from_igdb(db: Session, igdb_client: IGDBClient, igdb_id: i
     # display-only based on the *child's own* category, same as the direct-import path.
     addons = await igdb_client.get_addons_by_parent_igdb_id(igdb_id)
     for addon in addons:
-        _upsert_from_igdb_payload(db, addon, candidate_parent_id=game.id)
+        _upsert_from_igdb_payload(db, addon, candidate_parent_id=game.id, scope=scope)
 
     db.commit()
     return get_game_detail(db, game.id)
 
 
-async def resync_game(db: Session, igdb_client: IGDBClient, game_id: int) -> GameWithStatus:
+async def resync_game(
+    db: Session, igdb_client: IGDBClient, game_id: int, scope: CatalogSyncScope = CatalogSyncScope.ALL
+) -> GameWithStatus:
     # A plain PK lookup, not get_game_detail() — that eager-loads every catalog-richness
     # relation (selectinload(Game.genres), etc.) just to check igdb_id. Doing that here,
     # before _sync_catalog_richness has run, caches those relations as empty on this
@@ -111,7 +129,7 @@ async def resync_game(db: Session, igdb_client: IGDBClient, game_id: int) -> Gam
     if game.igdb_id is None:
         raise NotFoundError(f"Game {game_id} has no IGDB id to resync from")
 
-    return await import_game_from_igdb(db, igdb_client, game.igdb_id)
+    return await import_game_from_igdb(db, igdb_client, game.igdb_id, scope=scope)
 
 
 async def link_game_to_igdb(db: Session, igdb_client: IGDBClient, game_id: int, igdb_id: int) -> GameWithStatus:
@@ -194,7 +212,12 @@ def resolve_igdb_category(igdb_game: dict[str, Any]) -> tuple[int | None, GameCa
     return igdb_category_id, GameCategory.from_igdb_category_id(igdb_category_id)
 
 
-def _upsert_from_igdb_payload(db: Session, igdb_game: dict[str, Any], candidate_parent_id: int | None = None) -> Game:
+def _upsert_from_igdb_payload(
+    db: Session,
+    igdb_game: dict[str, Any],
+    candidate_parent_id: int | None = None,
+    scope: CatalogSyncScope = CatalogSyncScope.ALL,
+) -> Game:
     igdb_category_id, category = resolve_igdb_category(igdb_game)
 
     external_parent_name = None
@@ -248,93 +271,106 @@ def _upsert_from_igdb_payload(db: Session, igdb_game: dict[str, Any], candidate_
         similar_game_igdb_ids=igdb_game.get("similar_games"),
     )
 
-    _sync_catalog_richness(db, game, igdb_game)
+    _sync_catalog_richness(db, game, igdb_game, scope=scope)
     return game
 
 
-def _sync_catalog_richness(db: Session, game: Game, igdb_game: dict[str, Any]) -> None:
+def _sync_catalog_richness(
+    db: Session, game: Game, igdb_game: dict[str, Any], scope: CatalogSyncScope = CatalogSyncScope.ALL
+) -> None:
     """Persists everything GAME_FIELDS' relation expansions add beyond the base columns —
     genres/companies/franchises/collections/platforms/screenshots/videos/release_dates.
     Each call replaces these wholesale: IGDB's current response is the source of truth on
-    every resync, not something to merge with whatever was previously recorded."""
-    genre_ids = [
-        genre_repository.get_or_create_by_igdb(db, genre["id"], genre["name"], genre.get("slug")).id
-        for genre in igdb_game.get("genres") or []
-    ]
-    genre_repository.sync_for_game(db, game.id, genre_ids)
+    every resync, not something to merge with whatever was previously recorded.
 
-    # A set, not a list: IGDB sometimes lists the same company in involved_companies more
-    # than once with overlapping role flags (verified live — e.g. two separate entries for
-    # the same publisher), which would otherwise produce duplicate (company_id, role) pairs
-    # and violate game_companies' composite primary key.
-    company_roles: set[tuple[int, CompanyRole]] = set()
-    for involved in igdb_game.get("involved_companies") or []:
-        company_data = involved.get("company")
-        if not company_data:
-            continue
-        logo_url = (company_data.get("logo") or {}).get("url")
-        company = company_repository.get_or_create_by_igdb(
-            db, company_data["id"], company_data.get("name", ""), company_data.get("slug"), logo_url
+    `scope` narrows which of these get written — used by the bulk resync jobs (see
+    app/services/resync_jobs.py) to isolate e.g. a Series-only resync from touching genres.
+    Every interactive caller (import/resync/link-to-igdb routes) uses the ALL default."""
+    if scope in (CatalogSyncScope.ALL, CatalogSyncScope.GAMES):
+        genre_ids = [
+            genre_repository.get_or_create_by_igdb(db, genre["id"], genre["name"], genre.get("slug")).id
+            for genre in igdb_game.get("genres") or []
+        ]
+        genre_repository.sync_for_game(db, game.id, genre_ids)
+
+        # A set, not a list: IGDB sometimes lists the same company in involved_companies
+        # more than once with overlapping role flags (verified live — e.g. two separate
+        # entries for the same publisher), which would otherwise produce duplicate
+        # (company_id, role) pairs and violate game_companies' composite primary key.
+        company_roles: set[tuple[int, CompanyRole]] = set()
+        for involved in igdb_game.get("involved_companies") or []:
+            company_data = involved.get("company")
+            if not company_data:
+                continue
+            logo_url = (company_data.get("logo") or {}).get("url")
+            company = company_repository.get_or_create_by_igdb(
+                db, company_data["id"], company_data.get("name", ""), company_data.get("slug"), logo_url
+            )
+            for flag, role in _COMPANY_ROLE_FLAGS:
+                if involved.get(flag):
+                    company_roles.add((company.id, role))
+        company_repository.sync_for_game(
+            db, game.id, sorted(company_roles, key=lambda pair: (pair[0], pair[1].value))
         )
-        for flag, role in _COMPANY_ROLE_FLAGS:
-            if involved.get(flag):
-                company_roles.add((company.id, role))
-    company_repository.sync_for_game(db, game.id, sorted(company_roles, key=lambda pair: (pair[0], pair[1].value)))
 
-    franchise_ids = [
-        franchise_repository.get_or_create_by_igdb(db, franchise["id"], franchise["name"], franchise.get("slug")).id
-        for franchise in igdb_game.get("franchises") or []
-    ]
-    franchise_repository.sync_for_game(db, game.id, franchise_ids)
+        platform_ids = [
+            platform_repository.get_or_create_by_igdb(
+                db, platform["id"], platform["name"], platform.get("slug"), platform.get("abbreviation")
+            ).id
+            for platform in igdb_game.get("platforms") or []
+        ]
+        platform_repository.sync_for_game(db, game.id, platform_ids)
 
-    collection_ids = [
-        collection_repository.get_or_create_by_igdb(db, coll["id"], coll["name"], coll.get("slug")).id
-        for coll in igdb_game.get("collections") or []
-    ]
-    collection_repository.sync_for_game(db, game.id, collection_ids)
+        screenshots = [
+            (screenshot["id"], screenshot["url"])
+            for screenshot in igdb_game.get("screenshots") or []
+            if screenshot.get("url")
+        ]
+        game_media_repository.sync_screenshots(db, game.id, screenshots)
 
-    platform_ids = [
-        platform_repository.get_or_create_by_igdb(
-            db, platform["id"], platform["name"], platform.get("slug"), platform.get("abbreviation")
-        ).id
-        for platform in igdb_game.get("platforms") or []
-    ]
-    platform_repository.sync_for_game(db, game.id, platform_ids)
+        artworks = [
+            (artwork["id"], artwork["url"]) for artwork in igdb_game.get("artworks") or [] if artwork.get("url")
+        ]
+        game_media_repository.sync_artworks(db, game.id, artworks)
 
-    screenshots = [
-        (screenshot["id"], screenshot["url"])
-        for screenshot in igdb_game.get("screenshots") or []
-        if screenshot.get("url")
-    ]
-    game_media_repository.sync_screenshots(db, game.id, screenshots)
+        videos = [
+            (video["id"], video.get("name"), video["video_id"])
+            for video in igdb_game.get("videos") or []
+            if video.get("video_id")
+        ]
+        game_media_repository.sync_videos(db, game.id, videos)
 
-    artworks = [
-        (artwork["id"], artwork["url"]) for artwork in igdb_game.get("artworks") or [] if artwork.get("url")
-    ]
-    game_media_repository.sync_artworks(db, game.id, artworks)
+        # Depends on the platforms sync just above (a release date's platform is always one
+        # of the game's own platforms) — stays in this block rather than its own scope so
+        # that dependency is never split across a scope boundary.
+        release_dates = [
+            game_media_repository.ReleaseDateInput(
+                igdb_id=release_date["id"],
+                date=release_date.get("date"),
+                human=release_date.get("human"),
+                # Looked up, not upserted: the platform should already exist from the
+                # `platforms` sync above with full slug/abbreviation data — re-upserting
+                # here with only id+name would silently clobber that richer data with nulls.
+                platform_id=_release_date_platform_id(db, release_date.get("platform")),
+                release_region=IgdbReleaseRegion.from_igdb_value(release_date.get("release_region")),
+            )
+            for release_date in igdb_game.get("release_dates") or []
+        ]
+        game_media_repository.sync_release_dates(db, game.id, release_dates)
 
-    videos = [
-        (video["id"], video.get("name"), video["video_id"])
-        for video in igdb_game.get("videos") or []
-        if video.get("video_id")
-    ]
-    game_media_repository.sync_videos(db, game.id, videos)
+    if scope in (CatalogSyncScope.ALL, CatalogSyncScope.SERIES):
+        franchise_ids = [
+            franchise_repository.get_or_create_by_igdb(db, franchise["id"], franchise["name"], franchise.get("slug")).id
+            for franchise in igdb_game.get("franchises") or []
+        ]
+        franchise_repository.sync_for_game(db, game.id, franchise_ids)
 
-    release_dates = [
-        game_media_repository.ReleaseDateInput(
-            igdb_id=release_date["id"],
-            date=release_date.get("date"),
-            human=release_date.get("human"),
-            # Looked up, not upserted: the platform should already exist from the
-            # `platforms` sync above (a release date's platform is always one of the
-            # game's own platforms) with full slug/abbreviation data — re-upserting here
-            # with only id+name would silently clobber that richer data with nulls.
-            platform_id=_release_date_platform_id(db, release_date.get("platform")),
-            release_region=IgdbReleaseRegion.from_igdb_value(release_date.get("release_region")),
-        )
-        for release_date in igdb_game.get("release_dates") or []
-    ]
-    game_media_repository.sync_release_dates(db, game.id, release_dates)
+    if scope in (CatalogSyncScope.ALL, CatalogSyncScope.COLLECTIONS):
+        collection_ids = [
+            collection_repository.get_or_create_by_igdb(db, coll["id"], coll["name"], coll.get("slug")).id
+            for coll in igdb_game.get("collections") or []
+        ]
+        collection_repository.sync_for_game(db, game.id, collection_ids)
 
 
 def _release_date_platform_id(db: Session, platform_data: dict[str, Any] | None) -> int | None:
