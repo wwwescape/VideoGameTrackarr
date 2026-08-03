@@ -17,7 +17,7 @@ HARDWARE_REFERENCE_IMAGES_DIR = BACKEND_DIR / "static" / "hardware-reference"
 class Settings(BaseSettings):
     # Secrets live in one .env at the repo root (not backend/), so the same file works for
     # both local dev and the Docker Compose setup, which reads it from there too.
-    model_config = SettingsConfigDict(env_file=str(REPO_ROOT / ".env"), extra="ignore")
+    model_config = SettingsConfigDict(env_file=str(REPO_ROOT / ".env"), extra="ignore", env_ignore_empty=True)
 
     app_name: str = "VideoGameTrackarr API"
     environment: str = "development"
