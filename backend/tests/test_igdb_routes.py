@@ -6,7 +6,7 @@ from PIL import Image
 
 from app.core.config import UPLOADS_DIR
 from app.models.catalog import Game, GameCategory
-from app.models.library import LibraryItem, LibraryStatus, Note
+from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, Note, Tag
 from app.services import upload_service
 from app.services.igdb_client import IGDB_API_BASE, IGDB_TOKEN_URL
 
@@ -529,3 +529,97 @@ def test_link_via_parent_conflict_when_addon_has_no_parent(auth_client, db_sessi
     response = auth_client.post(f"/api/games/{manual_addon.id}/link-igdb-via-parent", json={"igdbId": 9001})
 
     assert response.status_code == 409
+
+
+def test_merge_into_igdb_moves_user_data_and_deletes_source(auth_client, db_session, seed_game, seed_platform):
+    manual_game = Game(name="F1 25: 2026 Season Pack (custom)", category=None)
+    db_session.add(manual_game)
+    db_session.commit()
+    db_session.add(LibraryItem(game_id=manual_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(Note(game_id=manual_game.id, body="My placeholder notes"))
+    db_session.commit()
+
+    response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == seed_game.id
+
+    assert db_session.get(Game, manual_game.id) is None
+    assert db_session.query(LibraryItem).filter_by(game_id=seed_game.id).one().status == LibraryStatus.OWNED
+    assert db_session.query(Note).filter_by(game_id=seed_game.id).one().body == "My placeholder notes"
+
+
+def test_merge_into_igdb_dedupes_a_tag_shared_by_both_entries(auth_client, db_session, seed_game):
+    manual_game = Game(name="Custom Duplicate", category=None)
+    db_session.add(manual_game)
+    db_session.commit()
+    shared_tag = Tag(name="Speedrun")
+    other_tag = Tag(name="Backlog")
+    db_session.add_all([shared_tag, other_tag])
+    db_session.commit()
+    db_session.add(GameTag(game_id=seed_game.id, tag_id=shared_tag.id))
+    db_session.add(GameTag(game_id=manual_game.id, tag_id=shared_tag.id))
+    db_session.add(GameTag(game_id=manual_game.id, tag_id=other_tag.id))
+    db_session.commit()
+
+    response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+
+    assert response.status_code == 200
+    target_tag_ids = {row.tag_id for row in db_session.query(GameTag).filter_by(game_id=seed_game.id).all()}
+    assert target_tag_ids == {shared_tag.id, other_tag.id}
+
+
+def test_merge_into_igdb_conflict_when_both_entries_have_progress(auth_client, db_session, seed_game):
+    manual_game = Game(name="Custom Duplicate", category=None)
+    db_session.add(manual_game)
+    db_session.commit()
+    db_session.add(GameProgress(game_id=seed_game.id, rating=8))
+    db_session.add(GameProgress(game_id=manual_game.id, rating=9))
+    db_session.commit()
+
+    response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+
+    assert response.status_code == 409
+    # Refused before touching anything — both rows still exist, untouched.
+    assert db_session.get(Game, manual_game.id) is not None
+    assert db_session.query(GameProgress).filter_by(game_id=seed_game.id).one().rating == 8
+
+
+def test_merge_into_igdb_404_when_igdb_id_not_in_library(auth_client, db_session):
+    manual_game = Game(name="Custom Duplicate", category=None)
+    db_session.add(manual_game)
+    db_session.commit()
+
+    response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": 999999})
+
+    assert response.status_code == 404
+
+
+def test_merge_into_igdb_conflict_when_source_already_linked(auth_client, seed_game):
+    response = auth_client.post(f"/api/games/{seed_game.id}/merge-into-igdb", json={"igdbId": 5555})
+
+    assert response.status_code == 409
+
+
+def test_merge_into_igdb_404_for_missing_game(auth_client):
+    response = auth_client.post("/api/games/999999/merge-into-igdb", json={"igdbId": 1})
+
+    assert response.status_code == 404
+
+
+def test_merge_into_igdb_discards_source_cover_image(auth_client, db_session, seed_game):
+    image_bytes = io.BytesIO()
+    Image.new("RGB", (10, 10), color="blue").save(image_bytes, format="PNG")
+    uploaded_url = upload_service.save_cover_image(image_bytes.getvalue())
+    uploaded_path = UPLOADS_DIR / "covers" / uploaded_url.removeprefix("/uploads/covers/")
+    assert uploaded_path.is_file()
+
+    manual_game = Game(name="Custom Duplicate", category=None, cover_url=uploaded_url)
+    db_session.add(manual_game)
+    db_session.commit()
+
+    response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+
+    assert response.status_code == 200
+    assert not uploaded_path.exists()

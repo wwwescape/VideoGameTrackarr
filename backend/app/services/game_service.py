@@ -200,6 +200,33 @@ async def link_addon_via_new_parent(
     return get_game_detail(db, new_addon.id)
 
 
+def merge_duplicate_game(db: Session, game_id: int, igdb_id: int) -> GameWithStatus:
+    """The already-in-your-library path for Link to IGDB: `igdb_id` is already claimed by
+    another row (see link_game_to_igdb's ConflictError), so instead of just failing, this
+    merges this manually-added game's library status/progress/notes/tags onto that existing
+    row and discards this one — same outcome as link_addon_via_new_parent, but for a
+    duplicate that already existed rather than one this call just created."""
+    game = db.get(Game, game_id)
+    if game is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    if game.igdb_id is not None:
+        raise ConflictError(f"Game {game_id} is already linked to IGDB")
+
+    target = game_repository.get_game_by_igdb_id(db, igdb_id)
+    if target is None:
+        raise NotFoundError(f"IGDB game {igdb_id} is not in your library")
+
+    if game_repository.game_has_progress(db, game.id) and game_repository.game_has_progress(db, target.id):
+        raise ConflictError("Both entries already track play progress — resolve that manually before merging")
+
+    old_cover_url = game.cover_url
+    game_repository.merge_game(db, source=game, target=target)
+    db.commit()
+    # Never carried over to target — same orphaned-upload cleanup as link_game_to_igdb above.
+    upload_service.delete_if_local_upload(old_cover_url)
+    return get_game_detail(db, target.id)
+
+
 def resolve_igdb_category(igdb_game: dict[str, Any]) -> tuple[int | None, GameCategory | None]:
     # IGDB has migrated classification onto `game_type` — verified live that `category` is
     # now unset on essentially everything, including top-level games like Elden Ring, while

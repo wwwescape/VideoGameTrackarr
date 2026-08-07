@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import { searchIgdb } from "../api/igdb";
 import type { GameCategory, IgdbSearchResult } from "../api/types";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { useGames, useLinkGameToIgdb, useLinkGameToIgdbViaParent } from "../hooks/useGames";
+import { useGames, useLinkGameToIgdb, useLinkGameToIgdbViaParent, useMergeGameIntoIgdb } from "../hooks/useGames";
 import { useIgdbSearch } from "../hooks/useIgdbSearch";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -52,6 +52,11 @@ interface ParentNeeded {
   parentName: string;
 }
 
+interface DuplicateFound {
+  igdbId: number;
+  name: string;
+}
+
 const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: LinkToIgdbDialogProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -59,9 +64,11 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
   const [manualIgdbId, setManualIgdbId] = useState("");
   const [isResolvingManualId, setIsResolvingManualId] = useState(false);
   const [parentNeeded, setParentNeeded] = useState<ParentNeeded | null>(null);
+  const [duplicateFound, setDuplicateFound] = useState<DuplicateFound | null>(null);
   const [cannotBeAddedOpen, setCannotBeAddedOpen] = useState(false);
   const linkGameToIgdb = useLinkGameToIgdb(gameId);
   const linkViaParent = useLinkGameToIgdbViaParent(gameId);
+  const mergeIntoIgdb = useMergeGameIntoIgdb(gameId);
   const { data: localGames } = useGames();
 
   const isLinkingAddon = gameCategory !== null && ADDON_TYPE_CATEGORIES.includes(gameCategory);
@@ -72,6 +79,7 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
       setQuery(gameName);
       setManualIgdbId("");
       setParentNeeded(null);
+      setDuplicateFound(null);
       setCannotBeAddedOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,23 +97,23 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
     (result) => result.category !== null && allowedCategories.includes(result.category)
   );
   const igdbNotConfigured = isAxiosError(searchError) && searchError.response?.status === 503;
-  const isPending = linkGameToIgdb.isPending || linkViaParent.isPending || isResolvingManualId;
+  const isPending = linkGameToIgdb.isPending || linkViaParent.isPending || mergeIntoIgdb.isPending || isResolvingManualId;
 
   const handleLinkError = (error: unknown) => {
     console.error("Error linking game to IGDB:", error);
-    const message =
-      isAxiosError(error) && error.response?.status === 409
-        ? t("igdb.alreadyInLibraryError")
-        : t("igdb.linkError");
-    toast.error(message, TOAST_OPTIONS);
+    toast.error(t("igdb.linkError"), TOAST_OPTIONS);
   };
 
-  const handleLink = async (igdbId: number) => {
+  const handleLink = async (igdbId: number, name: string) => {
     try {
       await linkGameToIgdb.mutateAsync(igdbId);
       toast.success(t("igdb.linkedSuccess"), TOAST_OPTIONS);
       onClose();
     } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        setDuplicateFound({ igdbId, name });
+        return;
+      }
       handleLinkError(error);
     }
   };
@@ -115,7 +123,7 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
   // its parent, or refuse.
   const resolveAndLink = (result: IgdbSearchResult) => {
     if (result.category !== null && GAME_TYPE_CATEGORIES.includes(result.category)) {
-      void handleLink(result.igdbId);
+      void handleLink(result.igdbId, result.name);
       return;
     }
     if (result.category !== null && ADDON_TYPE_CATEGORIES.includes(result.category)) {
@@ -125,7 +133,7 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
       }
       const parentExistsLocally = localGames?.some((game) => game.igdbId === result.parentGame!.igdbId);
       if (parentExistsLocally) {
-        void handleLink(result.igdbId);
+        void handleLink(result.igdbId, result.name);
       } else {
         setParentNeeded({
           addonIgdbId: result.igdbId,
@@ -171,6 +179,24 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
     } catch (error) {
       console.error("Error adding parent game:", error);
       toast.error(t("igdb.addParentError"), TOAST_OPTIONS);
+    }
+  };
+
+  const handleConfirmMerge = async () => {
+    if (!duplicateFound) return;
+    try {
+      const game = await mergeIntoIgdb.mutateAsync(duplicateFound.igdbId);
+      toast.success(t("igdb.mergeSuccess"), TOAST_OPTIONS);
+      setDuplicateFound(null);
+      onClose();
+      navigate(`/game/${gameIdentifier(game)}`);
+    } catch (error) {
+      console.error("Error merging duplicate game:", error);
+      const message =
+        isAxiosError(error) && error.response?.status === 409
+          ? t("igdb.mergeProgressConflictError")
+          : t("igdb.mergeError");
+      toast.error(message, TOAST_OPTIONS);
     }
   };
 
@@ -256,6 +282,14 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
         confirmLabel={t("igdb.proceedButton")}
         onClose={() => setParentNeeded(null)}
         onConfirm={() => void handleProceedWithParent()}
+      />
+      <ConfirmDialog
+        open={duplicateFound !== null}
+        title={t("igdb.duplicateFoundTitle")}
+        description={duplicateFound ? t("igdb.duplicateFoundDescription", { name: duplicateFound.name }) : ""}
+        confirmLabel={t("igdb.mergeButton")}
+        onClose={() => setDuplicateFound(null)}
+        onConfirm={() => void handleConfirmMerge()}
       />
       <MessageDialog
         open={cannotBeAddedOpen}

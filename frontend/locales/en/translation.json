@@ -690,14 +690,19 @@
     "proceedButton": "Proceed",
     "cannotLinkTitle": "Can't link to IGDB",
     "cannotLinkMessage": "This category cannot be added.",
-    "alreadyInLibraryError": "That IGDB game is already in your library.",
     "linkError": "Error linking to IGDB. Please try again.",
     "linkedSuccess": "Game linked to IGDB!",
     "invalidIdError": "Enter a valid IGDB ID.",
     "idNotFoundError": "No IGDB game found with id \"{{id}}\".",
     "idLookupError": "Error looking up that IGDB ID. Please try again.",
     "parentAddedSuccess": "Parent game and addon added!",
-    "addParentError": "Error adding parent game. Please try again."
+    "addParentError": "Error adding parent game. Please try again.",
+    "duplicateFoundTitle": "Already in your library",
+    "duplicateFoundDescription": "\"{{name}}\" is already in your library under a different entry. Merge this one into it? Your status, notes, tags, and playtime will move over; this entry (including any custom cover image) will be deleted.",
+    "mergeButton": "Merge",
+    "mergeSuccess": "Merged into the existing entry!",
+    "mergeError": "Error merging into the existing entry. Please try again.",
+    "mergeProgressConflictError": "Both entries already track play progress — resolve that manually, then try again."
   },
   "about": {
     "title": "About",

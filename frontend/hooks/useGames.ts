@@ -8,6 +8,7 @@ import {
   linkGameToIgdbViaParent,
   listAddons,
   listGames,
+  mergeGameIntoIgdb,
   resyncGame,
   updateManualGame,
 } from "../api/games";
@@ -123,6 +124,18 @@ export function useLinkGameToIgdbViaParent(gameId: number) {
     mutationFn: (igdbId: number) => linkGameToIgdbViaParent(gameId, igdbId),
     onSuccess: () => {
       // The original row (gameId) is deleted by the merge, replaced by a new row — no
+      // point invalidating its own id-keyed queries, just the broader games list/addons.
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+    },
+  });
+}
+
+export function useMergeGameIntoIgdb(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (igdbId: number) => mergeGameIntoIgdb(gameId, igdbId),
+    onSuccess: () => {
+      // gameId is deleted by the merge, its data folded into the existing target row — no
       // point invalidating its own id-keyed queries, just the broader games list/addons.
       queryClient.invalidateQueries({ queryKey: ["games"] });
     },

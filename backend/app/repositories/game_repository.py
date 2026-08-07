@@ -220,13 +220,31 @@ def upsert_game_from_igdb(db: Session, igdb_id: int, **fields: Any) -> Game:
     return game
 
 
+def game_has_progress(db: Session, game_id: int) -> bool:
+    return bool(db.scalar(select(exists().where(GameProgress.game_id == game_id))))
+
+
 def merge_game(db: Session, source: Game, target: Game) -> None:
     """Re-points every user-data row (library status, progress, play sessions, notes,
-    tags) and any addon children from `source` onto `target`, then deletes `source` — for
-    Link-to-IGDB's addon-parent flow, where the freshly-imported `target` row is always one
-    `import_game_from_igdb` just created, so it starts with zero rows in any of these
-    tables (import never creates user data, only catalog rows) — no merge-conflict
-    handling needed."""
+    tags) and any addon children from `source` onto `target`, then deletes `source`.
+
+    Originally written for Link-to-IGDB's addon-parent flow, where the freshly-imported
+    `target` row is always one `import_game_from_igdb` just created (so it starts with zero
+    rows in any of these tables). The duplicate-merge flow (merging a stale custom entry
+    into a pre-existing IGDB-linked row) reuses this against a `target` that may already
+    have data, which only matters for two tables here:
+      - `GameTag` has a composite (game_id, tag_id) primary key, so a source row for a tag
+        the target already has would violate it on a blind reassignment — deduped below by
+        dropping those source rows first (lossless: target already carries that tag).
+      - `GameProgress` is unique per game_id, so if both source and target already have a
+        row this would violate that constraint. Unlike GameTag there's no lossless way to
+        reconcile two real progress records automatically, so the caller must check
+        `game_has_progress` on both sides and refuse the merge beforehand — not handled
+        here.
+    """
+    dup_tag_ids = select(GameTag.tag_id).where(GameTag.game_id == target.id)
+    db.execute(delete(GameTag).where(GameTag.game_id == source.id, GameTag.tag_id.in_(dup_tag_ids)))
+
     db.execute(update(LibraryItem).where(LibraryItem.game_id == source.id).values(game_id=target.id))
     db.execute(update(GameProgress).where(GameProgress.game_id == source.id).values(game_id=target.id))
     db.execute(update(PlaySession).where(PlaySession.game_id == source.id).values(game_id=target.id))

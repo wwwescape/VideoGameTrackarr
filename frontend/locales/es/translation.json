@@ -690,14 +690,19 @@
     "proceedButton": "Continuar",
     "cannotLinkTitle": "No se puede vincular a IGDB",
     "cannotLinkMessage": "Esta categoría no se puede añadir.",
-    "alreadyInLibraryError": "Ese juego de IGDB ya está en tu biblioteca.",
     "linkError": "Error al vincular con IGDB. Inténtalo de nuevo.",
     "linkedSuccess": "¡Juego vinculado a IGDB!",
     "invalidIdError": "Introduce un ID de IGDB válido.",
     "idNotFoundError": "No se encontró ningún juego de IGDB con el id \"{{id}}\".",
     "idLookupError": "Error al buscar ese ID de IGDB. Inténtalo de nuevo.",
     "parentAddedSuccess": "¡Juego principal y expansión añadidos!",
-    "addParentError": "Error al añadir el juego principal. Inténtalo de nuevo."
+    "addParentError": "Error al añadir el juego principal. Inténtalo de nuevo.",
+    "duplicateFoundTitle": "Ya está en tu biblioteca",
+    "duplicateFoundDescription": "\"{{name}}\" ya está en tu biblioteca con otra entrada. ¿Fusionar esta entrada con esa? Tu estado, notas, etiquetas y tiempo de juego se transferirán; esta entrada (incluida cualquier carátula personalizada) se eliminará.",
+    "mergeButton": "Fusionar",
+    "mergeSuccess": "¡Fusionado con la entrada existente!",
+    "mergeError": "Error al fusionar con la entrada existente. Inténtalo de nuevo.",
+    "mergeProgressConflictError": "Ambas entradas ya registran progreso de juego; resuélvelo manualmente y vuelve a intentarlo."
   },
   "about": {
     "title": "Acerca de",

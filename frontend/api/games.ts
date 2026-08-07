@@ -43,6 +43,11 @@ export async function linkGameToIgdbViaParent(gameId: number, igdbId: number): P
   return response.data;
 }
 
+export async function mergeGameIntoIgdb(gameId: number, igdbId: number): Promise<GameDetail> {
+  const response = await apiClient.post<GameDetail>(`/api/games/${gameId}/merge-into-igdb`, { igdbId });
+  return response.data;
+}
+
 export async function createManualGame(input: ManualGameInput): Promise<GameDetail> {
   const response = await apiClient.post<GameDetail>("/api/games/manual", input);
   return response.data;

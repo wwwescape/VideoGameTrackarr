@@ -690,14 +690,19 @@
     "proceedButton": "Continuer",
     "cannotLinkTitle": "Impossible de lier à IGDB",
     "cannotLinkMessage": "Cette catégorie ne peut pas être ajoutée.",
-    "alreadyInLibraryError": "Ce jeu IGDB se trouve déjà dans votre bibliothèque.",
     "linkError": "Erreur lors de la liaison à IGDB. Veuillez réessayer.",
     "linkedSuccess": "Jeu lié à IGDB !",
     "invalidIdError": "Saisissez un ID IGDB valide.",
     "idNotFoundError": "Aucun jeu IGDB trouvé avec l'id « {{id}} ».",
     "idLookupError": "Erreur lors de la recherche de cet ID IGDB. Veuillez réessayer.",
     "parentAddedSuccess": "Jeu parent et complément ajoutés !",
-    "addParentError": "Erreur lors de l'ajout du jeu parent. Veuillez réessayer."
+    "addParentError": "Erreur lors de l'ajout du jeu parent. Veuillez réessayer.",
+    "duplicateFoundTitle": "Déjà dans votre bibliothèque",
+    "duplicateFoundDescription": "« {{name}} » se trouve déjà dans votre bibliothèque sous une autre fiche. Fusionner celle-ci avec l'autre ? Votre statut, vos notes, vos étiquettes et votre temps de jeu seront transférés ; cette fiche (y compris toute jaquette personnalisée) sera supprimée.",
+    "mergeButton": "Fusionner",
+    "mergeSuccess": "Fusionné avec la fiche existante !",
+    "mergeError": "Erreur lors de la fusion avec la fiche existante. Veuillez réessayer.",
+    "mergeProgressConflictError": "Les deux fiches suivent déjà une progression de jeu — réglez cela manuellement, puis réessayez."
   },
   "about": {
     "title": "À propos",

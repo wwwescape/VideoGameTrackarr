@@ -116,3 +116,13 @@ async def link_game_to_igdb_via_parent(
 ) -> GameDetailResponse:
     game = await game_service.link_addon_via_new_parent(db, igdb_client, game_id, body.igdb_id)
     return _game_detail_response(db, game)
+
+
+@router.post("/{game_id}/merge-into-igdb", response_model=GameDetailResponse)
+def merge_game_into_igdb(
+    game_id: int,
+    body: GameImportRequest,
+    db: Session = Depends(get_db),
+) -> GameDetailResponse:
+    game = game_service.merge_duplicate_game(db, game_id, body.igdb_id)
+    return _game_detail_response(db, game)
