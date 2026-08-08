@@ -6,7 +6,7 @@ To add a new curated image: drop a 400x400 `.jpg` into `backend/static/hardware-
 
 **Naming rule** (if a new reference entry is added later and isn't in this list): lowercase the official name, replace every run of non-alphanumeric characters with a single hyphen, trim leading/trailing hyphens, append `.jpg`.
 
-**Summary: 155 rows — 1 not yet in the dataset/DB. Devices: 56/56 images present. Accessories: 99 missing an image.**
+**Summary: 156 rows. Devices: 57/57 images present. Accessories: 99 missing an image.**
 
 ## Devices
 
@@ -21,6 +21,7 @@ To add a new curated image: drop a 400x400 `.jpg` into `backend/static/hardware-
 | Microsoft | Microsoft Xbox One X | ✅ | `microsoft-xbox-one-x.jpg` | ✅ |
 | Microsoft | Microsoft Xbox Series S | ✅ | `microsoft-xbox-series-s.jpg` | ✅ |
 | Microsoft | Microsoft Xbox Series X | ✅ | `microsoft-xbox-series-x.jpg` | ✅ |
+| Nintendo | Family Computer | ✅ | `family-computer.jpg` | ✅ |
 | Nintendo | New Nintendo 2DS XL | ✅ | `new-nintendo-2ds-xl.jpg` | ✅ |
 | Nintendo | New Nintendo 3DS | ✅ | `new-nintendo-3ds.jpg` | ✅ |
 | Nintendo | New Nintendo 3DS XL | ✅ | `new-nintendo-3ds-xl.jpg` | ✅ |

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, delete, exists, func, select
+from sqlalchemy import ColumnElement, delete, exists, func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.models.hardware import AccessoryDeviceLink, Device, DeviceNote, DeviceTag, UserDevice
+from app.models.hardware import AccessoryDeviceLink, Device, DeviceNote, DeviceTag, HardwareReferenceEntry, UserDevice
 from app.models.library import LibraryStatus
 
 # Repositories only add/flush/delete — they never commit. The service that calls them owns
@@ -66,7 +66,14 @@ def list_devices(
 ) -> list[DeviceWithStatus]:
     stmt = select(Device, *_STATUS_COLUMNS)
     if search:
-        stmt = stmt.where(Device.official_name.ilike(f"%{search}%"))
+        stmt = stmt.outerjoin(
+            HardwareReferenceEntry, Device.hardware_reference_entry_id == HardwareReferenceEntry.id
+        ).where(
+            or_(
+                Device.official_name.ilike(f"%{search}%"),
+                HardwareReferenceEntry.generation_short.ilike(f"%{search}%"),
+            )
+        )
     if manufacturer_id is not None:
         stmt = stmt.where(Device.manufacturer_id == manufacturer_id)
     if device_type_id is not None:

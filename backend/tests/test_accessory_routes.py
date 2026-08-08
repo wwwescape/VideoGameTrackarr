@@ -452,3 +452,41 @@ def test_list_accessories_filters_by_compatible_platform(auth_client, db_session
 
     filtered = auth_client.get("/api/accessories", params={"hardwarePlatformId": platform.id}).json()
     assert [a["officialName"] for a in filtered] == ["DualSense"]
+
+
+def test_list_accessories_search_matches_hardware_reference_generation_short(
+    auth_client, db_session, seed_manufacturer, seed_accessory_type
+):
+    entry = HardwareReferenceEntry(
+        brand="Sony",
+        family="PlayStation",
+        generation="PlayStation 3",
+        generation_short="PS3",
+        artefact="SIXAXIS Controller",
+        official_name="Sony SIXAXIS Controller (reference)",
+        category="Controller",
+        type="Accessory",
+        discontinued=False,
+    )
+    db_session.add(entry)
+    db_session.commit()
+    db_session.add_all(
+        [
+            Accessory(
+                manufacturer_id=seed_manufacturer.id,
+                accessory_type_id=seed_accessory_type.id,
+                official_name="SIXAXIS Controller",
+                hardware_reference_entry_id=entry.id,
+            ),
+            Accessory(
+                manufacturer_id=seed_manufacturer.id,
+                accessory_type_id=seed_accessory_type.id,
+                official_name="DualSense",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/accessories", params={"search": "ps3"})
+
+    assert [a["officialName"] for a in response.json()] == ["SIXAXIS Controller"]

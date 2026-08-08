@@ -243,6 +243,44 @@ def test_list_devices_filters_by_manufacturer_type_platform_and_search(
     assert [d["officialName"] for d in response.json()] == ["Sony PlayStation 5"]
 
 
+def test_list_devices_search_matches_hardware_reference_generation_short(
+    auth_client, db_session, seed_manufacturer, seed_device_type
+):
+    entry = HardwareReferenceEntry(
+        brand="Sony",
+        family="PlayStation",
+        generation="PlayStation 3",
+        generation_short="PS3",
+        artefact="PlayStation 3",
+        official_name="Sony PlayStation 3 (reference)",
+        category="Console",
+        type="Device",
+        discontinued=False,
+    )
+    db_session.add(entry)
+    db_session.commit()
+    db_session.add_all(
+        [
+            Device(
+                manufacturer_id=seed_manufacturer.id,
+                device_type_id=seed_device_type.id,
+                official_name="Sony PlayStation 3",
+                hardware_reference_entry_id=entry.id,
+            ),
+            Device(
+                manufacturer_id=seed_manufacturer.id,
+                device_type_id=seed_device_type.id,
+                official_name="Sony PlayStation 4",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/devices", params={"search": "ps3"})
+
+    assert [d["officialName"] for d in response.json()] == ["Sony PlayStation 3"]
+
+
 def test_list_devices_filters_by_ownership_status(auth_client, seed_device):
     auth_client.post(f"/api/devices/{seed_device.id}/user-devices", json={"status": "owned"})
 

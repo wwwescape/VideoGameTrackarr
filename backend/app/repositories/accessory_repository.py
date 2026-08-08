@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, delete, exists, func, select
+from sqlalchemy import ColumnElement, delete, exists, func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.hardware import (
@@ -11,6 +11,7 @@ from app.models.hardware import (
     AccessoryDeviceLink,
     AccessoryNote,
     AccessoryTag,
+    HardwareReferenceEntry,
     UserAccessory,
 )
 from app.models.library import LibraryStatus
@@ -71,7 +72,14 @@ def list_accessories(
 ) -> list[AccessoryWithStatus]:
     stmt = select(Accessory, *_STATUS_COLUMNS)
     if search:
-        stmt = stmt.where(Accessory.official_name.ilike(f"%{search}%"))
+        stmt = stmt.outerjoin(
+            HardwareReferenceEntry, Accessory.hardware_reference_entry_id == HardwareReferenceEntry.id
+        ).where(
+            or_(
+                Accessory.official_name.ilike(f"%{search}%"),
+                HardwareReferenceEntry.generation_short.ilike(f"%{search}%"),
+            )
+        )
     if manufacturer_id is not None:
         stmt = stmt.where(Accessory.manufacturer_id == manufacturer_id)
     if accessory_type_id is not None:
