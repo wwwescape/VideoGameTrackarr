@@ -709,6 +709,8 @@
     "title": "Acerca de",
     "appName": "VideoGameTrackarr",
     "version": "Versión {{version}}",
+    "checkForUpdates": "Buscar actualizaciones",
+    "upToDate": "Tienes la última versión",
     "updateAvailable": "Hay una nueva versión disponible: {{version}}",
     "description": "Una aplicación web autoalojada para registrar tu colección de videojuegos: lo que tienes, lo que quieres, a qué estás jugando y cómo va.",
     "sourceCode": "Código fuente",

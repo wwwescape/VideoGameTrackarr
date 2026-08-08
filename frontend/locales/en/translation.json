@@ -709,6 +709,8 @@
     "title": "About",
     "appName": "VideoGameTrackarr",
     "version": "Version {{version}}",
+    "checkForUpdates": "Check for updates",
+    "upToDate": "You're on the latest version",
     "updateAvailable": "A new version is available: {{version}}",
     "description": "A self-hosted web app for tracking your video game collection: what you own, what you want, what you're playing, and how it's going.",
     "sourceCode": "Source code",

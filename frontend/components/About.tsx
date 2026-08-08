@@ -1,8 +1,13 @@
+import { useState } from "react";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Trans, useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
@@ -13,7 +18,10 @@ const BMC_URL = "https://buymeacoffee.com/wwwescape";
 
 const About = () => {
   const { t } = useTranslation();
-  const { data: version } = useVersion();
+  const { data: version, refetch, isFetching } = useVersion();
+  // Only surface the "up to date" confirmation after the user has explicitly asked us to
+  // check — on initial load, staying silent when there's no update is the existing behavior.
+  const [hasCheckedManually, setHasCheckedManually] = useState(false);
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -26,15 +34,34 @@ const About = () => {
             {t("about.appName")}
           </Typography>
           {version && (
-            <Typography variant="body2" color="text.secondary">
-              {t("about.version", { version: version.currentVersion })}
-            </Typography>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                {t("about.version", { version: version.currentVersion })}
+              </Typography>
+              <Button
+                size="small"
+                variant="text"
+                startIcon={isFetching ? <CircularProgress size={14} /> : <RefreshIcon fontSize="small" />}
+                disabled={isFetching}
+                onClick={() => {
+                  setHasCheckedManually(true);
+                  refetch();
+                }}
+              >
+                {t("about.checkForUpdates")}
+              </Button>
+            </Stack>
           )}
           {version?.updateAvailable && (
             <Typography variant="body2">
               <Link href={version.releaseUrl ?? undefined} target="_blank" rel="noopener noreferrer">
                 {t("about.updateAvailable", { version: version.latestVersion })}
               </Link>
+            </Typography>
+          )}
+          {hasCheckedManually && !isFetching && version && !version.updateAvailable && (
+            <Typography variant="body2" color="text.secondary">
+              {t("about.upToDate")}
             </Typography>
           )}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, mt: version ? 1.5 : 0 }}>
