@@ -25,7 +25,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import GameCard from "./GameCard";
 import MessageDialog from "./MessageDialog";
 
-const MIN_SEARCH_LENGTH = 4;
+const MIN_SEARCH_LENGTH = 3;
 
 // Mirrors ManualGameForm.tsx's CATEGORY_OPTIONS split: independently ownable/playable
 // games vs. content that only makes sense bolted onto an existing copy.

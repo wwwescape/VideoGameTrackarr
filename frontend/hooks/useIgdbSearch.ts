@@ -5,7 +5,7 @@ export function useIgdbSearch(query: string, categoryScope: "game" | "addon" = "
   return useQuery({
     queryKey: ["igdb-search", query, categoryScope],
     queryFn: ({ signal }) => searchIgdb(query, signal, categoryScope),
-    enabled: query.trim().length > 3,
+    enabled: query.trim().length > 2,
     staleTime: 60_000,
   });
 }

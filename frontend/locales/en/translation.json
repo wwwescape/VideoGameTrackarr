@@ -643,7 +643,8 @@
       "accessoriesHeading": "Accessories"
     },
     "searchBar": {
-      "statusAll": "All"
+      "statusAll": "All",
+      "searchPlaceholder": "Enter device or accessory name"
     },
     "stats": {
       "ownedConsoles": "Owned consoles",

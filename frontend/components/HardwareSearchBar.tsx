@@ -42,6 +42,7 @@ const HardwareSearchBar = ({
           variant="outlined"
           value={searchKeyword}
           onChange={(event) => onSearchKeywordChange(event.target.value)}
+          placeholder={t("hardware.searchBar.searchPlaceholder")}
           slotProps={{
             input: {
               startAdornment: (

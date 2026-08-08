@@ -28,7 +28,7 @@ import ManualGameForm from "./ManualGameForm";
 import SimpleTabPanel from "./SimpleTabPanel";
 import VirtualGameGrid from "./VirtualGameGrid";
 
-const MIN_SEARCH_LENGTH = 4;
+const MIN_SEARCH_LENGTH = 3;
 
 type AddMode = "igdb" | "manual";
 

@@ -17,7 +17,7 @@ import GameListToolbar, { type GameFilter } from "./GameListToolbar";
 import GamesSubNav from "./GamesSubNav";
 import VirtualGameGrid from "./VirtualGameGrid";
 
-const MIN_SEARCH_LENGTH = 4;
+const MIN_SEARCH_LENGTH = 3;
 
 const GameList = () => {
   const { t } = useTranslation();

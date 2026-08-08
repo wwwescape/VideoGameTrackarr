@@ -643,7 +643,8 @@
       "accessoriesHeading": "Accessoires"
     },
     "searchBar": {
-      "statusAll": "Tous"
+      "statusAll": "Tous",
+      "searchPlaceholder": "Saisir le nom de l'appareil ou de l'accessoire"
     },
     "stats": {
       "ownedConsoles": "Consoles possédées",

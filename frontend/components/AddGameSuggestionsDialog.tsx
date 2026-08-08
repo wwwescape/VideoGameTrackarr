@@ -19,7 +19,7 @@ import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import GameCard from "./GameCard";
 
-const MIN_SEARCH_LENGTH = 4;
+const MIN_SEARCH_LENGTH = 3;
 
 interface AddGameSuggestionsDialogProps {
   open: boolean;
