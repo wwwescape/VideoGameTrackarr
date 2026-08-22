@@ -7,8 +7,11 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
+import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDeleteGame, useGames } from "../hooks/useGames";
+import { usePlatforms } from "../hooks/usePlatforms";
+import { useTags } from "../hooks/useTags";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { gameIdentifier } from "../utils/identifiers";
 import { showUndoToast } from "./UndoToast";
@@ -23,6 +26,10 @@ const GameList = () => {
   const { t } = useTranslation();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filter, setFilter] = useState<GameFilter>("all");
+  const [platformIds, setPlatformIds] = useState<number[]>([]);
+  const [tagIds, setTagIds] = useState<number[]>([]);
+  const [collectionId, setCollectionId] = useState<number | "">("");
+  const [franchiseId, setFranchiseId] = useState<number | "">("");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
   const navigate = useNavigate();
@@ -32,7 +39,22 @@ const GameList = () => {
   const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
   const isPendingDebounce = trimmedKeyword.length >= MIN_SEARCH_LENGTH && trimmedKeyword !== debouncedKeyword;
 
-  const { data: games, isLoading, isFetching } = useGames(isSearchActive ? debouncedKeyword : undefined);
+  const { data: platforms = [] } = usePlatforms();
+  const { data: tags = [] } = useTags();
+  const { data: collections = [] } = useCollections();
+  const { data: franchises = [] } = useFranchises();
+
+  const gameListFilters = useMemo(
+    () => ({
+      search: isSearchActive ? debouncedKeyword : undefined,
+      platformIds: platformIds.length > 0 ? platformIds : undefined,
+      tagIds: tagIds.length > 0 ? tagIds : undefined,
+      collectionId: collectionId || undefined,
+      franchiseId: franchiseId || undefined,
+    }),
+    [isSearchActive, debouncedKeyword, platformIds, tagIds, collectionId, franchiseId]
+  );
+  const { data: games, isLoading, isFetching } = useGames(gameListFilters);
   const isSearching = isPendingDebounce || (isSearchActive && isFetching);
 
   const deleteGameMutation = useDeleteGame();
@@ -154,6 +176,18 @@ const GameList = () => {
           onSelectAllVisible={handleSelectAllVisible}
           onBulkDelete={handleBulkDelete}
           onCompare={handleCompare}
+          platformOptions={platforms}
+          platformIds={platformIds}
+          onPlatformIdsChange={setPlatformIds}
+          tagOptions={tags}
+          tagIds={tagIds}
+          onTagIdsChange={setTagIds}
+          collectionOptions={collections}
+          collectionId={collectionId}
+          onCollectionChange={setCollectionId}
+          franchiseOptions={franchises}
+          franchiseId={franchiseId}
+          onFranchiseChange={setFranchiseId}
         />
       </Box>
       {/* Contains z-index in here to its own stacking context — otherwise MUI's
@@ -169,7 +203,7 @@ const GameList = () => {
           <Paper sx={{ p: 3, textAlign: "center" }}>
             {isSearchActive
               ? t("games.list.noGamesFound")
-              : filter !== "all"
+              : filter !== "all" || platformIds.length > 0 || tagIds.length > 0 || collectionId || franchiseId
                 ? t("games.list.noGamesMatchFilter")
                 : t("games.list.pleaseAddGames")}
           </Paper>

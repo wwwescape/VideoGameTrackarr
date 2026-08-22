@@ -11,13 +11,14 @@ import {
   mergeGameIntoIgdb,
   resyncGame,
   updateManualGame,
+  type GameListFilters,
 } from "../api/games";
 import type { ManualGameInput } from "../api/types";
 
-export function useGames(search?: string) {
+export function useGames(filters: GameListFilters = {}) {
   return useQuery({
-    queryKey: ["games", { search: search ?? "" }],
-    queryFn: ({ signal }) => listGames(search, signal),
+    queryKey: ["games", filters],
+    queryFn: ({ signal }) => listGames(filters, signal),
   });
 }
 

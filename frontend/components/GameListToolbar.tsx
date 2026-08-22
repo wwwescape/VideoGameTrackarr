@@ -1,21 +1,32 @@
+import { useState } from "react";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import ClearIcon from "@mui/icons-material/Clear";
 import CloseIcon from "@mui/icons-material/Close";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchIcon from "@mui/icons-material/Search";
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
+import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import type { CatalogRefSummary, PlatformResponse, Tag } from "../api/types";
+import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
+import AutocompleteSelect from "./AutocompleteSelect";
+
+function platformOptionLabel(option: PlatformResponse): string {
+  return option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name;
+}
 
 export type GameFilter = "all" | "owned" | "wishlist";
 
@@ -38,6 +49,18 @@ interface GameListToolbarProps {
   onSelectAllVisible: () => void;
   onBulkDelete: () => void;
   onCompare: () => void;
+  platformOptions: PlatformResponse[];
+  platformIds: number[];
+  onPlatformIdsChange: (value: number[]) => void;
+  tagOptions: Tag[];
+  tagIds: number[];
+  onTagIdsChange: (value: number[]) => void;
+  collectionOptions: CatalogRefSummary[];
+  collectionId: number | "";
+  onCollectionChange: (value: number | "") => void;
+  franchiseOptions: CatalogRefSummary[];
+  franchiseId: number | "";
+  onFranchiseChange: (value: number | "") => void;
 }
 
 // Sticky-feeling toolbar (rendered once, above the virtualized grid) that swaps between
@@ -56,8 +79,36 @@ const GameListToolbar = ({
   onSelectAllVisible,
   onBulkDelete,
   onCompare,
+  platformOptions,
+  platformIds,
+  onPlatformIdsChange,
+  tagOptions,
+  tagIds,
+  onTagIdsChange,
+  collectionOptions,
+  collectionId,
+  onCollectionChange,
+  franchiseOptions,
+  franchiseId,
+  onFranchiseChange,
 }: GameListToolbarProps) => {
   const { t } = useTranslation();
+  const allPlaceholder = t("games.listToolbar.allOption");
+  const selectedTags = tagOptions.filter((tag) => tagIds.includes(tag.id));
+  const selectedPlatforms = platformOptions.filter((platform) => platformIds.includes(platform.id));
+  const activeFilterCount =
+    platformIds.length + tagIds.length + (collectionId ? 1 : 0) + (franchiseId ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0;
+
+  const [filtersAnchorEl, setFiltersAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const filtersOpen = Boolean(filtersAnchorEl);
+
+  const handleClearFilters = () => {
+    onPlatformIdsChange([]);
+    onTagIdsChange([]);
+    onCollectionChange("");
+    onFranchiseChange("");
+  };
 
   if (selectionMode) {
     return (
@@ -126,6 +177,17 @@ const GameListToolbar = ({
             }}
             fullWidth
           />
+          <Tooltip title={t("games.listToolbar.filtersButtonLabel")}>
+            <IconButton
+              onClick={(event) => setFiltersAnchorEl(event.currentTarget)}
+              aria-label={t("games.listToolbar.filtersButtonLabel")}
+              sx={{ alignSelf: "center" }}
+            >
+              <Badge badgeContent={activeFilterCount} color="primary">
+                <FilterListIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t("games.listToolbar.selectGames")}>
             <IconButton
               onClick={onEnterSelectionMode}
@@ -147,6 +209,58 @@ const GameListToolbar = ({
             />
           ))}
         </Box>
+        <Popover
+          open={filtersOpen}
+          anchorEl={filtersAnchorEl}
+          onClose={() => setFiltersAnchorEl(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        >
+          <Stack spacing={2} sx={{ p: 2, width: 280 }}>
+            <AutocompleteMultiSelect<PlatformResponse>
+              label={t("games.listToolbar.consoleLabel")}
+              options={platformOptions}
+              value={selectedPlatforms}
+              onChange={(newValue) => onPlatformIdsChange(newValue.map((platform) => platform.id))}
+              getOptionLabel={platformOptionLabel}
+              isOptionEqualToValue={(option, val) => option.id === val.id}
+              placeholder={allPlaceholder}
+              fullWidth
+            />
+            <AutocompleteMultiSelect<Tag>
+              label={t("games.listToolbar.tagLabel")}
+              options={tagOptions}
+              value={selectedTags}
+              onChange={(newValue) => onTagIdsChange(newValue.map((tag) => tag.id))}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, val) => option.id === val.id}
+              placeholder={allPlaceholder}
+              fullWidth
+            />
+            <AutocompleteSelect<CatalogRefSummary>
+              label={t("games.listToolbar.collectionLabel")}
+              options={collectionOptions}
+              value={collectionOptions.find((option) => option.id === collectionId) ?? null}
+              onChange={(newValue) => onCollectionChange(newValue ? newValue.id : "")}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, val) => option.id === val.id}
+              placeholder={allPlaceholder}
+              fullWidth
+            />
+            <AutocompleteSelect<CatalogRefSummary>
+              label={t("games.listToolbar.seriesLabel")}
+              options={franchiseOptions}
+              value={franchiseOptions.find((option) => option.id === franchiseId) ?? null}
+              onChange={(newValue) => onFranchiseChange(newValue ? newValue.id : "")}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, val) => option.id === val.id}
+              placeholder={allPlaceholder}
+              fullWidth
+            />
+            <Button onClick={handleClearFilters} disabled={!hasActiveFilters}>
+              {t("games.listToolbar.clearFiltersButton")}
+            </Button>
+          </Stack>
+        </Popover>
       </Stack>
     </Paper>
   );

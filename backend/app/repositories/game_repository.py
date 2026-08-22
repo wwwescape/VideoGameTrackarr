@@ -78,7 +78,14 @@ def _is_browsable_game(category_column: ColumnElement[GameCategory | None]) -> C
     return category_column.in_(_BROWSABLE_CATEGORIES) | category_column.is_(None)
 
 
-def list_top_level_games(db: Session, search: str | None = None) -> list[GameWithStatus]:
+def list_top_level_games(
+    db: Session,
+    search: str | None = None,
+    platform_ids: list[int] | None = None,
+    tag_ids: list[int] | None = None,
+    collection_id: int | None = None,
+    franchise_id: int | None = None,
+) -> list[GameWithStatus]:
     stmt = select(
         Game,
         _owned_exists(Game.id),
@@ -88,6 +95,20 @@ def list_top_level_games(db: Session, search: str | None = None) -> list[GameWit
     ).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
     if search:
         stmt = stmt.where(Game.name.ilike(f"%{search}%"))
+    if platform_ids:
+        # The platform of the user's *owned/wishlisted copy* (library_items), not
+        # game_platforms — IGDB's full list of platforms a game was ever released on.
+        stmt = stmt.where(exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(platform_ids)))
+    if tag_ids:
+        stmt = stmt.where(exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(tag_ids)))
+    if collection_id is not None:
+        stmt = stmt.where(
+            exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id == collection_id)
+        )
+    if franchise_id is not None:
+        stmt = stmt.where(
+            exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id == franchise_id)
+        )
     stmt = stmt.order_by(Game.name)
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 

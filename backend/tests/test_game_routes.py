@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from app.models.catalog import Game, GameCategory
+from app.models.catalog import Collection, Franchise, Game, GameCategory, GameCollection, GameFranchise, Platform
 from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, Note, PlaySession, Tag
 
 
@@ -59,6 +59,87 @@ def test_list_games_search_is_case_insensitive_substring(auth_client, db_session
 
     response = auth_client.get("/api/games", params={"search": "no match"})
     assert response.json() == []
+
+
+def test_list_games_filters_by_platform_tag_collection_and_franchise(
+    auth_client, db_session, seed_game, seed_platform
+):
+    other_game = Game(igdb_id=2200, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    other_platform = Platform(name="Nintendo Game Boy", slug="game-boy")
+    tag = Tag(name="Roguelike")
+    collection = Collection(name="Age of Empires Series", slug="age-of-empires")
+    franchise = Franchise(name="Final Fantasy", slug="final-fantasy")
+    db_session.add_all([other_platform, tag, collection, franchise])
+    db_session.commit()
+
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(GameTag(game_id=seed_game.id, tag_id=tag.id))
+    db_session.add(GameCollection(game_id=seed_game.id, collection_id=collection.id))
+    db_session.add(GameFranchise(game_id=seed_game.id, franchise_id=franchise.id))
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"platformId": seed_platform.id})
+    assert [g["id"] for g in response.json()] == [seed_game.id]
+
+    response = auth_client.get("/api/games", params={"platformId": other_platform.id})
+    assert response.json() == []
+
+    response = auth_client.get("/api/games", params={"tagId": tag.id})
+    assert [g["id"] for g in response.json()] == [seed_game.id]
+
+    response = auth_client.get("/api/games", params={"collectionId": collection.id})
+    assert [g["id"] for g in response.json()] == [seed_game.id]
+
+    response = auth_client.get("/api/games", params={"franchiseId": franchise.id})
+    assert [g["id"] for g in response.json()] == [seed_game.id]
+
+    # search and a filter combine with AND, not OR.
+    response = auth_client.get("/api/games", params={"search": "other", "tagId": tag.id})
+    assert response.json() == []
+
+
+def test_list_games_filters_by_tag_id_matches_any_selected_tag(auth_client, db_session, seed_game):
+    other_game = Game(igdb_id=2201, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    tag_a = Tag(name="Roguelike")
+    tag_b = Tag(name="Metroidvania")
+    db_session.add_all([tag_a, tag_b])
+    db_session.commit()
+
+    db_session.add(GameTag(game_id=seed_game.id, tag_id=tag_a.id))
+    db_session.add(GameTag(game_id=other_game.id, tag_id=tag_b.id))
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params=[("tagId", tag_a.id), ("tagId", tag_b.id)])
+    names = {g["name"] for g in response.json()}
+    assert names == {"Test Game", "Other Game"}
+
+
+def test_list_games_filters_by_platform_id_matches_any_selected_platform(
+    auth_client, db_session, seed_game, seed_platform
+):
+    other_game = Game(igdb_id=2202, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    other_platform = Platform(name="Nintendo Game Boy", slug="game-boy")
+    db_session.add(other_platform)
+    db_session.commit()
+
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(LibraryItem(game_id=other_game.id, platform_id=other_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games", params=[("platformId", seed_platform.id), ("platformId", other_platform.id)]
+    )
+    names = {g["name"] for g in response.json()}
+    assert names == {"Test Game", "Other Game"}
 
 
 def test_get_game_detail_includes_parent_name(auth_client, db_session, seed_game):

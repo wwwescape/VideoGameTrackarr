@@ -25,9 +25,21 @@ def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailRespon
 
 @router.get("", response_model=list[GameSummaryResponse])
 def list_games(
-    search: str | None = Query(default=None), db: Session = Depends(get_db)
+    search: str | None = Query(default=None),
+    platform_ids: list[int] | None = Query(default=None, alias="platformId"),
+    tag_ids: list[int] | None = Query(default=None, alias="tagId"),
+    collection_id: int | None = Query(default=None, alias="collectionId"),
+    franchise_id: int | None = Query(default=None, alias="franchiseId"),
+    db: Session = Depends(get_db),
 ) -> list[GameSummaryResponse]:
-    games = game_service.search_local_games(db, search=search)
+    games = game_service.search_local_games(
+        db,
+        search=search,
+        platform_ids=platform_ids,
+        tag_ids=tag_ids,
+        collection_id=collection_id,
+        franchise_id=franchise_id,
+    )
     return [game_summary_from_orm(game) for game in games]
 
 

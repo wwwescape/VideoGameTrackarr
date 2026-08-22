@@ -269,7 +269,14 @@
       "selectGames": "Select games",
       "filterAll": "All",
       "filterOwned": "Owned",
-      "filterWishlist": "Wishlist"
+      "filterWishlist": "Wishlist",
+      "consoleLabel": "Console",
+      "tagLabel": "Tag",
+      "collectionLabel": "Collection",
+      "seriesLabel": "Series",
+      "allOption": "All",
+      "filtersButtonLabel": "Filters",
+      "clearFiltersButton": "Clear filters"
     },
     "card": {
       "playStatusBacklog": "Backlog",

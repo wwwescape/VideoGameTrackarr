@@ -269,7 +269,14 @@
       "selectGames": "Seleccionar juegos",
       "filterAll": "Todos",
       "filterOwned": "En propiedad",
-      "filterWishlist": "Lista de deseos"
+      "filterWishlist": "Lista de deseos",
+      "consoleLabel": "Consola",
+      "tagLabel": "Etiqueta",
+      "collectionLabel": "Colección",
+      "seriesLabel": "Serie",
+      "allOption": "Todos",
+      "filtersButtonLabel": "Filtros",
+      "clearFiltersButton": "Borrar filtros"
     },
     "card": {
       "playStatusBacklog": "Pendiente",

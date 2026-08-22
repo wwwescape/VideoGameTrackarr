@@ -47,8 +47,22 @@ class CatalogSyncScope(enum.Enum):
 _HIERARCHICAL_ADDON_CATEGORIES = {GameCategory.DLC_ADDON, GameCategory.EXPANSION, GameCategory.PACK}
 
 
-def search_local_games(db: Session, search: str | None = None) -> list[GameWithStatus]:
-    return game_repository.list_top_level_games(db, search=search)
+def search_local_games(
+    db: Session,
+    search: str | None = None,
+    platform_ids: list[int] | None = None,
+    tag_ids: list[int] | None = None,
+    collection_id: int | None = None,
+    franchise_id: int | None = None,
+) -> list[GameWithStatus]:
+    return game_repository.list_top_level_games(
+        db,
+        search=search,
+        platform_ids=platform_ids,
+        tag_ids=tag_ids,
+        collection_id=collection_id,
+        franchise_id=franchise_id,
+    )
 
 
 def get_game_detail(db: Session, game_id: int) -> GameWithStatus:

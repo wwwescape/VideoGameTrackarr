@@ -1,9 +1,28 @@
 import { apiClient } from "./client";
 import type { GameDetail, GameSummary, ManualGameInput } from "./types";
 
-export async function listGames(search?: string, signal?: AbortSignal): Promise<GameSummary[]> {
+export interface GameListFilters {
+  search?: string;
+  platformIds?: number[];
+  tagIds?: number[];
+  collectionId?: number;
+  franchiseId?: number;
+}
+
+export async function listGames(filters: GameListFilters = {}, signal?: AbortSignal): Promise<GameSummary[]> {
+  const { search, platformIds, tagIds, collectionId, franchiseId } = filters;
   const response = await apiClient.get<GameSummary[]>("/api/games", {
-    params: search ? { search } : undefined,
+    params: {
+      search: search || undefined,
+      platformId: platformIds?.length ? platformIds : undefined,
+      tagId: tagIds?.length ? tagIds : undefined,
+      collectionId: collectionId || undefined,
+      franchiseId: franchiseId || undefined,
+    },
+    // Axios's default array serialization emits `tagId[]=1`, which FastAPI's `list[int]`
+    // Query param won't bind under the `tagId` alias — this repeats the bare key instead
+    // (`tagId=1&tagId=2`), matching what the backend actually parses.
+    paramsSerializer: { indexes: null },
     signal,
   });
   return response.data;
