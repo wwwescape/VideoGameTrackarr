@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import get_current_user
 from app.core.config import get_app_version
@@ -9,9 +9,9 @@ router = APIRouter(prefix="/api/version", tags=["version"], dependencies=[Depend
 
 
 @router.get("", response_model=VersionResponse)
-async def get_version() -> VersionResponse:
+async def get_version(force: bool = Query(default=False)) -> VersionResponse:
     current_version = get_app_version()
-    latest_release = await version_service.get_latest_release()
+    latest_release = await version_service.get_latest_release(force=force)
 
     if latest_release is None:
         return VersionResponse(

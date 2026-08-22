@@ -18,7 +18,7 @@ const BMC_URL = "https://buymeacoffee.com/wwwescape";
 
 const About = () => {
   const { t } = useTranslation();
-  const { data: version, refetch, isFetching } = useVersion();
+  const { data: version, checkForUpdates, isFetching } = useVersion();
   // Only surface the "up to date" confirmation after the user has explicitly asked us to
   // check — on initial load, staying silent when there's no update is the existing behavior.
   const [hasCheckedManually, setHasCheckedManually] = useState(false);
@@ -45,7 +45,7 @@ const About = () => {
                 disabled={isFetching}
                 onClick={() => {
                   setHasCheckedManually(true);
-                  refetch();
+                  checkForUpdates();
                 }}
               >
                 {t("about.checkForUpdates")}

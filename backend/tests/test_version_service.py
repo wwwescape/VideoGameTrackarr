@@ -56,6 +56,42 @@ async def test_get_latest_release_caches_across_calls():
 
 
 @respx.mock
+async def test_get_latest_release_force_bypasses_cache():
+    route = respx.get(_RELEASES_URL).mock(
+        side_effect=[
+            httpx.Response(200, json={"tag_name": "v1.4.0", "html_url": "https://example.com/v1.4.0"}),
+            httpx.Response(200, json={"tag_name": "v1.5.0", "html_url": "https://example.com/v1.5.0"}),
+        ]
+    )
+    cache = InMemoryTTLCache()
+
+    first = await version_service.get_latest_release(cache=cache)
+    forced = await version_service.get_latest_release(cache=cache, force=True)
+
+    assert route.call_count == 2
+    assert first.tag_name == "v1.4.0"
+    assert forced.tag_name == "v1.5.0"
+
+
+@respx.mock
+async def test_get_latest_release_force_still_refreshes_cache_for_later_non_forced_calls():
+    route = respx.get(_RELEASES_URL).mock(
+        side_effect=[
+            httpx.Response(200, json={"tag_name": "v1.4.0", "html_url": "https://example.com/v1.4.0"}),
+            httpx.Response(200, json={"tag_name": "v1.5.0", "html_url": "https://example.com/v1.5.0"}),
+        ]
+    )
+    cache = InMemoryTTLCache()
+
+    await version_service.get_latest_release(cache=cache)
+    await version_service.get_latest_release(cache=cache, force=True)
+    third = await version_service.get_latest_release(cache=cache)
+
+    assert route.call_count == 2
+    assert third.tag_name == "v1.5.0"
+
+
+@respx.mock
 async def test_get_latest_release_returns_none_on_http_error():
     respx.get(_RELEASES_URL).mock(return_value=httpx.Response(500))
 

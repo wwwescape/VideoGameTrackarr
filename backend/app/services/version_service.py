@@ -20,7 +20,7 @@ class LatestRelease:
     html_url: str
 
 
-async def get_latest_release(cache: CacheBackend | None = None) -> LatestRelease | None:
+async def get_latest_release(cache: CacheBackend | None = None, force: bool = False) -> LatestRelease | None:
     """Fetches the repo's latest published GitHub release, cached for _CACHE_TTL_SECONDS via
     the same CacheBackend used for IGDB responses (app/services/cache.py) — one outbound call
     per cache window regardless of how many browser tabs/users poll GET /api/version, rather
@@ -30,10 +30,15 @@ async def get_latest_release(cache: CacheBackend | None = None) -> LatestRelease
     fresh InMemoryTTLCache() instead, same pattern as IGDBClient's `cache` parameter, so one
     test's cached response can't leak into another's.
 
+    `force` skips the cache *read* (used by the About page's manual "Check for updates"
+    button, via GET /api/version?force=true) — the fresh result still gets written back to
+    cache afterward, so it's a one-off bypass of that call only, not a cache-disabling flag;
+    background/passive checks keep hitting the shared cache as normal.
+
     Returns None on any failure (network error, non-2xx, malformed body) — an update check
     must never block login or crash a page over GitHub being unreachable."""
     cache = cache or get_cache()
-    cached = await cache.get(_CACHE_KEY)
+    cached = None if force else await cache.get(_CACHE_KEY)
     if cached is not None:
         return _parse_release_payload(cached)
 
