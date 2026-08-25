@@ -402,7 +402,7 @@ export type HardwareCondition = "sealed" | "new" | "like_new" | "good" | "fair" 
 
 export type HardwareReferenceType = "Device" | "Accessory";
 
-// One row imported from data/hardware/*.xlsx — powers the Brand/Console/Variant cascades on
+// One row imported from docs/data/hardware/*.csv — powers the Brand/Console/Variant cascades on
 // the Add Device/Add Accessory (Predefined) forms. See DevicePredefinedFields.tsx /
 // AccessoryPredefinedFields.tsx.
 export interface HardwareReferenceEntry {

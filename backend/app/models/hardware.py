@@ -68,8 +68,8 @@ class Color(TimestampMixin, Base):
 
 
 class HardwareReferenceEntry(TimestampMixin, Base):
-    """Curated reference data imported from data/hardware/*.xlsx (one row per real-world
-    hardware SKU across Nintendo/Sony/Xbox) — powers the Brand/Console/Variant cascades on
+    """Curated reference data imported from docs/data/hardware/*.csv (one row per real-world
+    hardware SKU across Nintendo/Sega/Sony/Xbox) — powers the Brand/Console/Variant cascades on
     the Add Device/Add Accessory (Predefined) forms and the "rich" descriptive data shown on
     detail pages. Distinct from Device/Accessory, which are the user's own catalog of
     ownable SKUs; entries here are descriptive lookup data sourced from the import, not

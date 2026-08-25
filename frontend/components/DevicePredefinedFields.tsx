@@ -21,7 +21,7 @@ function unique(values: (string | null)[]): string[] {
 }
 
 // Brand → Console → Variant cascade, reading from the HardwareReferenceEntry rows imported
-// from data/hardware/*.xlsx (type=Device). Each selection clears the ones below it. Reports
+// from docs/data/hardware/*.csv (type=Device). Each selection clears the ones below it. Reports
 // the resolved create-device fields plus a suggested official name up to the parent on every
 // change — the parent (AddDeviceForm) owns the actual editable Official Name field, since it
 // needs to interleave it with other form fields (Edition, etc.) in a specific row layout.

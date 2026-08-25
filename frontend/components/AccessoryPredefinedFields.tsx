@@ -21,7 +21,7 @@ function unique(values: (string | null)[]): string[] {
 }
 
 // Brand → Console → Accessory cascade, reading from the HardwareReferenceEntry rows
-// imported from data/hardware/*.xlsx (type=Accessory) — same pattern
+// imported from docs/data/hardware/*.csv (type=Accessory) — same pattern
 // DevicePredefinedFields.tsx uses for Brand → Console → Variant. Picking a console narrows
 // the Accessory options to ones offered for it; the selected console becomes this
 // accessory's reported compatible platform. The parent (AddAccessoryForm) owns the actual

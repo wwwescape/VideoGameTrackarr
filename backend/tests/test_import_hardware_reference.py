@@ -1,7 +1,7 @@
-import openpyxl
+import csv
 
 from app.models.hardware import HardwareReferenceEntry
-from scripts.import_hardware_reference import import_from_directory, import_from_workbook
+from scripts.import_hardware_reference import import_from_csv, import_from_directory
 
 HEADER = [
     "Brand", "Family", "Generation", "Generation (Short)", "Artefact", "Official Name",
@@ -9,28 +9,26 @@ HEADER = [
 ]
 
 
-def _build_workbook(tmp_path, filename, *, summary="A console."):
-    workbook = openpyxl.Workbook()
-    ws = workbook.active
-    ws.title = "Master Hardware"
-    ws.append(HEADER)
-    ws.append(
-        ["Sony", "PlayStation", "PlayStation 5", "PS5", "PlayStation 5", "Sony PlayStation 5",
-         "Console", "Device", "2020-11-12", "No", "PlayStation 5", summary]
-    )
-    ws.append(
-        ["Sony", "PlayStation", "PlayStation 5", "PS5", "DualSense", "Sony DualSense",
-         "Controller", "Accessory", "2020", "No", "PlayStation 5", "A controller."]
-    )
+def _build_csv(tmp_path, filename, *, summary="A console."):
     path = tmp_path / filename
-    workbook.save(path)
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(HEADER)
+        writer.writerow(
+            ["Sony", "PlayStation", "PlayStation 5", "PS5", "PlayStation 5", "Sony PlayStation 5",
+             "Console", "Device", "2020-11-12", "No", "PlayStation 5", summary]
+        )
+        writer.writerow(
+            ["Sony", "PlayStation", "PlayStation 5", "PS5", "DualSense", "Sony DualSense",
+             "Controller", "Accessory", "2020", "No", "PlayStation 5", "A controller."]
+        )
     return path
 
 
-def test_import_from_workbook_creates_expected_rows(db_session, tmp_path):
-    path = _build_workbook(tmp_path, "nintendo.xlsx")
+def test_import_from_csv_creates_expected_rows(db_session, tmp_path):
+    path = _build_csv(tmp_path, "sony.csv")
 
-    count = import_from_workbook(db_session, path)
+    count = import_from_csv(db_session, path)
     db_session.commit()
 
     assert count == 2
@@ -49,15 +47,15 @@ def test_import_from_workbook_creates_expected_rows(db_session, tmp_path):
     assert controller.release_date == "2020"
 
 
-def test_import_from_workbook_is_idempotent_on_rerun(db_session, tmp_path):
-    path = _build_workbook(tmp_path, "nintendo.xlsx")
-    import_from_workbook(db_session, path)
+def test_import_from_csv_is_idempotent_on_rerun(db_session, tmp_path):
+    path = _build_csv(tmp_path, "sony.csv")
+    import_from_csv(db_session, path)
     db_session.commit()
 
-    # Re-running against an updated spreadsheet (same official names, changed data) should
-    # update in place, not create duplicates.
-    path = _build_workbook(tmp_path, "nintendo.xlsx", summary="Updated summary.")
-    import_from_workbook(db_session, path)
+    # Re-running against an updated CSV (same official names, changed data) should update
+    # in place, not create duplicates.
+    path = _build_csv(tmp_path, "sony.csv", summary="Updated summary.")
+    import_from_csv(db_session, path)
     db_session.commit()
 
     assert db_session.query(HardwareReferenceEntry).count() == 2
@@ -67,9 +65,8 @@ def test_import_from_workbook_is_idempotent_on_rerun(db_session, tmp_path):
     assert console.summary == "Updated summary."
 
 
-def test_import_from_directory_skips_excel_lock_files(db_session, tmp_path):
-    _build_workbook(tmp_path, "nintendo.xlsx")
-    (tmp_path / "~$nintendo.xlsx").write_text("not a real workbook")
+def test_import_from_directory_sums_all_csv_files(db_session, tmp_path):
+    _build_csv(tmp_path, "sony.csv")
 
     total = import_from_directory(db_session, tmp_path)
     db_session.commit()

@@ -6,7 +6,7 @@ To add a new curated image: drop a 400x400 `.jpg` into `backend/static/hardware-
 
 **Naming rule** (if a new reference entry is added later and isn't in this list): lowercase the official name, replace every run of non-alphanumeric characters with a single hyphen, trim leading/trailing hyphens, append `.jpg`.
 
-**Summary: 156 rows. Devices: 57/57 images present. Accessories: 99 missing an image.**
+**Summary: 193 rows. Devices: 57/74 images present. Accessories: 119 missing an image.**
 
 ## Devices
 
@@ -47,6 +47,23 @@ To add a new curated image: drop a 400x400 `.jpg` into `backend/static/hardware-
 | Nintendo | Nintendo Wii | ✅ | `nintendo-wii.jpg` | ✅ |
 | Nintendo | Nintendo Wii U | ✅ | `nintendo-wii-u.jpg` | ✅ |
 | Nintendo | Super Nintendo Entertainment System | ✅ | `super-nintendo-entertainment-system.jpg` | ✅ |
+| Sega | Sega 32X | ✅ | `sega-32x.jpg` | — |
+| Sega | Sega CD | ✅ | `sega-cd.jpg` | — |
+| Sega | Sega CD 2 | ✅ | `sega-cd-2.jpg` | — |
+| Sega | Sega CDX | ✅ | `sega-cdx.jpg` | — |
+| Sega | Sega Dreamcast | ✅ | `sega-dreamcast.jpg` | — |
+| Sega | Sega Game Gear | ✅ | `sega-game-gear.jpg` | — |
+| Sega | Sega Genesis | ✅ | `sega-genesis.jpg` | — |
+| Sega | Sega Genesis 2 | ✅ | `sega-genesis-2.jpg` | — |
+| Sega | Sega Genesis 3 | ✅ | `sega-genesis-3.jpg` | — |
+| Sega | Sega Master System | ✅ | `sega-master-system.jpg` | — |
+| Sega | Sega Master System II | ✅ | `sega-master-system-ii.jpg` | — |
+| Sega | Sega Mega-CD | ✅ | `sega-mega-cd.jpg` | — |
+| Sega | Sega Mega-CD 2 | ✅ | `sega-mega-cd-2.jpg` | — |
+| Sega | Sega Mega Drive | ✅ | `sega-mega-drive.jpg` | — |
+| Sega | Sega Mega Drive II | ✅ | `sega-mega-drive-ii.jpg` | — |
+| Sega | Sega Nomad | ✅ | `sega-nomad.jpg` | — |
+| Sega | Sega Saturn | ✅ | `sega-saturn.jpg` | — |
 | Sony | Sony PSPgo | ✅ | `sony-pspgo.jpg` | ✅ |
 | Sony | Sony PSX | ✅ | `sony-psx.jpg` | ✅ |
 | Sony | Sony PSone | ✅ | `sony-psone.jpg` | ✅ |
@@ -122,6 +139,26 @@ To add a new curated image: drop a 400x400 `.jpg` into `backend/static/hardware-
 | Nintendo | Nintendo Wii Remote | ✅ | `nintendo-wii-remote.jpg` | — |
 | Nintendo | Nintendo Wii U GamePad | ✅ | `nintendo-wii-u-gamepad.jpg` | — |
 | Nintendo | Nintendo e-Reader | ✅ | `nintendo-e-reader.jpg` | — |
+| Sega | Sega 6-Button Arcade Pad | ✅ | `sega-6-button-arcade-pad.jpg` | — |
+| Sega | Sega Activator | ✅ | `sega-activator.jpg` | — |
+| Sega | Sega Dreamcast Arcade Stick | ✅ | `sega-dreamcast-arcade-stick.jpg` | — |
+| Sega | Sega Dreamcast Controller | ✅ | `sega-dreamcast-controller.jpg` | — |
+| Sega | Sega Dreamcast Jump Pack | ✅ | `sega-dreamcast-jump-pack.jpg` | — |
+| Sega | Sega Dreamcast Keyboard | ✅ | `sega-dreamcast-keyboard.jpg` | — |
+| Sega | Sega Dreamcast Mouse | ✅ | `sega-dreamcast-mouse.jpg` | — |
+| Sega | Sega Dreamcast VMU | ✅ | `sega-dreamcast-vmu.jpg` | — |
+| Sega | Sega Game Gear TV Tuner | ✅ | `sega-game-gear-tv-tuner.jpg` | — |
+| Sega | Sega Genesis/Mega Drive Control Pad | ✅ | `sega-genesis-mega-drive-control-pad.jpg` | — |
+| Sega | Sega Light Phaser | ✅ | `sega-light-phaser.jpg` | — |
+| Sega | Sega Master System Control Pad | ✅ | `sega-master-system-control-pad.jpg` | — |
+| Sega | Sega Menacer | ✅ | `sega-menacer.jpg` | — |
+| Sega | Sega Power Base Converter | ✅ | `sega-power-base-converter.jpg` | — |
+| Sega | Sega Saturn 3D Control Pad | ✅ | `sega-saturn-3d-control-pad.jpg` | — |
+| Sega | Sega Saturn Control Pad | ✅ | `sega-saturn-control-pad.jpg` | — |
+| Sega | Sega Saturn Memory Cartridge | ✅ | `sega-saturn-memory-cartridge.jpg` | — |
+| Sega | Sega Saturn Mouse | ✅ | `sega-saturn-mouse.jpg` | — |
+| Sega | Sega Saturn NetLink | ✅ | `sega-saturn-netlink.jpg` | — |
+| Sega | Sega SegaScope 3-D Glasses | ✅ | `sega-segascope-3-d-glasses.jpg` | — |
 | Sony | Sony Access Controller | ✅ | `sony-access-controller.jpg` | — |
 | Sony | Sony Blu-ray Disc Remote (PlayStation 3) | ✅ | `sony-blu-ray-disc-remote-playstation-3.jpg` | — |
 | Sony | Sony Buzz Controller | ✅ | `sony-buzz-controller.jpg` | — |
