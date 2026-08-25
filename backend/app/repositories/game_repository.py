@@ -60,10 +60,11 @@ def _row_to_game_with_status(row: Any) -> GameWithStatus:
 # What counts as a browsable "game" in the main games list / Dashboard, as opposed to
 # something only reachable through a parent's Addons tab (DLC/expansion/pack — kept off this
 # list via parent_game_id already) or that's just metadata noise around a real game rather
-# than something a user tracks as its own entry — community mods, seasons, updates, ports,
-# forks, episodes. Mirrors igdb_client._BROWSABLE_GAME_TYPES (search/import only ever offer
-# these same categories to add in the first place). NULL stays included: better to show an
-# unclassifiable game than silently hide it because IGDB never returned a category for it.
+# than something a user tracks as its own entry — community mods, seasons, updates, forks,
+# episodes. Mirrors igdb_client._BROWSABLE_GAME_TYPES (search/import only ever offer these
+# same categories to add in the first place) and frontend AddGame.tsx's ADDABLE_CATEGORIES —
+# keep all three in sync. NULL stays included: better to show an unclassifiable game than
+# silently hide it because IGDB never returned a category for it.
 _BROWSABLE_CATEGORIES = (
     GameCategory.MAIN_GAME,
     GameCategory.BUNDLE,
@@ -71,6 +72,7 @@ _BROWSABLE_CATEGORIES = (
     GameCategory.REMAKE,
     GameCategory.REMASTER,
     GameCategory.EXPANDED_GAME,
+    GameCategory.PORT,
 )
 
 

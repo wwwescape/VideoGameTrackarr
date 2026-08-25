@@ -28,7 +28,6 @@ def test_list_games_excludes_non_browsable_categories_even_without_a_parent(auth
     # game" — a community mod, a seasonal content drop, an update, etc.
     excluded = [
         Game(igdb_id=2100, name="Some Mod", category=GameCategory.MOD),
-        Game(igdb_id=2101, name="Some Port", category=GameCategory.PORT),
         Game(igdb_id=2102, name="Some Update", category=GameCategory.UPDATE),
         Game(igdb_id=2103, name="Some Season", category=GameCategory.SEASON),
     ]
@@ -38,6 +37,7 @@ def test_list_games_excludes_non_browsable_categories_even_without_a_parent(auth
         Game(igdb_id=2106, name="Some Expanded Game", category=GameCategory.EXPANDED_GAME),
         Game(igdb_id=2108, name="Some Bundle", category=GameCategory.BUNDLE),
         Game(igdb_id=2109, name="Some Remake", category=GameCategory.REMAKE),
+        Game(igdb_id=2110, name="Some Port", category=GameCategory.PORT),
         Game(igdb_id=2107, name="Uncategorized Game", category=None),
     ]
     db_session.add_all(excluded + included)
