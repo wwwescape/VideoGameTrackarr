@@ -103,7 +103,7 @@ def test_igdb_search_default_scope_queries_browsable_game_types(auth_client, igd
 
     assert response.status_code == 200
     body = games_route.calls.last.request.content.decode()
-    assert "game_type = (0,3,4,8,9,10) | game_type = null" in body
+    assert "game_type = (0,3,4,8,9,10,11) | game_type = null" in body
 
 
 @respx.mock

@@ -39,8 +39,18 @@ const IGDB_ID_QUERY_PATTERN = /^igdb:\d+$/i;
 
 // Addons (DLC/Addon, Expansion, Pack) need a parent already in the tracker to make sense —
 // adding one directly here would create an orphaned top-level entry. Only these top-level-
-// game categories are addable straight from a search result.
-const ADDABLE_CATEGORIES: GameCategory[] = ["main_game", "standalone_expansion", "expanded_game", "bundle", "remaster"];
+// game categories are addable straight from a search result. Remake/Port are independently
+// ownable/playable releases too (same bucket as Standalone Expansion/Bundle/Remaster), so
+// they belong here alongside them, not with the addon categories.
+const ADDABLE_CATEGORIES: GameCategory[] = [
+  "main_game",
+  "standalone_expansion",
+  "expanded_game",
+  "bundle",
+  "remaster",
+  "remake",
+  "port",
+];
 
 function isAddableCategory(category: GameCategory | null): boolean {
   return category !== null && ADDABLE_CATEGORIES.includes(category);

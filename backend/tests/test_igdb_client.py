@@ -151,7 +151,7 @@ async def test_search_games_filters_to_browsable_game_types():
     await make_client().search_games("zelda")
 
     sent_body = games_route.calls.last.request.content.decode("utf-8")
-    assert "game_type = (0,3,4,8,9,10) | game_type = null" in sent_body
+    assert "game_type = (0,3,4,8,9,10,11) | game_type = null" in sent_body
     # Used to exclude everything with a parent_game backlink — wrong, since a remaster/
     # bundle/standalone expansion/remake commonly has one and should still be searchable.
     assert "parent_game = null" not in sent_body

@@ -24,8 +24,8 @@ COVER_CACHE_TTL_SECONDS = 24 * 60 * 60
 #
 # Independently ownable/playable releases — what search should surface, and the only things
 # someone should be able to add directly: main_game(0), bundle(3), standalone_expansion(4),
-# remake(8), remaster(9), expanded_game(10).
-_BROWSABLE_GAME_TYPES = (0, 3, 4, 8, 9, 10)
+# remake(8), remaster(9), expanded_game(10), port(11).
+_BROWSABLE_GAME_TYPES = (0, 3, 4, 8, 9, 10, 11)
 # Content that only makes sense bolted onto an existing copy, never independently playable:
 # dlc_addon(1), expansion(2), pack(13). The only categories get_addons_by_parent_igdb_id
 # should ever cascade-import alongside a game — everything else a parent_game backlink
