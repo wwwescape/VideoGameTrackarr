@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.schemas.tag import TagCreateRequest, TagResponse, tag_from_orm
+from app.schemas.tag import TagCreateRequest, TagResponse, TagUpdateRequest, tag_from_orm
 from app.services import tag_service
 
 router = APIRouter(tags=["tags"], dependencies=[Depends(get_current_user)])
@@ -15,7 +15,13 @@ def list_tags(db: Session = Depends(get_db)) -> list[TagResponse]:
 
 @router.post("/api/tags", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
 def create_tag(body: TagCreateRequest, db: Session = Depends(get_db)) -> TagResponse:
-    tag = tag_service.create_tag(db, body.name, body.color)
+    tag = tag_service.create_tag(db, body.name, body.color, body.text_color)
+    return tag_from_orm(tag)
+
+
+@router.patch("/api/tags/{tag_id}", response_model=TagResponse)
+def update_tag(tag_id: int, body: TagUpdateRequest, db: Session = Depends(get_db)) -> TagResponse:
+    tag = tag_service.update_tag(db, tag_id, body.name, body.color, body.text_color)
     return tag_from_orm(tag)
 
 

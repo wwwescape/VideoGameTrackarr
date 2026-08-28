@@ -18,7 +18,8 @@
     "retry": "Retry",
     "none": "None",
     "unknown": "Unknown",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "actions": "Actions"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -34,6 +35,8 @@
     "missingDlc": "Missing DLC",
     "orphanedAccessories": "Orphaned Accessories",
     "settings": "Settings",
+    "tagManager": "Tag Manager",
+    "jobs": "Jobs",
     "about": "About"
   },
   "breadcrumbs": {
@@ -48,6 +51,11 @@
   "dialogs": {
     "message": {
       "ok": "OK"
+    },
+    "tag": {
+      "useCustomColorLabel": "Use custom colors",
+      "colorLabel": "Chip color",
+      "textColorLabel": "Text color"
     },
     "libraryItem": {
       "platformLabel": "Platform",
@@ -86,6 +94,9 @@
   },
   "settings": {
     "title": "Settings",
+    "subNav": {
+      "overview": "Overview"
+    },
     "account": {
       "heading": "Account",
       "signedInAs": "Signed in as <1>{{username}}</1>."
@@ -161,6 +172,23 @@
           "description": "Re-fetches only Series data for every IGDB-linked game — restores Series after a backup restore, which doesn't carry it over."
         }
       }
+    },
+    "tagManager": {
+      "description": "Permanently delete a tag. This removes it from every game, device, and accessory that has it — not just one item. To remove a tag from a single item instead, use the Tags field on that item's own page.",
+      "deleteConfirmTitle": "Delete \"{{name}}\" permanently?",
+      "deleteConfirmDescription": "This permanently deletes the \"{{name}}\" tag and removes it from every game, device, and accessory currently tagged with it. This cannot be undone.",
+      "deleteConfirmTitle_bulk_one": "Delete 1 tag permanently?",
+      "deleteConfirmTitle_bulk_other": "Delete {{count}} tags permanently?",
+      "deleteConfirmDescription_bulk_one": "This permanently deletes the selected tag and removes it from every game, device, and accessory currently tagged with it. This cannot be undone.",
+      "deleteConfirmDescription_bulk_other": "This permanently deletes {{count}} selected tags and removes them from every game, device, and accessory currently tagged with them. This cannot be undone.",
+      "deleteError": "Error deleting tag. Please try again.",
+      "nameColumn": "Name",
+      "addDialogTitle": "Add tag",
+      "editDialogTitle": "Edit tag",
+      "addSuccess": "Tag added.",
+      "updateSuccess": "Tag updated.",
+      "saveError": "Error saving tag. Please try again.",
+      "duplicateNameError": "A tag with that name already exists."
     },
     "igdb": {
       "heading": "IGDB credentials",

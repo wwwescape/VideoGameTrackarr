@@ -18,7 +18,8 @@
     "retry": "Tentar novamente",
     "none": "Nenhum",
     "unknown": "Desconhecido",
-    "logOut": "Terminar sessão"
+    "logOut": "Terminar sessão",
+    "actions": "Ações"
   },
   "nav": {
     "dashboard": "Painel",
@@ -34,6 +35,8 @@
     "missingDlc": "DLC em Falta",
     "orphanedAccessories": "Acessórios Órfãos",
     "settings": "Definições",
+    "tagManager": "Gestor de etiquetas",
+    "jobs": "Tarefas",
     "about": "Sobre"
   },
   "breadcrumbs": {
@@ -48,6 +51,11 @@
   "dialogs": {
     "message": {
       "ok": "OK"
+    },
+    "tag": {
+      "useCustomColorLabel": "Usar cores personalizadas",
+      "colorLabel": "Cor da etiqueta",
+      "textColorLabel": "Cor do texto"
     },
     "libraryItem": {
       "platformLabel": "Plataforma",
@@ -86,6 +94,9 @@
   },
   "settings": {
     "title": "Definições",
+    "subNav": {
+      "overview": "Visão geral"
+    },
     "account": {
       "heading": "Conta",
       "signedInAs": "Sessão iniciada como <1>{{username}}</1>."
@@ -161,6 +172,23 @@
           "description": "Obtém novamente apenas os dados de séries de cada jogo associado ao IGDB — restaura as séries após uma restauração de cópia de segurança, que não as inclui."
         }
       }
+    },
+    "tagManager": {
+      "description": "Elimina uma etiqueta de forma permanente. Isto remove-a de todos os jogos, dispositivos e acessórios que a tenham — não apenas de um. Para remover uma etiqueta de um único item, utilize o campo Etiquetas na página desse item.",
+      "deleteConfirmTitle": "Eliminar \"{{name}}\" permanentemente?",
+      "deleteConfirmDescription": "Isto elimina permanentemente a etiqueta \"{{name}}\" e remove-a de todos os jogos, dispositivos e acessórios atualmente associados. Esta ação não pode ser desfeita.",
+      "deleteConfirmTitle_bulk_one": "Eliminar 1 etiqueta permanentemente?",
+      "deleteConfirmTitle_bulk_other": "Eliminar {{count}} etiquetas permanentemente?",
+      "deleteConfirmDescription_bulk_one": "Isto elimina permanentemente a etiqueta selecionada e remove-a de todos os jogos, dispositivos e acessórios atualmente associados. Esta ação não pode ser desfeita.",
+      "deleteConfirmDescription_bulk_other": "Isto elimina permanentemente as {{count}} etiquetas selecionadas e remove-as de todos os jogos, dispositivos e acessórios atualmente associados. Esta ação não pode ser desfeita.",
+      "deleteError": "Erro ao eliminar a etiqueta. Tente novamente.",
+      "nameColumn": "Nome",
+      "addDialogTitle": "Adicionar etiqueta",
+      "editDialogTitle": "Editar etiqueta",
+      "addSuccess": "Etiqueta adicionada.",
+      "updateSuccess": "Etiqueta atualizada.",
+      "saveError": "Erro ao guardar a etiqueta. Tente novamente.",
+      "duplicateNameError": "Já existe uma etiqueta com esse nome."
     },
     "igdb": {
       "heading": "Credenciais IGDB",

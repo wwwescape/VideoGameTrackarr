@@ -110,6 +110,7 @@ export interface Tag {
   id: number;
   name: string;
   color: string | null;
+  textColor: string | null;
 }
 
 export interface CatalogRef {

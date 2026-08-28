@@ -5,11 +5,14 @@ def test_list_tags_requires_auth(client):
 
 
 def test_create_and_list_tags(auth_client):
-    response = auth_client.post("/api/tags", json={"name": "Couch Co-op", "color": "#7C4DFF"})
+    response = auth_client.post(
+        "/api/tags", json={"name": "Couch Co-op", "color": "#7C4DFF", "textColor": "#FFFFFF"}
+    )
 
     assert response.status_code == 201
     assert response.json()["name"] == "Couch Co-op"
     assert response.json()["color"] == "#7C4DFF"
+    assert response.json()["textColor"] == "#FFFFFF"
 
     list_response = auth_client.get("/api/tags")
     assert [tag["name"] for tag in list_response.json()] == ["Couch Co-op"]
@@ -35,6 +38,55 @@ def test_delete_tag(auth_client):
 
 def test_delete_tag_404_for_missing_tag(auth_client):
     response = auth_client.delete("/api/tags/999999")
+
+    assert response.status_code == 404
+
+
+def test_update_tag_renames_and_recolors(auth_client):
+    tag_id = auth_client.post(
+        "/api/tags", json={"name": "Old Name", "color": "#111111", "textColor": "#EEEEEE"}
+    ).json()["id"]
+
+    response = auth_client.patch(
+        f"/api/tags/{tag_id}", json={"name": "New Name", "color": "#222222", "textColor": "#DDDDDD"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "New Name"
+    assert response.json()["color"] == "#222222"
+    assert response.json()["textColor"] == "#DDDDDD"
+
+
+def test_update_tag_color_only_keeps_name(auth_client):
+    tag_id = auth_client.post("/api/tags", json={"name": "Backlog", "color": None}).json()["id"]
+
+    response = auth_client.patch(f"/api/tags/{tag_id}", json={"name": "Backlog", "color": "#7C4DFF"})
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Backlog"
+    assert response.json()["color"] == "#7C4DFF"
+
+
+def test_update_tag_to_own_current_name_is_a_noop(auth_client):
+    tag_id = auth_client.post("/api/tags", json={"name": "Backlog"}).json()["id"]
+
+    response = auth_client.patch(f"/api/tags/{tag_id}", json={"name": "Backlog", "color": "#7C4DFF"})
+
+    assert response.status_code == 200
+    assert response.json()["color"] == "#7C4DFF"
+
+
+def test_update_tag_rejects_name_used_by_another_tag(auth_client):
+    auth_client.post("/api/tags", json={"name": "Speedrun"})
+    other_id = auth_client.post("/api/tags", json={"name": "Backlog"}).json()["id"]
+
+    response = auth_client.patch(f"/api/tags/{other_id}", json={"name": "Speedrun"})
+
+    assert response.status_code == 409
+
+
+def test_update_tag_404_for_missing_tag(auth_client):
+    response = auth_client.patch("/api/tags/999999", json={"name": "Whatever"})
 
     assert response.status_code == 404
 

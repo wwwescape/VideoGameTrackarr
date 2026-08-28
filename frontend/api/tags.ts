@@ -6,8 +6,18 @@ export async function listTags(): Promise<Tag[]> {
   return response.data;
 }
 
-export async function createTag(name: string, color?: string | null): Promise<Tag> {
-  const response = await apiClient.post<Tag>("/api/tags", { name, color });
+export async function createTag(name: string, color?: string | null, textColor?: string | null): Promise<Tag> {
+  const response = await apiClient.post<Tag>("/api/tags", { name, color, textColor });
+  return response.data;
+}
+
+export async function updateTag(
+  tagId: number,
+  name: string,
+  color?: string | null,
+  textColor?: string | null
+): Promise<Tag> {
+  const response = await apiClient.patch<Tag>(`/api/tags/${tagId}`, { name, color, textColor });
   return response.data;
 }
 

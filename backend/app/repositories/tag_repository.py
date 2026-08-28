@@ -17,9 +17,17 @@ def get_tag_by_name(db: Session, name: str) -> Tag | None:
     return db.scalars(select(Tag).where(Tag.name == name)).first()
 
 
-def create_tag(db: Session, name: str, color: str | None) -> Tag:
-    tag = Tag(name=name, color=color)
+def create_tag(db: Session, name: str, color: str | None, text_color: str | None) -> Tag:
+    tag = Tag(name=name, color=color, text_color=text_color)
     db.add(tag)
+    db.flush()
+    return tag
+
+
+def update_tag(db: Session, tag: Tag, name: str, color: str | None, text_color: str | None) -> Tag:
+    tag.name = name
+    tag.color = color
+    tag.text_color = text_color
     db.flush()
     return tag
 

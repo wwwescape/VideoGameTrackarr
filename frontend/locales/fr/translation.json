@@ -18,7 +18,8 @@
     "retry": "Réessayer",
     "none": "Aucun",
     "unknown": "Inconnu",
-    "logOut": "Déconnexion"
+    "logOut": "Déconnexion",
+    "actions": "Actions"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -34,6 +35,8 @@
     "missingDlc": "DLC manquants",
     "orphanedAccessories": "Accessoires orphelins",
     "settings": "Paramètres",
+    "tagManager": "Gestionnaire d'étiquettes",
+    "jobs": "Tâches",
     "about": "À propos"
   },
   "breadcrumbs": {
@@ -48,6 +51,11 @@
   "dialogs": {
     "message": {
       "ok": "OK"
+    },
+    "tag": {
+      "useCustomColorLabel": "Utiliser des couleurs personnalisées",
+      "colorLabel": "Couleur de l'étiquette",
+      "textColorLabel": "Couleur du texte"
     },
     "libraryItem": {
       "platformLabel": "Plateforme",
@@ -86,6 +94,9 @@
   },
   "settings": {
     "title": "Paramètres",
+    "subNav": {
+      "overview": "Vue d'ensemble"
+    },
     "account": {
       "heading": "Compte",
       "signedInAs": "Connecté en tant que <1>{{username}}</1>."
@@ -161,6 +172,23 @@
           "description": "Récupère à nouveau uniquement les données de séries de chaque jeu lié à IGDB — restaure les séries après une restauration de sauvegarde, qui ne les conserve pas."
         }
       }
+    },
+    "tagManager": {
+      "description": "Supprime une étiquette de façon permanente. Cela la retire de tous les jeux, appareils et accessoires qui la portent — pas seulement d'un seul élément. Pour retirer une étiquette d'un seul élément, utilisez le champ Étiquettes sur la page de cet élément.",
+      "deleteConfirmTitle": "Supprimer « {{name}} » définitivement ?",
+      "deleteConfirmDescription": "Cela supprime définitivement l'étiquette « {{name}} » et la retire de tous les jeux, appareils et accessoires actuellement associés. Cette action est irréversible.",
+      "deleteConfirmTitle_bulk_one": "Supprimer 1 étiquette définitivement ?",
+      "deleteConfirmTitle_bulk_other": "Supprimer {{count}} étiquettes définitivement ?",
+      "deleteConfirmDescription_bulk_one": "Cela supprime définitivement l'étiquette sélectionnée et la retire de tous les jeux, appareils et accessoires actuellement associés. Cette action est irréversible.",
+      "deleteConfirmDescription_bulk_other": "Cela supprime définitivement les {{count}} étiquettes sélectionnées et les retire de tous les jeux, appareils et accessoires actuellement associés. Cette action est irréversible.",
+      "deleteError": "Erreur lors de la suppression de l'étiquette. Veuillez réessayer.",
+      "nameColumn": "Nom",
+      "addDialogTitle": "Ajouter une étiquette",
+      "editDialogTitle": "Modifier l'étiquette",
+      "addSuccess": "Étiquette ajoutée.",
+      "updateSuccess": "Étiquette mise à jour.",
+      "saveError": "Erreur lors de l'enregistrement de l'étiquette. Veuillez réessayer.",
+      "duplicateNameError": "Une étiquette portant ce nom existe déjà."
     },
     "igdb": {
       "heading": "Identifiants IGDB",

@@ -10,7 +10,9 @@ import GamesIcon from "@mui/icons-material/Games";
 import InfoIcon from "@mui/icons-material/Info";
 import InsightsIcon from "@mui/icons-material/Insights";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import MemoryIcon from "@mui/icons-material/Memory";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 export interface NavSubDestination {
@@ -64,7 +66,15 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
         { to: "/insights/orphaned-accessories", label: t("nav.orphanedAccessories"), icon: <LinkOffIcon /> },
       ],
     },
-    { to: "/settings", label: t("nav.settings"), icon: <SettingsIcon /> },
+    {
+      to: "/settings",
+      label: t("nav.settings"),
+      icon: <SettingsIcon />,
+      subItems: [
+        { to: "/settings/tags", label: t("nav.tagManager"), icon: <LocalOfferIcon /> },
+        { to: "/settings/jobs", label: t("nav.jobs"), icon: <RefreshIcon /> },
+      ],
+    },
     { to: "/about", label: t("nav.about"), icon: <InfoIcon /> },
   ];
 }

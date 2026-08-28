@@ -395,7 +395,15 @@ const EnhancedTable = ({
                       {headCells.map((cell) => (
                         <TableCell
                           key={cell.id}
-                          align={cell.disableHeader ? "center" : cell.numeric ? "right" : "left"}
+                          align={
+                            cell.id === "actions"
+                              ? "right"
+                              : cell.disableHeader
+                                ? "center"
+                                : cell.numeric
+                                  ? "right"
+                                  : "left"
+                          }
                         >
                           {cell.id === "move" ? (
                             <IconButton onClick={(event) => handleMove(event, row.id)}>
@@ -421,6 +429,19 @@ const EnhancedTable = ({
                                 <DeleteIcon />
                               </Tooltip>
                             </IconButton>
+                          ) : cell.id === "actions" ? (
+                            <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
+                              <IconButton onClick={(event) => handleEdit(event, row.id)}>
+                                <Tooltip title={t("common.edit")}>
+                                  <EditIcon />
+                                </Tooltip>
+                              </IconButton>
+                              <IconButton onClick={(event) => handleDelete(event, row.id)}>
+                                <Tooltip title={t("common.delete")}>
+                                  <DeleteIcon />
+                                </Tooltip>
+                              </IconButton>
+                            </Stack>
                           ) : (
                             (row[cell.id] as ReactNode)
                           )}

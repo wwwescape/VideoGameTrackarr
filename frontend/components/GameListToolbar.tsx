@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import type { CatalogRefSummary, PlatformResponse, Tag } from "../api/types";
 import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
 import AutocompleteSelect from "./AutocompleteSelect";
+import TagChip from "./TagChip";
 
 function platformOptionLabel(option: PlatformResponse): string {
   return option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name;
@@ -235,6 +236,12 @@ const GameListToolbar = ({
               isOptionEqualToValue={(option, val) => option.id === val.id}
               placeholder={allPlaceholder}
               fullWidth
+              renderValue={(tagsValue, getItemProps) =>
+                tagsValue.map((tag, index) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <TagChip key={key} tag={tag} {...itemProps} />;
+                })
+              }
             />
             <AutocompleteSelect<CatalogRefSummary>
               label={t("games.listToolbar.collectionLabel")}

@@ -151,4 +151,14 @@ export const compareCrumbs: CrumbsFn = (_params, t) => [{ label: t("breadcrumbs.
 
 export const settingsCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.settings") }];
 
+export const tagManagerCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.tagManager") },
+];
+
+export const jobsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.jobs") },
+];
+
 export const aboutCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.about") }];

@@ -2,21 +2,33 @@ from sqlalchemy.orm import Session
 
 from app.models.library import Tag
 from app.repositories import accessory_repository, device_repository, game_repository, tag_repository
-from app.services.exceptions import NotFoundError
+from app.services.exceptions import ConflictError, NotFoundError
 
 
 def list_tags(db: Session) -> list[Tag]:
     return tag_repository.list_tags(db)
 
 
-def create_tag(db: Session, name: str, color: str | None) -> Tag:
+def create_tag(db: Session, name: str, color: str | None, text_color: str | None) -> Tag:
     # Get-or-create: tags are lightweight labels, not user-owned records worth a 409 over —
     # if the name already exists, reuse it rather than making the caller handle a conflict.
     existing = tag_repository.get_tag_by_name(db, name)
     if existing is not None:
         return existing
 
-    tag = tag_repository.create_tag(db, name, color)
+    tag = tag_repository.create_tag(db, name, color, text_color)
+    db.commit()
+    db.refresh(tag)
+    return tag
+
+
+def update_tag(db: Session, tag_id: int, name: str, color: str | None, text_color: str | None) -> Tag:
+    tag = _require_tag(db, tag_id)
+    existing = tag_repository.get_tag_by_name(db, name)
+    if existing is not None and existing.id != tag_id:
+        raise ConflictError(f"A tag named {name!r} already exists")
+
+    tag = tag_repository.update_tag(db, tag, name, color, text_color)
     db.commit()
     db.refresh(tag)
     return tag

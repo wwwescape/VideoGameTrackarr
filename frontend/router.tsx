@@ -22,7 +22,9 @@ import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import SeriesPage from "./components/SeriesPage";
 import About from "./components/About";
+import JobsPage from "./components/JobsPage";
 import Settings from "./components/Settings";
+import TagManagerPage from "./components/TagManagerPage";
 import {
   accessoryCrumbs,
   addAccessoryCrumbs,
@@ -43,10 +45,12 @@ import {
   gamesCrumbs,
   hardwareCrumbs,
   insightsCrumbs,
+  jobsCrumbs,
   missingDlcCrumbs,
   orphanedAccessoriesCrumbs,
   seriesCrumbs,
   settingsCrumbs,
+  tagManagerCrumbs,
 } from "./navigation/breadcrumbConfig";
 import Login from "./pages/Login";
 import ProtectedLayout from "./routes/ProtectedLayout";
@@ -114,6 +118,8 @@ const router = createBrowserRouter([
           },
           { path: "/compare", element: <ComparePage />, handle: { crumbs: compareCrumbs } },
           { path: "/settings", element: <Settings />, handle: { crumbs: settingsCrumbs } },
+          { path: "/settings/tags", element: <TagManagerPage />, handle: { crumbs: tagManagerCrumbs } },
+          { path: "/settings/jobs", element: <JobsPage />, handle: { crumbs: jobsCrumbs } },
           { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
         ],
       },
