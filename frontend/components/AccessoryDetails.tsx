@@ -19,6 +19,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import FieldRow from "./FieldRow";
 import HardwareCoverCard from "./HardwareCoverCard";
 import NotesSection from "./NotesSection";
+import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
 import { useAccessoryItem, useDeleteAccessory } from "../hooks/useAccessories";
 import {
@@ -42,7 +43,7 @@ const AccessoryDetails = () => {
   const { identifier } = useParams<{ identifier: string }>();
   const navigate = useNavigate();
 
-  const { data: accessory, isLoading } = useAccessoryItem(identifier);
+  const { data: accessory, isLoading, isError } = useAccessoryItem(identifier);
   const accessoryId = accessory?.id ?? NaN;
   const { currency } = useCurrency();
   const deleteAccessory = useDeleteAccessory();
@@ -57,6 +58,17 @@ const AccessoryDetails = () => {
   const createNote = useCreateAccessoryNote(accessoryId);
   const updateNote = useUpdateAccessoryNote(accessoryId);
   const deleteNote = useDeleteAccessoryNote(accessoryId);
+
+  if (isError) {
+    return (
+      <NotFoundPage
+        title={t("errors.accessoryNotFoundTitle")}
+        message={t("errors.notFoundMessage")}
+        actionLabel={t("errors.backTo", { page: t("nav.hardware") })}
+        actionTo="/hardware"
+      />
+    );
+  }
 
   if (isLoading || !accessory) {
     return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;

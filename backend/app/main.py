@@ -30,7 +30,9 @@ from app.api.routes import (
     notes,
     platforms,
     progress,
+    public,
     regions,
+    share,
     tags,
     uploads,
     version,
@@ -137,6 +139,8 @@ app.include_router(companies.router)
 app.include_router(uploads.router)
 app.include_router(jobs.router)
 app.include_router(version.router)
+app.include_router(share.router)
+app.include_router(public.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather
 # than committed to the repo, so it needs to exist before StaticFiles will mount it.

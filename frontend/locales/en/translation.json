@@ -21,6 +21,20 @@
     "logOut": "Log out",
     "actions": "Actions"
   },
+  "errors": {
+    "pageNotFoundTitle": "Page not found",
+    "pageNotFoundMessage": "The page you're looking for doesn't exist or may have been moved.",
+    "unexpectedErrorTitle": "Something went wrong",
+    "unexpectedErrorMessage": "An unexpected error occurred. Please try again.",
+    "backToDashboard": "Back to Dashboard",
+    "notFoundMessage": "It may have been removed, or the link might be incorrect.",
+    "backTo": "Back to {{page}}",
+    "gameNotFoundTitle": "Game not found",
+    "deviceNotFoundTitle": "Device not found",
+    "accessoryNotFoundTitle": "Accessory not found",
+    "seriesNotFoundTitle": "Series not found",
+    "collectionNotFoundTitle": "Collection not found"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "games": "Games",
@@ -189,6 +203,20 @@
       "updateSuccess": "Tag updated.",
       "saveError": "Error saving tag. Please try again.",
       "duplicateNameError": "A tag with that name already exists."
+    },
+    "share": {
+      "heading": "Share",
+      "description": "Unlisted, read-only links — anyone with a link can browse your Games or Hardware collection with no login, but the links aren't discoverable or public unless you share them. Regenerating breaks both links immediately.",
+      "gamesLabel": "Games",
+      "hardwareLabel": "Hardware",
+      "copyButton": "Copy link",
+      "copySuccess": "Link copied to clipboard.",
+      "copyError": "Could not copy the link. Please try again.",
+      "regenerateButton": "Regenerate links",
+      "regenerateConfirmTitle": "Regenerate share links?",
+      "regenerateConfirmDescription": "This immediately breaks both links above — anyone using the old links loses access. New links replace them right away.",
+      "regenerateSuccess": "Share links regenerated.",
+      "regenerateError": "Could not regenerate the links. Please try again."
     },
     "igdb": {
       "heading": "IGDB credentials",
@@ -830,6 +858,24 @@
       "playing": "Playing",
       "completed": "Completed",
       "abandoned": "Abandoned"
+    }
+  },
+  "public": {
+    "nav": {
+      "games": "Games",
+      "hardware": "Hardware"
+    },
+    "games": {
+      "title": "Games",
+      "searchLabel": "Search games",
+      "emptyState": "No games found."
+    },
+    "hardware": {
+      "title": "Hardware",
+      "searchLabel": "Search hardware",
+      "devicesHeading": "Devices",
+      "accessoriesHeading": "Accessories",
+      "emptyState": "No hardware found."
     }
   }
 }

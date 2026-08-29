@@ -21,6 +21,20 @@
     "logOut": "Terminar sessão",
     "actions": "Ações"
   },
+  "errors": {
+    "pageNotFoundTitle": "Página não encontrada",
+    "pageNotFoundMessage": "A página que procura não existe ou pode ter sido movida.",
+    "unexpectedErrorTitle": "Algo correu mal",
+    "unexpectedErrorMessage": "Ocorreu um erro inesperado. Tente novamente.",
+    "backToDashboard": "Voltar ao painel",
+    "notFoundMessage": "Isto pode ter sido removido, ou a ligação pode estar incorreta.",
+    "backTo": "Voltar a {{page}}",
+    "gameNotFoundTitle": "Jogo não encontrado",
+    "deviceNotFoundTitle": "Dispositivo não encontrado",
+    "accessoryNotFoundTitle": "Acessório não encontrado",
+    "seriesNotFoundTitle": "Série não encontrada",
+    "collectionNotFoundTitle": "Coleção não encontrada"
+  },
   "nav": {
     "dashboard": "Painel",
     "games": "Jogos",
@@ -189,6 +203,20 @@
       "updateSuccess": "Etiqueta atualizada.",
       "saveError": "Erro ao guardar a etiqueta. Tente novamente.",
       "duplicateNameError": "Já existe uma etiqueta com esse nome."
+    },
+    "share": {
+      "heading": "Partilhar",
+      "description": "Ligações não listadas, apenas de leitura — qualquer pessoa com uma ligação pode ver a sua coleção de Jogos ou Hardware sem sessão iniciada, mas as ligações não são públicas nem detetáveis a menos que as partilhe. Regenerá-las quebra ambas as ligações de imediato.",
+      "gamesLabel": "Jogos",
+      "hardwareLabel": "Hardware",
+      "copyButton": "Copiar ligação",
+      "copySuccess": "Ligação copiada para a área de transferência.",
+      "copyError": "Não foi possível copiar a ligação. Tente novamente.",
+      "regenerateButton": "Regenerar ligações",
+      "regenerateConfirmTitle": "Regenerar as ligações de partilha?",
+      "regenerateConfirmDescription": "Isto quebra imediatamente ambas as ligações acima — quem estiver a usar as ligações antigas perde o acesso. Novas ligações substituem-nas de imediato.",
+      "regenerateSuccess": "Ligações de partilha regeneradas.",
+      "regenerateError": "Não foi possível regenerar as ligações. Tente novamente."
     },
     "igdb": {
       "heading": "Credenciais IGDB",
@@ -830,6 +858,24 @@
       "playing": "A jogar",
       "completed": "Concluído",
       "abandoned": "Abandonado"
+    }
+  },
+  "public": {
+    "nav": {
+      "games": "Jogos",
+      "hardware": "Hardware"
+    },
+    "games": {
+      "title": "Jogos",
+      "searchLabel": "Pesquisar jogos",
+      "emptyState": "Nenhum jogo encontrado."
+    },
+    "hardware": {
+      "title": "Hardware",
+      "searchLabel": "Pesquisar hardware",
+      "devicesHeading": "Dispositivos",
+      "accessoriesHeading": "Acessórios",
+      "emptyState": "Nenhum hardware encontrado."
     }
   }
 }

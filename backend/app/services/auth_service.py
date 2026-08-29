@@ -1,3 +1,4 @@
+import secrets
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.system import RefreshToken, User
-from app.services.exceptions import ConflictError
+from app.services.exceptions import ConflictError, NotFoundError
 
 
 class AuthError(Exception):
@@ -69,6 +70,32 @@ def revoke_refresh_token(db: Session, refresh_token: str) -> None:
 
     record.revoked_at = datetime.now(UTC)
     db.commit()
+
+
+def get_or_create_share_token(db: Session, user: User) -> str:
+    if user.public_share_token is None:
+        user.public_share_token = secrets.token_urlsafe(32)
+        db.commit()
+        db.refresh(user)
+    return user.public_share_token
+
+
+def regenerate_share_token(db: Session, user: User) -> str:
+    # Regenerating immediately breaks every URL built from the old token — that's the
+    # only way to revoke a leaked share link, since there's no per-link revocation.
+    user.public_share_token = secrets.token_urlsafe(32)
+    db.commit()
+    db.refresh(user)
+    return user.public_share_token
+
+
+def get_user_by_share_token(db: Session, token: str) -> User:
+    # 404, not 401/403 — a wrong/guessed token shouldn't be distinguishable from a
+    # not-found route, so a bad guess can't tell an attacker they're "close."
+    user = db.query(User).filter(User.public_share_token == token).first()
+    if user is None:
+        raise NotFoundError("Share link not found")
+    return user
 
 
 def _load_active_refresh_token(db: Session, refresh_token: str) -> tuple[RefreshToken, User]:

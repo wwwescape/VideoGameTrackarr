@@ -113,6 +113,37 @@ export interface Tag {
   textColor: string | null;
 }
 
+export interface PublicGameSummary {
+  id: number;
+  name: string;
+  coverUrl: string | null;
+  category: GameCategory | null;
+  firstReleaseDate: number | null;
+  owned: boolean;
+  wishlisted: boolean;
+}
+
+export interface PublicDeviceSummary {
+  id: number;
+  officialName: string;
+  manufacturerName: string;
+  hardwarePlatformName: string | null;
+  imageUrl: string | null;
+  owned: boolean;
+  wishlisted: boolean;
+  ownedQuantity: number;
+}
+
+export interface PublicAccessorySummary {
+  id: number;
+  officialName: string;
+  manufacturerName: string;
+  imageUrl: string | null;
+  owned: boolean;
+  wishlisted: boolean;
+  ownedQuantity: number;
+}
+
 export interface CatalogRef {
   id: number;
   name: string;

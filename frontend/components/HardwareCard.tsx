@@ -17,7 +17,9 @@ interface HardwareCardProps {
   owned: boolean;
   wishlisted: boolean;
   ownedQuantity: number;
-  onClick: () => void;
+  // Optional so a read-only context (the public share-link view) can render a non-clickable
+  // card without a dummy handler.
+  onClick?: () => void;
 }
 
 // Shared by Hardware and Accessory grids — same shape of info (name, a one-line
@@ -27,6 +29,7 @@ interface HardwareCardProps {
 const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuantity, onClick }: HardwareCardProps) => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const isClickable = Boolean(onClick);
 
   return (
     <Card
@@ -37,9 +40,11 @@ const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuanti
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        cursor: "pointer",
+        cursor: isClickable ? "pointer" : "default",
         transition: "transform 150ms ease, box-shadow 150ms ease",
-        "&:hover": { transform: "translateY(-2px)", boxShadow: theme.shadows[6] },
+        "&:hover": isClickable
+          ? { transform: "translateY(-2px)", boxShadow: theme.shadows[6] }
+          : { transform: "none", boxShadow: theme.shadows[1] },
       }}
       onClick={onClick}
     >

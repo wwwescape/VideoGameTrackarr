@@ -18,13 +18,18 @@ import GameList from "./components/GameList";
 import HardwarePage from "./components/HardwarePage";
 import InsightsPage from "./components/InsightsPage";
 import MissingDlcPage from "./components/MissingDlcPage";
+import NotFoundPage from "./components/NotFoundPage";
 import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
+import RouteErrorBoundary from "./components/RouteErrorBoundary";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import SeriesPage from "./components/SeriesPage";
 import About from "./components/About";
 import JobsPage from "./components/JobsPage";
+import PublicGamesPage from "./components/PublicGamesPage";
+import PublicHardwarePage from "./components/PublicHardwarePage";
 import Settings from "./components/Settings";
 import TagManagerPage from "./components/TagManagerPage";
+import PublicShell from "./PublicShell";
 import {
   accessoryCrumbs,
   addAccessoryCrumbs,
@@ -47,6 +52,7 @@ import {
   insightsCrumbs,
   jobsCrumbs,
   missingDlcCrumbs,
+  notFoundCrumbs,
   orphanedAccessoriesCrumbs,
   seriesCrumbs,
   settingsCrumbs,
@@ -54,11 +60,40 @@ import {
 } from "./navigation/breadcrumbConfig";
 import Login from "./pages/Login";
 import ProtectedLayout from "./routes/ProtectedLayout";
+import { useTranslation } from "react-i18next";
+
+// The AppShell-internal "*" catch-all (a wrong URL, not a crash) — kept inside AppShell so
+// the nav/header stay visible, unlike RouteErrorBoundary which renders standalone.
+const NotFoundRouteElement = () => {
+  const { t } = useTranslation();
+  return (
+    <NotFoundPage
+      title={t("errors.pageNotFoundTitle")}
+      message={t("errors.pageNotFoundMessage")}
+      actionLabel={t("errors.backToDashboard")}
+      actionTo="/"
+    />
+  );
+};
 
 const router = createBrowserRouter([
-  { path: "/login", element: <Login /> },
+  // Each top-level branch gets its own errorElement (rather than one shared pathless wrapper
+  // route) so a render-time crash lands on this same friendly fallback instead of React
+  // Router's raw, unstyled default error screen — regardless of which branch it happened in.
+  { path: "/login", element: <Login />, errorElement: <RouteErrorBoundary /> },
+  {
+    // Deliberately outside ProtectedLayout — no auth check, since access here is gated by
+    // the unlisted token in the path instead (see backend/app/api/routes/public.py).
+    element: <PublicShell />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      { path: "/public/:token/games", element: <PublicGamesPage /> },
+      { path: "/public/:token/hardware", element: <PublicHardwarePage /> },
+    ],
+  },
   {
     element: <ProtectedLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         element: <AppShell />,
@@ -121,6 +156,7 @@ const router = createBrowserRouter([
           { path: "/settings/tags", element: <TagManagerPage />, handle: { crumbs: tagManagerCrumbs } },
           { path: "/settings/jobs", element: <JobsPage />, handle: { crumbs: jobsCrumbs } },
           { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
+          { path: "*", element: <NotFoundRouteElement />, handle: { crumbs: notFoundCrumbs } },
         ],
       },
     ],

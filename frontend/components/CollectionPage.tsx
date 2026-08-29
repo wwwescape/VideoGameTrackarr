@@ -2,11 +2,23 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCollection } from "../hooks/useCatalogBrowse";
 import CatalogBrowseGrid from "./CatalogBrowseGrid";
+import NotFoundPage from "./NotFoundPage";
 
 const CollectionPage = () => {
   const { t } = useTranslation();
   const { collectionSlug } = useParams<{ collectionSlug: string }>();
-  const { data, isLoading } = useCollection(collectionSlug);
+  const { data, isLoading, isError } = useCollection(collectionSlug);
+
+  if (isError) {
+    return (
+      <NotFoundPage
+        title={t("errors.collectionNotFoundTitle")}
+        message={t("errors.notFoundMessage")}
+        actionLabel={t("errors.backTo", { page: t("nav.collections") })}
+        actionTo="/games/collections"
+      />
+    );
+  }
 
   return (
     <CatalogBrowseGrid

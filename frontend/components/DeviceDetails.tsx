@@ -17,6 +17,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import FieldRow from "./FieldRow";
 import HardwareCoverCard from "./HardwareCoverCard";
 import NotesSection from "./NotesSection";
+import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
 import { useDeleteDevice, useDeviceItem } from "../hooks/useDevice";
 import {
@@ -40,7 +41,7 @@ const DeviceDetails = () => {
   const { identifier } = useParams<{ identifier: string }>();
   const navigate = useNavigate();
 
-  const { data: device, isLoading } = useDeviceItem(identifier);
+  const { data: device, isLoading, isError } = useDeviceItem(identifier);
   const deviceId = device?.id ?? NaN;
   const { currency } = useCurrency();
   const deleteDevice = useDeleteDevice();
@@ -55,6 +56,17 @@ const DeviceDetails = () => {
   const createNote = useCreateDeviceNote(deviceId);
   const updateNote = useUpdateDeviceNote(deviceId);
   const deleteNote = useDeleteDeviceNote(deviceId);
+
+  if (isError) {
+    return (
+      <NotFoundPage
+        title={t("errors.deviceNotFoundTitle")}
+        message={t("errors.notFoundMessage")}
+        actionLabel={t("errors.backTo", { page: t("nav.hardware") })}
+        actionTo="/hardware"
+      />
+    );
+  }
 
   if (isLoading || !device) {
     return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;

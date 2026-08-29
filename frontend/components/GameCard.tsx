@@ -41,7 +41,7 @@ const AddedGameButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-export type GameCardContext = "list" | "addon" | "added" | "add";
+export type GameCardContext = "list" | "addon" | "added" | "add" | "public";
 
 export interface GameCardGame {
   name: string;
@@ -56,7 +56,8 @@ export interface GameCardGame {
 interface GameCardProps {
   game: GameCardGame;
   context: GameCardContext;
-  contextFunction: () => void;
+  // Optional since "public" context cards render inert — no click target to activate.
+  contextFunction?: () => void;
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -65,7 +66,7 @@ interface GameCardProps {
 const GameCard = ({ game, context, contextFunction, selectable, selected, onToggleSelect }: GameCardProps) => {
   const theme = useTheme();
   const { t } = useTranslation();
-  const showsBadges = (context === "list" || context === "addon") && !selectable;
+  const showsBadges = (context === "list" || context === "addon" || context === "public") && !selectable;
   const isClickable = context === "list" || context === "addon" || context === "added";
   const releaseYear = getReleaseYear(game.firstReleaseDate);
 
@@ -75,7 +76,7 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
       return;
     }
     if (isClickable) {
-      contextFunction();
+      contextFunction?.();
     }
   };
 

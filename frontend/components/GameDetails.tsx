@@ -18,6 +18,7 @@ import GameAddonsSection from "./GameAddonsSection";
 import GameCoverCard from "./GameCoverCard";
 import GameLibrarySection from "./GameLibrarySection";
 import NotesSection from "./NotesSection";
+import NotFoundPage from "./NotFoundPage";
 import PlaySessionsSection from "./PlaySessionsSection";
 import ProgressStatusCard from "./ProgressStatusCard";
 import TagsSection from "./TagsSection";
@@ -36,7 +37,7 @@ const GameDetails = () => {
   const location = useLocation();
   const { identifier } = useParams<{ identifier: string }>();
 
-  const { data: game } = useGame(identifier);
+  const { data: game, isError } = useGame(identifier);
   const gameId = game?.id ?? NaN;
   const { data: addons } = useAddons(gameId);
   const { data: libraryItems } = useLibraryItems(gameId);
@@ -59,6 +60,17 @@ const GameDetails = () => {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [location.hash, game]);
+
+  if (isError) {
+    return (
+      <NotFoundPage
+        title={t("errors.gameNotFoundTitle")}
+        message={t("errors.notFoundMessage")}
+        actionLabel={t("errors.backTo", { page: t("nav.games") })}
+        actionTo="/games"
+      />
+    );
+  }
 
   if (!game) {
     return <>{t("common.loading")}</>;

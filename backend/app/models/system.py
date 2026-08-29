@@ -16,6 +16,9 @@ class User(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    public_share_token: Mapped[str | None] = mapped_column(
+        String(64), unique=True, comment="Unlisted share-link token for the public Games/Hardware view"
+    )
 
 
 class RefreshToken(Base):

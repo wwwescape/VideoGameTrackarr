@@ -18,34 +18,38 @@ export interface RouteHandle {
   crumbs: CrumbsFn;
 }
 
+// Each *CrumbLabel below falls back to "…NotFoundTitle" on isError rather than
+// "common.loading" — a nonexistent entity's query settles as an error, not just missing
+// data, so without this check the crumb would say "Loading…" forever (same underlying bug
+// as the page body's own isError handling in GameDetails.tsx etc., just visible here too).
 const GameCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: game } = useGame(identifier);
-  return <>{game?.name ?? t("common.loading")}</>;
+  const { data: game, isError } = useGame(identifier);
+  return <>{isError ? t("errors.gameNotFoundTitle") : (game?.name ?? t("common.loading"))}</>;
 };
 
 const FranchiseCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: franchise } = useFranchise(slug);
-  return <>{franchise?.name ?? t("common.loading")}</>;
+  const { data: franchise, isError } = useFranchise(slug);
+  return <>{isError ? t("errors.seriesNotFoundTitle") : (franchise?.name ?? t("common.loading"))}</>;
 };
 
 const CollectionCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: collection } = useCollection(slug);
-  return <>{collection?.name ?? t("common.loading")}</>;
+  const { data: collection, isError } = useCollection(slug);
+  return <>{isError ? t("errors.collectionNotFoundTitle") : (collection?.name ?? t("common.loading"))}</>;
 };
 
 const DeviceCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: device } = useDeviceItem(identifier);
-  return <>{device?.officialName ?? t("common.loading")}</>;
+  const { data: device, isError } = useDeviceItem(identifier);
+  return <>{isError ? t("errors.deviceNotFoundTitle") : (device?.officialName ?? t("common.loading"))}</>;
 };
 
 const AccessoryCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: accessory } = useAccessoryItem(identifier);
-  return <>{accessory?.officialName ?? t("common.loading")}</>;
+  const { data: accessory, isError } = useAccessoryItem(identifier);
+  return <>{isError ? t("errors.accessoryNotFoundTitle") : (accessory?.officialName ?? t("common.loading"))}</>;
 };
 
 // Each leaf route in router.tsx owns its full trail (rather than nested routes inheriting
@@ -162,3 +166,5 @@ export const jobsCrumbs: CrumbsFn = (_params, t) => [
 ];
 
 export const aboutCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.about") }];
+
+export const notFoundCrumbs: CrumbsFn = (_params, t) => [{ label: t("errors.pageNotFoundTitle") }];

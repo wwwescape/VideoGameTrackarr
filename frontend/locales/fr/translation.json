@@ -21,6 +21,20 @@
     "logOut": "Déconnexion",
     "actions": "Actions"
   },
+  "errors": {
+    "pageNotFoundTitle": "Page introuvable",
+    "pageNotFoundMessage": "La page que vous recherchez n'existe pas ou a peut-être été déplacée.",
+    "unexpectedErrorTitle": "Une erreur s'est produite",
+    "unexpectedErrorMessage": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+    "backToDashboard": "Retour au tableau de bord",
+    "notFoundMessage": "Cela a peut-être été supprimé, ou le lien est peut-être incorrect.",
+    "backTo": "Retour à {{page}}",
+    "gameNotFoundTitle": "Jeu introuvable",
+    "deviceNotFoundTitle": "Appareil introuvable",
+    "accessoryNotFoundTitle": "Accessoire introuvable",
+    "seriesNotFoundTitle": "Série introuvable",
+    "collectionNotFoundTitle": "Collection introuvable"
+  },
   "nav": {
     "dashboard": "Tableau de bord",
     "games": "Jeux",
@@ -189,6 +203,20 @@
       "updateSuccess": "Étiquette mise à jour.",
       "saveError": "Erreur lors de l'enregistrement de l'étiquette. Veuillez réessayer.",
       "duplicateNameError": "Une étiquette portant ce nom existe déjà."
+    },
+    "share": {
+      "heading": "Partage",
+      "description": "Liens non répertoriés, en lecture seule — toute personne disposant d'un lien peut consulter votre collection de Jeux ou de Matériel sans se connecter, mais les liens ne sont ni publics ni détectables tant que vous ne les partagez pas. Les régénérer casse immédiatement les deux liens.",
+      "gamesLabel": "Jeux",
+      "hardwareLabel": "Matériel",
+      "copyButton": "Copier le lien",
+      "copySuccess": "Lien copié dans le presse-papiers.",
+      "copyError": "Impossible de copier le lien. Veuillez réessayer.",
+      "regenerateButton": "Régénérer les liens",
+      "regenerateConfirmTitle": "Régénérer les liens de partage ?",
+      "regenerateConfirmDescription": "Cela casse immédiatement les deux liens ci-dessus — toute personne utilisant les anciens liens perd l'accès. De nouveaux liens les remplacent aussitôt.",
+      "regenerateSuccess": "Liens de partage régénérés.",
+      "regenerateError": "Impossible de régénérer les liens. Veuillez réessayer."
     },
     "igdb": {
       "heading": "Identifiants IGDB",
@@ -830,6 +858,24 @@
       "playing": "En cours",
       "completed": "Terminé",
       "abandoned": "Abandonné"
+    }
+  },
+  "public": {
+    "nav": {
+      "games": "Jeux",
+      "hardware": "Matériel"
+    },
+    "games": {
+      "title": "Jeux",
+      "searchLabel": "Rechercher des jeux",
+      "emptyState": "Aucun jeu trouvé."
+    },
+    "hardware": {
+      "title": "Matériel",
+      "searchLabel": "Rechercher du matériel",
+      "devicesHeading": "Appareils",
+      "accessoriesHeading": "Accessoires",
+      "emptyState": "Aucun matériel trouvé."
     }
   }
 }

@@ -21,6 +21,20 @@
     "logOut": "Cerrar sesión",
     "actions": "Acciones"
   },
+  "errors": {
+    "pageNotFoundTitle": "Página no encontrada",
+    "pageNotFoundMessage": "La página que buscas no existe o puede que se haya movido.",
+    "unexpectedErrorTitle": "Algo salió mal",
+    "unexpectedErrorMessage": "Se produjo un error inesperado. Inténtalo de nuevo.",
+    "backToDashboard": "Volver al panel",
+    "notFoundMessage": "Puede que se haya eliminado, o que el enlace sea incorrecto.",
+    "backTo": "Volver a {{page}}",
+    "gameNotFoundTitle": "Juego no encontrado",
+    "deviceNotFoundTitle": "Dispositivo no encontrado",
+    "accessoryNotFoundTitle": "Accesorio no encontrado",
+    "seriesNotFoundTitle": "Serie no encontrada",
+    "collectionNotFoundTitle": "Colección no encontrada"
+  },
   "nav": {
     "dashboard": "Panel",
     "games": "Juegos",
@@ -189,6 +203,20 @@
       "updateSuccess": "Etiqueta actualizada.",
       "saveError": "Error al guardar la etiqueta. Inténtalo de nuevo.",
       "duplicateNameError": "Ya existe una etiqueta con ese nombre."
+    },
+    "share": {
+      "heading": "Compartir",
+      "description": "Enlaces no listados y de solo lectura — cualquiera con un enlace puede ver tu colección de Juegos o Hardware sin iniciar sesión, pero los enlaces no son públicos ni detectables a menos que los compartas. Regenerarlos rompe ambos enlaces de inmediato.",
+      "gamesLabel": "Juegos",
+      "hardwareLabel": "Hardware",
+      "copyButton": "Copiar enlace",
+      "copySuccess": "Enlace copiado al portapapeles.",
+      "copyError": "No se pudo copiar el enlace. Inténtalo de nuevo.",
+      "regenerateButton": "Regenerar enlaces",
+      "regenerateConfirmTitle": "¿Regenerar los enlaces para compartir?",
+      "regenerateConfirmDescription": "Esto rompe ambos enlaces anteriores de inmediato — cualquiera que use los enlaces antiguos perderá el acceso. Los nuevos enlaces los sustituyen al momento.",
+      "regenerateSuccess": "Enlaces para compartir regenerados.",
+      "regenerateError": "No se pudieron regenerar los enlaces. Inténtalo de nuevo."
     },
     "igdb": {
       "heading": "Credenciales de IGDB",
@@ -830,6 +858,24 @@
       "playing": "Jugando",
       "completed": "Completado",
       "abandoned": "Abandonado"
+    }
+  },
+  "public": {
+    "nav": {
+      "games": "Juegos",
+      "hardware": "Hardware"
+    },
+    "games": {
+      "title": "Juegos",
+      "searchLabel": "Buscar juegos",
+      "emptyState": "No se encontraron juegos."
+    },
+    "hardware": {
+      "title": "Hardware",
+      "searchLabel": "Buscar hardware",
+      "devicesHeading": "Dispositivos",
+      "accessoriesHeading": "Accesorios",
+      "emptyState": "No se encontró hardware."
     }
   }
 }
