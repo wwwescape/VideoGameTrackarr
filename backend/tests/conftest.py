@@ -129,6 +129,16 @@ def seed_platform(db_session):
 
 
 @pytest.fixture()
+def seed_pc_platform(db_session):
+    """An ITAD-eligible platform (slug in itad_service.ITAD_ELIGIBLE_PLATFORM_SLUGS) — for
+    tests exercising sale-price matching/display, which is gated on platform+format."""
+    platform = Platform(name="PC (Microsoft Windows)", slug="win")
+    db_session.add(platform)
+    db_session.commit()
+    return platform
+
+
+@pytest.fixture()
 def seed_region(db_session):
     region = Region(name="PAL")
     db_session.add(region)

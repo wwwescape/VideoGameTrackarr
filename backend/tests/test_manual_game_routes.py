@@ -58,6 +58,41 @@ def test_create_manual_game_with_parent(auth_client, seed_game):
     assert response.json()["parentGameId"] == seed_game.id
 
 
+def test_create_manual_game_links_the_originating_steam_entry(auth_client, db_session):
+    from app.models.steam import SteamLibraryEntry
+
+    db_session.add(SteamLibraryEntry(steam_app_id=410700, steam_name="System Shock: Classic"))
+    db_session.commit()
+
+    response = auth_client.post(
+        "/api/games/manual",
+        json={"name": "System Shock: Classic", "steamAppId": 410700},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["steamAppId"] == 410700
+
+    entry = db_session.query(SteamLibraryEntry).filter(SteamLibraryEntry.steam_app_id == 410700).first()
+    assert entry.game_id == response.json()["id"]
+
+
+def test_create_manual_game_with_unknown_steam_app_id_is_a_silent_no_op(auth_client):
+    response = auth_client.post(
+        "/api/games/manual",
+        json={"name": "Some Game", "steamAppId": 999999999},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["steamAppId"] is None
+
+
+def test_create_manual_game_without_steam_app_id_has_no_steam_link(auth_client):
+    response = auth_client.post("/api/games/manual", json={"name": "My Homebrew Game"})
+
+    assert response.status_code == 201
+    assert response.json()["steamAppId"] is None
+
+
 def test_create_manual_game_rejects_missing_parent(auth_client):
     response = auth_client.post(
         "/api/games/manual",

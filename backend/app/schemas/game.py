@@ -42,6 +42,7 @@ class GameDetailResponse(GameSummaryResponse):
     storyline: str | None
     edition: str | None
     igdb_url: str | None
+    steam_app_id: int | None
     parent_game_id: int | None
     parent_game_name: str | None
     parent_game_slug: str | None
@@ -86,7 +87,9 @@ def game_summary_from_orm(status: GameWithStatus) -> GameSummaryResponse:
     return GameSummaryResponse(**_game_fields(status.game, status))
 
 
-def game_detail_from_orm(status: GameWithStatus, progress: GameProgress | None, tags: list[Tag]) -> GameDetailResponse:
+def game_detail_from_orm(
+    status: GameWithStatus, progress: GameProgress | None, tags: list[Tag], steam_app_id: int | None = None
+) -> GameDetailResponse:
     game = status.game
     # parent_game_name comes from the `parent_game` relationship, not a plain column, so
     # this can't just be GameDetailResponse.model_validate(game, from_attributes=True).
@@ -96,6 +99,7 @@ def game_detail_from_orm(status: GameWithStatus, progress: GameProgress | None, 
         storyline=game.storyline,
         edition=game.edition,
         igdb_url=game.igdb_url,
+        steam_app_id=steam_app_id,
         parent_game_id=game.parent_game_id,
         parent_game_name=game.parent_game.name if game.parent_game else None,
         parent_game_slug=game.parent_game.slug if game.parent_game else None,

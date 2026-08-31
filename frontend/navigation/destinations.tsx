@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import type { TFunction } from "i18next";
+import Box from "@mui/material/Box";
 import AddIcon from "@mui/icons-material/Add";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import CableIcon from "@mui/icons-material/Cable";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -13,7 +15,9 @@ import LinkOffIcon from "@mui/icons-material/LinkOff";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import MemoryIcon from "@mui/icons-material/Memory";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import SellIcon from "@mui/icons-material/Sell";
 import SettingsIcon from "@mui/icons-material/Settings";
+import steamLogo from "../assets/steam-logo.png";
 
 export interface NavSubDestination {
   to: string;
@@ -63,7 +67,18 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
       subItems: [
         { to: "/insights/duplicates", label: t("nav.duplicates"), icon: <ContentCopyIcon /> },
         { to: "/insights/missing-dlc", label: t("nav.missingDlc"), icon: <ExtensionOffIcon /> },
-        { to: "/insights/orphaned-accessories", label: t("nav.orphanedAccessories"), icon: <LinkOffIcon /> },
+        {
+          to: "/insights/orphaned-accessories",
+          label: t("nav.orphanedAccessories"),
+          icon: <LinkOffIcon />,
+        },
+        {
+          to: "/insights/steam-sync",
+          label: t("nav.steamSync"),
+          // Decorative — the adjacent ListItemText already provides the accessible name.
+          icon: <Box component="img" src={steamLogo} alt="" sx={{ width: 20, height: 20 }} />,
+        },
+        { to: "/insights/on-sale", label: t("nav.onSale"), icon: <SellIcon /> },
       ],
     },
     {
@@ -73,6 +88,7 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
       subItems: [
         { to: "/settings/tags", label: t("nav.tagManager"), icon: <LocalOfferIcon /> },
         { to: "/settings/jobs", label: t("nav.jobs"), icon: <RefreshIcon /> },
+        { to: "/settings/integrations", label: t("nav.integrations"), icon: <CableIcon /> },
       ],
     },
     { to: "/about", label: t("nav.about"), icon: <InfoIcon /> },

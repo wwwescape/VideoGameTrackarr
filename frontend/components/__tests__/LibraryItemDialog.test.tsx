@@ -18,6 +18,7 @@ describe("LibraryItemDialog", () => {
       <LibraryItemDialog
         open
         title="Add game to your collection"
+        status="owned"
         platforms={platforms}
         regions={regions}
         onClose={vi.fn()}
@@ -42,6 +43,7 @@ describe("LibraryItemDialog", () => {
       <LibraryItemDialog
         open
         title="Add game to your collection"
+        status="owned"
         platforms={platforms}
         regions={regions}
         onClose={vi.fn()}
@@ -63,6 +65,7 @@ describe("LibraryItemDialog", () => {
       <LibraryItemDialog
         open
         title="Update game in your collection"
+        status="owned"
         platforms={platforms}
         regions={regions}
         defaultValues={{ platformId: 1, format: "digital" }}

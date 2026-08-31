@@ -19,6 +19,9 @@ class User(TimestampMixin, Base):
     public_share_token: Mapped[str | None] = mapped_column(
         String(64), unique=True, comment="Unlisted share-link token for the public Games/Hardware view"
     )
+    steam_id_64: Mapped[str | None] = mapped_column(
+        String(32), comment="Steam profile SteamID64, used for Steam Web API sync"
+    )
 
 
 class RefreshToken(Base):

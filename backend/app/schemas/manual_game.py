@@ -17,6 +17,10 @@ class ManualGameCreateRequest(CamelModel):
     published_by: list[str] = Field(default_factory=list)
     platform_names: list[str] = Field(default_factory=list)
     notes: str | None = None
+    # Set when this game originates from Insights → Steam Sync's "Add as custom game" —
+    # links the originating SteamLibraryEntry to the new game so its Steam store page shows
+    # up on the game's own details page (see manual_game_service.create_manual_game).
+    steam_app_id: int | None = None
 
 
 class ManualGameUpdateRequest(CamelModel):

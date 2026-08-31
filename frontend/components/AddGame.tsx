@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
@@ -32,6 +32,15 @@ const MIN_SEARCH_LENGTH = 3;
 
 type AddMode = "igdb" | "manual";
 
+interface SteamPrefillState {
+  steamPrefill?: {
+    steamAppId?: number;
+    name?: string;
+    coverUrl?: string;
+    summary?: string;
+  };
+}
+
 // Matches backend's _IGDB_ID_QUERY_PATTERN (app/api/routes/igdb.py) — an exact-ID search
 // returns at most one result, so it gets its own "wrong category" message instead of the
 // generic "no games found".
@@ -58,18 +67,25 @@ function isAddableCategory(category: GameCategory | null): boolean {
 
 const AddGame = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const steamPrefill = (location.state as SteamPrefillState | null)?.steamPrefill;
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [mode, setMode] = useState<AddMode>("igdb");
+  // Landing here from Insights → Steam Sync's "Add as custom game" (see SteamSyncPage.tsx)
+  // skips straight to the manual form, pre-filled — there's no IGDB entry to search for.
+  const [mode, setMode] = useState<AddMode>(steamPrefill ? "manual" : "igdb");
   const navigate = useNavigate();
 
   const trimmedKeyword = searchKeyword.trim();
   const debouncedKeyword = useDebouncedValue(trimmedKeyword, 1000);
   const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
-  const isPendingDebounce = trimmedKeyword.length >= MIN_SEARCH_LENGTH && trimmedKeyword !== debouncedKeyword;
+  const isPendingDebounce =
+    trimmedKeyword.length >= MIN_SEARCH_LENGTH && trimmedKeyword !== debouncedKeyword;
 
-  const { data: searchResults, isFetching, error: searchError } = useIgdbSearch(
-    isSearchActive ? debouncedKeyword : ""
-  );
+  const {
+    data: searchResults,
+    isFetching,
+    error: searchError,
+  } = useIgdbSearch(isSearchActive ? debouncedKeyword : "");
   const isSearching = isPendingDebounce || (isSearchActive && isFetching);
 
   const { data: localGames } = useGames();
@@ -92,7 +108,10 @@ const AddGame = () => {
   const igdbNotConfigured = isAxiosError(searchError) && searchError.response?.status === 503;
   const isIdSearch = IGDB_ID_QUERY_PATTERN.test(debouncedKeyword);
   const idSearchCategoryBlocked =
-    isIdSearch && !!searchResults && searchResults.length > 0 && !isAddableCategory(searchResults[0].category);
+    isIdSearch &&
+    !!searchResults &&
+    searchResults.length > 0 &&
+    !isAddableCategory(searchResults[0].category);
 
   return (
     <>
@@ -117,7 +136,11 @@ const AddGame = () => {
           sx={{ mb: 2 }}
         >
           <FormControlLabel value="igdb" control={<Radio />} label={t("games.add.fromIgdbLabel")} />
-          <FormControlLabel value="manual" control={<Radio />} label={t("games.add.manuallyLabel")} />
+          <FormControlLabel
+            value="manual"
+            control={<Radio />}
+            label={t("games.add.manuallyLabel")}
+          />
         </RadioGroup>
         <SimpleTabPanel value="igdb" activeValue={mode} sx={{ px: 0, py: 2 }}>
           <Grid container spacing={2}>
@@ -158,7 +181,9 @@ const AddGame = () => {
               ) : !searchResults || searchResults.length === 0 ? (
                 <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.noGamesFound")}</Paper>
               ) : idSearchCategoryBlocked ? (
-                <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.add.categoryCannotBeAdded")}</Paper>
+                <Paper sx={{ p: 3, textAlign: "center" }}>
+                  {t("games.add.categoryCannotBeAdded")}
+                </Paper>
               ) : (
                 <VirtualGameGrid
                   items={searchResults}
@@ -169,7 +194,9 @@ const AddGame = () => {
                       <GameCard
                         game={game}
                         context={addedGame ? "added" : "add"}
-                        contextFunction={() => (addedGame ? handleGameClick(addedGame) : handleAddGame(game.igdbId))}
+                        contextFunction={() =>
+                          addedGame ? handleGameClick(addedGame) : handleAddGame(game.igdbId)
+                        }
                       />
                     );
                   }}
@@ -179,7 +206,7 @@ const AddGame = () => {
           </Grid>
         </SimpleTabPanel>
         <SimpleTabPanel value="manual" activeValue={mode} sx={{ py: 2 }}>
-          <ManualGameForm />
+          <ManualGameForm initialValues={steamPrefill} steamAppId={steamPrefill?.steamAppId} />
         </SimpleTabPanel>
       </Box>
     </>

@@ -9,6 +9,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
+import steamLogo from "../assets/steam-logo.png";
 import type { GameCompany, GameDetail, IgdbReleaseRegion } from "../api/types";
 import { gameIdentifier } from "../utils/identifiers";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
@@ -54,10 +55,19 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
       <CardContent>
         {game.igdbId === null ? (
           <Tooltip title={t("games.about.customTooltip")}>
-            <Chip label={t("games.about.customLabel")} size="small" variant="outlined" sx={{ mb: 1 }} />
+            <Chip
+              label={t("games.about.customLabel")}
+              size="small"
+              variant="outlined"
+              sx={{ mb: 1 }}
+            />
           </Tooltip>
         ) : null}
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}
+        >
           <Typography variant="h4" component="h1" sx={{ lineHeight: 1.15 }}>
             {game.name}{" "}
             <Typography variant="subtitle2" color="text.secondary" component="span">
@@ -124,7 +134,12 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
         ) : null}
 
         {Object.entries(companiesByRole).map(([role, companies]) => (
-          <Stack key={role} direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.5 }}>
+          <Stack
+            key={role}
+            direction="row"
+            spacing={0.75}
+            sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.5 }}
+          >
             <Typography variant="body2" color="text.secondary" component="span">
               {companyRoleLabel[role] ?? role}:
             </Typography>
@@ -229,7 +244,11 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
         <>
           <Divider />
           <CardContent>
-            <ScreenshotGallery urls={game.artworkUrls} altPrefix={game.name} title={t("games.about.artworkTitle")} />
+            <ScreenshotGallery
+              urls={game.artworkUrls}
+              altPrefix={game.name}
+              title={t("games.about.artworkTitle")}
+            />
           </CardContent>
         </>
       ) : null}
@@ -258,13 +277,32 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
       ) : null}
       <Divider />
       <CardContent>
-        {game.igdbUrl && (
-          <Tooltip title={t("games.about.viewOnIgdb")}>
-            <a href={game.igdbUrl} target="_blank" rel="noreferrer" style={{ color: theme.palette.text.primary }}>
-              <img src={igdbLogo} alt={t("games.about.viewOnIgdb")} style={{ width: "64px" }} />
-            </a>
-          </Tooltip>
-        )}
+        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+          {game.igdbUrl && (
+            <Tooltip title={t("games.about.viewOnIgdb")}>
+              <a
+                href={game.igdbUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img src={igdbLogo} alt={t("games.about.viewOnIgdb")} style={{ width: "64px" }} />
+              </a>
+            </Tooltip>
+          )}
+          {game.steamAppId && (
+            <Tooltip title={t("games.about.viewOnSteam")}>
+              <a
+                href={`https://store.steampowered.com/app/${game.steamAppId}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img src={steamLogo} alt={t("games.about.viewOnSteam")} style={{ width: "64px" }} />
+              </a>
+            </Tooltip>
+          )}
+        </Stack>
       </CardContent>
     </>
   );

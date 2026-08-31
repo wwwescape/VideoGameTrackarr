@@ -18,7 +18,12 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { ChipProps } from "@mui/material/Chip";
 import type { JobRunStatus, JobSummary, ResyncJobResult } from "../api/types";
-import { useAcknowledgeJobStatus, useJobsList, useRunJob, useUpdateJobSchedule } from "../hooks/useJobs";
+import {
+  useAcknowledgeJobStatus,
+  useJobsList,
+  useRunJob,
+  useUpdateJobSchedule,
+} from "../hooks/useJobs";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
 // Registering a future job means adding one entry here — job ids on their own aren't good
@@ -40,6 +45,10 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
   resync_series: {
     nameKey: "settings.jobs.jobs.resyncSeries.name",
     descriptionKey: "settings.jobs.jobs.resyncSeries.description",
+  },
+  steam_import: {
+    nameKey: "settings.jobs.jobs.steamImport.name",
+    descriptionKey: "settings.jobs.jobs.steamImport.description",
   },
 };
 
@@ -129,12 +138,18 @@ function JobCard({ job }: { job: JobSummary }) {
       {result && (
         <Box sx={{ mt: 1.5 }}>
           <Alert
-            severity={job.run.status === "failed" ? "error" : result.failed > 0 ? "warning" : "success"}
+            severity={
+              job.run.status === "failed" ? "error" : result.failed > 0 ? "warning" : "success"
+            }
             action={
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 {result.failed > 0 && (
                   <IconButton size="small" onClick={() => setShowFailures((prev) => !prev)}>
-                    {showFailures ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                    {showFailures ? (
+                      <ExpandLessIcon fontSize="small" />
+                    ) : (
+                      <ExpandMoreIcon fontSize="small" />
+                    )}
                   </IconButton>
                 )}
                 <Button size="small" onClick={handleDismiss}>
@@ -143,7 +158,11 @@ function JobCard({ job }: { job: JobSummary }) {
               </Stack>
             }
           >
-            {t("settings.jobs.resultSummary", { succeeded: result.succeeded, failed: result.failed, total: result.total })}
+            {t("settings.jobs.resultSummary", {
+              succeeded: result.succeeded,
+              failed: result.failed,
+              total: result.total,
+            })}
           </Alert>
           <Collapse in={showFailures}>
             <Stack spacing={0.5} sx={{ mt: 1, pl: 2 }}>
@@ -157,7 +176,15 @@ function JobCard({ job }: { job: JobSummary }) {
         </Box>
       )}
       {job.run.status === "failed" && !result && (
-        <Alert severity="error" sx={{ mt: 1.5 }} action={<Button size="small" onClick={handleDismiss}>{t("settings.jobs.dismiss")}</Button>}>
+        <Alert
+          severity="error"
+          sx={{ mt: 1.5 }}
+          action={
+            <Button size="small" onClick={handleDismiss}>
+              {t("settings.jobs.dismiss")}
+            </Button>
+          }
+        >
           {job.run.error}
         </Alert>
       )}
@@ -168,10 +195,19 @@ function JobCard({ job }: { job: JobSummary }) {
         {t("settings.jobs.scheduleHeading")}
       </Typography>
       <FormControlLabel
-        control={<Switch checked={scheduleEnabled} onChange={(event) => setScheduleEnabled(event.target.checked)} />}
+        control={
+          <Switch
+            checked={scheduleEnabled}
+            onChange={(event) => setScheduleEnabled(event.target.checked)}
+          />
+        }
         label={t("settings.jobs.scheduleEnabledLabel")}
       />
-      <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", flexWrap: "wrap", mt: 1 }}>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={{ alignItems: "flex-start", flexWrap: "wrap", mt: 1 }}
+      >
         <TextField
           size="small"
           label={t("settings.jobs.cronExpressionLabel")}
@@ -181,7 +217,12 @@ function JobCard({ job }: { job: JobSummary }) {
           onChange={(event) => setCronExpression(event.target.value)}
           sx={{ minWidth: 220 }}
         />
-        <Button variant="outlined" size="small" onClick={handleSaveSchedule} disabled={updateSchedule.isPending}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleSaveSchedule}
+          disabled={updateSchedule.isPending}
+        >
           {t("settings.jobs.saveSchedule")}
         </Button>
       </Stack>

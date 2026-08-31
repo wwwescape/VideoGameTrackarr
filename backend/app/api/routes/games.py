@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_igdb_client
+from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.game import (
     GameDetailResponse,
@@ -20,7 +21,8 @@ router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(ge
 def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailResponse:
     progress = progress_service.get_progress(db, game.game.id)
     tags = tag_service.list_tags_for_game(db, game.game.id)
-    return game_detail_from_orm(game, progress, tags)
+    steam_entry = steam_repository.get_entry_by_game_id(db, game.game.id)
+    return game_detail_from_orm(game, progress, tags, steam_app_id=steam_entry.steam_app_id if steam_entry else None)
 
 
 @router.get("", response_model=list[GameSummaryResponse])
@@ -86,6 +88,7 @@ def create_manual_game(body: ManualGameCreateRequest, db: Session = Depends(get_
         published_by=body.published_by,
         platform_names=body.platform_names,
         notes=body.notes,
+        steam_app_id=body.steam_app_id,
     )
     return _game_detail_response(db, game)
 

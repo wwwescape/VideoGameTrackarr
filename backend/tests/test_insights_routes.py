@@ -1,6 +1,8 @@
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import AccessoryDeviceLink, UserAccessory, UserDevice
-from app.models.library import LibraryItem, LibraryStatus
+from app.models.itad import ItadPriceCache
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat
+from app.models.platprices import PlatPricesCache
 
 
 def test_duplicate_library_items_requires_auth(client):
@@ -131,9 +133,7 @@ def test_accessories_without_owned_hardware_empty_when_nothing_owned(auth_client
     assert response.json() == []
 
 
-def test_accessories_without_owned_hardware_flags_accessory_with_no_links(
-    auth_client, db_session, seed_accessory
-):
+def test_accessories_without_owned_hardware_flags_accessory_with_no_links(auth_client, db_session, seed_accessory):
     db_session.add(UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.OWNED))
     db_session.commit()
 
@@ -175,5 +175,251 @@ def test_accessories_without_owned_hardware_excludes_wishlisted_accessory(auth_c
     db_session.commit()
 
     response = auth_client.get("/api/insights/accessories-without-owned-hardware")
+
+    assert response.json() == []
+
+
+def test_on_sale_requires_auth(client):
+    response = client.get("/api/insights/on-sale")
+
+    assert response.status_code == 401
+
+
+def test_on_sale_empty_when_nothing_wishlisted(auth_client):
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_on_sale_lists_a_wishlisted_game_with_a_current_discount(auth_client, db_session, seed_game, seed_pc_platform):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            target_price=20.0,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(
+            game_id=seed_game.id,
+            itad_game_id="itad-1",
+            current_price_amount=14.99,
+            current_price_currency="USD",
+            current_shop_name="GOG",
+            current_cut=40,
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.status_code == 200
+    [item] = response.json()
+    assert item["game"]["id"] == seed_game.id
+    assert item["currentPriceAmount"] == 14.99
+    assert item["currentShopName"] == "GOG"
+    assert item["targetPrice"] == 20.0
+    assert item["isTargetHit"] is True
+
+
+def test_on_sale_excludes_a_game_with_no_current_discount(auth_client, db_session, seed_game, seed_pc_platform):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=None))
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
+def test_on_sale_is_not_target_hit_when_current_price_is_above_target(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            target_price=5.0,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=10)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    [item] = response.json()
+    assert item["isTargetHit"] is False
+
+
+def test_on_sale_excludes_an_owned_games_discount(auth_client, db_session, seed_game, seed_pc_platform):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=40)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
+def test_on_sale_excludes_a_wishlist_row_on_a_non_itad_platform(auth_client, db_session, seed_game, seed_platform):
+    """seed_platform is PlayStation 5 (slug "ps5") — ITAD doesn't cover it, so even a real
+    current discount on the game (e.g. via its Steam release) must not be shown against a
+    console wishlist row that could never actually redeem that deal."""
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_platform.id,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=40)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
+def test_on_sale_excludes_a_physical_wishlist_row_even_on_an_itad_platform(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.PHYSICAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=40)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
+def test_on_sale_excludes_a_wishlist_row_with_no_platform_set(auth_client, db_session, seed_game):
+    db_session.add(LibraryItem(game_id=seed_game.id, status=LibraryStatus.WISHLIST, format=MediaFormat.DIGITAL))
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=40)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
+def test_on_sale_includes_a_wishlisted_ps5_game_with_a_current_discount(
+    auth_client, db_session, seed_game, seed_platform
+):
+    # conftest's seed_platform is "Sony PlayStation 5" (slug "ps5").
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_platform.id,
+            target_price=25.0,
+        )
+    )
+    db_session.add(
+        PlatPricesCache(
+            game_id=seed_game.id,
+            ppid="222",
+            current_price_amount=19.99,
+            current_price_currency="USD",
+            current_shop_name="PlayStation Store",
+            current_cut=50,
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.status_code == 200
+    [item] = response.json()
+    assert item["game"]["id"] == seed_game.id
+    assert item["currentPriceAmount"] == 19.99
+    assert item["currentShopName"] == "PlayStation Store"
+    assert item["isTargetHit"] is True
+
+
+def test_on_sale_merges_itad_and_platprices_rows_sorted_by_discount(
+    auth_client, db_session, seed_pc_platform, seed_platform
+):
+    pc_game = Game(igdb_id=1, name="PC Game", slug="pc-game", category=GameCategory.MAIN_GAME)
+    ps_game = Game(igdb_id=2, name="PS Game", slug="ps-game", category=GameCategory.MAIN_GAME)
+    db_session.add(pc_game)
+    db_session.add(ps_game)
+    db_session.commit()
+    db_session.add(
+        LibraryItem(
+            game_id=pc_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=ps_game.id, status=LibraryStatus.WISHLIST, format=MediaFormat.DIGITAL, platform_id=seed_platform.id
+        )
+    )
+    db_session.add(ItadPriceCache(game_id=pc_game.id, itad_game_id="itad-1", current_price_amount=10.0, current_cut=20))
+    db_session.add(PlatPricesCache(game_id=ps_game.id, ppid="222", current_price_amount=10.0, current_cut=70))
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [item["game"]["id"] for item in body] == [ps_game.id, pc_game.id]  # 70% before 20%
+
+
+def test_on_sale_excludes_a_wishlisted_ps5_physical_row_even_with_a_cached_discount(
+    auth_client, db_session, seed_game, seed_platform
+):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.PHYSICAL,
+            platform_id=seed_platform.id,
+        )
+    )
+    db_session.add(PlatPricesCache(game_id=seed_game.id, ppid="222", current_price_amount=19.99, current_cut=50))
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
 
     assert response.json() == []

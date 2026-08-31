@@ -1,5 +1,4 @@
 import LogoutIcon from "@mui/icons-material/Logout";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -20,8 +19,6 @@ import DataManagementSection from "./DataManagementSection";
 import SettingsSubNav from "./SettingsSubNav";
 import ShareSection from "./ShareSection";
 
-// IGDB credentials are .env-only (backend/app/core/config.py) — there's no API to set
-// them from the UI, so this page is just account info + logout.
 const Settings = () => {
   const { t } = useTranslation();
   const { data: currentUser } = useCurrentUser();
@@ -121,15 +118,6 @@ const Settings = () => {
             {t("settings.share.heading")}
           </Typography>
           <ShareSection />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.igdb.heading")}
-          </Typography>
-          <Alert severity="info">
-            <Trans i18nKey="settings.igdb.description" components={{ 1: <code />, 3: <code />, 5: <code /> }} />
-          </Alert>
         </CardContent>
       </Card>
     </Box>

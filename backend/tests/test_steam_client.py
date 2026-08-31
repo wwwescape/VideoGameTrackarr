@@ -1,0 +1,78 @@
+import httpx
+import pytest
+import respx
+
+from app.core.config import get_settings
+from app.services.steam_client import STEAM_API_BASE, SteamClient, SteamCredentialsError
+
+
+def make_client(**overrides) -> SteamClient:
+    kwargs = {"api_key": "test-steam-key"}
+    kwargs.update(overrides)
+    return SteamClient(**kwargs)
+
+
+async def test_get_owned_games_requires_an_api_key(monkeypatch):
+    # The repo-root .env may have a real STEAM_API_KEY for local dev use, which the
+    # constructor's `api_key or settings.steam_api_key` fallback would pick up instead of
+    # None — override it explicitly, same reasoning as test_igdb_client.py's equivalent
+    # credentials test.
+    monkeypatch.setattr(get_settings(), "steam_api_key", None)
+    client = make_client(api_key=None)
+
+    with pytest.raises(SteamCredentialsError):
+        await client.get_owned_games("76561197960287930")
+
+
+@respx.mock
+async def test_get_owned_games_parses_playtime_and_last_played():
+    respx.get(f"{STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "response": {
+                    "game_count": 1,
+                    "games": [
+                        {
+                            "appid": 220,
+                            "name": "Half-Life 2",
+                            "playtime_forever": 754,
+                            "rtime_last_played": 1690000000,
+                        }
+                    ],
+                }
+            },
+        )
+    )
+
+    games = await make_client().get_owned_games("76561197960287930")
+
+    assert len(games) == 1
+    assert games[0].app_id == 220
+    assert games[0].name == "Half-Life 2"
+    assert games[0].playtime_minutes == 754
+    assert games[0].last_played_at is not None
+
+
+@respx.mock
+async def test_get_owned_games_returns_none_for_a_private_profile():
+    # Steam's actual signal for a private/friends-only profile: the response has no
+    # "games" key at all, not an empty list and not an error.
+    respx.get(f"{STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/").mock(
+        return_value=httpx.Response(200, json={"response": {}})
+    )
+
+    result = await make_client().get_owned_games("76561197960287930")
+
+    assert result is None
+
+
+@respx.mock
+async def test_get_owned_games_handles_a_genuinely_empty_library():
+    respx.get(f"{STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/").mock(
+        return_value=httpx.Response(200, json={"response": {"game_count": 0, "games": []}})
+    )
+
+    result = await make_client().get_owned_games("76561197960287930")
+
+    assert result == []

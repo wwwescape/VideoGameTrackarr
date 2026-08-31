@@ -7,6 +7,7 @@ const SUB_NAV_ITEMS = [
   { to: "/settings", labelKey: "settings.subNav.overview" },
   { to: "/settings/tags", labelKey: "nav.tagManager" },
   { to: "/settings/jobs", labelKey: "nav.jobs" },
+  { to: "/settings/integrations", labelKey: "nav.integrations" },
 ] as const;
 
 // Mirrors InsightsSubNav.tsx — keeps Tag Manager/Jobs reachable at every breakpoint, since

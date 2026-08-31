@@ -31,25 +31,37 @@ const GameCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
 const FranchiseCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
   const { data: franchise, isError } = useFranchise(slug);
-  return <>{isError ? t("errors.seriesNotFoundTitle") : (franchise?.name ?? t("common.loading"))}</>;
+  return (
+    <>{isError ? t("errors.seriesNotFoundTitle") : (franchise?.name ?? t("common.loading"))}</>
+  );
 };
 
 const CollectionCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
   const { data: collection, isError } = useCollection(slug);
-  return <>{isError ? t("errors.collectionNotFoundTitle") : (collection?.name ?? t("common.loading"))}</>;
+  return (
+    <>{isError ? t("errors.collectionNotFoundTitle") : (collection?.name ?? t("common.loading"))}</>
+  );
 };
 
 const DeviceCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
   const { data: device, isError } = useDeviceItem(identifier);
-  return <>{isError ? t("errors.deviceNotFoundTitle") : (device?.officialName ?? t("common.loading"))}</>;
+  return (
+    <>{isError ? t("errors.deviceNotFoundTitle") : (device?.officialName ?? t("common.loading"))}</>
+  );
 };
 
 const AccessoryCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
   const { data: accessory, isError } = useAccessoryItem(identifier);
-  return <>{isError ? t("errors.accessoryNotFoundTitle") : (accessory?.officialName ?? t("common.loading"))}</>;
+  return (
+    <>
+      {isError
+        ? t("errors.accessoryNotFoundTitle")
+        : (accessory?.officialName ?? t("common.loading"))}
+    </>
+  );
 };
 
 // Each leaf route in router.tsx owns its full trail (rather than nested routes inheriting
@@ -149,6 +161,16 @@ export const orphanedAccessoriesCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.orphanedAccessories") },
 ];
 
+export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.insights"), to: "/insights" },
+  { label: t("nav.steamSync") },
+];
+
+export const onSaleCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.insights"), to: "/insights" },
+  { label: t("nav.onSale") },
+];
+
 export const dashboardCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.dashboard") }];
 
 export const compareCrumbs: CrumbsFn = (_params, t) => [{ label: t("breadcrumbs.compareGames") }];
@@ -163,6 +185,11 @@ export const tagManagerCrumbs: CrumbsFn = (_params, t) => [
 export const jobsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.jobs") },
+];
+
+export const integrationsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.integrations") },
 ];
 
 export const aboutCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.about") }];

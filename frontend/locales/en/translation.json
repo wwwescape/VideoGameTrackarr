@@ -48,9 +48,12 @@
     "duplicates": "Duplicates",
     "missingDlc": "Missing DLC",
     "orphanedAccessories": "Orphaned Accessories",
+    "steamSync": "Steam Sync",
+    "onSale": "On Sale",
     "settings": "Settings",
     "tagManager": "Tag Manager",
     "jobs": "Jobs",
+    "integrations": "Integrations",
     "about": "About"
   },
   "breadcrumbs": {
@@ -83,7 +86,9 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
       "digitalStorefrontLabel": "Digital Storefront",
-      "priceLabel": "Price"
+      "priceLabel": "Price",
+      "targetPriceLabel": "Target price",
+      "targetPriceHelperText": "Get flagged on the On Sale page once the price drops to or below this."
     }
   },
   "restore": {
@@ -184,6 +189,10 @@
         "resyncSeries": {
           "name": "Resync Series",
           "description": "Re-fetches only Series data for every IGDB-linked game — restores Series after a backup restore, which doesn't carry it over."
+        },
+        "steamImport": {
+          "name": "Steam import",
+          "description": "Fetches your Steam library and matches it to your catalog — nothing is added or changed automatically. Review and sync in Insights → Steam Sync."
         }
       }
     },
@@ -218,9 +227,28 @@
       "regenerateSuccess": "Share links regenerated.",
       "regenerateError": "Could not regenerate the links. Please try again."
     },
-    "igdb": {
-      "heading": "IGDB credentials",
-      "description": "IGDB credentials are configured via this server's <1>.env</1> file (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), not through the app."
+    "integrations": {
+      "igdbHeading": "IGDB credentials",
+      "igdbLogoAlt": "IGDB",
+      "igdbDescription": "IGDB credentials are configured via this server's <1>.env</1> file (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), not through the app.",
+      "steamHeading": "Steam",
+      "steamLogoAlt": "Steam",
+      "itadLogoAlt": "IsThereAnyDeal",
+      "steamDescription": "The Steam API key is configured via this server's <1>.env</1> file (<3>STEAM_API_KEY</3>), not through the app. Get a free key at steamcommunity.com/dev/apikey, add it to .env, then restart VideoGameTrackarr.",
+      "configuredLabel": "Configured",
+      "notConfiguredLabel": "Not configured",
+      "steamIdLabel": "SteamID64",
+      "steamIdPlaceholder": "e.g. 76561197960287930",
+      "steamIdHelperText": "Your public SteamID64 — find it on your Steam profile page or via steamid.io. This isn't a secret; it's only used to look up your owned games.",
+      "saveSuccessToast": "SteamID64 saved.",
+      "saveErrorToast": "Could not save SteamID64. Please try again.",
+      "itadHeading": "IsThereAnyDeal (ITAD)",
+      "itadDescription": "The IsThereAnyDeal API key is configured via this server's <1>.env</1> file (<3>ITAD_API_KEY</3>), not through the app. Get a free key at isthereanydeal.com/apps/my, add it to .env, then restart VideoGameTrackarr.",
+      "platpricesHeading": "PlatPrices (PlayStation)",
+      "platpricesLogoAlt": "PlatPrices",
+      "platpricesDescription": "The PlatPrices API key is configured via this server's <1>.env</1> file (<3>PLATPRICES_API_KEY</3>), not through the app. Get a key by applying at platprices.com/api-request (usually issued within 1-2 business days), add it to .env, then restart VideoGameTrackarr.",
+      "platpricesRegionCaveat": "PlatPrices' free tier only covers 2 PlayStation Store regions (US and GB) and 1,000 requests/month. If your PS Store region isn't one of those, prices will reflect the wrong region's storefront unless you upgrade your own PlatPrices plan for more region access.",
+      "platpricesCredit": "PlayStation price data is powered by <1>PlatPrices</1>."
     }
   },
   "auth": {
@@ -344,7 +372,8 @@
       "addedButton": "Added",
       "selectAriaLabel": "Select {{name}}",
       "deselectAriaLabel": "Deselect {{name}}",
-      "nameYearTooltip": "{{name}} ({{year}})"
+      "nameYearTooltip": "{{name}} ({{year}})",
+      "onSaleLabel": "On Sale"
     },
     "subNav": {
       "allGames": "All Games",
@@ -421,7 +450,8 @@
       "artworkTitle": "Artwork",
       "videosTitle": "Videos",
       "watchOnYoutube": "Watch on YouTube",
-      "viewOnIgdb": "View more details on IGDB.com"
+      "viewOnIgdb": "View more details on IGDB.com",
+      "viewOnSteam": "View on Steam"
     },
     "actions": {
       "removeSuccessToast": "Game removed from your library!",
@@ -459,8 +489,9 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
       "platformColumn": "Platform",
-      "regionColumn": "Region",
       "formatColumn": "Format",
+      "storefrontColumn": "Storefront",
+      "onSaleColumn": "On Sale",
       "moveColumn": "Move",
       "collectionPhrase": "collection",
       "wishlistPhrase": "wishlist",
@@ -503,7 +534,11 @@
   "insights": {
     "dashboard": {
       "gamesCalendarHeading": "Games Release Calendar",
-      "hardwareCalendarHeading": "Hardware Release Calendar"
+      "hardwareCalendarHeading": "Hardware Release Calendar",
+      "onSaleHeading": "On Sale Now",
+      "onSaleSeeAll_one": "See all {{count}} on-sale wishlist game",
+      "onSaleSeeAll_other": "See all {{count}} on-sale wishlist games",
+      "welcomeMessage": "Welcome to VideoGameTrackarr"
     },
     "page": {
       "gamesHeading": "Games",
@@ -523,6 +558,53 @@
     },
     "missingDlc": {
       "noneFound": "No missing DLC found — you have everything that's been imported for the games you own."
+    },
+    "steamSync": {
+      "heading": "Steam Sync",
+      "description": "Every game Steam knows you own, matched against your VGT catalog. Nothing changes here until you explicitly Sync a row — Import only fetches and matches, it never writes to your library on its own.",
+      "tableHeading": "Steam library",
+      "emptyState": "Nothing here yet. Set your SteamID64 in Settings → Integrations, then run Import.",
+      "columnName": "Name",
+      "columnSteamPlaytime": "Steam",
+      "columnVgtPlaytime": "VGT",
+      "columnStatus": "Status",
+      "columnActions": "Actions",
+      "hoursValue": "{{hours}}h",
+      "status": {
+        "noMatch": "No catalog match",
+        "new": "New",
+        "updateAvailable": "Update available",
+        "upToDate": "Up to date",
+        "ignored": "Ignored"
+      },
+      "selectedCount_one": "{{count}} selected",
+      "selectedCount_other": "{{count}} selected",
+      "syncSelectedButton": "Sync selected",
+      "runImportButton": "Run Import",
+      "importRunning": "Importing…",
+      "importErrorToast": "Could not start the Steam import. Please try again.",
+      "syncButton": "Sync",
+      "addCustomButton": "Add as custom game",
+      "ignoreButton": "Ignore",
+      "ignoreErrorToast": "Could not ignore this entry. Please try again.",
+      "storeDetailsErrorToast": "Could not fetch this game's Steam store page. Please try again.",
+      "syncSuccessToast_one": "Synced {{count}} game.",
+      "syncSuccessToast_other": "Synced {{count}} games.",
+      "syncPartialErrorToast": "{{failed}} game(s) failed to sync. Please try again.",
+      "syncErrorToast": "Could not sync. Please try again.",
+      "confirmSingleTitle": "Sync \"{{name}}\"?",
+      "confirmBulkTitle": "Sync {{count}} games?",
+      "confirmAddDescription": "This will add \"{{name}}\" to your library (PC, Digital, Steam) with {{hours}}h logged.",
+      "confirmUpdateDescription": "This will set \"{{name}}\"'s playtime from {{currentHours}}h to {{newHours}}h, straight from Steam — this can overwrite manually-logged time.",
+      "confirmBulkDescription": "This will add {{newCount}} new game(s) to your library and update playtime for {{updateCount}} game(s) already there, straight from Steam — this can overwrite manually-logged time."
+    },
+    "onSale": {
+      "description": "Current deals on your wishlisted digital games, matched via IsThereAnyDeal (Windows/Mac/Linux/Android) and PlatPrices (PlayStation). A game with no digital release, or on a platform neither provider covers, just won't show up here.",
+      "noneFound": "No wishlisted games are on sale right now.",
+      "targetHitLabel": "Target hit",
+      "currentPriceLabel": "{{price}} at {{shop}} (-{{cut}}%)",
+      "historicalLowLabel": "Historical low: {{price}}",
+      "targetPriceLabel": "Target: {{price}}"
     }
   },
   "catalog": {

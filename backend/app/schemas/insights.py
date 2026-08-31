@@ -1,8 +1,12 @@
+from datetime import datetime
+
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory
 from app.models.library import LibraryItem
 from app.schemas.base import CamelModel
 from app.schemas.library import LibraryItemResponse, library_item_from_orm
+from app.services.itad_service import OnSaleItem
+from app.services.platprices_service import PlatPricesOnSaleItem
 
 
 class DuplicateLibraryItemGroupResponse(CamelModel):
@@ -72,4 +76,40 @@ def insight_accessory_ref_from_orm(accessory: Accessory) -> InsightAccessoryRefR
         official_name=accessory.official_name,
         image_url=accessory.image_url,
         manufacturer_name=accessory.manufacturer.name,
+    )
+
+
+class OnSaleItemResponse(CamelModel):
+    library_item_id: int
+    game: InsightGameRefResponse
+    current_price_amount: float
+    current_price_currency: str | None
+    current_shop_name: str | None
+    current_cut: int | None
+    historical_low_amount: float | None
+    historical_low_currency: str | None
+    historical_low_shop_name: str | None
+    historical_low_at: datetime | None
+    target_price: float | None
+    is_target_hit: bool
+
+
+def on_sale_item_from_orm(item: OnSaleItem | PlatPricesOnSaleItem) -> OnSaleItemResponse:
+    # ItadPriceCache and PlatPricesCache deliberately share the same field names (see
+    # models/platprices.py), so this works unchanged for either provider's item.
+    library_item = item.library_item
+    cache = item.cache
+    return OnSaleItemResponse(
+        library_item_id=library_item.id,
+        game=insight_game_ref_from_orm(library_item.game),
+        current_price_amount=cache.current_price_amount,
+        current_price_currency=cache.current_price_currency,
+        current_shop_name=cache.current_shop_name,
+        current_cut=cache.current_cut,
+        historical_low_amount=cache.historical_low_amount,
+        historical_low_currency=cache.historical_low_currency,
+        historical_low_shop_name=cache.historical_low_shop_name,
+        historical_low_at=cache.historical_low_at,
+        target_price=library_item.target_price,
+        is_target_hit=item.is_target_hit,
     )

@@ -38,6 +38,7 @@ from app.models.hardware import (  # noqa: F401
     UserAccessory,
     UserDevice,
 )
+from app.models.itad import ItadPriceCache  # noqa: F401
 from app.models.jobs import JobSchedule  # noqa: F401
 from app.models.library import (  # noqa: F401
     GameProgress,
@@ -50,6 +51,8 @@ from app.models.library import (  # noqa: F401
     PlayStatus,
     Tag,
 )
+from app.models.platprices import PlatPricesCache  # noqa: F401
+from app.models.steam import SteamLibraryEntry  # noqa: F401
 from app.models.system import RefreshToken, User  # noqa: F401
 
 __all__ = ["Base"]

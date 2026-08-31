@@ -17,6 +17,7 @@ import GameDetails from "./components/GameDetails";
 import GameList from "./components/GameList";
 import HardwarePage from "./components/HardwarePage";
 import InsightsPage from "./components/InsightsPage";
+import IntegrationsPage from "./components/IntegrationsPage";
 import MissingDlcPage from "./components/MissingDlcPage";
 import NotFoundPage from "./components/NotFoundPage";
 import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
@@ -28,6 +29,8 @@ import JobsPage from "./components/JobsPage";
 import PublicGamesPage from "./components/PublicGamesPage";
 import PublicHardwarePage from "./components/PublicHardwarePage";
 import Settings from "./components/Settings";
+import SteamSyncPage from "./components/SteamSyncPage";
+import OnSalePage from "./components/OnSalePage";
 import TagManagerPage from "./components/TagManagerPage";
 import PublicShell from "./PublicShell";
 import {
@@ -50,12 +53,15 @@ import {
   gamesCrumbs,
   hardwareCrumbs,
   insightsCrumbs,
+  integrationsCrumbs,
   jobsCrumbs,
   missingDlcCrumbs,
   notFoundCrumbs,
+  onSaleCrumbs,
   orphanedAccessoriesCrumbs,
   seriesCrumbs,
   settingsCrumbs,
+  steamSyncCrumbs,
   tagManagerCrumbs,
 } from "./navigation/breadcrumbConfig";
 import Login from "./pages/Login";
@@ -101,23 +107,43 @@ const router = createBrowserRouter([
           { path: "/", element: <DashboardPage />, handle: { crumbs: dashboardCrumbs } },
           { path: "/games", element: <GameList />, handle: { crumbs: gamesCrumbs } },
           { path: "/games/add", element: <AddGame />, handle: { crumbs: addGameCrumbs } },
-          { path: "/game/:identifier", element: <GameDetails />, handle: { crumbs: gameDetailCrumbs } },
-          { path: "/game/:identifier/edit", element: <EditGamePage />, handle: { crumbs: editGameCrumbs } },
-          { path: "/addon/:identifier", element: <GameDetails />, handle: { crumbs: gameDetailCrumbs } },
+          {
+            path: "/game/:identifier",
+            element: <GameDetails />,
+            handle: { crumbs: gameDetailCrumbs },
+          },
+          {
+            path: "/game/:identifier/edit",
+            element: <EditGamePage />,
+            handle: { crumbs: editGameCrumbs },
+          },
+          {
+            path: "/addon/:identifier",
+            element: <GameDetails />,
+            handle: { crumbs: gameDetailCrumbs },
+          },
           { path: "/games/series", element: <SeriesPage />, handle: { crumbs: seriesCrumbs } },
           {
             path: "/games/series/:seriesSlug",
             element: <SeriesDetailPage />,
             handle: { crumbs: franchiseCrumbs },
           },
-          { path: "/games/collections", element: <CollectionsPage />, handle: { crumbs: collectionsCrumbs } },
+          {
+            path: "/games/collections",
+            element: <CollectionsPage />,
+            handle: { crumbs: collectionsCrumbs },
+          },
           {
             path: "/games/collections/:collectionSlug",
             element: <CollectionPage />,
             handle: { crumbs: collectionCrumbs },
           },
           { path: "/hardware", element: <HardwarePage />, handle: { crumbs: hardwareCrumbs } },
-          { path: "/hardware/device/add", element: <AddDevicePage />, handle: { crumbs: addDeviceCrumbs } },
+          {
+            path: "/hardware/device/add",
+            element: <AddDevicePage />,
+            handle: { crumbs: addDeviceCrumbs },
+          },
           {
             path: "/hardware/accessory/add",
             element: <AddAccessoryPage />,
@@ -144,17 +170,44 @@ const router = createBrowserRouter([
             handle: { crumbs: editAccessoryCrumbs },
           },
           { path: "/insights", element: <InsightsPage />, handle: { crumbs: insightsCrumbs } },
-          { path: "/insights/duplicates", element: <DuplicatesPage />, handle: { crumbs: duplicatesCrumbs } },
-          { path: "/insights/missing-dlc", element: <MissingDlcPage />, handle: { crumbs: missingDlcCrumbs } },
+          {
+            path: "/insights/duplicates",
+            element: <DuplicatesPage />,
+            handle: { crumbs: duplicatesCrumbs },
+          },
+          {
+            path: "/insights/missing-dlc",
+            element: <MissingDlcPage />,
+            handle: { crumbs: missingDlcCrumbs },
+          },
           {
             path: "/insights/orphaned-accessories",
             element: <OrphanedAccessoriesPage />,
             handle: { crumbs: orphanedAccessoriesCrumbs },
           },
+          {
+            path: "/insights/steam-sync",
+            element: <SteamSyncPage />,
+            handle: { crumbs: steamSyncCrumbs },
+          },
+          {
+            path: "/insights/on-sale",
+            element: <OnSalePage />,
+            handle: { crumbs: onSaleCrumbs },
+          },
           { path: "/compare", element: <ComparePage />, handle: { crumbs: compareCrumbs } },
           { path: "/settings", element: <Settings />, handle: { crumbs: settingsCrumbs } },
-          { path: "/settings/tags", element: <TagManagerPage />, handle: { crumbs: tagManagerCrumbs } },
+          {
+            path: "/settings/tags",
+            element: <TagManagerPage />,
+            handle: { crumbs: tagManagerCrumbs },
+          },
           { path: "/settings/jobs", element: <JobsPage />, handle: { crumbs: jobsCrumbs } },
+          {
+            path: "/settings/integrations",
+            element: <IntegrationsPage />,
+            handle: { crumbs: integrationsCrumbs },
+          },
           { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
           { path: "*", element: <NotFoundRouteElement />, handle: { crumbs: notFoundCrumbs } },
         ],

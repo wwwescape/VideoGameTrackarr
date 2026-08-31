@@ -203,6 +203,25 @@ def test_addon_owned_status_is_independent_of_parent(auth_client, db_session, se
     assert parent_response.json()["owned"] is False
 
 
+def test_get_game_detail_includes_steam_app_id_when_matched(auth_client, db_session, seed_game):
+    from app.models.steam import SteamLibraryEntry
+
+    db_session.add(SteamLibraryEntry(steam_app_id=220, steam_name="Test Game", game_id=seed_game.id))
+    db_session.commit()
+
+    response = auth_client.get(f"/api/games/{seed_game.uuid}")
+
+    assert response.status_code == 200
+    assert response.json()["steamAppId"] == 220
+
+
+def test_get_game_detail_steam_app_id_is_null_when_unmatched(auth_client, seed_game):
+    response = auth_client.get(f"/api/games/{seed_game.uuid}")
+
+    assert response.status_code == 200
+    assert response.json()["steamAppId"] is None
+
+
 def test_get_game_detail_404_for_missing_game(auth_client):
     response = auth_client.get("/api/games/999999")
 

@@ -38,6 +38,25 @@ class Settings(BaseSettings):
     igdb_client_id: str | None = None
     igdb_client_secret: str | None = None
 
+    # Steam Web API key — same "bring your own credentials" shape as IGDB above. Unlike
+    # IGDB, Steam sync is optional, so there's no dedicated error type for a missing key yet;
+    # see app/api/routes/integrations.py for the configured/not-configured status check.
+    steam_api_key: str | None = None
+
+    # IsThereAnyDeal API key — same "bring your own credentials," optional shape as Steam
+    # above. itad_country picks which region's shops/currency prices come back in;
+    # deliberately separate from the app's own display-currency setting (that's a display
+    # formatting preference, this changes which real prices get fetched).
+    itad_api_key: str | None = None
+    itad_country: str = "US"
+
+    # PlatPrices API key — same "bring your own credentials" shape as ITAD above, but the
+    # free tier itself is much narrower: 2 PS Store regions (US/GB) and 1,000 requests/month.
+    # A self-hoster wanting their own region or more headroom upgrades their own PlatPrices
+    # plan directly — VGT never holds or proxies a shared key/plan.
+    platprices_api_key: str | None = None
+    platprices_region: str = "US"
+
     # Optional response cache backend — falls back to an in-process TTL cache if unset.
     redis_url: str | None = None
 

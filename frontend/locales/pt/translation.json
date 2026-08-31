@@ -48,9 +48,12 @@
     "duplicates": "Duplicados",
     "missingDlc": "DLC em Falta",
     "orphanedAccessories": "Acessórios Órfãos",
+    "steamSync": "Sincronização Steam",
+    "onSale": "Em Promoção",
     "settings": "Definições",
     "tagManager": "Gestor de etiquetas",
     "jobs": "Tarefas",
+    "integrations": "Integrações",
     "about": "Sobre"
   },
   "breadcrumbs": {
@@ -83,7 +86,9 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Outro",
       "digitalStorefrontLabel": "Loja digital",
-      "priceLabel": "Preço"
+      "priceLabel": "Preço",
+      "targetPriceLabel": "Preço-alvo",
+      "targetPriceHelperText": "Fica assinalado na página Em Promoção quando o preço descer até este valor ou menos."
     }
   },
   "restore": {
@@ -184,6 +189,10 @@
         "resyncSeries": {
           "name": "Ressincronizar séries",
           "description": "Obtém novamente apenas os dados de séries de cada jogo associado ao IGDB — restaura as séries após uma restauração de cópia de segurança, que não as inclui."
+        },
+        "steamImport": {
+          "name": "Importação Steam",
+          "description": "Obtém a sua biblioteca Steam e associa-a ao seu catálogo — nada é adicionado ou alterado automaticamente. Reveja e sincronize em Insights → Sincronização Steam."
         }
       }
     },
@@ -218,9 +227,28 @@
       "regenerateSuccess": "Ligações de partilha regeneradas.",
       "regenerateError": "Não foi possível regenerar as ligações. Tente novamente."
     },
-    "igdb": {
-      "heading": "Credenciais IGDB",
-      "description": "As credenciais do IGDB são configuradas através do ficheiro <1>.env</1> deste servidor (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), não através da aplicação."
+    "integrations": {
+      "igdbHeading": "Credenciais IGDB",
+      "igdbLogoAlt": "IGDB",
+      "igdbDescription": "As credenciais do IGDB são configuradas através do ficheiro <1>.env</1> deste servidor (<3>IGDB_CLIENT_ID</3> / <5>IGDB_CLIENT_SECRET</5>), não através da aplicação.",
+      "steamHeading": "Steam",
+      "steamLogoAlt": "Steam",
+      "itadLogoAlt": "IsThereAnyDeal",
+      "steamDescription": "A chave da API da Steam é configurada através do ficheiro <1>.env</1> deste servidor (<3>STEAM_API_KEY</3>), não através da aplicação. Obtenha uma chave gratuita em steamcommunity.com/dev/apikey, adicione-a ao .env e reinicie o VideoGameTrackarr.",
+      "configuredLabel": "Configurado",
+      "notConfiguredLabel": "Não configurado",
+      "steamIdLabel": "SteamID64",
+      "steamIdPlaceholder": "ex. 76561197960287930",
+      "steamIdHelperText": "O seu SteamID64 público — encontra-se no seu perfil Steam ou em steamid.io. Não é um segredo; serve apenas para consultar os seus jogos.",
+      "saveSuccessToast": "SteamID64 guardado.",
+      "saveErrorToast": "Não foi possível guardar o SteamID64. Tente novamente.",
+      "itadHeading": "IsThereAnyDeal (ITAD)",
+      "itadDescription": "A chave da API do IsThereAnyDeal é configurada através do ficheiro <1>.env</1> deste servidor (<3>ITAD_API_KEY</3>), não através da aplicação. Obtenha uma chave gratuita em isthereanydeal.com/apps/my, adicione-a ao .env e reinicie o VideoGameTrackarr.",
+      "platpricesHeading": "PlatPrices (PlayStation)",
+      "platpricesLogoAlt": "PlatPrices",
+      "platpricesDescription": "A chave da API do PlatPrices é configurada através do ficheiro <1>.env</1> deste servidor (<3>PLATPRICES_API_KEY</3>), não através da aplicação. Peça uma chave em platprices.com/api-request (normalmente emitida em 1-2 dias úteis), adicione-a ao .env e reinicie o VideoGameTrackarr.",
+      "platpricesRegionCaveat": "O plano gratuito do PlatPrices só cobre 2 regiões da PlayStation Store (US e GB) e 1000 pedidos por mês. Se a sua região da PS Store não for uma dessas, os preços refletirão a loja da região errada, a menos que atualize o seu próprio plano PlatPrices para aceder a mais regiões.",
+      "platpricesCredit": "Os dados de preços da PlayStation são fornecidos por <1>PlatPrices</1>."
     }
   },
   "auth": {
@@ -344,7 +372,8 @@
       "addedButton": "Adicionado",
       "selectAriaLabel": "Selecionar {{name}}",
       "deselectAriaLabel": "Remover seleção de {{name}}",
-      "nameYearTooltip": "{{name}} ({{year}})"
+      "nameYearTooltip": "{{name}} ({{year}})",
+      "onSaleLabel": "Em Promoção"
     },
     "subNav": {
       "allGames": "Todos os Jogos",
@@ -421,7 +450,8 @@
       "artworkTitle": "Arte",
       "videosTitle": "Vídeos",
       "watchOnYoutube": "Ver no YouTube",
-      "viewOnIgdb": "Ver mais detalhes em IGDB.com"
+      "viewOnIgdb": "Ver mais detalhes em IGDB.com",
+      "viewOnSteam": "Ver na Steam"
     },
     "actions": {
       "removeSuccessToast": "Jogo removido da sua biblioteca!",
@@ -459,8 +489,9 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Outro",
       "platformColumn": "Plataforma",
-      "regionColumn": "Região",
       "formatColumn": "Formato",
+      "storefrontColumn": "Loja",
+      "onSaleColumn": "Em Promoção",
       "moveColumn": "Mover",
       "collectionPhrase": "coleção",
       "wishlistPhrase": "lista de desejos",
@@ -503,7 +534,11 @@
   "insights": {
     "dashboard": {
       "gamesCalendarHeading": "Calendário de Lançamentos de Jogos",
-      "hardwareCalendarHeading": "Calendário de Lançamentos de Hardware"
+      "hardwareCalendarHeading": "Calendário de Lançamentos de Hardware",
+      "onSaleHeading": "Em Promoção Agora",
+      "onSaleSeeAll_one": "Ver o {{count}} jogo em promoção da sua lista de desejos",
+      "onSaleSeeAll_other": "Ver os {{count}} jogos em promoção da sua lista de desejos",
+      "welcomeMessage": "Bem-vindo ao VideoGameTrackarr"
     },
     "page": {
       "gamesHeading": "Jogos",
@@ -523,6 +558,53 @@
     },
     "missingDlc": {
       "noneFound": "Nenhum DLC em falta — tem tudo o que foi importado para os jogos que possui."
+    },
+    "steamSync": {
+      "heading": "Sincronização Steam",
+      "description": "Todos os jogos que a Steam diz que possui, comparados com o seu catálogo VGT. Nada muda aqui até sincronizar uma linha explicitamente — Importar apenas obtém e associa dados, nunca escreve na sua biblioteca por si só.",
+      "tableHeading": "Biblioteca Steam",
+      "emptyState": "Ainda não há nada aqui. Defina o seu SteamID64 em Definições → Integrações e depois execute Importar.",
+      "columnName": "Nome",
+      "columnSteamPlaytime": "Steam",
+      "columnVgtPlaytime": "VGT",
+      "columnStatus": "Estado",
+      "columnActions": "Ações",
+      "hoursValue": "{{hours}}h",
+      "status": {
+        "noMatch": "Sem correspondência no catálogo",
+        "new": "Novo",
+        "updateAvailable": "Atualização disponível",
+        "upToDate": "Atualizado",
+        "ignored": "Ignorado"
+      },
+      "selectedCount_one": "{{count}} selecionado",
+      "selectedCount_other": "{{count}} selecionados",
+      "syncSelectedButton": "Sincronizar selecionados",
+      "runImportButton": "Executar Importar",
+      "importRunning": "A importar…",
+      "importErrorToast": "Não foi possível iniciar a importação Steam. Tente novamente.",
+      "syncButton": "Sincronizar",
+      "addCustomButton": "Adicionar como jogo personalizado",
+      "ignoreButton": "Ignorar",
+      "ignoreErrorToast": "Não foi possível ignorar esta entrada. Tente novamente.",
+      "storeDetailsErrorToast": "Não foi possível obter a página Steam deste jogo. Tente novamente.",
+      "syncSuccessToast_one": "{{count}} jogo sincronizado.",
+      "syncSuccessToast_other": "{{count}} jogos sincronizados.",
+      "syncPartialErrorToast": "{{failed}} jogo(s) falharam ao sincronizar. Tente novamente.",
+      "syncErrorToast": "Não foi possível sincronizar. Tente novamente.",
+      "confirmSingleTitle": "Sincronizar \"{{name}}\"?",
+      "confirmBulkTitle": "Sincronizar {{count}} jogos?",
+      "confirmAddDescription": "Isto irá adicionar \"{{name}}\" à sua biblioteca (PC, Digital, Steam) com {{hours}}h registadas.",
+      "confirmUpdateDescription": "Isto irá definir o tempo de jogo de \"{{name}}\" de {{currentHours}}h para {{newHours}}h, diretamente da Steam — isto pode sobrepor tempo registado manualmente.",
+      "confirmBulkDescription": "Isto irá adicionar {{newCount}} jogo(s) novo(s) à sua biblioteca e atualizar o tempo de jogo de {{updateCount}} jogo(s) já existentes, diretamente da Steam — isto pode sobrepor tempo registado manualmente."
+    },
+    "onSale": {
+      "description": "Promoções atuais nos seus jogos digitais na lista de desejos, associados através do IsThereAnyDeal (Windows/Mac/Linux/Android) e PlatPrices (PlayStation). Um jogo sem lançamento digital, ou numa plataforma que nenhum dos dois cobre, simplesmente não aparece aqui.",
+      "noneFound": "Nenhum jogo da sua lista de desejos está em promoção neste momento.",
+      "targetHitLabel": "Objetivo atingido",
+      "currentPriceLabel": "{{price}} em {{shop}} (-{{cut}}%)",
+      "historicalLowLabel": "Mínimo histórico: {{price}}",
+      "targetPriceLabel": "Objetivo: {{price}}"
     }
   },
   "catalog": {

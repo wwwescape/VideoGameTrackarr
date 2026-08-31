@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.models.catalog import CompanyRole, Game, GameCategory
-from app.repositories import company_repository, game_repository, note_repository, platform_repository
+from app.repositories import company_repository, game_repository, note_repository, platform_repository, steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.game_service import get_game_detail
@@ -23,6 +23,7 @@ def create_manual_game(
     published_by: list[str] | None = None,
     platform_names: list[str] | None = None,
     notes: str | None = None,
+    steam_app_id: int | None = None,
 ) -> GameWithStatus:
     if parent_game_id is not None and db.get(Game, parent_game_id) is None:
         raise NotFoundError(f"Game {parent_game_id} not found")
@@ -57,6 +58,15 @@ def create_manual_game(
 
     if notes:
         note_repository.create_note(db, game.id, notes)
+
+    if steam_app_id is not None:
+        # Best-effort — links the originating SteamLibraryEntry (from the "Add as custom
+        # game" flow on Insights → Steam Sync) so its Steam store page shows on this game's
+        # details page. A missing/already-claimed entry is a silent no-op, not a failure —
+        # linking is a bonus, not a requirement for the game to be created.
+        entry = steam_repository.get_entry(db, steam_app_id)
+        if entry is not None:
+            steam_repository.set_game_id(db, entry, game.id)
 
     db.commit()
     return get_game_detail(db, game.id)

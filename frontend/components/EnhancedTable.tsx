@@ -31,6 +31,10 @@ export interface HeadCell {
   disablePadding: boolean;
   label: string;
   disableHeader: boolean;
+  // Fixed column width — lets two tables sharing most of the same columns (e.g. the
+  // Owned/Wishlist library tables) line up pixel-for-pixel even when one has an extra
+  // column the other doesn't.
+  width?: number | string;
 }
 
 export interface EnhancedTableRow {
@@ -59,7 +63,10 @@ function getComparator<T extends EnhancedTableRow>(order: Order, orderBy: string
     : (a: T, b: T) => -descendingComparator(a, b, orderBy);
 }
 
-function stableSort<T extends EnhancedTableRow>(array: T[], comparator: (a: T, b: T) => number): T[] {
+function stableSort<T extends EnhancedTableRow>(
+  array: T[],
+  comparator: (a: T, b: T) => number
+): T[] {
   const stabilizedThis = array.map((el, index) => [el, index] as const);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
@@ -114,6 +121,7 @@ const EnhancedTableHead = ({
             align={headCell.disableHeader ? "center" : headCell.numeric ? "right" : "left"}
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
+            sx={{ width: headCell.width }}
           >
             <TableSortLabel
               active={orderBy === headCell.id}
@@ -166,7 +174,8 @@ const EnhancedTableToolbar = ({
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 },
         ...(numSelected > 0 && {
-          bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+          bgcolor: (theme) =>
+            alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
         }),
       }}
     >
@@ -177,7 +186,12 @@ const EnhancedTableToolbar = ({
       ) : (
         <>
           {tableIcon}
-          <Typography sx={{ flex: "1 1 100%", marginLeft: "20px" }} variant="h6" id="tableTitle" component="div">
+          <Typography
+            sx={{ flex: "1 1 100%", marginLeft: "20px" }}
+            variant="h6"
+            id="tableTitle"
+            component="div"
+          >
             {tableName}
           </Typography>
         </>
@@ -285,7 +299,11 @@ const EnhancedTable = ({
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
   const visibleRows = useMemo(
-    () => stableSort(rows, getComparator(order, orderBy)).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    () =>
+      stableSort(rows, getComparator(order, orderBy)).slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+      ),
     [order, orderBy, page, rowsPerPage, rows]
   );
 
@@ -305,7 +323,9 @@ const EnhancedTable = ({
         {isMobile ? (
           <Stack spacing={1.5} sx={{ p: 1.5, pt: 0 }}>
             {visibleRows.length === 0 ? (
-              <Box sx={{ py: 2, textAlign: "center", color: "text.secondary" }}>{t("table.noRecords")}</Box>
+              <Box sx={{ py: 2, textAlign: "center", color: "text.secondary" }}>
+                {t("table.noRecords")}
+              </Box>
             ) : (
               visibleRows.map((row) => {
                 const isItemSelected = isSelected(row.id);
@@ -323,7 +343,10 @@ const EnhancedTable = ({
                   >
                     <Stack spacing={1}>
                       {dataCells.map((cell) => (
-                        <Box key={cell.id} sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                        <Box
+                          key={cell.id}
+                          sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}
+                        >
                           <Typography variant="caption" color="text.secondary">
                             {cell.label}
                           </Typography>
@@ -332,9 +355,22 @@ const EnhancedTable = ({
                           </Typography>
                         </Box>
                       ))}
-                      <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end", pt: 0.5 }}>
+                      {row.sale ? (
+                        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                          {row.sale as ReactNode}
+                        </Box>
+                      ) : null}
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
+                        sx={{ justifyContent: "flex-end", pt: 0.5 }}
+                      >
                         <Tooltip
-                          title={moveDirection === "up" ? t("table.moveToCollection") : t("table.moveToWishlist")}
+                          title={
+                            moveDirection === "up"
+                              ? t("table.moveToCollection")
+                              : t("table.moveToWishlist")
+                          }
                         >
                           <IconButton onClick={(event) => handleMove(event, row.id)}>
                             {moveDirection === "up" ? <MoveUpIcon /> : <MoveDownIcon />}
@@ -404,6 +440,7 @@ const EnhancedTable = ({
                                   ? "right"
                                   : "left"
                           }
+                          sx={{ width: cell.width }}
                         >
                           {cell.id === "move" ? (
                             <IconButton onClick={(event) => handleMove(event, row.id)}>

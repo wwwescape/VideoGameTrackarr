@@ -51,7 +51,22 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 // LinkToIgdbDialog.tsx's ADDON_TYPE_CATEGORIES split.
 const ADDON_TYPE_CATEGORIES: GameCategory[] = ["dlc_addon", "expansion", "pack"];
 
-const ManualGameForm = () => {
+interface ManualGameFormInitialValues {
+  name?: string;
+  coverUrl?: string;
+  summary?: string;
+}
+
+interface ManualGameFormProps {
+  initialValues?: ManualGameFormInitialValues;
+  // Set when this form was reached from Insights → Steam Sync's "Add as custom game" —
+  // carried through to the create call so the new game links back to the originating
+  // SteamLibraryEntry (see backend/app/services/manual_game_service.py). Not a form field:
+  // there's nothing here for the user to edit.
+  steamAppId?: number;
+}
+
+const ManualGameForm = ({ initialValues, steamAppId }: ManualGameFormProps) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -61,14 +76,14 @@ const ManualGameForm = () => {
   const { data: companies } = useCompanies();
   const { data: platforms } = usePlatforms();
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialValues?.name ?? "");
   const [category, setCategory] = useState<GameCategory>("main_game");
   const [releaseDate, setReleaseDate] = useState<Dayjs | null>(null);
-  const [coverUrl, setCoverUrl] = useState("");
+  const [coverUrl, setCoverUrl] = useState(initialValues?.coverUrl ?? "");
   const [developedBy, setDevelopedBy] = useState<string[]>([]);
   const [publishedBy, setPublishedBy] = useState<string[]>([]);
   const [platformNames, setPlatformNames] = useState<string[]>([]);
-  const [summary, setSummary] = useState("");
+  const [summary, setSummary] = useState(initialValues?.summary ?? "");
   const [storyline, setStoryline] = useState("");
   const [edition, setEdition] = useState("");
   const [notes, setNotes] = useState("");
@@ -109,7 +124,8 @@ const ManualGameForm = () => {
         storyline: storyline.trim() || null,
         edition: edition.trim() || null,
         notes: notes.trim() || null,
-        parentGameId: showParentGameField ? parentGame?.id ?? null : null,
+        parentGameId: showParentGameField ? (parentGame?.id ?? null) : null,
+        steamAppId,
       });
       toast.success(t("games.manualForm.addSuccessToast"), TOAST_OPTIONS);
       navigate(`/game/${gameIdentifier(game)}`);
@@ -178,10 +194,14 @@ const ManualGameForm = () => {
             <Button
               component="label"
               variant="outlined"
-              startIcon={uploadCover.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
+              startIcon={
+                uploadCover.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />
+              }
               disabled={uploadCover.isPending}
             >
-              {coverUrl ? t("games.gameForm.replaceCoverButton") : t("games.gameForm.uploadCoverButton")}
+              {coverUrl
+                ? t("games.gameForm.replaceCoverButton")
+                : t("games.gameForm.uploadCoverButton")}
               <input
                 type="file"
                 accept="image/*"
@@ -195,7 +215,13 @@ const ManualGameForm = () => {
                   component="img"
                   src={resolveAssetUrl(coverUrl) ?? undefined}
                   alt={t("games.gameForm.coverPreviewAlt")}
-                  sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
+                  sx={{
+                    height: 56,
+                    width: "auto",
+                    borderRadius: 1,
+                    border: "1px solid",
+                    borderColor: "divider",
+                  }}
                 />
                 <IconButton
                   size="small"
@@ -215,7 +241,9 @@ const ManualGameForm = () => {
             options={(companies ?? []).map((company) => company.name)}
             value={developedBy}
             onChange={(_event, newValue) => setDevelopedBy(newValue)}
-            renderInput={(params) => <TextField {...params} label={t("games.gameForm.developedByLabel")} />}
+            renderInput={(params) => (
+              <TextField {...params} label={t("games.gameForm.developedByLabel")} />
+            )}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -225,7 +253,9 @@ const ManualGameForm = () => {
             options={(companies ?? []).map((company) => company.name)}
             value={publishedBy}
             onChange={(_event, newValue) => setPublishedBy(newValue)}
-            renderInput={(params) => <TextField {...params} label={t("games.gameForm.publishedByLabel")} />}
+            renderInput={(params) => (
+              <TextField {...params} label={t("games.gameForm.publishedByLabel")} />
+            )}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -244,7 +274,9 @@ const ManualGameForm = () => {
             options={(platforms ?? []).map((platform) => platform.name)}
             value={platformNames}
             onChange={(_event, newValue) => setPlatformNames(newValue)}
-            renderInput={(params) => <TextField {...params} label={t("games.gameForm.availableOnLabel")} />}
+            renderInput={(params) => (
+              <TextField {...params} label={t("games.gameForm.availableOnLabel")} />
+            )}
           />
         </Grid>
         <Grid size={12}>
@@ -297,7 +329,11 @@ const ManualGameForm = () => {
           </Grid>
         ) : null}
         <Grid size={12}>
-          <Button variant="contained" onClick={handleAddGameClick} disabled={createManualGame.isPending}>
+          <Button
+            variant="contained"
+            onClick={handleAddGameClick}
+            disabled={createManualGame.isPending}
+          >
             {t("games.manualForm.addGameButton")}
           </Button>
         </Grid>

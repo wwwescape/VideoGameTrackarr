@@ -25,6 +25,7 @@ from app.api.routes import (
     igdb,
     import_export,
     insights,
+    integrations,
     jobs,
     library,
     notes,
@@ -140,6 +141,7 @@ app.include_router(uploads.router)
 app.include_router(jobs.router)
 app.include_router(version.router)
 app.include_router(share.router)
+app.include_router(integrations.router)
 app.include_router(public.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather

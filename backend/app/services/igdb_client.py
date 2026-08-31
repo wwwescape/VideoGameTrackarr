@@ -214,6 +214,20 @@ class IGDBClient:
         _normalize_nested_image_urls(addons)
         return addons
 
+    async def get_igdb_id_for_steam_appid(self, steam_app_id: int) -> int | None:
+        """Matches a Steam AppID to an IGDB game id via the external_games endpoint.
+        external_game_source = 1 is Steam — confirmed via a live query (2026-08-29):
+        IGDB's older documented `category` enum field is no longer populated on current
+        rows, `external_game_source` is what's actually set today (verified against two
+        known AppIDs — 220/Half-Life 2 and 730/CS:GO — both returning a
+        store.steampowered.com url with external_game_source=1)."""
+        headers = await self._auth_headers()
+        escaped_appid = _escape_apicalypse_string(str(steam_app_id))
+        body = f'fields game;\nwhere uid = "{escaped_appid}" & external_game_source = 1;\nlimit 1;'
+        response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
+        matches = response.json()
+        return matches[0]["game"] if matches and "game" in matches[0] else None
+
     async def _attach_covers(self, games: list[dict], headers: dict[str, str]) -> None:
         cover_ids = [game["cover"] for game in games if game.get("cover")]
         if not cover_ids:

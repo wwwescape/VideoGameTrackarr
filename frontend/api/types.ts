@@ -193,6 +193,7 @@ export interface GameDetail extends GameSummary {
   storyline: string | null;
   edition: string | null;
   igdbUrl: string | null;
+  steamAppId: number | null;
   parentGameId: number | null;
   parentGameName: string | null;
   parentGameSlug: string | null;
@@ -264,6 +265,7 @@ export interface ManualGameInput {
   publishedBy?: string[];
   platformNames?: string[];
   notes?: string | null;
+  steamAppId?: number;
 }
 
 export interface BackupRestoreResult {
@@ -346,8 +348,14 @@ export interface LibraryItem {
   ratingBoard: RatingBoard | null;
   edition: string | null;
   price: number | null;
+  targetPrice: number | null;
   acquiredAt: string | null;
   notes: string | null;
+  isOnSale: boolean;
+  salePriceAmount: number | null;
+  salePriceCurrency: string | null;
+  saleShopName: string | null;
+  saleCut: number | null;
 }
 
 export interface LibraryItemInput {
@@ -359,6 +367,7 @@ export interface LibraryItemInput {
   ratingBoard?: RatingBoard | null;
   edition?: string | null;
   price?: number | null;
+  targetPrice?: number | null;
   acquiredAt?: string | null;
   notes?: string | null;
 }
@@ -400,6 +409,21 @@ export interface InsightGameRef {
 export interface MissingDlcEntry {
   game: InsightGameRef;
   missingAddons: InsightGameRef[];
+}
+
+export interface OnSaleItem {
+  libraryItemId: number;
+  game: InsightGameRef;
+  currentPriceAmount: number;
+  currentPriceCurrency: string | null;
+  currentShopName: string | null;
+  currentCut: number | null;
+  historicalLowAmount: number | null;
+  historicalLowCurrency: string | null;
+  historicalLowShopName: string | null;
+  historicalLowAt: string | null;
+  targetPrice: number | null;
+  isTargetHit: boolean;
 }
 
 export interface InsightAccessoryRef {

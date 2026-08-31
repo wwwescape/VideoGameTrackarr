@@ -62,6 +62,39 @@ async def test_search_games_attaches_batched_covers():
 
 
 @respx.mock
+async def test_get_igdb_id_for_steam_appid_returns_the_matched_game_id():
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/external_games").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {
+                    "id": 15164,
+                    "game": 233,
+                    "uid": "220",
+                    "url": "https://store.steampowered.com/app/220",
+                    "external_game_source": 1,
+                }
+            ],
+        )
+    )
+
+    igdb_id = await make_client().get_igdb_id_for_steam_appid(220)
+
+    assert igdb_id == 233
+
+
+@respx.mock
+async def test_get_igdb_id_for_steam_appid_returns_none_when_unmatched():
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/external_games").mock(return_value=httpx.Response(200, json=[]))
+
+    igdb_id = await make_client().get_igdb_id_for_steam_appid(999999999)
+
+    assert igdb_id is None
+
+
+@respx.mock
 async def test_access_token_is_cached_across_calls():
     token_route = respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
     respx.post(f"{IGDB_API_BASE}/games").mock(return_value=httpx.Response(200, json=[]))

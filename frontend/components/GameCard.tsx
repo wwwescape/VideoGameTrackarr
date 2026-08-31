@@ -51,6 +51,7 @@ export interface GameCardGame {
   owned?: boolean;
   wishlisted?: boolean;
   playStatus?: PlayStatus | null;
+  onSale?: boolean;
 }
 
 interface GameCardProps {
@@ -63,10 +64,18 @@ interface GameCardProps {
   onToggleSelect?: () => void;
 }
 
-const GameCard = ({ game, context, contextFunction, selectable, selected, onToggleSelect }: GameCardProps) => {
+const GameCard = ({
+  game,
+  context,
+  contextFunction,
+  selectable,
+  selected,
+  onToggleSelect,
+}: GameCardProps) => {
   const theme = useTheme();
   const { t } = useTranslation();
-  const showsBadges = (context === "list" || context === "addon" || context === "public") && !selectable;
+  const showsBadges =
+    (context === "list" || context === "addon" || context === "public") && !selectable;
   const isClickable = context === "list" || context === "addon" || context === "added";
   const releaseYear = getReleaseYear(game.firstReleaseDate);
 
@@ -85,7 +94,9 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
       sx={{
         position: "relative",
         borderRadius: 2,
-        border: selected ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+        border: selected
+          ? `2px solid ${theme.palette.primary.main}`
+          : `1px solid ${theme.palette.divider}`,
         width: "100%",
         height: "100%",
         overflow: "hidden",
@@ -121,7 +132,9 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
         />
       ) : null}
 
-      <Tooltip title={t("games.card.nameYearTooltip", { name: game.name, year: releaseYear ?? "?" })}>
+      <Tooltip
+        title={t("games.card.nameYearTooltip", { name: game.name, year: releaseYear ?? "?" })}
+      >
         <Box
           onClick={handleCardActivate}
           sx={{
@@ -137,7 +150,13 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
               component="img"
               alt={game.name}
               image={resolveAssetUrl(game.coverUrl) ?? undefined}
-              sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              sx={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
             />
           ) : (
             <Box
@@ -156,13 +175,33 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
               <Typography variant="caption">{t("games.card.noCover")}</Typography>
             </Box>
           )}
+          {showsBadges && game.onSale ? (
+            <Chip
+              label={t("games.card.onSaleLabel")}
+              color="success"
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 8,
+                left: 8,
+                zIndex: 1,
+                fontWeight: 600,
+                boxShadow: theme.shadows[3],
+              }}
+            />
+          ) : null}
         </Box>
       </Tooltip>
 
-      <OwnershipBadges owned={showsBadges && Boolean(game.owned)} wishlisted={showsBadges && Boolean(game.wishlisted)} />
+      <OwnershipBadges
+        owned={showsBadges && Boolean(game.owned)}
+        wishlisted={showsBadges && Boolean(game.wishlisted)}
+      />
 
       <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
-        <Tooltip title={t("games.card.nameYearTooltip", { name: game.name, year: releaseYear ?? "?" })}>
+        <Tooltip
+          title={t("games.card.nameYearTooltip", { name: game.name, year: releaseYear ?? "?" })}
+        >
           <Typography
             variant="subtitle2"
             component="div"
@@ -197,10 +236,21 @@ const GameCard = ({ game, context, contextFunction, selectable, selected, onTogg
           // which is what broke row alignment again as soon as a "Completed"/etc. chip
           // showed up on only some cards in a row.
           <Chip
-            label={game.playStatus && game.playStatus !== "none" ? t(PLAY_STATUS_LABEL_KEYS[game.playStatus]) : " "}
-            color={game.playStatus && game.playStatus !== "none" ? PLAY_STATUS_COLORS[game.playStatus] : "default"}
+            label={
+              game.playStatus && game.playStatus !== "none"
+                ? t(PLAY_STATUS_LABEL_KEYS[game.playStatus])
+                : " "
+            }
+            color={
+              game.playStatus && game.playStatus !== "none"
+                ? PLAY_STATUS_COLORS[game.playStatus]
+                : "default"
+            }
             size="small"
-            sx={{ mt: 0.75, visibility: game.playStatus && game.playStatus !== "none" ? "visible" : "hidden" }}
+            sx={{
+              mt: 0.75,
+              visibility: game.playStatus && game.playStatus !== "none" ? "visible" : "hidden",
+            }}
           />
         ) : null}
         {context === "add" || context === "added" ? (

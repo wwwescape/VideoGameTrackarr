@@ -3,7 +3,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import Autocomplete, { type AutocompleteRenderInputParams, createFilterOptions } from "@mui/material/Autocomplete";
+import Autocomplete, {
+  type AutocompleteRenderInputParams,
+  createFilterOptions,
+} from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -15,7 +18,13 @@ import FormLabel from "@mui/material/FormLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
-import type { MediaFormat, PlatformResponse, RatingBoard, RegionResponse } from "../api/types";
+import type {
+  LibraryStatus,
+  MediaFormat,
+  PlatformResponse,
+  RatingBoard,
+  RegionResponse,
+} from "../api/types";
 import { RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 
 const formSchema = z.object({
@@ -23,8 +32,11 @@ const formSchema = z.object({
   regionId: z.number().optional(),
   format: z.enum(["physical", "digital", "iso", "rom", "abandonware", "other"]),
   digitalStorefront: z.string().optional(),
-  ratingBoard: z.enum(["esrb", "pegi", "cero", "usk", "grac", "classind", "acb", "iarc"]).optional(),
+  ratingBoard: z
+    .enum(["esrb", "pegi", "cero", "usk", "grac", "classind", "acb", "iarc"])
+    .optional(),
   price: z.number().optional(),
+  targetPrice: z.number().optional(),
 });
 
 export type LibraryItemFormValues = z.infer<typeof formSchema>;
@@ -70,6 +82,7 @@ interface RatingBoardOption {
 interface LibraryItemDialogProps {
   open: boolean;
   title: string;
+  status: LibraryStatus;
   platforms: PlatformResponse[];
   regions: RegionResponse[];
   defaultValues?: Partial<LibraryItemFormValues>;
@@ -81,6 +94,7 @@ interface LibraryItemDialogProps {
 const LibraryItemDialog = ({
   open,
   title,
+  status,
   platforms,
   regions,
   defaultValues,
@@ -113,7 +127,10 @@ const LibraryItemDialog = ({
   const noneOption: SelectOption = { value: undefined, label: t("common.none") };
   const ratingBoardOptions: RatingBoardOption[] = [
     { value: undefined, label: t("common.none") },
-    ...(Object.entries(RATING_BOARD_LABELS) as [RatingBoard, string][]).map(([value, label]) => ({ value, label })),
+    ...(Object.entries(RATING_BOARD_LABELS) as [RatingBoard, string][]).map(([value, label]) => ({
+      value,
+      label,
+    })),
   ];
 
   const platformOptions: SelectOption[] = platforms.map((platform) => ({
@@ -121,7 +138,10 @@ const LibraryItemDialog = ({
     label: platform.name,
     abbreviation: platform.abbreviation,
   }));
-  const regionOptions: SelectOption[] = [noneOption, ...regions.map((region) => ({ value: region.id, label: region.name }))];
+  const regionOptions: SelectOption[] = [
+    noneOption,
+    ...regions.map((region) => ({ value: region.id, label: region.name })),
+  ];
 
   const watchedFormat = useWatch({ control, name: "format" });
   const watchedPlatformId = useWatch({ control, name: "platformId" });
@@ -191,7 +211,10 @@ const LibraryItemDialog = ({
                 options={ratingBoardOptions}
                 getOptionLabel={(option) => option.label}
                 isOptionEqualToValue={(option, value) => option.value === value.value}
-                value={ratingBoardOptions.find((option) => option.value === field.value) ?? ratingBoardOptions[0]}
+                value={
+                  ratingBoardOptions.find((option) => option.value === field.value) ??
+                  ratingBoardOptions[0]
+                }
                 onChange={(_event, option) => field.onChange(option?.value)}
                 renderInput={(params: AutocompleteRenderInputParams) => (
                   <TextField {...params} label={t("dialogs.libraryItem.ratingBoardLabel")} />
@@ -234,7 +257,10 @@ const LibraryItemDialog = ({
                     if (reason === "input") field.onChange(value || undefined);
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} label={t("dialogs.libraryItem.digitalStorefrontLabel")} />
+                    <TextField
+                      {...params}
+                      label={t("dialogs.libraryItem.digitalStorefrontLabel")}
+                    />
                   )}
                 />
               )}
@@ -251,11 +277,35 @@ const LibraryItemDialog = ({
                 type="number"
                 label={t("dialogs.libraryItem.priceLabel")}
                 value={field.value ?? ""}
-                onChange={(event) => field.onChange(event.target.value === "" ? undefined : Number(event.target.value))}
+                onChange={(event) =>
+                  field.onChange(event.target.value === "" ? undefined : Number(event.target.value))
+                }
               />
             )}
           />
         </FormControl>
+        {status === "wishlist" ? (
+          <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
+            <Controller
+              name="targetPrice"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t("dialogs.libraryItem.targetPriceLabel")}
+                  helperText={t("dialogs.libraryItem.targetPriceHelperText")}
+                  value={field.value ?? ""}
+                  onChange={(event) =>
+                    field.onChange(
+                      event.target.value === "" ? undefined : Number(event.target.value)
+                    )
+                  }
+                />
+              )}
+            />
+          </FormControl>
+        ) : null}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">

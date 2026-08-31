@@ -46,7 +46,11 @@ describe("GameCard", () => {
 
   it("shows the wishlist and owned badges in list context", () => {
     const { container } = renderWithTheme(
-      <GameCard game={{ ...baseGame, owned: true, wishlisted: true }} context="list" contextFunction={vi.fn()} />
+      <GameCard
+        game={{ ...baseGame, owned: true, wishlisted: true }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
     );
 
     // Queried by aria-label, not MUI's data-testid - the latter is stripped in production
@@ -72,8 +76,43 @@ describe("GameCard", () => {
     expect(container.querySelector('svg[aria-label="In your collection"]')).toBeNull();
   });
 
+  it("shows an On Sale chip when onSale is true in list context", () => {
+    renderWithTheme(
+      <GameCard game={{ ...baseGame, onSale: true }} context="list" contextFunction={vi.fn()} />
+    );
+
+    expect(screen.getByText("On Sale")).toBeInTheDocument();
+  });
+
+  it("does not show an On Sale chip when onSale is false or unset", () => {
+    renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} />);
+
+    expect(screen.queryByText("On Sale")).not.toBeInTheDocument();
+  });
+
+  it("hides the On Sale chip while in selectable mode, even if onSale is true", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, onSale: true }}
+        context="list"
+        contextFunction={vi.fn()}
+        selectable
+        selected={false}
+        onToggleSelect={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText("On Sale")).not.toBeInTheDocument();
+  });
+
   it("shows a play status chip when set to something other than 'none'", () => {
-    renderWithTheme(<GameCard game={{ ...baseGame, playStatus: "playing" }} context="list" contextFunction={vi.fn()} />);
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, playStatus: "playing" }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
+    );
 
     expect(screen.getByText("Playing")).toBeInTheDocument();
   });
@@ -114,7 +153,13 @@ describe("GameCard", () => {
   });
 
   it("shows the addon type label for non-main_game categories", () => {
-    renderWithTheme(<GameCard game={{ ...baseGame, category: "dlc_addon" }} context="addon" contextFunction={vi.fn()} />);
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, category: "dlc_addon" }}
+        context="addon"
+        contextFunction={vi.fn()}
+      />
+    );
 
     expect(screen.getByText("DLC")).toBeInTheDocument();
   });
