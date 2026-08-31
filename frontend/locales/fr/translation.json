@@ -250,12 +250,12 @@
       "steamIdHelperText": "Votre SteamID64 public — disponible sur votre profil Steam ou via steamid.io. Ce n'est pas un secret ; il sert uniquement à consulter vos jeux possédés.",
       "saveSuccessToast": "SteamID64 enregistré.",
       "saveErrorToast": "Impossible d'enregistrer le SteamID64. Veuillez réessayer.",
-      "itadHeading": "IsThereAnyDeal (ITAD)",
+      "itadHeading": "IsThereAnyDeal",
       "itadDescription": "La clé API IsThereAnyDeal est configurée via le fichier <1>.env</1> de ce serveur (<3>ITAD_API_KEY</3>), pas via l'application. Obtenez une clé gratuite sur isthereanydeal.com/apps/my, ajoutez-la à .env, puis redémarrez VideoGameTrackarr.",
       "platpricesHeading": "PlatPrices (PlayStation)",
       "platpricesLogoAlt": "PlatPrices",
       "platpricesDescription": "La clé API PlatPrices est configurée via le fichier <1>.env</1> de ce serveur (<3>PLATPRICES_API_KEY</3>), pas via l'application. Faites une demande de clé sur platprices.com/api-request (généralement traitée sous 1 à 2 jours ouvrés), ajoutez-la à .env, puis redémarrez VideoGameTrackarr.",
-      "platpricesRegionCaveat": "L'offre gratuite de PlatPrices ne couvre que 2 régions du PlayStation Store (US et GB) et 1 000 requêtes par mois. Si votre région du PS Store n'en fait pas partie, les prix refléteront la mauvaise boutique régionale, sauf si vous mettez à niveau votre propre offre PlatPrices pour accéder à plus de régions.",
+      "platpricesRegionCaveat": "L'offre gratuite de PlatPrices permet à votre compte de suivre 2 régions du PlayStation Store à la fois (modifiable une fois toutes les 24 heures sur platprices.com), en plus de 1 000 requêtes par mois. Définissez PLATPRICES_REGION dans .env sur l'une des 2 régions actuellement suivies par votre compte, sinon les prix refléteront la mauvaise boutique régionale.",
       "platpricesCredit": "Les données de prix PlayStation sont fournies par <1>PlatPrices</1>."
     }
   },

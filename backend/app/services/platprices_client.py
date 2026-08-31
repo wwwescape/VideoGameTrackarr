@@ -22,8 +22,9 @@ class PlatPricesCredentialsError(Exception):
 
 
 class PlatPricesRegionNotInPlanError(Exception):
-    """Raised when PLATPRICES_REGION isn't one of the regions this key's plan enables —
-    the free tier only covers US/GB (see .env.example)."""
+    """Raised when PLATPRICES_REGION isn't one of the (up to 2, on the free tier) regions
+    this key's account is currently tracking — configurable on the PlatPrices dashboard,
+    not something VGT can set on the account's behalf (see .env.example)."""
 
 
 @dataclass

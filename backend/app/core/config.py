@@ -51,9 +51,11 @@ class Settings(BaseSettings):
     itad_country: str = "US"
 
     # PlatPrices API key — same "bring your own credentials" shape as ITAD above, but the
-    # free tier itself is much narrower: 2 PS Store regions (US/GB) and 1,000 requests/month.
-    # A self-hoster wanting their own region or more headroom upgrades their own PlatPrices
-    # plan directly — VGT never holds or proxies a shared key/plan.
+    # free tier itself is much narrower: any 2 PS Store regions of the account's choosing
+    # (changeable once every 24h on the PlatPrices dashboard, not from VGT) and 1,000
+    # requests/month. A self-hoster wanting more regions tracked at once or more headroom
+    # upgrades their own PlatPrices plan directly — VGT never holds or proxies a shared
+    # key/plan.
     platprices_api_key: str | None = None
     platprices_region: str = "US"
 

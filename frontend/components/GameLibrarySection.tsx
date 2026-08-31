@@ -19,6 +19,7 @@ import type {
 } from "../api/types";
 import { useAddLibraryItem, useDeleteLibraryItem, useUpdateLibraryItem } from "../hooks/useLibrary";
 import { useUndoableAction } from "../hooks/useUndoableAction";
+import { PLATFORM_COLUMN_WIDTH } from "../utils/tableColumnWidths";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
@@ -27,11 +28,14 @@ import { showUndoToast } from "./UndoToast";
 
 // Shared across the Owned and Wishlist tables below so their Platform/Format/Storefront/
 // action columns line up pixel-for-pixel even though Wishlist has one extra column (the
-// on-sale chip) that Owned doesn't.
+// on-sale chip) that Owned doesn't. Values are deliberately tight (fixed widths, cell
+// content ellipsis-truncates rather than wrapping or growing the column — see
+// EnhancedTable.tsx) so the two tables together don't force horizontal scrolling on a
+// typical card width.
 const COLUMN_WIDTHS = {
-  platformName: 200,
+  platformName: PLATFORM_COLUMN_WIDTH,
   formatLabel: 140,
-  storefrontLabel: 200,
+  storefrontLabel: 110,
   sale: 130,
   move: 64,
   edit: 64,

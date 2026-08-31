@@ -2,6 +2,7 @@ import ImageNotSupportedOutlinedIcon from "@mui/icons-material/ImageNotSupported
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
+import Chip from "@mui/material/Chip";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -11,7 +12,7 @@ import type { GameDetail } from "../api/types";
 import OwnershipBadges from "./OwnershipBadges";
 
 interface GameCoverCardProps {
-  game: Pick<GameDetail, "name" | "coverUrl" | "owned" | "wishlisted">;
+  game: Pick<GameDetail, "name" | "coverUrl" | "owned" | "wishlisted" | "isOnSale">;
 }
 
 const GameCoverCard = ({ game }: GameCoverCardProps) => {
@@ -68,6 +69,21 @@ const GameCoverCard = ({ game }: GameCoverCardProps) => {
               <Typography variant="body2">{t("games.coverCard.noImageAvailable")}</Typography>
             </Box>
           )}
+          {game.isOnSale ? (
+            <Chip
+              label={t("games.card.onSaleLabel")}
+              color="success"
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 8,
+                left: 8,
+                zIndex: 1,
+                fontWeight: 600,
+                boxShadow: theme.shadows[3],
+              }}
+            />
+          ) : null}
         </Box>
       </Tooltip>
     </Card>

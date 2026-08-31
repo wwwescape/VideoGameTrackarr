@@ -22,6 +22,7 @@ import {
   useUpdatePlaySession,
 } from "../hooks/usePlaySessions";
 import { useUndoableAction } from "../hooks/useUndoableAction";
+import { PLATFORM_COLUMN_WIDTH } from "../utils/tableColumnWidths";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
 import PlaySessionDialog, { type PlaySessionFormValues } from "./PlaySessionDialog";
@@ -33,6 +34,26 @@ interface GameProgressSectionProps {
   libraryItems: LibraryItem[] | undefined;
   platforms: PlatformResponse[] | undefined;
 }
+
+// Fixed widths (not just the shared Platform one) so both tables get table-layout: fixed
+// in EnhancedTable.tsx — cell content ellipsis-truncates rather than wrapping/growing the
+// column, same rule as GameLibrarySection's Owned/Wishlist tables.
+const PROGRESS_COLUMN_WIDTHS = {
+  platformName: PLATFORM_COLUMN_WIDTH,
+  statusLabel: 110,
+  playtimeLabel: 100,
+  ratingLabel: 90,
+  lastPlayedLabel: 110,
+  actions: 100,
+} as const;
+
+const SESSION_COLUMN_WIDTHS = {
+  platformName: PLATFORM_COLUMN_WIDTH,
+  startedLabel: 160,
+  endedLabel: 160,
+  durationLabel: 100,
+  actions: 100,
+} as const;
 
 function formatDuration(minutes: number | null): string {
   if (minutes === null) return "-";
@@ -79,6 +100,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("progress.platformColumn"),
       disableHeader: false,
+      width: PROGRESS_COLUMN_WIDTHS.platformName,
     },
     {
       id: "statusLabel",
@@ -86,6 +108,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("progress.statusColumn"),
       disableHeader: false,
+      width: PROGRESS_COLUMN_WIDTHS.statusLabel,
     },
     {
       id: "playtimeLabel",
@@ -93,6 +116,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("progress.playtimeColumn"),
       disableHeader: false,
+      width: PROGRESS_COLUMN_WIDTHS.playtimeLabel,
     },
     {
       id: "ratingLabel",
@@ -100,6 +124,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("progress.ratingColumn"),
       disableHeader: false,
+      width: PROGRESS_COLUMN_WIDTHS.ratingLabel,
     },
     {
       id: "lastPlayedLabel",
@@ -107,6 +132,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("progress.lastPlayedColumn"),
       disableHeader: false,
+      width: PROGRESS_COLUMN_WIDTHS.lastPlayedLabel,
     },
     {
       id: "actions",
@@ -114,7 +140,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: true,
       label: "",
       disableHeader: true,
-      width: 100,
+      width: PROGRESS_COLUMN_WIDTHS.actions,
     },
   ];
 
@@ -125,6 +151,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("playSessions.platformColumn"),
       disableHeader: false,
+      width: SESSION_COLUMN_WIDTHS.platformName,
     },
     {
       id: "startedLabel",
@@ -132,6 +159,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("playSessions.startedColumn"),
       disableHeader: false,
+      width: SESSION_COLUMN_WIDTHS.startedLabel,
     },
     {
       id: "endedLabel",
@@ -139,6 +167,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("playSessions.endedColumn"),
       disableHeader: false,
+      width: SESSION_COLUMN_WIDTHS.endedLabel,
     },
     {
       id: "durationLabel",
@@ -146,6 +175,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: false,
       label: t("playSessions.durationColumn"),
       disableHeader: false,
+      width: SESSION_COLUMN_WIDTHS.durationLabel,
     },
     {
       id: "actions",
@@ -153,7 +183,7 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       disablePadding: true,
       label: "",
       disableHeader: true,
-      width: 100,
+      width: SESSION_COLUMN_WIDTHS.actions,
     },
   ];
 

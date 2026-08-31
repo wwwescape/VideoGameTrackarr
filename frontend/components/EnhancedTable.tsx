@@ -126,7 +126,7 @@ const EnhancedTableHead = ({
             align={headCell.disableHeader ? "center" : headCell.numeric ? "right" : "left"}
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
-            sx={{ width: headCell.width }}
+            sx={{ width: headCell.width, overflow: "hidden" }}
           >
             <TableSortLabel
               active={orderBy === headCell.id}
@@ -472,7 +472,7 @@ const EnhancedTable = ({
                                   ? "right"
                                   : "left"
                           }
-                          sx={{ width: cell.width }}
+                          sx={{ width: cell.width, overflow: "hidden" }}
                         >
                           {cell.id === "move" ? (
                             <IconButton onClick={(event) => handleMove(event, row.id)}>
@@ -512,7 +512,15 @@ const EnhancedTable = ({
                               </IconButton>
                             </Stack>
                           ) : (
-                            (row[cell.id] as ReactNode)
+                            <Box
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {row[cell.id] as ReactNode}
+                            </Box>
                           )}
                         </TableCell>
                       ))}

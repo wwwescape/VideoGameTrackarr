@@ -250,12 +250,12 @@
       "steamIdHelperText": "Your public SteamID64 — find it on your Steam profile page or via steamid.io. This isn't a secret; it's only used to look up your owned games.",
       "saveSuccessToast": "SteamID64 saved.",
       "saveErrorToast": "Could not save SteamID64. Please try again.",
-      "itadHeading": "IsThereAnyDeal (ITAD)",
+      "itadHeading": "IsThereAnyDeal",
       "itadDescription": "The IsThereAnyDeal API key is configured via this server's <1>.env</1> file (<3>ITAD_API_KEY</3>), not through the app. Get a free key at isthereanydeal.com/apps/my, add it to .env, then restart VideoGameTrackarr.",
       "platpricesHeading": "PlatPrices (PlayStation)",
       "platpricesLogoAlt": "PlatPrices",
       "platpricesDescription": "The PlatPrices API key is configured via this server's <1>.env</1> file (<3>PLATPRICES_API_KEY</3>), not through the app. Get a key by applying at platprices.com/api-request (usually issued within 1-2 business days), add it to .env, then restart VideoGameTrackarr.",
-      "platpricesRegionCaveat": "PlatPrices' free tier only covers 2 PlayStation Store regions (US and GB) and 1,000 requests/month. If your PS Store region isn't one of those, prices will reflect the wrong region's storefront unless you upgrade your own PlatPrices plan for more region access.",
+      "platpricesRegionCaveat": "PlatPrices' free tier lets your account track any 2 PlayStation Store regions at a time (changeable once every 24 hours on platprices.com), plus 1,000 requests/month. Set PLATPRICES_REGION in .env to one of the 2 regions your account is currently tracking, or prices will reflect the wrong region's storefront.",
       "platpricesCredit": "PlayStation price data is powered by <1>PlatPrices</1>."
     }
   },
