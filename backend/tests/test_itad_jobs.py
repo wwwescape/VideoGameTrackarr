@@ -51,7 +51,11 @@ def test_run_matches_and_caches_price_for_a_wishlisted_game(db_session, seed_pla
         return {"itad-id-1": ItadDeal(shop_name="GOG", price_amount=14.99, price_currency="USD", cut=40)}
 
     async def fake_get_historical_low(self, itad_ids, country):
-        return {"itad-id-1": ItadHistoricalLow(shop_name="Steam", price_amount=9.99, price_currency="USD", cut=75, achieved_at=None)}
+        return {
+            "itad-id-1": ItadHistoricalLow(
+                shop_name="Steam", price_amount=9.99, price_currency="USD", cut=75, achieved_at=None
+            )
+        }
 
     monkeypatch.setattr(ItadClient, "lookup_game_id", fake_lookup)
     monkeypatch.setattr(ItadClient, "get_prices", fake_get_prices)
@@ -92,7 +96,8 @@ def test_run_skips_games_with_no_wishlist_items(db_session, seed_platform, monke
 def test_run_does_not_refetch_a_match_that_already_exists(db_session, seed_platform, monkeypatch):
     game = _seed_wishlisted_game(db_session, igdb_id=233, name="Half-Life 2", seed_platform=seed_platform)
     db_session.add(itad_jobs.itad_repository.get_or_create_cache(db_session, game.id))
-    itad_jobs.itad_repository.set_itad_id(db_session, itad_jobs.itad_repository.get_cache(db_session, game.id), "already-matched")
+    cache = itad_jobs.itad_repository.get_cache(db_session, game.id)
+    itad_jobs.itad_repository.set_itad_id(db_session, cache, "already-matched")
     db_session.commit()
     _configure_itad(monkeypatch)
 
@@ -119,7 +124,7 @@ def test_run_does_not_refetch_a_match_that_already_exists(db_session, seed_platf
 
 
 def test_run_isolates_a_per_game_lookup_failure(db_session, seed_platform, monkeypatch):
-    good_game = _seed_wishlisted_game(db_session, igdb_id=1, name="Good Game", seed_platform=seed_platform)
+    _seed_wishlisted_game(db_session, igdb_id=1, name="Good Game", seed_platform=seed_platform)
     bad_game = _seed_wishlisted_game(db_session, igdb_id=2, name="Bad Game", seed_platform=seed_platform)
 
     _configure_itad(monkeypatch)
@@ -147,13 +152,17 @@ def test_run_isolates_a_per_game_lookup_failure(db_session, seed_platform, monke
     assert result["failures"] == [{"gameId": bad_game.id, "gameName": "Bad Game", "error": "ITAD request failed"}]
 
 
-def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(db_session, seed_platform, seed_region, monkeypatch):
+def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(
+    db_session, seed_platform, seed_region, monkeypatch
+):
     game = Game(igdb_id=233, name="Half-Life 2", slug="half-life-2", category=GameCategory.MAIN_GAME)
     db_session.add(game)
     db_session.commit()
     db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
     db_session.add(
-        LibraryItem(game_id=game.id, platform_id=seed_platform.id, region_id=seed_region.id, status=LibraryStatus.WISHLIST)
+        LibraryItem(
+            game_id=game.id, platform_id=seed_platform.id, region_id=seed_region.id, status=LibraryStatus.WISHLIST
+        )
     )
     db_session.commit()
     _configure_itad(monkeypatch)

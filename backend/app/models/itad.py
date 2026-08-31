@@ -17,7 +17,9 @@ class ItadPriceCache(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), unique=True, nullable=False)
-    itad_game_id: Mapped[str | None] = mapped_column(String(64), comment="ITAD's internal game id; null = no match found")
+    itad_game_id: Mapped[str | None] = mapped_column(
+        String(64), comment="ITAD's internal game id; null = no match found"
+    )
     current_price_amount: Mapped[float | None] = mapped_column()
     current_price_currency: Mapped[str | None] = mapped_column(String(8))
     current_shop_name: Mapped[str | None] = mapped_column(String(100))

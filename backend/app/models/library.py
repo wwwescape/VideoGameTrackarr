@@ -64,7 +64,7 @@ class LibraryItem(TimestampMixin, Base):
     )
     price: Mapped[float | None] = mapped_column()
     target_price: Mapped[float | None] = mapped_column(
-        comment="Only meaningful when status=wishlist — flags this row 'on sale' once ITAD's current price drops to or below this"
+        comment="Only meaningful when status=wishlist — flags this row on sale once the price drops to or below this"
     )
     acquired_at: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)

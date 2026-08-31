@@ -17,7 +17,7 @@ from app.services.exceptions import NotFoundError
 _PC_IGDB_PLATFORM_ID = 6
 
 
-class SteamEntryStatus(str, enum.Enum):
+class SteamEntryStatus(enum.StrEnum):
     NO_MATCH = "no_match"
     NEW = "new"
     UPDATE_AVAILABLE = "update_available"
@@ -113,7 +113,8 @@ def _with_status(db: Session, entry: SteamLibraryEntry) -> SteamEntryWithStatus:
         return SteamEntryWithStatus(entry, SteamEntryStatus.NEW, None)
 
     vgt_minutes = progress.playtime_minutes if progress else 0
-    status = SteamEntryStatus.UP_TO_DATE if vgt_minutes == entry.steam_playtime_minutes else SteamEntryStatus.UPDATE_AVAILABLE
+    is_up_to_date = vgt_minutes == entry.steam_playtime_minutes
+    status = SteamEntryStatus.UP_TO_DATE if is_up_to_date else SteamEntryStatus.UPDATE_AVAILABLE
     return SteamEntryWithStatus(entry, status, vgt_minutes)
 
 

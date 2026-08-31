@@ -4,7 +4,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.models.catalog import Game, GameCategory
-from app.models.library import GameProgress, LibraryItem, LibraryStatus
+from app.models.library import LibraryItem, LibraryStatus
 from app.models.steam import SteamLibraryEntry
 from app.repositories import game_progress_repository, steam_repository
 from app.services import steam_jobs
