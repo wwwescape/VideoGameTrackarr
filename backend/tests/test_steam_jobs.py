@@ -4,9 +4,9 @@ import pytest
 
 from app.core.config import get_settings
 from app.models.catalog import Game, GameCategory
-from app.models.library import LibraryItem, LibraryStatus
+from app.models.library import GameProgress, LibraryItem, LibraryStatus
 from app.models.steam import SteamLibraryEntry
-from app.repositories import game_progress_repository, steam_repository
+from app.repositories import steam_repository
 from app.services import steam_jobs
 from app.services.igdb_client import IGDBClient
 from app.services.steam_client import SteamClient, SteamOwnedGame
@@ -72,7 +72,7 @@ def test_run_never_writes_progress_for_an_already_owned_game(db_session, test_us
     result = steam_jobs.run(lambda: db_session)
 
     assert result == {"total": 1, "succeeded": 1, "failed": 0, "failures": []}
-    assert game_progress_repository.get_progress(db_session, game_id) is None
+    assert db_session.query(GameProgress).filter_by(game_id=game_id).count() == 0
     entry = steam_repository.get_entry(db_session, 220)
     assert entry.game_id == game_id
     assert entry.steam_playtime_minutes == 754  # the cache still updates, just not GameProgress
@@ -95,7 +95,7 @@ def test_run_caches_the_match_for_an_untracked_game(db_session, test_user, monke
     result = steam_jobs.run(lambda: db_session)
 
     assert result["succeeded"] == 1
-    assert game_progress_repository.get_progress(db_session, game_id) is None
+    assert db_session.query(GameProgress).filter_by(game_id=game_id).count() == 0
     entry = steam_repository.get_entry(db_session, 220)
     assert entry.game_id == game_id  # matched and cached, ready for the Steam Sync page
 

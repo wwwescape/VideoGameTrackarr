@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, delete, exists, select, update
+from sqlalchemy import ColumnElement, case, delete, exists, select, update
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import (
@@ -45,12 +45,39 @@ def _wishlisted_exists(game_id_column: ColumnElement[int]) -> ColumnElement[bool
     return exists().where(LibraryItem.game_id == game_id_column, LibraryItem.status == LibraryStatus.WISHLIST)
 
 
+# A game can now have GameProgress on multiple platforms (one owned copy each). Game-level
+# views (list/card/dashboard) can only show one status, so these pick a single "representative"
+# row via priority order — Playing beats Completed beats Backlog beats Abandoned beats None —
+# rather than assuming (as before per-platform tracking) that at most one row exists.
+_PLAY_STATUS_PRIORITY = case(
+    (GameProgress.play_status == PlayStatus.PLAYING, 0),
+    (GameProgress.play_status == PlayStatus.COMPLETED, 1),
+    (GameProgress.play_status == PlayStatus.BACKLOG, 2),
+    (GameProgress.play_status == PlayStatus.ABANDONED, 3),
+    else_=4,
+)
+
+
 def _play_status_subquery(game_id_column: ColumnElement[int]) -> ColumnElement[PlayStatus | None]:
-    return select(GameProgress.play_status).where(GameProgress.game_id == game_id_column).scalar_subquery()
+    return (
+        select(GameProgress.play_status)
+        .where(GameProgress.game_id == game_id_column)
+        .order_by(_PLAY_STATUS_PRIORITY)
+        .limit(1)
+        .scalar_subquery()
+    )
 
 
 def _rating_subquery(game_id_column: ColumnElement[int]) -> ColumnElement[float | None]:
-    return select(GameProgress.rating).where(GameProgress.game_id == game_id_column).scalar_subquery()
+    # Rides along with the same representative row as _play_status_subquery, so a game's
+    # card badge and "your rating" reflect the same platform's progress consistently.
+    return (
+        select(GameProgress.rating)
+        .where(GameProgress.game_id == game_id_column)
+        .order_by(_PLAY_STATUS_PRIORITY)
+        .limit(1)
+        .scalar_subquery()
+    )
 
 
 def _row_to_game_with_status(row: Any) -> GameWithStatus:
@@ -108,9 +135,7 @@ def list_top_level_games(
             exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id == collection_id)
         )
     if franchise_id is not None:
-        stmt = stmt.where(
-            exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id == franchise_id)
-        )
+        stmt = stmt.where(exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id == franchise_id))
     stmt = stmt.order_by(Game.name)
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 

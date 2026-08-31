@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.catalog import Game, GameGenre, Genre, Platform
 from app.models.hardware import Accessory, Device, HardwareReferenceEntry
-from app.models.library import GameProgress, LibraryItem, LibraryStatus
+from app.models.library import GameProgress, LibraryItem, LibraryStatus, PlayStatus
 from app.repositories.accessory_repository import _STATUS_COLUMNS as _ACCESSORY_STATUS_COLUMNS
 from app.repositories.accessory_repository import AccessoryWithStatus
 from app.repositories.accessory_repository import _owned_exists as _accessory_owned_exists
@@ -53,27 +54,39 @@ class DashboardStatsData:
 
 
 def get_stats(db: Session) -> DashboardStatsData:
-    total_owned = db.scalar(
-        select(func.count(func.distinct(LibraryItem.game_id))).where(LibraryItem.status == LibraryStatus.OWNED)
-    ) or 0
-    total_wishlisted = db.scalar(
-        select(func.count(func.distinct(LibraryItem.game_id))).where(LibraryItem.status == LibraryStatus.WISHLIST)
-    ) or 0
-    total_tracked = (
+    total_owned = (
         db.scalar(
-            select(func.count(Game.id)).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
+            select(func.count(func.distinct(LibraryItem.game_id))).where(LibraryItem.status == LibraryStatus.OWNED)
         )
+        or 0
+    )
+    total_wishlisted = (
+        db.scalar(
+            select(func.count(func.distinct(LibraryItem.game_id))).where(LibraryItem.status == LibraryStatus.WISHLIST)
+        )
+        or 0
+    )
+    total_tracked = (
+        db.scalar(select(func.count(Game.id)).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category)))
         or 0
     )
     total_playtime_minutes = db.scalar(select(func.coalesce(func.sum(GameProgress.playtime_minutes), 0))) or 0
     average_rating = db.scalar(select(func.avg(GameProgress.rating)).where(GameProgress.rating.is_not(None)))
 
-    play_status_breakdown = {
-        status.value: count
-        for status, count in db.execute(
-            select(GameProgress.play_status, func.count(GameProgress.id)).group_by(GameProgress.play_status)
+    # Counted per-game via the same derived-priority status as _play_status_subquery, not a
+    # raw GROUP BY over game_progress rows — a game with progress on multiple platforms must
+    # count once (under its one representative status), not once per platform. A game with
+    # no progress row at all (subquery yields NULL) counts as PlayStatus.NONE, matching
+    # game_progress_from_orm's default for an unset game.
+    derived_status_counts = Counter(
+        (status or PlayStatus.NONE)
+        for (status,) in db.execute(
+            select(_play_status_subquery(Game.id)).where(
+                Game.parent_game_id.is_(None), _is_browsable_game(Game.category)
+            )
         )
-    }
+    )
+    play_status_breakdown = {status.value: count for status, count in derived_status_counts.items()}
 
     platform_breakdown = [
         NamedCount(name=name, count=count)

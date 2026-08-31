@@ -8,7 +8,7 @@ from app.schemas.franchise import (
     franchise_detail_from_orm,
     franchise_summary_from_orm,
 )
-from app.services import franchise_service
+from app.services import franchise_service, insight_service
 
 router = APIRouter(prefix="/api/franchises", tags=["franchises"], dependencies=[Depends(get_current_user)])
 
@@ -21,4 +21,5 @@ def list_franchises(db: Session = Depends(get_db)) -> list[FranchiseSummaryRespo
 @router.get("/{slug}", response_model=FranchiseDetailResponse)
 def get_franchise(slug: str, db: Session = Depends(get_db)) -> FranchiseDetailResponse:
     franchise, games = franchise_service.get_franchise_with_games(db, slug)
-    return franchise_detail_from_orm(franchise, games)
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return franchise_detail_from_orm(franchise, games, on_sale_game_ids)

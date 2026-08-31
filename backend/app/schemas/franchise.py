@@ -18,12 +18,14 @@ class FranchiseSummaryResponse(CamelModel):
     game_count: int
 
 
-def franchise_detail_from_orm(franchise: Franchise, games: list[GameWithStatus]) -> FranchiseDetailResponse:
+def franchise_detail_from_orm(
+    franchise: Franchise, games: list[GameWithStatus], on_sale_game_ids: frozenset[int] = frozenset()
+) -> FranchiseDetailResponse:
     return FranchiseDetailResponse(
         id=franchise.id,
         name=franchise.name,
         slug=franchise.slug,
-        games=[game_summary_from_orm(game) for game in games],
+        games=[game_summary_from_orm(game, on_sale_game_ids) for game in games],
     )
 
 

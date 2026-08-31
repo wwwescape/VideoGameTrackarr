@@ -24,7 +24,7 @@ const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
   return (
     <Box>
       <GameCard
-        game={{ ...item.game, wishlisted: true, onSale: true }}
+        game={{ ...item.game, wishlisted: true, isOnSale: true }}
         context={addon ? "addon" : "list"}
         contextFunction={() =>
           navigate(`/${addon ? "addon" : "game"}/${gameIdentifier(item.game)}`)

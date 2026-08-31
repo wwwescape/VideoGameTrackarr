@@ -35,6 +35,7 @@ class GameSummaryResponse(CamelModel):
     wishlisted: bool
     play_status: PlayStatus | None
     rating: float | None
+    is_on_sale: bool
 
 
 class GameDetailResponse(GameSummaryResponse):
@@ -83,18 +84,25 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
     }
 
 
-def game_summary_from_orm(status: GameWithStatus) -> GameSummaryResponse:
-    return GameSummaryResponse(**_game_fields(status.game, status))
+def game_summary_from_orm(
+    status: GameWithStatus, on_sale_game_ids: frozenset[int] = frozenset()
+) -> GameSummaryResponse:
+    return GameSummaryResponse(**_game_fields(status.game, status), is_on_sale=status.game.id in on_sale_game_ids)
 
 
 def game_detail_from_orm(
-    status: GameWithStatus, progress: GameProgress | None, tags: list[Tag], steam_app_id: int | None = None
+    status: GameWithStatus,
+    progress: GameProgress | None,
+    tags: list[Tag],
+    steam_app_id: int | None = None,
+    on_sale_game_ids: frozenset[int] = frozenset(),
 ) -> GameDetailResponse:
     game = status.game
     # parent_game_name comes from the `parent_game` relationship, not a plain column, so
     # this can't just be GameDetailResponse.model_validate(game, from_attributes=True).
     return GameDetailResponse(
         **_game_fields(game, status),
+        is_on_sale=game.id in on_sale_game_ids,
         summary=game.summary,
         storyline=game.storyline,
         edition=game.edition,

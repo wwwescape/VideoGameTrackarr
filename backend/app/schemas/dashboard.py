@@ -26,7 +26,9 @@ class DashboardStatsResponse(CamelModel):
     recently_played: list[GameSummaryResponse]
 
 
-def dashboard_stats_from_data(data: DashboardStatsData) -> DashboardStatsResponse:
+def dashboard_stats_from_data(
+    data: DashboardStatsData, on_sale_game_ids: frozenset[int] = frozenset()
+) -> DashboardStatsResponse:
     return DashboardStatsResponse(
         total_owned=data.total_owned,
         total_wishlisted=data.total_wishlisted,
@@ -36,8 +38,8 @@ def dashboard_stats_from_data(data: DashboardStatsData) -> DashboardStatsRespons
         play_status_breakdown=data.play_status_breakdown,
         platform_breakdown=[NamedCountResponse(name=p.name, count=p.count) for p in data.platform_breakdown],
         genre_breakdown=[NamedCountResponse(name=g.name, count=g.count) for g in data.genre_breakdown],
-        recently_added=[game_summary_from_orm(g) for g in data.recently_added],
-        recently_played=[game_summary_from_orm(g) for g in data.recently_played],
+        recently_added=[game_summary_from_orm(g, on_sale_game_ids) for g in data.recently_added],
+        recently_played=[game_summary_from_orm(g, on_sale_game_ids) for g in data.recently_played],
     )
 
 
@@ -49,10 +51,12 @@ class UpcomingReleaseResponse(CamelModel):
     release_date: str
 
 
-def upcoming_release_from_item(item: UpcomingReleaseItem) -> UpcomingReleaseResponse:
+def upcoming_release_from_item(
+    item: UpcomingReleaseItem, on_sale_game_ids: frozenset[int] = frozenset()
+) -> UpcomingReleaseResponse:
     return UpcomingReleaseResponse(
         kind=item.kind,
-        game=game_summary_from_orm(item.game) if item.game else None,
+        game=game_summary_from_orm(item.game, on_sale_game_ids) if item.game else None,
         device=device_summary_from_orm(item.device) if item.device else None,
         accessory=accessory_summary_from_orm(item.accessory) if item.accessory else None,
         release_date=item.release_date.isoformat(),

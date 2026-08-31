@@ -12,17 +12,24 @@ from app.schemas.game import (
     game_summary_from_orm,
 )
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
-from app.services import game_service, manual_game_service, progress_service, tag_service
+from app.services import game_service, insight_service, manual_game_service, progress_service, tag_service
 from app.services.igdb_client import IGDBClient
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(get_current_user)])
 
 
 def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailResponse:
-    progress = progress_service.get_progress(db, game.game.id)
+    progress = progress_service.get_derived_progress(db, game.game.id)
     tags = tag_service.list_tags_for_game(db, game.game.id)
     steam_entry = steam_repository.get_entry_by_game_id(db, game.game.id)
-    return game_detail_from_orm(game, progress, tags, steam_app_id=steam_entry.steam_app_id if steam_entry else None)
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return game_detail_from_orm(
+        game,
+        progress,
+        tags,
+        steam_app_id=steam_entry.steam_app_id if steam_entry else None,
+        on_sale_game_ids=on_sale_game_ids,
+    )
 
 
 @router.get("", response_model=list[GameSummaryResponse])
@@ -42,7 +49,8 @@ def list_games(
         collection_id=collection_id,
         franchise_id=franchise_id,
     )
-    return [game_summary_from_orm(game) for game in games]
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return [game_summary_from_orm(game, on_sale_game_ids) for game in games]
 
 
 @router.get("/{identifier}", response_model=GameDetailResponse)
@@ -59,7 +67,8 @@ def delete_game(game_id: int, db: Session = Depends(get_db)) -> None:
 @router.get("/{game_id}/addons", response_model=list[GameSummaryResponse])
 def list_addons(game_id: int, db: Session = Depends(get_db)) -> list[GameSummaryResponse]:
     addons = game_service.list_addons(db, game_id)
-    return [game_summary_from_orm(addon) for addon in addons]
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return [game_summary_from_orm(addon, on_sale_game_ids) for addon in addons]
 
 
 @router.post("", response_model=GameDetailResponse, status_code=status.HTTP_201_CREATED)

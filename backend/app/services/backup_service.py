@@ -125,6 +125,7 @@ def build_backup_payload(db: Session) -> BackupPayload:
             BackupGameProgress(
                 id=gp.id,
                 game_id=gp.game_id,
+                platform_id=gp.platform_id,
                 play_status=gp.play_status.value,
                 playtime_minutes=gp.playtime_minutes,
                 rating=gp.rating,
@@ -139,6 +140,7 @@ def build_backup_payload(db: Session) -> BackupPayload:
             BackupPlaySession(
                 id=ps.id,
                 game_id=ps.game_id,
+                platform_id=ps.platform_id,
                 started_at=ps.started_at.isoformat(),
                 ended_at=ps.ended_at.isoformat() if ps.ended_at else None,
                 duration_minutes=ps.duration_minutes,
@@ -149,14 +151,10 @@ def build_backup_payload(db: Session) -> BackupPayload:
         notes=[BackupNote(id=n.id, game_id=n.game_id, body=n.body) for n in db.scalars(select(Note))],
         game_tags=[BackupGameTag(game_id=gt.game_id, tag_id=gt.tag_id) for gt in db.scalars(select(GameTag))],
         manufacturers=[BackupManufacturer(id=m.id, name=m.name) for m in db.scalars(select(Manufacturer))],
-        hardware_platforms=[
-            BackupHardwarePlatform(id=p.id, name=p.name) for p in db.scalars(select(HardwarePlatform))
-        ],
+        hardware_platforms=[BackupHardwarePlatform(id=p.id, name=p.name) for p in db.scalars(select(HardwarePlatform))],
         hardware_types=[BackupHardwareType(id=t.id, name=t.name) for t in db.scalars(select(DeviceType))],
         accessory_types=[BackupAccessoryType(id=t.id, name=t.name) for t in db.scalars(select(AccessoryType))],
-        storage_variants=[
-            BackupStorageVariant(id=s.id, name=s.name) for s in db.scalars(select(StorageVariant))
-        ],
+        storage_variants=[BackupStorageVariant(id=s.id, name=s.name) for s in db.scalars(select(StorageVariant))],
         colors=[BackupColor(id=c.id, name=c.name) for c in db.scalars(select(Color))],
         # BackupHardware/BackupUserHardware are the frozen on-disk backup schema names/
         # fields — intentionally not renamed even though the ORM class feeding them
@@ -339,11 +337,17 @@ def restore_backup(db: Session, payload: BackupPayload) -> BackupRestoreResult:
                 notes=li.notes,
             )
         )
+    # platform_id is required now — a backup taken before per-platform Progress has no way
+    # to know which platform a row belonged to, so those rows are dropped on restore rather
+    # than guessed at (same data-loss tradeoff already accepted for the schema migration).
     for gp in payload.game_progress:
+        if gp.platform_id is None:
+            continue
         db.add(
             GameProgress(
                 id=gp.id,
                 game_id=gp.game_id,
+                platform_id=gp.platform_id,
                 play_status=PlayStatus(gp.play_status),
                 playtime_minutes=gp.playtime_minutes,
                 rating=gp.rating,
@@ -354,10 +358,13 @@ def restore_backup(db: Session, payload: BackupPayload) -> BackupRestoreResult:
             )
         )
     for ps in payload.play_sessions:
+        if ps.platform_id is None:
+            continue
         db.add(
             PlaySession(
                 id=ps.id,
                 game_id=ps.game_id,
+                platform_id=ps.platform_id,
                 started_at=datetime.fromisoformat(ps.started_at),
                 ended_at=datetime.fromisoformat(ps.ended_at) if ps.ended_at else None,
                 duration_minutes=ps.duration_minutes,

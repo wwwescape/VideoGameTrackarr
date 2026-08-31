@@ -68,13 +68,11 @@ def ignore_entry(db: Session, steam_app_id: int) -> SteamEntryWithStatus:
 
 
 def _sync_one(db: Session, entry: SteamLibraryEntry) -> None:
-    already_tracked = (
-        len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
+    pc_platform = platform_repository.get_or_create_by_igdb(
+        db, igdb_id=_PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
     )
+    already_tracked = len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
     if not already_tracked:
-        pc_platform = platform_repository.get_or_create_by_igdb(
-            db, igdb_id=_PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
-        )
         library_service.add_library_item(
             db,
             entry.game_id,
@@ -87,12 +85,14 @@ def _sync_one(db: Session, entry: SteamLibraryEntry) -> None:
     # A straight set to Steam's numbers, not a merge — Sync is now an explicit, confirmed
     # action (the confirmation popup shows the current-vs-new delta before this ever runs),
     # so it's allowed to actually overwrite, including downward, rather than silently
-    # capping at the higher of the two like Phase 2 did.
+    # capping at the higher of the two like Phase 2 did. Scoped to the PC platform row only —
+    # a copy owned on another platform (e.g. PS5) keeps its own separate progress untouched.
     # play_status is deliberately left at its model default (NONE) — playtime alone can't
     # tell VGT whether the user considers this backlog/playing/completed/abandoned.
-    progress_service.update_progress(
+    progress_service.upsert_progress_for_platform(
         db,
         entry.game_id,
+        pc_platform.id,
         playtime_minutes=entry.steam_playtime_minutes,
         last_played_at=entry.steam_last_played_at.date() if entry.steam_last_played_at else None,
     )
@@ -105,10 +105,11 @@ def _with_status(db: Session, entry: SteamLibraryEntry) -> SteamEntryWithStatus:
     if entry.game_id is None:
         return SteamEntryWithStatus(entry, SteamEntryStatus.NO_MATCH, None)
 
-    progress = progress_service.get_progress(db, entry.game_id)
-    already_tracked = (
-        len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
+    pc_platform = platform_repository.get_or_create_by_igdb(
+        db, igdb_id=_PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
     )
+    progress = progress_service.get_progress_for_platform(db, entry.game_id, pc_platform.id)
+    already_tracked = len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
     if not already_tracked:
         return SteamEntryWithStatus(entry, SteamEntryStatus.NEW, None)
 

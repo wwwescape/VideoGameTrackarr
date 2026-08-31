@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
 
 from app.models.catalog import Collection, Franchise, Game, GameCategory, GameCollection, GameFranchise, Platform
-from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, Note, PlaySession, Tag
+from app.models.itad import ItadPriceCache
+from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, MediaFormat, Note, PlaySession, Tag
 
 
 def test_list_games_requires_auth(client):
@@ -20,6 +21,42 @@ def test_list_games_returns_top_level_games_only(auth_client, db_session, seed_g
     assert response.status_code == 200
     names = [g["name"] for g in response.json()]
     assert names == ["Test Game"]
+
+
+def test_list_and_detail_expose_is_on_sale_for_a_wishlisted_itad_eligible_game(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            platform_id=seed_pc_platform.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=9.99, current_cut=50)
+    )
+    db_session.commit()
+
+    list_response = auth_client.get("/api/games")
+    detail_response = auth_client.get(f"/api/games/{seed_game.slug}")
+
+    assert list_response.json()[0]["isOnSale"] is True
+    assert detail_response.json()["isOnSale"] is True
+
+
+def test_list_games_is_not_on_sale_without_a_wishlisted_eligible_item(auth_client, db_session, seed_game):
+    # A cached ITAD price with no eligible wishlist row backing it (nothing owned/wishlisted
+    # on an ITAD-eligible platform) must not flag the game as on sale.
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=9.99, current_cut=50)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games")
+
+    assert response.json()[0]["isOnSale"] is False
 
 
 def test_list_games_excludes_non_browsable_categories_even_without_a_parent(auth_client, db_session, seed_game):
@@ -61,9 +98,7 @@ def test_list_games_search_is_case_insensitive_substring(auth_client, db_session
     assert response.json() == []
 
 
-def test_list_games_filters_by_platform_tag_collection_and_franchise(
-    auth_client, db_session, seed_game, seed_platform
-):
+def test_list_games_filters_by_platform_tag_collection_and_franchise(auth_client, db_session, seed_game, seed_platform):
     other_game = Game(igdb_id=2200, name="Other Game", category=GameCategory.MAIN_GAME)
     db_session.add(other_game)
     db_session.commit()
@@ -260,9 +295,7 @@ def test_list_addons_returns_children(auth_client, db_session, seed_game):
     assert [a["name"] for a in response.json()] == ["Test Game DLC"]
 
 
-def test_delete_game_cascades_to_addons_and_library_items(
-    auth_client, db_session, seed_game, seed_platform
-):
+def test_delete_game_cascades_to_addons_and_library_items(auth_client, db_session, seed_game, seed_platform):
     addon = Game(igdb_id=2002, name="Test Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)
     db_session.commit()
@@ -289,9 +322,13 @@ def test_delete_game_404_for_missing_game(auth_client):
     assert response.status_code == 404
 
 
-def test_delete_game_cascades_to_progress_sessions_notes_and_tags(auth_client, db_session, seed_game):
-    db_session.add(GameProgress(game_id=seed_game.id, rating=9))
-    db_session.add(PlaySession(game_id=seed_game.id, started_at=datetime(2026, 1, 1, 10, 0, tzinfo=UTC)))
+def test_delete_game_cascades_to_progress_sessions_notes_and_tags(auth_client, db_session, seed_game, seed_platform):
+    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, rating=9))
+    db_session.add(
+        PlaySession(
+            game_id=seed_game.id, platform_id=seed_platform.id, started_at=datetime(2026, 1, 1, 10, 0, tzinfo=UTC)
+        )
+    )
     db_session.add(Note(game_id=seed_game.id, body="note"))
     tag = Tag(name="Cascade Test Tag")
     db_session.add(tag)

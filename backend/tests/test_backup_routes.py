@@ -46,7 +46,9 @@ def test_export_backup_contains_every_section(auth_client, db_session, seed_game
             game_id=seed_game.id, platform_id=seed_platform.id, region_id=seed_region.id, status=LibraryStatus.OWNED
         )
     )
-    db_session.add(GameProgress(game_id=seed_game.id, play_status=PlayStatus.PLAYING, rating=8))
+    db_session.add(
+        GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING, rating=8)
+    )
     db_session.add(Note(game_id=seed_game.id, body="a note"))
     tag = Tag(name="Backup Test Tag")
     db_session.add(tag)
@@ -124,7 +126,14 @@ def test_restore_backup_replaces_existing_data(auth_client, db_session, seed_gam
             }
         ],
         "game_progress": [
-            {"id": 300, "game_id": 100, "play_status": "completed", "playtime_minutes": 600, "rating": 9}
+            {
+                "id": 300,
+                "game_id": 100,
+                "platform_id": 50,
+                "play_status": "completed",
+                "playtime_minutes": 600,
+                "rating": 9,
+            }
         ],
         "play_sessions": [],
         "notes": [{"id": 400, "game_id": 100, "body": "Restored note"}],
@@ -163,6 +172,29 @@ def test_restore_backup_replaces_existing_data(auth_client, db_session, seed_gam
     assert db_session.query(GameTag).filter_by(game_id=100, tag_id=70).count() == 1
 
     Path(body["safetySnapshotPath"]).unlink()
+
+
+def test_restore_backup_skips_progress_rows_from_a_pre_platform_scoped_backup(auth_client, db_session):
+    # A backup taken before per-platform Progress has no platform_id to assign a row to —
+    # restore drops those rows rather than crashing on the new NOT NULL column.
+    snake_payload = {
+        "version": 1,
+        "exported_at": "2026-01-01T00:00:00+00:00",
+        "games": [{"id": 100, "igdb_id": None, "name": "Old Backup Game", "category": "main_game"}],
+        "game_progress": [{"id": 300, "game_id": 100, "play_status": "completed", "playtime_minutes": 600}],
+        "play_sessions": [{"id": 500, "game_id": 100, "started_at": "2026-01-01T00:00:00+00:00"}],
+    }
+
+    response = _upload_backup(auth_client, snake_payload)
+
+    assert response.status_code == 202
+    status_body = _wait_for_restore_completion(auth_client)
+    assert status_body["status"] == "completed"
+
+    assert db_session.query(Game).filter_by(id=100).count() == 1
+    assert db_session.query(GameProgress).filter_by(game_id=100).count() == 0
+
+    Path(status_body["result"]["safetySnapshotPath"]).unlink()
 
 
 def test_restore_backup_restores_hardware_sections(auth_client, db_session):

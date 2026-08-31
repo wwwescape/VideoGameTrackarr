@@ -51,7 +51,12 @@ export interface GameCardGame {
   owned?: boolean;
   wishlisted?: boolean;
   playStatus?: PlayStatus | null;
-  onSale?: boolean;
+  // Named to match GameSummary's own field so a GameSummary object can be passed straight
+  // through as `game` everywhere (list, collections, series, addons, release calendar)
+  // without every call site having to remap it — only hand-built card objects (the
+  // Dashboard's On Sale sections, built from OnSaleItem rather than a full GameSummary)
+  // need to set it explicitly.
+  isOnSale?: boolean;
 }
 
 interface GameCardProps {
@@ -175,7 +180,7 @@ const GameCard = ({
               <Typography variant="caption">{t("games.card.noCover")}</Typography>
             </Box>
           )}
-          {showsBadges && game.onSale ? (
+          {showsBadges && game.isOnSale ? (
             <Chip
               label={t("games.card.onSaleLabel")}
               color="success"

@@ -18,12 +18,14 @@ class CollectionSummaryResponse(CamelModel):
     game_count: int
 
 
-def collection_detail_from_orm(collection: Collection, games: list[GameWithStatus]) -> CollectionDetailResponse:
+def collection_detail_from_orm(
+    collection: Collection, games: list[GameWithStatus], on_sale_game_ids: frozenset[int] = frozenset()
+) -> CollectionDetailResponse:
     return CollectionDetailResponse(
         id=collection.id,
         name=collection.name,
         slug=collection.slug,
-        games=[game_summary_from_orm(game) for game in games],
+        games=[game_summary_from_orm(game, on_sale_game_ids) for game in games],
     )
 
 

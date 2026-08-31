@@ -1,13 +1,18 @@
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.library import PlaySession
 
 
 def list_play_sessions(db: Session, game_id: int) -> list[PlaySession]:
-    stmt = select(PlaySession).where(PlaySession.game_id == game_id).order_by(PlaySession.started_at.desc())
+    stmt = (
+        select(PlaySession)
+        .options(joinedload(PlaySession.platform))
+        .where(PlaySession.game_id == game_id)
+        .order_by(PlaySession.started_at.desc())
+    )
     return list(db.scalars(stmt))
 
 

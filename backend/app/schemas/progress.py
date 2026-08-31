@@ -7,7 +7,10 @@ from app.schemas.base import CamelModel
 
 
 class GameProgressResponse(CamelModel):
+    id: int | None
     game_id: int
+    platform_id: int | None
+    platform_name: str | None
     play_status: PlayStatus
     playtime_minutes: int
     rating: float | None
@@ -19,10 +22,15 @@ class GameProgressResponse(CamelModel):
 
 def game_progress_from_orm(game_id: int, progress: GameProgress | None) -> GameProgressResponse:
     # Every game conceptually has progress, it's just unset until the user touches it —
-    # so this returns a default rather than letting callers special-case a 404.
+    # so this returns a default rather than letting callers special-case a 404. Used for
+    # the derived-summary embed (GameDetailResponse.progress), where no single platform
+    # applies.
     if progress is None:
         return GameProgressResponse(
+            id=None,
             game_id=game_id,
+            platform_id=None,
+            platform_name=None,
             play_status=PlayStatus.NONE,
             playtime_minutes=0,
             rating=None,
@@ -32,7 +40,10 @@ def game_progress_from_orm(game_id: int, progress: GameProgress | None) -> GameP
             last_played_at=None,
         )
     return GameProgressResponse(
+        id=progress.id,
         game_id=progress.game_id,
+        platform_id=progress.platform_id,
+        platform_name=progress.platform.name if progress.platform else None,
         play_status=progress.play_status,
         playtime_minutes=progress.playtime_minutes,
         rating=progress.rating,
@@ -41,6 +52,17 @@ def game_progress_from_orm(game_id: int, progress: GameProgress | None) -> GameP
         completed_at=progress.completed_at,
         last_played_at=progress.last_played_at,
     )
+
+
+class GameProgressCreateRequest(CamelModel):
+    platform_id: int
+    play_status: PlayStatus = PlayStatus.NONE
+    playtime_minutes: int = Field(default=0, ge=0)
+    rating: float | None = Field(default=None, ge=0, le=10)
+    review: str | None = None
+    started_at: date | None = None
+    completed_at: date | None = None
+    last_played_at: date | None = None
 
 
 class GameProgressUpdateRequest(CamelModel):

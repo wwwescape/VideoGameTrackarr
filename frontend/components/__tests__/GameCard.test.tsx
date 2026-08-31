@@ -76,24 +76,24 @@ describe("GameCard", () => {
     expect(container.querySelector('svg[aria-label="In your collection"]')).toBeNull();
   });
 
-  it("shows an On Sale chip when onSale is true in list context", () => {
+  it("shows an On Sale chip when isOnSale is true in list context", () => {
     renderWithTheme(
-      <GameCard game={{ ...baseGame, onSale: true }} context="list" contextFunction={vi.fn()} />
+      <GameCard game={{ ...baseGame, isOnSale: true }} context="list" contextFunction={vi.fn()} />
     );
 
     expect(screen.getByText("On Sale")).toBeInTheDocument();
   });
 
-  it("does not show an On Sale chip when onSale is false or unset", () => {
+  it("does not show an On Sale chip when isOnSale is false or unset", () => {
     renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} />);
 
     expect(screen.queryByText("On Sale")).not.toBeInTheDocument();
   });
 
-  it("hides the On Sale chip while in selectable mode, even if onSale is true", () => {
+  it("hides the On Sale chip while in selectable mode, even if isOnSale is true", () => {
     renderWithTheme(
       <GameCard
-        game={{ ...baseGame, onSale: true }}
+        game={{ ...baseGame, isOnSale: true }}
         context="list"
         contextFunction={vi.fn()}
         selectable

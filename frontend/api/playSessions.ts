@@ -6,7 +6,10 @@ export async function listPlaySessions(gameId: number): Promise<PlaySession[]> {
   return response.data;
 }
 
-export async function createPlaySession(gameId: number, input: PlaySessionInput): Promise<PlaySession> {
+export async function createPlaySession(
+  gameId: number,
+  input: PlaySessionInput
+): Promise<PlaySession> {
   const response = await apiClient.post<PlaySession>(`/api/games/${gameId}/play-sessions`, input);
   return response.data;
 }

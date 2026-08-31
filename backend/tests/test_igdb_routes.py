@@ -570,12 +570,12 @@ def test_merge_into_igdb_dedupes_a_tag_shared_by_both_entries(auth_client, db_se
     assert target_tag_ids == {shared_tag.id, other_tag.id}
 
 
-def test_merge_into_igdb_conflict_when_both_entries_have_progress(auth_client, db_session, seed_game):
+def test_merge_into_igdb_conflict_when_both_entries_have_progress(auth_client, db_session, seed_game, seed_platform):
     manual_game = Game(name="Custom Duplicate", category=None)
     db_session.add(manual_game)
     db_session.commit()
-    db_session.add(GameProgress(game_id=seed_game.id, rating=8))
-    db_session.add(GameProgress(game_id=manual_game.id, rating=9))
+    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, rating=8))
+    db_session.add(GameProgress(game_id=manual_game.id, platform_id=seed_platform.id, rating=9))
     db_session.commit()
 
     response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})

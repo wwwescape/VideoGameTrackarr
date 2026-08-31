@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -75,16 +75,17 @@ class LibraryItem(TimestampMixin, Base):
 
 
 class GameProgress(TimestampMixin, Base):
-    """One row per game: play status, playtime, personal rating/review."""
+    """One row per (game, platform) — a game owned on multiple platforms tracks progress
+    separately for each, since playtime/status on one copy says nothing about another."""
 
     __tablename__ = "game_progress"
+    __table_args__ = (UniqueConstraint("game_id", "platform_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), unique=True, index=True, nullable=False)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True, nullable=False)
+    platform_id: Mapped[int] = mapped_column(ForeignKey("platforms.id"), nullable=False)
 
-    play_status: Mapped[PlayStatus] = mapped_column(
-        enum_column(PlayStatus), nullable=False, default=PlayStatus.NONE
-    )
+    play_status: Mapped[PlayStatus] = mapped_column(enum_column(PlayStatus), nullable=False, default=PlayStatus.NONE)
     playtime_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     rating: Mapped[float | None] = mapped_column()
     review: Mapped[str | None] = mapped_column(Text)
@@ -94,6 +95,7 @@ class GameProgress(TimestampMixin, Base):
     last_played_at: Mapped[date | None] = mapped_column(Date)
 
     game: Mapped["Game"] = relationship()  # noqa: F821
+    platform: Mapped["Platform"] = relationship()  # noqa: F821
 
 
 class PlaySession(Base):
@@ -101,12 +103,14 @@ class PlaySession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True, nullable=False)
+    platform_id: Mapped[int] = mapped_column(ForeignKey("platforms.id"), nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     duration_minutes: Mapped[int | None] = mapped_column(Integer)
     notes: Mapped[str | None] = mapped_column(Text)
 
     game: Mapped["Game"] = relationship()  # noqa: F821
+    platform: Mapped["Platform"] = relationship()  # noqa: F821
 
 
 class Note(TimestampMixin, Base):
@@ -136,5 +140,3 @@ class GameTag(Base):
 
     game: Mapped["Game"] = relationship()  # noqa: F821
     tag: Mapped["Tag"] = relationship()
-
-

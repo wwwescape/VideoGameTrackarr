@@ -42,6 +42,11 @@ export interface EnhancedTableRow {
   [key: string]: unknown;
 }
 
+// Matches MUI's own checkbox-cell padding closely enough to look right, and gives the
+// checkbox column an explicit width so it doesn't unpredictably absorb leftover space once
+// table-layout: fixed is in play (see the width-computation comment below).
+const CHECKBOX_COLUMN_WIDTH = 58;
+
 type Order = "asc" | "desc";
 
 function descendingComparator<T extends EnhancedTableRow>(a: T, b: T, orderBy: string): number {
@@ -105,7 +110,7 @@ const EnhancedTableHead = ({
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox">
+        <TableCell padding="checkbox" sx={{ width: CHECKBOX_COLUMN_WIDTH }}>
           <Checkbox
             color="primary"
             indeterminate={numSelected > 0 && numSelected < rowCount}
@@ -199,13 +204,13 @@ const EnhancedTableToolbar = ({
 
       {numSelected > 0 ? (
         <Tooltip title={t("common.delete")}>
-          <IconButton onClick={handleDeleteClick}>
+          <IconButton onClick={handleDeleteClick} aria-label={`${t("common.delete")} ${tableName}`}>
             <DeleteIcon />
           </IconButton>
         </Tooltip>
       ) : (
         <Tooltip title={t("common.add")}>
-          <IconButton onClick={handleAddClick}>
+          <IconButton onClick={handleAddClick} aria-label={`${t("common.add")} ${tableName}`}>
             <AddIcon />
           </IconButton>
         </Tooltip>
@@ -308,6 +313,22 @@ const EnhancedTable = ({
   );
 
   const dataCells = headCells.filter((cell) => !cell.disableHeader);
+  // Tables without a move-between-status concept (e.g. Progress/Play Sessions) use the
+  // combined "actions" cell instead of a separate "move" cell — the mobile card view's
+  // move button only makes sense when a "move" cell is actually present.
+  const hasMoveColumn = headCells.some((cell) => cell.id === "move");
+
+  // When every column declares a fixed pixel width (e.g. GameLibrarySection's Owned/Wishlist
+  // tables, which deliberately share widths so their columns line up), pin the table to an
+  // exact total width under table-layout: fixed. Without an exact width, a table left to
+  // fill 100% would redistribute any leftover space unpredictably (typically dumping it all
+  // into the one column — usually the checkbox column — that lacks an explicit width), which
+  // would defeat the whole point of sharing widths between sibling tables. Tables that don't
+  // opt into per-column widths (e.g. TagManagerPage's) keep the original auto layout.
+  const allColumnsHaveExplicitWidth = headCells.every((cell) => typeof cell.width === "number");
+  const totalTableWidth = allColumnsHaveExplicitWidth
+    ? CHECKBOX_COLUMN_WIDTH + headCells.reduce((sum, cell) => sum + (cell.width as number), 0)
+    : undefined;
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -365,17 +386,19 @@ const EnhancedTable = ({
                         spacing={0.5}
                         sx={{ justifyContent: "flex-end", pt: 0.5 }}
                       >
-                        <Tooltip
-                          title={
-                            moveDirection === "up"
-                              ? t("table.moveToCollection")
-                              : t("table.moveToWishlist")
-                          }
-                        >
-                          <IconButton onClick={(event) => handleMove(event, row.id)}>
-                            {moveDirection === "up" ? <MoveUpIcon /> : <MoveDownIcon />}
-                          </IconButton>
-                        </Tooltip>
+                        {hasMoveColumn ? (
+                          <Tooltip
+                            title={
+                              moveDirection === "up"
+                                ? t("table.moveToCollection")
+                                : t("table.moveToWishlist")
+                            }
+                          >
+                            <IconButton onClick={(event) => handleMove(event, row.id)}>
+                              {moveDirection === "up" ? <MoveUpIcon /> : <MoveDownIcon />}
+                            </IconButton>
+                          </Tooltip>
+                        ) : null}
                         <Tooltip title={t("common.edit")}>
                           <IconButton onClick={(event) => handleEdit(event, row.id)}>
                             <EditIcon />
@@ -395,7 +418,16 @@ const EnhancedTable = ({
           </Stack>
         ) : (
           <TableContainer>
-            <Table sx={{ minWidth: 720 }} aria-labelledby="tableTitle" size="small">
+            <Table
+              sx={{
+                minWidth: totalTableWidth ?? 720,
+                ...(totalTableWidth
+                  ? { width: totalTableWidth, tableLayout: "fixed" }
+                  : {}),
+              }}
+              aria-labelledby="tableTitle"
+              size="small"
+            >
               <EnhancedTableHead
                 numSelected={selected.length}
                 order={order}
@@ -421,7 +453,7 @@ const EnhancedTable = ({
                       selected={isItemSelected}
                       sx={{ cursor: "pointer" }}
                     >
-                      <TableCell padding="checkbox">
+                      <TableCell padding="checkbox" sx={{ width: CHECKBOX_COLUMN_WIDTH }}>
                         <Checkbox
                           color="primary"
                           checked={isItemSelected}

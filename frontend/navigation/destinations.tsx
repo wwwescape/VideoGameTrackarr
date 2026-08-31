@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { TFunction } from "i18next";
-import Box from "@mui/material/Box";
 import AddIcon from "@mui/icons-material/Add";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import CableIcon from "@mui/icons-material/Cable";
@@ -17,7 +16,7 @@ import MemoryIcon from "@mui/icons-material/Memory";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SellIcon from "@mui/icons-material/Sell";
 import SettingsIcon from "@mui/icons-material/Settings";
-import steamLogo from "../assets/steam-logo.png";
+import SteamIcon from "../icons/SteamIcon";
 
 export interface NavSubDestination {
   to: string;
@@ -72,12 +71,7 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
           label: t("nav.orphanedAccessories"),
           icon: <LinkOffIcon />,
         },
-        {
-          to: "/insights/steam-sync",
-          label: t("nav.steamSync"),
-          // Decorative — the adjacent ListItemText already provides the accessible name.
-          icon: <Box component="img" src={steamLogo} alt="" sx={{ width: 20, height: 20 }} />,
-        },
+        { to: "/insights/steam-sync", label: t("nav.steamSync"), icon: <SteamIcon /> },
         { to: "/insights/on-sale", label: t("nav.onSale"), icon: <SellIcon /> },
       ],
     },

@@ -185,45 +185,6 @@ const LibraryItemDialog = ({
           />
         </FormControl>
         <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
-          <Controller
-            name="regionId"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete<SelectOption>
-                options={regionOptions}
-                getOptionLabel={(option) => option.label}
-                isOptionEqualToValue={(option, value) => option.value === value.value}
-                value={regionOptions.find((option) => option.value === field.value) ?? noneOption}
-                onChange={(_event, option) => field.onChange(option?.value)}
-                renderInput={(params: AutocompleteRenderInputParams) => (
-                  <TextField {...params} label={t("dialogs.libraryItem.regionLabel")} />
-                )}
-              />
-            )}
-          />
-        </FormControl>
-        <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
-          <Controller
-            name="ratingBoard"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete<RatingBoardOption>
-                options={ratingBoardOptions}
-                getOptionLabel={(option) => option.label}
-                isOptionEqualToValue={(option, value) => option.value === value.value}
-                value={
-                  ratingBoardOptions.find((option) => option.value === field.value) ??
-                  ratingBoardOptions[0]
-                }
-                onChange={(_event, option) => field.onChange(option?.value)}
-                renderInput={(params: AutocompleteRenderInputParams) => (
-                  <TextField {...params} label={t("dialogs.libraryItem.ratingBoardLabel")} />
-                )}
-              />
-            )}
-          />
-        </FormControl>
-        <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
           <FormLabel id="format">{t("dialogs.libraryItem.formatLabel")}</FormLabel>
           <Controller
             name="format"
@@ -267,23 +228,25 @@ const LibraryItemDialog = ({
             />
           </FormControl>
         ) : null}
-        <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
-          <Controller
-            name="price"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                fullWidth
-                type="number"
-                label={t("dialogs.libraryItem.priceLabel")}
-                value={field.value ?? ""}
-                onChange={(event) =>
-                  field.onChange(event.target.value === "" ? undefined : Number(event.target.value))
-                }
-              />
-            )}
-          />
-        </FormControl>
+        {status === "owned" ? (
+          <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
+            <Controller
+              name="price"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t("dialogs.libraryItem.priceLabel")}
+                  value={field.value ?? ""}
+                  onChange={(event) =>
+                    field.onChange(event.target.value === "" ? undefined : Number(event.target.value))
+                  }
+                />
+              )}
+            />
+          </FormControl>
+        ) : null}
         {status === "wishlist" ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
             <Controller
@@ -306,6 +269,45 @@ const LibraryItemDialog = ({
             />
           </FormControl>
         ) : null}
+        <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
+          <Controller
+            name="regionId"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete<SelectOption>
+                options={regionOptions}
+                getOptionLabel={(option) => option.label}
+                isOptionEqualToValue={(option, value) => option.value === value.value}
+                value={regionOptions.find((option) => option.value === field.value) ?? noneOption}
+                onChange={(_event, option) => field.onChange(option?.value)}
+                renderInput={(params: AutocompleteRenderInputParams) => (
+                  <TextField {...params} label={t("dialogs.libraryItem.regionLabel")} />
+                )}
+              />
+            )}
+          />
+        </FormControl>
+        <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
+          <Controller
+            name="ratingBoard"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete<RatingBoardOption>
+                options={ratingBoardOptions}
+                getOptionLabel={(option) => option.label}
+                isOptionEqualToValue={(option, value) => option.value === value.value}
+                value={
+                  ratingBoardOptions.find((option) => option.value === field.value) ??
+                  ratingBoardOptions[0]
+                }
+                onChange={(_event, option) => field.onChange(option?.value)}
+                renderInput={(params: AutocompleteRenderInputParams) => (
+                  <TextField {...params} label={t("dialogs.libraryItem.ratingBoardLabel")} />
+                )}
+              />
+            )}
+          />
+        </FormControl>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">

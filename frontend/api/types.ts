@@ -43,10 +43,16 @@ export interface GameSummary {
   wishlisted: boolean;
   playStatus: PlayStatus | null;
   rating: number | null;
+  isOnSale: boolean;
 }
 
 export interface GameProgress {
+  // Null for the derived-summary embed when a game has no progress on any platform yet;
+  // always set for a row returned from the per-platform list/create/update endpoints.
+  id: number | null;
   gameId: number;
+  platformId: number | null;
+  platformName: string | null;
   playStatus: PlayStatus;
   playtimeMinutes: number;
   rating: number | null;
@@ -54,6 +60,17 @@ export interface GameProgress {
   startedAt: string | null;
   completedAt: string | null;
   lastPlayedAt: string | null;
+}
+
+export interface GameProgressCreateInput {
+  platformId: number;
+  playStatus?: PlayStatus;
+  playtimeMinutes?: number;
+  rating?: number | null;
+  review?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  lastPlayedAt?: string | null;
 }
 
 export interface GameProgressUpdateInput {
@@ -69,6 +86,8 @@ export interface GameProgressUpdateInput {
 export interface PlaySession {
   id: number;
   gameId: number;
+  platformId: number;
+  platformName: string | null;
   startedAt: string;
   endedAt: string | null;
   durationMinutes: number | null;
@@ -76,6 +95,7 @@ export interface PlaySession {
 }
 
 export interface PlaySessionInput {
+  platformId: number;
   startedAt: string;
   endedAt?: string | null;
   durationMinutes?: number | null;

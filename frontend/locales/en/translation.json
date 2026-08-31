@@ -86,7 +86,7 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
       "digitalStorefrontLabel": "Digital Storefront",
-      "priceLabel": "Price",
+      "priceLabel": "Purchase Price",
       "targetPriceLabel": "Target price",
       "targetPriceHelperText": "Get flagged on the On Sale page once the price drops to or below this."
     }
@@ -193,6 +193,14 @@
         "steamImport": {
           "name": "Steam import",
           "description": "Fetches your Steam library and matches it to your catalog — nothing is added or changed automatically. Review and sync in Insights → Steam Sync."
+        },
+        "itadRefresh": {
+          "name": "ITAD price refresh",
+          "description": "Refreshes sale prices and historical lows for wishlisted Windows/Mac/Linux/Android games via IsThereAnyDeal — powers the On Sale badges and Insights → On Sale."
+        },
+        "platpricesRefresh": {
+          "name": "PlatPrices price refresh",
+          "description": "Refreshes sale prices for wishlisted PlayStation games via PlatPrices — powers the On Sale badges and Insights → On Sale."
         }
       }
     },
@@ -907,19 +915,41 @@
   },
   "playSessions": {
     "title": "Play sessions",
-    "subtitle": "Log individual sessions if you want a finer-grained history",
+    "subheader": "Log individual sessions per platform if you want a finer-grained history",
+    "tableName": "Play sessions",
+    "platformColumn": "Platform",
+    "startedColumn": "Started",
+    "endedColumn": "Ended",
+    "durationColumn": "Duration",
+    "addDialogTitle": "Log play session",
+    "updateDialogTitle": "Update play session",
+    "platformLabel": "Platform",
     "startedLabel": "Started",
     "endedLabel": "Ended",
     "notesLabel": "Notes",
-    "logButton": "Log session",
-    "noSessions": "No sessions logged yet.",
+    "platformRequiredError": "Select a platform.",
+    "noOwnedPlatformsMessage": "Add this game to your collection on a platform first.",
     "startRequiredError": "A start time is required to log a session.",
-    "addError": "Error logging play session. Please try again.",
-    "deleteError": "Error deleting play session. Please try again."
+    "addSuccessToast": "Play session logged!",
+    "addErrorToast": "Error logging play session. Please try again.",
+    "updateSuccessToast": "Play session updated!",
+    "updateErrorToast": "Error updating play session. Please try again.",
+    "deleteErrorToast": "Error deleting play session. Please try again.",
+    "removedToast_one": "Play session removed",
+    "removedToast_other": "Play sessions removed"
   },
-  "progressStatus": {
+  "progress": {
     "title": "Progress",
-    "subtitle": "Status, playtime, and your own rating/review",
+    "subheader": "Play status and playtime, tracked separately per owned platform",
+    "tableName": "Progress",
+    "platformColumn": "Platform",
+    "statusColumn": "Status",
+    "playtimeColumn": "Playtime",
+    "ratingColumn": "Rating",
+    "lastPlayedColumn": "Last played",
+    "addDialogTitle": "Add progress",
+    "updateDialogTitle": "Update progress",
+    "platformLabel": "Platform",
     "statusLabel": "Status",
     "playtimeLabel": "Playtime (minutes)",
     "playtimeHelperText": "≈ {{hours}} hours",
@@ -930,10 +960,16 @@
     "completedLabel": "Completed",
     "lastPlayedLabel": "Last played",
     "reviewLabel": "Review",
-    "saveButton": "Save progress",
+    "platformRequiredError": "Select a platform.",
+    "noPlatformsAvailableMessage": "Add this game to your collection on a platform first, or every owned platform already has progress logged.",
     "playtimeError": "Playtime must be a non-negative number of minutes.",
-    "saveSuccess": "Progress saved!",
-    "saveError": "Error saving progress. Please try again.",
+    "addSuccessToast": "Progress added!",
+    "addErrorToast": "Error adding progress. Please try again.",
+    "updateSuccessToast": "Progress updated!",
+    "updateErrorToast": "Error updating progress. Please try again.",
+    "deleteErrorToast": "Error deleting progress. Please try again.",
+    "removedToast_one": "Progress removed",
+    "removedToast_other": "Progress entries removed",
     "statusOptions": {
       "none": "Not started",
       "backlog": "Backlog",

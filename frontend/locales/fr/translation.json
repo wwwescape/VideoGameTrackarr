@@ -86,7 +86,7 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Autre",
       "digitalStorefrontLabel": "Boutique numérique",
-      "priceLabel": "Prix",
+      "priceLabel": "Prix d'achat",
       "targetPriceLabel": "Prix cible",
       "targetPriceHelperText": "Sera signalé sur la page En promotion dès que le prix descend à ce niveau ou en dessous."
     }
@@ -193,6 +193,14 @@
         "steamImport": {
           "name": "Importation Steam",
           "description": "Récupère votre bibliothèque Steam et l'associe à votre catalogue — rien n'est ajouté ni modifié automatiquement. Vérifiez et synchronisez dans Insights → Synchronisation Steam."
+        },
+        "itadRefresh": {
+          "name": "Actualisation des prix ITAD",
+          "description": "Actualise les prix promotionnels et les plus bas historiques pour les jeux Windows/Mac/Linux/Android de votre liste de souhaits via IsThereAnyDeal — alimente les badges En promotion et Insights → En promotion."
+        },
+        "platpricesRefresh": {
+          "name": "Actualisation des prix PlatPrices",
+          "description": "Actualise les prix promotionnels pour les jeux PlayStation de votre liste de souhaits via PlatPrices — alimente les badges En promotion et Insights → En promotion."
         }
       }
     },
@@ -907,19 +915,41 @@
   },
   "playSessions": {
     "title": "Sessions de jeu",
-    "subtitle": "Enregistrez des sessions individuelles pour un historique plus détaillé",
+    "subheader": "Enregistrez des sessions individuelles par plateforme pour un historique plus détaillé",
+    "tableName": "Sessions de jeu",
+    "platformColumn": "Plateforme",
+    "startedColumn": "Débutée",
+    "endedColumn": "Terminée",
+    "durationColumn": "Durée",
+    "addDialogTitle": "Enregistrer une session de jeu",
+    "updateDialogTitle": "Mettre à jour la session de jeu",
+    "platformLabel": "Plateforme",
     "startedLabel": "Débutée",
     "endedLabel": "Terminée",
     "notesLabel": "Notes",
-    "logButton": "Enregistrer la session",
-    "noSessions": "Aucune session enregistrée pour l'instant.",
+    "platformRequiredError": "Sélectionnez une plateforme.",
+    "noOwnedPlatformsMessage": "Ajoutez d'abord ce jeu à votre collection sur une plateforme.",
     "startRequiredError": "Une heure de début est requise pour enregistrer une session.",
-    "addError": "Erreur lors de l'enregistrement de la session de jeu. Veuillez réessayer.",
-    "deleteError": "Erreur lors de la suppression de la session de jeu. Veuillez réessayer."
+    "addSuccessToast": "Session de jeu enregistrée !",
+    "addErrorToast": "Erreur lors de l'enregistrement de la session de jeu. Veuillez réessayer.",
+    "updateSuccessToast": "Session de jeu mise à jour !",
+    "updateErrorToast": "Erreur lors de la mise à jour de la session de jeu. Veuillez réessayer.",
+    "deleteErrorToast": "Erreur lors de la suppression de la session de jeu. Veuillez réessayer.",
+    "removedToast_one": "Session de jeu supprimée",
+    "removedToast_other": "Sessions de jeu supprimées"
   },
-  "progressStatus": {
+  "progress": {
     "title": "Progression",
-    "subtitle": "Statut, temps de jeu et votre propre note/critique",
+    "subheader": "Statut et temps de jeu, suivis séparément pour chaque plateforme possédée",
+    "tableName": "Progression",
+    "platformColumn": "Plateforme",
+    "statusColumn": "Statut",
+    "playtimeColumn": "Temps de jeu",
+    "ratingColumn": "Note",
+    "lastPlayedColumn": "Dernière session",
+    "addDialogTitle": "Ajouter une progression",
+    "updateDialogTitle": "Mettre à jour la progression",
+    "platformLabel": "Plateforme",
     "statusLabel": "Statut",
     "playtimeLabel": "Temps de jeu (minutes)",
     "playtimeHelperText": "≈ {{hours}} heures",
@@ -930,10 +960,16 @@
     "completedLabel": "Terminé",
     "lastPlayedLabel": "Dernière session",
     "reviewLabel": "Critique",
-    "saveButton": "Enregistrer la progression",
+    "platformRequiredError": "Sélectionnez une plateforme.",
+    "noPlatformsAvailableMessage": "Ajoutez d'abord ce jeu à votre collection sur une plateforme, ou toutes les plateformes possédées ont déjà une progression enregistrée.",
     "playtimeError": "Le temps de jeu doit être un nombre de minutes non négatif.",
-    "saveSuccess": "Progression enregistrée !",
-    "saveError": "Erreur lors de l'enregistrement de la progression. Veuillez réessayer.",
+    "addSuccessToast": "Progression ajoutée !",
+    "addErrorToast": "Erreur lors de l'ajout de la progression. Veuillez réessayer.",
+    "updateSuccessToast": "Progression mise à jour !",
+    "updateErrorToast": "Erreur lors de la mise à jour de la progression. Veuillez réessayer.",
+    "deleteErrorToast": "Erreur lors de la suppression de la progression. Veuillez réessayer.",
+    "removedToast_one": "Progression supprimée",
+    "removedToast_other": "Entrées de progression supprimées",
     "statusOptions": {
       "none": "Pas commencé",
       "backlog": "À faire",

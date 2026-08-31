@@ -75,6 +75,9 @@ class BackupLibraryItem(_BackupRow):
 class BackupGameProgress(_BackupRow):
     id: int
     game_id: int
+    # Optional for backward compatibility with backups taken before per-platform Progress —
+    # restore skips any row where this is missing (see backup_service.restore_backup).
+    platform_id: int | None = None
     play_status: str
     playtime_minutes: int = 0
     rating: float | None = None
@@ -87,6 +90,7 @@ class BackupGameProgress(_BackupRow):
 class BackupPlaySession(_BackupRow):
     id: int
     game_id: int
+    platform_id: int | None = None
     started_at: str
     ended_at: str | None = None
     duration_minutes: int | None = None

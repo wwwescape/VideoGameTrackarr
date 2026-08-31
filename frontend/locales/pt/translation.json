@@ -86,7 +86,7 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Outro",
       "digitalStorefrontLabel": "Loja digital",
-      "priceLabel": "Preço",
+      "priceLabel": "Preço de compra",
       "targetPriceLabel": "Preço-alvo",
       "targetPriceHelperText": "Fica assinalado na página Em Promoção quando o preço descer até este valor ou menos."
     }
@@ -193,6 +193,14 @@
         "steamImport": {
           "name": "Importação Steam",
           "description": "Obtém a sua biblioteca Steam e associa-a ao seu catálogo — nada é adicionado ou alterado automaticamente. Reveja e sincronize em Insights → Sincronização Steam."
+        },
+        "itadRefresh": {
+          "name": "Atualização de preços ITAD",
+          "description": "Atualiza preços de saldo e mínimos históricos para os jogos Windows/Mac/Linux/Android na sua lista de desejos via IsThereAnyDeal — alimenta os selos Em saldo e Insights → Em saldo."
+        },
+        "platpricesRefresh": {
+          "name": "Atualização de preços PlatPrices",
+          "description": "Atualiza preços de saldo para os jogos PlayStation na sua lista de desejos via PlatPrices — alimenta os selos Em saldo e Insights → Em saldo."
         }
       }
     },
@@ -907,19 +915,41 @@
   },
   "playSessions": {
     "title": "Sessões de jogo",
-    "subtitle": "Registe sessões individuais se quiser um histórico mais detalhado",
+    "subheader": "Registe sessões individuais por plataforma se quiser um histórico mais detalhado",
+    "tableName": "Sessões de jogo",
+    "platformColumn": "Plataforma",
+    "startedColumn": "Início",
+    "endedColumn": "Fim",
+    "durationColumn": "Duração",
+    "addDialogTitle": "Registar sessão de jogo",
+    "updateDialogTitle": "Atualizar sessão de jogo",
+    "platformLabel": "Plataforma",
     "startedLabel": "Início",
     "endedLabel": "Fim",
     "notesLabel": "Notas",
-    "logButton": "Registar sessão",
-    "noSessions": "Ainda não há sessões registadas.",
+    "platformRequiredError": "Selecione uma plataforma.",
+    "noOwnedPlatformsMessage": "Adicione primeiro este jogo à sua coleção numa plataforma.",
     "startRequiredError": "É necessária uma hora de início para registar uma sessão.",
-    "addError": "Erro ao registar a sessão de jogo. Por favor, tente novamente.",
-    "deleteError": "Erro ao eliminar a sessão de jogo. Por favor, tente novamente."
+    "addSuccessToast": "Sessão de jogo registada!",
+    "addErrorToast": "Erro ao registar a sessão de jogo. Por favor, tente novamente.",
+    "updateSuccessToast": "Sessão de jogo atualizada!",
+    "updateErrorToast": "Erro ao atualizar a sessão de jogo. Por favor, tente novamente.",
+    "deleteErrorToast": "Erro ao eliminar a sessão de jogo. Por favor, tente novamente.",
+    "removedToast_one": "Sessão de jogo removida",
+    "removedToast_other": "Sessões de jogo removidas"
   },
-  "progressStatus": {
+  "progress": {
     "title": "Progresso",
-    "subtitle": "Estado, tempo de jogo e a sua própria classificação/análise",
+    "subheader": "Estado e tempo de jogo, registados separadamente por cada plataforma possuída",
+    "tableName": "Progresso",
+    "platformColumn": "Plataforma",
+    "statusColumn": "Estado",
+    "playtimeColumn": "Tempo de jogo",
+    "ratingColumn": "Classificação",
+    "lastPlayedColumn": "Última vez jogado",
+    "addDialogTitle": "Adicionar progresso",
+    "updateDialogTitle": "Atualizar progresso",
+    "platformLabel": "Plataforma",
     "statusLabel": "Estado",
     "playtimeLabel": "Tempo de jogo (minutos)",
     "playtimeHelperText": "≈ {{hours}} horas",
@@ -930,10 +960,16 @@
     "completedLabel": "Concluído",
     "lastPlayedLabel": "Última vez jogado",
     "reviewLabel": "Análise",
-    "saveButton": "Guardar progresso",
+    "platformRequiredError": "Selecione uma plataforma.",
+    "noPlatformsAvailableMessage": "Adicione primeiro este jogo à sua coleção numa plataforma, ou todas as plataformas possuídas já têm progresso registado.",
     "playtimeError": "O tempo de jogo deve ser um número não negativo de minutos.",
-    "saveSuccess": "Progresso guardado!",
-    "saveError": "Erro ao guardar o progresso. Por favor, tente novamente.",
+    "addSuccessToast": "Progresso adicionado!",
+    "addErrorToast": "Erro ao adicionar o progresso. Por favor, tente novamente.",
+    "updateSuccessToast": "Progresso atualizado!",
+    "updateErrorToast": "Erro ao atualizar o progresso. Por favor, tente novamente.",
+    "deleteErrorToast": "Erro ao eliminar o progresso. Por favor, tente novamente.",
+    "removedToast_one": "Progresso removido",
+    "removedToast_other": "Entradas de progresso removidas",
     "statusOptions": {
       "none": "Não iniciado",
       "backlog": "Backlog",

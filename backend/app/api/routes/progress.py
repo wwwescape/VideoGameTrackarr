@@ -8,24 +8,42 @@ from app.schemas.play_session import (
     PlaySessionUpdateRequest,
     play_session_from_orm,
 )
-from app.schemas.progress import GameProgressResponse, GameProgressUpdateRequest, game_progress_from_orm
+from app.schemas.progress import (
+    GameProgressCreateRequest,
+    GameProgressResponse,
+    GameProgressUpdateRequest,
+    game_progress_from_orm,
+)
 from app.services import progress_service
 
 router = APIRouter(tags=["progress"], dependencies=[Depends(get_current_user)])
 
 
-@router.get("/api/games/{game_id}/progress", response_model=GameProgressResponse)
-def get_progress(game_id: int, db: Session = Depends(get_db)) -> GameProgressResponse:
-    progress = progress_service.get_progress(db, game_id)
-    return game_progress_from_orm(game_id, progress)
+@router.get("/api/games/{game_id}/progress", response_model=list[GameProgressResponse])
+def list_progress(game_id: int, db: Session = Depends(get_db)) -> list[GameProgressResponse]:
+    rows = progress_service.list_progress(db, game_id)
+    return [game_progress_from_orm(game_id, row) for row in rows]
 
 
-@router.put("/api/games/{game_id}/progress", response_model=GameProgressResponse)
-def update_progress(
-    game_id: int, body: GameProgressUpdateRequest, db: Session = Depends(get_db)
+@router.post("/api/games/{game_id}/progress", response_model=GameProgressResponse, status_code=status.HTTP_201_CREATED)
+def create_progress(
+    game_id: int, body: GameProgressCreateRequest, db: Session = Depends(get_db)
 ) -> GameProgressResponse:
-    progress = progress_service.update_progress(db, game_id, **body.model_dump(exclude_unset=True))
+    progress = progress_service.create_progress(db, game_id, **body.model_dump())
     return game_progress_from_orm(game_id, progress)
+
+
+@router.put("/api/progress/{progress_id}", response_model=GameProgressResponse)
+def update_progress(
+    progress_id: int, body: GameProgressUpdateRequest, db: Session = Depends(get_db)
+) -> GameProgressResponse:
+    progress = progress_service.update_progress(db, progress_id, **body.model_dump(exclude_unset=True))
+    return game_progress_from_orm(progress.game_id, progress)
+
+
+@router.delete("/api/progress/{progress_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_progress(progress_id: int, db: Session = Depends(get_db)) -> None:
+    progress_service.delete_progress(db, progress_id)
 
 
 @router.get("/api/games/{game_id}/play-sessions", response_model=list[PlaySessionResponse])

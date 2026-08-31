@@ -58,7 +58,13 @@ def test_stats_counts_and_breakdowns(auth_client, db_session, seed_game, seed_pl
     db_session.commit()
     db_session.add(LibraryItem(game_id=other_game.id, status=LibraryStatus.WISHLIST))
     db_session.add(
-        GameProgress(game_id=seed_game.id, play_status=PlayStatus.PLAYING, playtime_minutes=120, rating=8)
+        GameProgress(
+            game_id=seed_game.id,
+            platform_id=seed_platform.id,
+            play_status=PlayStatus.PLAYING,
+            playtime_minutes=120,
+            rating=8,
+        )
     )
     db_session.commit()
 
@@ -70,12 +76,16 @@ def test_stats_counts_and_breakdowns(auth_client, db_session, seed_game, seed_pl
     assert body["totalTracked"] == 2
     assert body["totalPlaytimeMinutes"] == 120
     assert body["averageRating"] == 8
-    assert body["playStatusBreakdown"] == {"playing": 1}
+    # other_game has no progress row at all, so it derives to "none" — every browsable
+    # top-level game gets counted now, not just ones with an existing GameProgress row.
+    assert body["playStatusBreakdown"] == {"playing": 1, "none": 1}
     assert {p["name"]: p["count"] for p in body["platformBreakdown"]} == {seed_platform.name: 1}
 
 
-def test_stats_recently_added_and_recently_played(auth_client, db_session, seed_game):
-    db_session.add(GameProgress(game_id=seed_game.id, last_played_at=datetime.now(UTC).date()))
+def test_stats_recently_added_and_recently_played(auth_client, db_session, seed_game, seed_platform):
+    db_session.add(
+        GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, last_played_at=datetime.now(UTC).date())
+    )
     db_session.commit()
 
     response = auth_client.get("/api/dashboard/stats")

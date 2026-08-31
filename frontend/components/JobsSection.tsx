@@ -50,6 +50,14 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
     nameKey: "settings.jobs.jobs.steamImport.name",
     descriptionKey: "settings.jobs.jobs.steamImport.description",
   },
+  itad_refresh: {
+    nameKey: "settings.jobs.jobs.itadRefresh.name",
+    descriptionKey: "settings.jobs.jobs.itadRefresh.description",
+  },
+  platprices_refresh: {
+    nameKey: "settings.jobs.jobs.platpricesRefresh.name",
+    descriptionKey: "settings.jobs.jobs.platpricesRefresh.description",
+  },
 };
 
 const STATUS_CHIP_COLOR: Record<JobRunStatus, ChipProps["color"]> = {

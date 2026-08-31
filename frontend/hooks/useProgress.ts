@@ -1,23 +1,50 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getGameProgress, updateGameProgress } from "../api/progress";
-import type { GameProgressUpdateInput } from "../api/types";
+import {
+  createGameProgress,
+  deleteGameProgress,
+  listGameProgress,
+  updateGameProgress,
+} from "../api/progress";
+import type { GameProgressCreateInput, GameProgressUpdateInput } from "../api/types";
 
-export function useGameProgress(gameId: number) {
+export function useGameProgressList(gameId: number) {
   return useQuery({
     queryKey: ["games", gameId, "progress"],
-    queryFn: () => getGameProgress(gameId),
+    queryFn: () => listGameProgress(gameId),
     enabled: Number.isFinite(gameId),
   });
 }
 
-export function useUpdateGameProgress(gameId: number) {
+function useInvalidateProgress(gameId: number) {
   const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["games", gameId, "progress"] });
+    queryClient.invalidateQueries({ queryKey: ["games", gameId] });
+    queryClient.invalidateQueries({ queryKey: ["games"] });
+  };
+}
+
+export function useCreateGameProgress(gameId: number) {
+  const invalidate = useInvalidateProgress(gameId);
   return useMutation({
-    mutationFn: (input: GameProgressUpdateInput) => updateGameProgress(gameId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["games", gameId, "progress"] });
-      queryClient.invalidateQueries({ queryKey: ["games", gameId] });
-      queryClient.invalidateQueries({ queryKey: ["games"] });
-    },
+    mutationFn: (input: GameProgressCreateInput) => createGameProgress(gameId, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateGameProgress(gameId: number) {
+  const invalidate = useInvalidateProgress(gameId);
+  return useMutation({
+    mutationFn: ({ progressId, input }: { progressId: number; input: GameProgressUpdateInput }) =>
+      updateGameProgress(progressId, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteGameProgress(gameId: number) {
+  const invalidate = useInvalidateProgress(gameId);
+  return useMutation({
+    mutationFn: (progressId: number) => deleteGameProgress(progressId),
+    onSuccess: invalidate,
   });
 }

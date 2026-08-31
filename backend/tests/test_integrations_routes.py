@@ -110,10 +110,12 @@ def test_get_steam_entries_reports_new_for_a_matched_untracked_game(auth_client,
     assert entry["vgtPlaytimeMinutes"] is None
 
 
-def test_get_steam_entries_reports_up_to_date_when_playtime_matches(auth_client, db_session, seed_platform):
+def test_get_steam_entries_reports_up_to_date_when_playtime_matches(auth_client, db_session, seed_pc_platform):
+    # Steam Sync's status comparison is PC-platform-scoped, so the seeded progress row
+    # must be on the PC platform for it to be the one compared against Steam's number.
     game = _seed_matched_entry(db_session, steam_playtime_minutes=100)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
-    db_session.add(GameProgress(game_id=game.id, playtime_minutes=100))
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(GameProgress(game_id=game.id, platform_id=seed_pc_platform.id, playtime_minutes=100))
     db_session.commit()
 
     [entry] = auth_client.get("/api/integrations/steam/entries").json()
@@ -122,10 +124,10 @@ def test_get_steam_entries_reports_up_to_date_when_playtime_matches(auth_client,
     assert entry["vgtPlaytimeMinutes"] == 100
 
 
-def test_get_steam_entries_reports_update_available_when_playtime_differs(auth_client, db_session, seed_platform):
+def test_get_steam_entries_reports_update_available_when_playtime_differs(auth_client, db_session, seed_pc_platform):
     game = _seed_matched_entry(db_session, steam_playtime_minutes=500)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
-    db_session.add(GameProgress(game_id=game.id, playtime_minutes=100))
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(GameProgress(game_id=game.id, platform_id=seed_pc_platform.id, playtime_minutes=100))
     db_session.commit()
 
     [entry] = auth_client.get("/api/integrations/steam/entries").json()
@@ -170,18 +172,45 @@ def test_sync_steam_entries_creates_library_item_and_progress_for_a_new_game(aut
     assert entry["status"] == "up_to_date"
 
 
-def test_sync_steam_entries_overwrites_playtime_even_downward(auth_client, db_session, seed_platform):
+def test_sync_steam_entries_overwrites_playtime_even_downward(auth_client, db_session, seed_pc_platform):
     # Sync is now an explicit, confirmed action — it sets playtime straight to Steam's
     # number, it doesn't cap at the higher of the two like the old auto-sync policy did.
     game = _seed_matched_entry(db_session, steam_playtime_minutes=50)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
-    db_session.add(GameProgress(game_id=game.id, playtime_minutes=500))
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(GameProgress(game_id=game.id, platform_id=seed_pc_platform.id, playtime_minutes=500))
     db_session.commit()
 
     auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
 
     progress = db_session.query(GameProgress).filter(GameProgress.game_id == game.id).first()
     assert progress.playtime_minutes == 50
+
+
+def test_sync_steam_entries_preserves_progress_on_another_platform(auth_client, db_session, seed_platform):
+    # The exact bug this rework fixes: a game owned on PS5 (seed_platform) as well as PC
+    # must keep its PS5 progress untouched when Steam Sync applies PC playtime data.
+    game = _seed_matched_entry(db_session, steam_playtime_minutes=754)
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(GameProgress(game_id=game.id, platform_id=seed_platform.id, playtime_minutes=200, rating=9))
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
+    assert response.status_code == 200
+
+    ps5_progress = (
+        db_session.query(GameProgress)
+        .filter(GameProgress.game_id == game.id, GameProgress.platform_id == seed_platform.id)
+        .one()
+    )
+    assert ps5_progress.playtime_minutes == 200  # untouched
+    assert ps5_progress.rating == 9
+
+    pc_progress = (
+        db_session.query(GameProgress)
+        .filter(GameProgress.game_id == game.id, GameProgress.platform_id != seed_platform.id)
+        .one()
+    )
+    assert pc_progress.playtime_minutes == 754
 
 
 def test_sync_steam_entries_bulk_isolates_a_failure(auth_client, db_session):

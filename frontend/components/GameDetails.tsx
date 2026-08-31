@@ -17,10 +17,9 @@ import GameActionButtons from "./GameActionButtons";
 import GameAddonsSection from "./GameAddonsSection";
 import GameCoverCard from "./GameCoverCard";
 import GameLibrarySection from "./GameLibrarySection";
+import GameProgressSection from "./GameProgressSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
-import PlaySessionsSection from "./PlaySessionsSection";
-import ProgressStatusCard from "./ProgressStatusCard";
 import TagsSection from "./TagsSection";
 
 // Total fixed chrome stacked above the scrollable content: AppShell.tsx's AppBar (56px
@@ -29,7 +28,11 @@ import TagsSection from "./TagsSection";
 // section's header isn't flush against the breadcrumb bar.
 const SECTION_SCROLL_MARGIN_TOP = { xs: 104, sm: 112 };
 
-const sectionCardSx = { borderRadius: 2, overflow: "hidden", scrollMarginTop: SECTION_SCROLL_MARGIN_TOP } as const;
+const sectionCardSx = {
+  borderRadius: 2,
+  overflow: "hidden",
+  scrollMarginTop: SECTION_SCROLL_MARGIN_TOP,
+} as const;
 
 const GameDetails = () => {
   const { t } = useTranslation();
@@ -111,11 +114,6 @@ const GameDetails = () => {
           <Card id="about" sx={sectionCardSx}>
             <GameAboutSection game={game} />
           </Card>
-          {!hasParentGame ? (
-            <Card id="progress" sx={sectionCardSx}>
-              <ProgressStatusCard gameId={game.id} progress={game.progress} />
-            </Card>
-          ) : null}
           <Card id="tags" sx={sectionCardSx}>
             <TagsSection
               tags={game.tags}
@@ -124,8 +122,12 @@ const GameDetails = () => {
             />
           </Card>
           {!hasParentGame ? (
-            <Card id="play-sessions" sx={sectionCardSx}>
-              <PlaySessionsSection gameId={game.id} />
+            <Card id="progress" sx={sectionCardSx}>
+              <GameProgressSection
+                gameId={gameId}
+                libraryItems={libraryItems}
+                platforms={platforms}
+              />
             </Card>
           ) : null}
           <Card id="notes" sx={sectionCardSx}>
