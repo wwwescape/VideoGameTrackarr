@@ -121,9 +121,15 @@ const EnhancedTableHead = ({
           />
         </TableCell>
         {headCells.map((headCell, index) => {
-          // The last column's icon(s) should land directly under the toolbar's Add button
-          // (which sits inset by the Toolbar's own `pr`) — right-align it and match that
-          // same inset, rather than centering it within its own column width.
+          // The last column's icon(s) should land directly under the toolbar's Add button,
+          // which always sits flush against the table's true right edge (the Toolbar spans
+          // the full width, inset only by its own small `pr`). Rather than giving this
+          // column a fixed width like the others, it's left unwidthed on purpose — under
+          // table-layout: fixed, a column with no declared width absorbs whatever space is
+          // left over after the fixed-width columns are subtracted, so it always reaches
+          // the table's real right edge regardless of how many (or few) columns a sibling
+          // table has. Right-aligning its content, with a `pr` matching the Toolbar's own,
+          // lands the icon exactly under the Add button.
           const isLastCell = index === headCells.length - 1;
           return (
             <TableCell
@@ -131,7 +137,7 @@ const EnhancedTableHead = ({
               align={isLastCell ? "right" : headCell.disableHeader ? "center" : headCell.numeric ? "right" : "left"}
               padding={headCell.disablePadding ? "none" : "normal"}
               sortDirection={orderBy === headCell.id ? order : false}
-              sx={{ width: headCell.width, overflow: "hidden", ...(isLastCell ? { pr: 1 } : {}) }}
+              sx={{ width: isLastCell ? undefined : headCell.width, overflow: "hidden", ...(isLastCell ? { pr: 1 } : {}) }}
             >
               <TableSortLabel
                 active={orderBy === headCell.id}
@@ -165,11 +171,6 @@ interface EnhancedTableToolbarProps {
   onAddClick?: (tableName: string) => void;
   onDeleteClick?: (selected: number[], tableName: string) => void;
   selected: number[];
-  // Matches the table's own computed width (see totalTableWidth below) so the Add/Delete
-  // button sits directly above the table's actual last column — not the Card's full width,
-  // which a narrower sibling table (e.g. Owned next to Wishlist's extra On Sale column)
-  // wouldn't reach.
-  maxWidth?: number;
 }
 
 const EnhancedTableToolbar = ({
@@ -179,7 +180,6 @@ const EnhancedTableToolbar = ({
   onAddClick,
   onDeleteClick,
   selected,
-  maxWidth,
 }: EnhancedTableToolbarProps) => {
   const { t } = useTranslation();
   const handleAddClick = () => {
@@ -195,7 +195,6 @@ const EnhancedTableToolbar = ({
       sx={{
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 },
-        ...(maxWidth ? { maxWidth } : {}),
         ...(numSelected > 0 && {
           bgcolor: (theme) =>
             alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
@@ -336,17 +335,18 @@ const EnhancedTable = ({
   // move button only makes sense when a "move" cell is actually present.
   const hasMoveColumn = headCells.some((cell) => cell.id === "move");
 
-  // When every column declares a fixed pixel width (e.g. GameLibrarySection's Owned/Wishlist
-  // tables, which deliberately share widths so their columns line up), pin the table to an
-  // exact total width under table-layout: fixed. Without an exact width, a table left to
-  // fill 100% would redistribute any leftover space unpredictably (typically dumping it all
-  // into the one column — usually the checkbox column — that lacks an explicit width), which
-  // would defeat the whole point of sharing widths between sibling tables. Tables that don't
-  // opt into per-column widths (e.g. TagManagerPage's) keep the original auto layout.
-  const allColumnsHaveExplicitWidth = headCells.every((cell) => typeof cell.width === "number");
-  const totalTableWidth = allColumnsHaveExplicitWidth
-    ? CHECKBOX_COLUMN_WIDTH + headCells.reduce((sum, cell) => sum + (cell.width as number), 0)
-    : undefined;
+  // When every column except the last declares a fixed pixel width (e.g. GameLibrarySection's
+  // Owned/Wishlist tables, which deliberately share widths so their columns line up), switch
+  // to table-layout: fixed so those widths are honored exactly regardless of a given table's
+  // own row content — auto layout (the default) sizes each <table> independently from its own
+  // content, which is what let an empty Collection table's columns drift out of alignment
+  // with a populated Wishlist table's in the first place. The table itself still fills 100%
+  // of its container (Toolbar's Add button and the table's last column both anchor to that
+  // same true right edge — see the isLastCell comment below), so it never leaves a gap
+  // between the table and the card around it. Tables that don't opt into per-column widths
+  // (e.g. TagManagerPage's) keep the original auto layout.
+  const usesFixedColumnWidths =
+    headCells.length > 0 && headCells.slice(0, -1).every((cell) => typeof cell.width === "number");
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -358,7 +358,6 @@ const EnhancedTable = ({
           onAddClick={onAddClick}
           onDeleteClick={onDeleteClick}
           selected={selected}
-          maxWidth={totalTableWidth}
         />
         {isMobile ? (
           <Stack spacing={1.5} sx={{ p: 1.5, pt: 0 }}>
@@ -439,10 +438,8 @@ const EnhancedTable = ({
           <TableContainer>
             <Table
               sx={{
-                minWidth: totalTableWidth ?? 720,
-                ...(totalTableWidth
-                  ? { width: totalTableWidth, tableLayout: "fixed" }
-                  : {}),
+                minWidth: 720,
+                ...(usesFixedColumnWidths ? { tableLayout: "fixed" } : {}),
               }}
               aria-labelledby="tableTitle"
               size="small"
@@ -496,7 +493,11 @@ const EnhancedTable = ({
                                   ? "right"
                                   : "left"
                           }
-                          sx={{ width: cell.width, overflow: "hidden", ...(isLastCell ? { pr: 1 } : {}) }}
+                          sx={{
+                            width: isLastCell ? undefined : cell.width,
+                            overflow: "hidden",
+                            ...(isLastCell ? { pr: 1 } : {}),
+                          }}
                         >
                           {cell.id === "move" ? (
                             <IconButton onClick={(event) => handleMove(event, row.id)}>
