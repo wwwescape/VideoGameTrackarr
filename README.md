@@ -5,7 +5,9 @@
 <h1 align="center">VideoGameTrackarr</h1>
 
 A self-hosted web app for tracking your video game collection: what you own, what you want,
-what you're playing, and how it's going.
+what you're playing, and how it's going — with Steam library sync and automatic wishlist
+sale-price tracking (PC/Mac/Linux/Android via IsThereAnyDeal, PlayStation via PlatPrices) so
+you know what's worth grabbing next.
 
 ## Screenshots
 
@@ -22,8 +24,21 @@ what you're playing, and how it's going.
 - **IGDB-powered catalog** — search and import from IGDB, including genres, developers/
   publishers, franchises, collections, platforms, screenshots, artwork, videos, and release
   dates. Addons (DLC/expansions/packs) import and resync alongside their parent game.
-- **Personal tracking** — play status, playtime, a 0–10 rating with review, individual play
-  sessions, free-form notes, and tags.
+- **Personal tracking** — play status, playtime, and a 0–10 rating with review, tracked
+  separately per platform you own a game on; plus individual play sessions, free-form notes,
+  and tags with custom colors (managed from a dedicated Tag Manager).
+- **External integrations** (all optional, off by default — see Configure below):
+  - **Steam** — import your owned games and their playtime, matched against your catalog, and
+    apply the sync one row (or many) at a time — nothing is ever written silently.
+  - **IsThereAnyDeal** and **PlatPrices** track sale prices for your wishlist (PC/Mac/Linux/
+    Android via ITAD, PlayStation via PlatPrices) and surface them on the dashboard's On Sale
+    section, with an optional per-item target price.
+- **Media viewer** — an in-app lightbox for screenshots and artwork (zoom, fullscreen,
+  thumbnail filmstrip) and a video gallery with thumbnail previews, instead of opening raw
+  URLs in a new tab.
+- **Public share links** — generate an unauthenticated, unlisted read-only link to your Games
+  or Hardware collection from Settings → Share, for showing it off without giving out your
+  login.
 - **Library intelligence** — duplicate detection, missing-DLC detection, and flagging accessories
   that aren't linked to hardware you own.
 - **Dashboard** — collection stats, an upcoming-release calendar for your wishlist, and
@@ -69,6 +84,27 @@ JWT_SECRET_KEY=            # generate with: python -c "import secrets; print(sec
 Get IGDB credentials at https://api-docs.igdb.com/#getting-started (free, requires a Twitch
 developer account). See `.env.example` for the rest (database URL, Redis, CORS — all
 optional with sane defaults).
+
+### Optional: external integrations
+
+IGDB is the only hard requirement — Steam sync and sale-price tracking are each independently
+optional. Enable any of them by uncommenting its block in `.env.example`, filling it in, and
+restarting:
+
+- **Steam** (`STEAM_API_KEY`) — free at https://steamcommunity.com/dev/apikey. Your SteamID64
+  isn't a secret and is set separately, in-app under Settings → Integrations, not in `.env`.
+- **IsThereAnyDeal** (`ITAD_API_KEY`) — free at https://isthereanydeal.com/apps/my/. Covers
+  PC/Mac/Linux/Android wishlist prices.
+- **PlatPrices** (`PLATPRICES_API_KEY`) — an application-reviewed free key, usually issued
+  within 1-2 business days: https://platprices.com/api-request. Covers PlayStation wishlist
+  prices. Its free tier only tracks **2 PS Store regions at a time**, chosen on your PlatPrices
+  dashboard and changeable once every 24 hours — `PLATPRICES_REGION` in `.env` must match one
+  of them, or prices will reflect the wrong region.
+
+Each configured integration shows a live Configured/Not configured status in
+Settings → Integrations. Steam Sync itself lives under Settings → Steam Sync; ITAD/PlatPrices
+results surface under Insights → On Sale and the dashboard's On Sale teaser. All three refresh
+on a schedule you can review and adjust under Settings → Jobs.
 
 ## Set up the database
 
@@ -207,7 +243,7 @@ sending a PR.
 
 P2:
 - [ ] Source reference images for predefined devices and accessories.
-- [ ] Investigate possible integrations with Steam, HowLongToBeat.com, and others.
+- [ ] Investigate a possible integration with HowLongToBeat.com.
 
 P5:
 - [ ] If we can obtain a list of editions for predefined devices and accessories, remove the
