@@ -121,6 +121,19 @@ const GameDetails = () => {
               onDetach={(tagId) => detachTag.mutateAsync(tagId)}
             />
           </Card>
+          <Card id="library" sx={sectionCardSx}>
+            <GameLibrarySection
+              gameId={gameId}
+              libraryItems={libraryItems}
+              platforms={platforms}
+              regions={regions}
+            />
+          </Card>
+          {!hasParentGame ? (
+            <Card id="addons" sx={sectionCardSx}>
+              <GameAddonsSection addons={addons} onAddonClick={handleAddonClick} />
+            </Card>
+          ) : null}
           {!hasParentGame ? (
             <Card id="progress" sx={sectionCardSx}>
               <GameProgressSection
@@ -139,19 +152,6 @@ const GameDetails = () => {
               onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
             />
           </Card>
-          <Card id="library" sx={sectionCardSx}>
-            <GameLibrarySection
-              gameId={gameId}
-              libraryItems={libraryItems}
-              platforms={platforms}
-              regions={regions}
-            />
-          </Card>
-          {!hasParentGame ? (
-            <Card id="addons" sx={sectionCardSx}>
-              <GameAddonsSection addons={addons} onAddonClick={handleAddonClick} />
-            </Card>
-          ) : null}
         </Stack>
       </Grid>
     </Grid>

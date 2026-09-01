@@ -37,9 +37,6 @@ const COLUMN_WIDTHS = {
   formatLabel: 140,
   storefrontLabel: 110,
   sale: 130,
-  move: 64,
-  edit: 64,
-  delete: 64,
 } as const;
 
 interface GameLibrarySectionProps {
@@ -109,35 +106,21 @@ const GameLibrarySection = ({
     width: COLUMN_WIDTHS.sale,
   };
 
-  const actionHeadCells: HeadCell[] = [
-    {
-      id: "move",
-      numeric: false,
-      disablePadding: true,
-      label: t("games.library.moveColumn"),
-      disableHeader: true,
-      width: COLUMN_WIDTHS.move,
-    },
-    {
-      id: "edit",
-      numeric: false,
-      disablePadding: true,
-      label: t("common.edit"),
-      disableHeader: true,
-      width: COLUMN_WIDTHS.edit,
-    },
-    {
-      id: "delete",
-      numeric: false,
-      disablePadding: true,
-      label: t("common.delete"),
-      disableHeader: true,
-      width: COLUMN_WIDTHS.delete,
-    },
-  ];
+  // One combined column for Move/Edit/Delete rather than three separate ones — always the
+  // last column, so it's the one EnhancedTable.tsx leaves unwidthed to soak up the table's
+  // remaining space and land flush against the toolbar's Add button; keeping the icons
+  // inside a single cell (spaced via a Stack) is what keeps them clustered neatly together
+  // as that cell grows, instead of each icon staying pinned to its own fixed-width slot.
+  const actionsHeadCell: HeadCell = {
+    id: "actions",
+    numeric: false,
+    disablePadding: true,
+    label: t("common.actions"),
+    disableHeader: true,
+  };
 
-  const ownedHeadCells: HeadCell[] = [...commonHeadCells, ...actionHeadCells];
-  const wishlistHeadCells: HeadCell[] = [...commonHeadCells, saleHeadCell, ...actionHeadCells];
+  const ownedHeadCells: HeadCell[] = [...commonHeadCells, actionsHeadCell];
+  const wishlistHeadCells: HeadCell[] = [...commonHeadCells, saleHeadCell, actionsHeadCell];
 
   // "collection"/"wishlist" phrases used inside toast/dialog sentences below.
   const statusPhrase: Record<LibraryStatus, string> = {

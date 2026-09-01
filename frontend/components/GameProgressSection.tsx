@@ -37,18 +37,16 @@ interface GameProgressSectionProps {
 
 // Fixed widths (not just the shared Platform one) so both tables get table-layout: fixed
 // in EnhancedTable.tsx — cell content ellipsis-truncates rather than wrapping/growing the
-// column, same rule as GameLibrarySection's Owned/Wishlist tables. Separate edit/delete
-// columns (rather than one combined "actions" cell) at the exact same 64px GameLibrarySection
-// uses, so every table's action-icon columns line up the same way. lastPlayedLabel is wide
-// enough that its header ("Last played") never has to wrap to a second line.
+// column, same rule as GameLibrarySection's Owned/Wishlist tables. lastPlayedLabel is wide
+// enough that its header ("Last Played") never has to wrap to a second line. Edit/Delete
+// live in one combined "actions" column (below), not separate widthed ones — see that
+// headCell's own comment for why.
 const PROGRESS_COLUMN_WIDTHS = {
   platformName: PLATFORM_COLUMN_WIDTH,
   statusLabel: 110,
   playtimeLabel: 100,
   ratingLabel: 90,
   lastPlayedLabel: 130,
-  edit: 64,
-  delete: 64,
 } as const;
 
 const SESSION_COLUMN_WIDTHS = {
@@ -56,8 +54,6 @@ const SESSION_COLUMN_WIDTHS = {
   startedLabel: 160,
   endedLabel: 160,
   durationLabel: 100,
-  edit: 64,
-  delete: 64,
 } as const;
 
 function formatDuration(minutes: number | null): string {
@@ -140,20 +136,15 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       width: PROGRESS_COLUMN_WIDTHS.lastPlayedLabel,
     },
     {
-      id: "edit",
+      // One combined column for Edit/Delete rather than two separate ones — see
+      // GameLibrarySection.tsx's actionsHeadCell for why (always the last column, left
+      // unwidthed so it soaks up the table's remaining space and keeps the icons grouped
+      // together at the true right edge instead of pinned to individual fixed slots).
+      id: "actions",
       numeric: false,
       disablePadding: true,
-      label: t("common.edit"),
+      label: t("common.actions"),
       disableHeader: true,
-      width: PROGRESS_COLUMN_WIDTHS.edit,
-    },
-    {
-      id: "delete",
-      numeric: false,
-      disablePadding: true,
-      label: t("common.delete"),
-      disableHeader: true,
-      width: PROGRESS_COLUMN_WIDTHS.delete,
     },
   ];
 
@@ -191,20 +182,11 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
       width: SESSION_COLUMN_WIDTHS.durationLabel,
     },
     {
-      id: "edit",
+      id: "actions",
       numeric: false,
       disablePadding: true,
-      label: t("common.edit"),
+      label: t("common.actions"),
       disableHeader: true,
-      width: SESSION_COLUMN_WIDTHS.edit,
-    },
-    {
-      id: "delete",
-      numeric: false,
-      disablePadding: true,
-      label: t("common.delete"),
-      disableHeader: true,
-      width: SESSION_COLUMN_WIDTHS.delete,
     },
   ];
 

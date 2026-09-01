@@ -330,10 +330,11 @@ const EnhancedTable = ({
   );
 
   const dataCells = headCells.filter((cell) => !cell.disableHeader);
-  // Tables without a move-between-status concept (e.g. Progress/Play Sessions) use the
-  // combined "actions" cell instead of a separate "move" cell — the mobile card view's
-  // move button only makes sense when a "move" cell is actually present.
-  const hasMoveColumn = headCells.some((cell) => cell.id === "move");
+  // Whether the combined "actions" cell (see below) should include a Move button ahead of
+  // Edit/Delete — driven by whether the caller actually wired one up (GameLibrarySection's
+  // Owned/Wishlist tables do; Progress/Play Sessions and Tag Manager don't), not by scanning
+  // headCells for an id, since move/edit/delete now always live in one combined column.
+  const showMoveButton = Boolean(onMoveClick);
 
   // When every column except the last declares a fixed pixel width (e.g. GameLibrarySection's
   // Owned/Wishlist tables, which deliberately share widths so their columns line up), switch
@@ -404,7 +405,7 @@ const EnhancedTable = ({
                         spacing={0.5}
                         sx={{ justifyContent: "flex-end", pt: 0.5 }}
                       >
-                        {hasMoveColumn ? (
+                        {showMoveButton ? (
                           <Tooltip
                             title={
                               moveDirection === "up"
@@ -499,32 +500,21 @@ const EnhancedTable = ({
                             ...(isLastCell ? { pr: 1 } : {}),
                           }}
                         >
-                          {cell.id === "move" ? (
-                            <IconButton onClick={(event) => handleMove(event, row.id)}>
-                              {moveDirection === "up" ? (
-                                <Tooltip title={t("table.moveToCollection")}>
-                                  <MoveUpIcon />
-                                </Tooltip>
-                              ) : (
-                                <Tooltip title={t("table.moveToWishlist")}>
-                                  <MoveDownIcon />
-                                </Tooltip>
-                              )}
-                            </IconButton>
-                          ) : cell.id === "edit" ? (
-                            <IconButton onClick={(event) => handleEdit(event, row.id)}>
-                              <Tooltip title={t("common.edit")}>
-                                <EditIcon />
-                              </Tooltip>
-                            </IconButton>
-                          ) : cell.id === "delete" ? (
-                            <IconButton onClick={(event) => handleDelete(event, row.id)}>
-                              <Tooltip title={t("common.delete")}>
-                                <DeleteIcon />
-                              </Tooltip>
-                            </IconButton>
-                          ) : cell.id === "actions" ? (
+                          {cell.id === "actions" ? (
                             <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
+                              {showMoveButton ? (
+                                <IconButton onClick={(event) => handleMove(event, row.id)}>
+                                  {moveDirection === "up" ? (
+                                    <Tooltip title={t("table.moveToCollection")}>
+                                      <MoveUpIcon />
+                                    </Tooltip>
+                                  ) : (
+                                    <Tooltip title={t("table.moveToWishlist")}>
+                                      <MoveDownIcon />
+                                    </Tooltip>
+                                  )}
+                                </IconButton>
+                              ) : null}
                               <IconButton onClick={(event) => handleEdit(event, row.id)}>
                                 <Tooltip title={t("common.edit")}>
                                   <EditIcon />

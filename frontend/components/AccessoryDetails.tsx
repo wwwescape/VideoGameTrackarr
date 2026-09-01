@@ -191,17 +191,6 @@ const AccessoryDetails = () => {
           </Card>
 
           <Card sx={sectionCardSx}>
-            <NotesSection
-              notes={accessoryNotes}
-              isCreating={createNote.isPending}
-              subheader={t("hardware.detailsShared.notesSubheader")}
-              onCreate={(body) => createNote.mutateAsync(body)}
-              onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-              onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-            />
-          </Card>
-
-          <Card sx={sectionCardSx}>
             <CardHeader title={t("hardware.detailsShared.inventoryTitle")} />
             <CardContent>
               {primaryOwnership ? (
@@ -273,6 +262,17 @@ const AccessoryDetails = () => {
                 </Stack>
               )}
             </CardContent>
+          </Card>
+
+          <Card sx={sectionCardSx}>
+            <NotesSection
+              notes={accessoryNotes}
+              isCreating={createNote.isPending}
+              subheader={t("hardware.detailsShared.notesSubheader")}
+              onCreate={(body) => createNote.mutateAsync(body)}
+              onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+              onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+            />
           </Card>
         </Stack>
       </Grid>
