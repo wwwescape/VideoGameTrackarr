@@ -49,6 +49,7 @@
     "missingDlc": "DLC faltante",
     "orphanedAccessories": "Accesorios huérfanos",
     "steamSync": "Sincronización Steam",
+    "salesIgnored": "Lista de ofertas ignoradas",
     "onSale": "En oferta",
     "settings": "Configuración",
     "tagManager": "Gestor de etiquetas",
@@ -87,6 +88,7 @@
       "formatOther": "Otro",
       "digitalStorefrontLabel": "Tienda digital",
       "priceLabel": "Precio de compra",
+      "trackForSalesLabel": "Rastrear ofertas",
       "targetPriceLabel": "Precio objetivo",
       "targetPriceHelperText": "Se marcará en la página de Ofertas cuando el precio baje hasta este valor o menos."
     }
@@ -605,6 +607,22 @@
       "confirmAddDescription": "Esto añadirá \"{{name}}\" a tu biblioteca (PC, Digital, Steam) con {{hours}}h registradas.",
       "confirmUpdateDescription": "Esto cambiará el tiempo de juego de \"{{name}}\" de {{currentHours}}h a {{newHours}}h, directamente desde Steam — esto puede sobrescribir tiempo registrado manualmente.",
       "confirmBulkDescription": "Esto añadirá {{newCount}} juego(s) nuevo(s) a tu biblioteca y actualizará el tiempo de juego de {{updateCount}} juego(s) ya existentes, directamente desde Steam — esto puede sobrescribir tiempo registrado manualmente."
+    },
+    "salesIgnored": {
+      "heading": "Lista de ofertas ignoradas",
+      "description": "Juegos en tu lista de deseos para los que ITAD o PlatPrices no encontraron una coincidencia exacta de título. Se omiten en cada actualización a partir de ahora — usa Reintentar para darle otra oportunidad a un título en la próxima ejecución.",
+      "emptyState": "No hay nada aquí. Todos los títulos rastreados o bien coincidieron o aún no se han buscado.",
+      "columnName": "Nombre",
+      "columnProvider": "Proveedor",
+      "columnCheckedAt": "Última comprobación",
+      "columnActions": "Acciones",
+      "provider": {
+        "itad": "IsThereAnyDeal",
+        "platprices": "PlatPrices"
+      },
+      "retryButton": "Reintentar",
+      "retrySuccessToast": "Se reintentará en la próxima actualización.",
+      "retryErrorToast": "No se pudo reintentar este título. Inténtalo de nuevo."
     },
     "onSale": {
       "description": "Ofertas actuales de tus juegos digitales en la lista de deseos, emparejados mediante IsThereAnyDeal (Windows/Mac/Linux/Android) y PlatPrices (PlayStation). Un juego sin lanzamiento digital, o en una plataforma que ningún proveedor cubre, simplemente no aparecerá aquí.",

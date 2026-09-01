@@ -33,6 +33,7 @@ from app.api.routes import (
     progress,
     public,
     regions,
+    sales_tracking,
     share,
     tags,
     uploads,
@@ -142,6 +143,7 @@ app.include_router(jobs.router)
 app.include_router(version.router)
 app.include_router(share.router)
 app.include_router(integrations.router)
+app.include_router(sales_tracking.router)
 app.include_router(public.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather

@@ -49,6 +49,7 @@
     "missingDlc": "Missing DLC",
     "orphanedAccessories": "Orphaned Accessories",
     "steamSync": "Steam Sync",
+    "salesIgnored": "Sales Ignored List",
     "onSale": "On Sale",
     "settings": "Settings",
     "tagManager": "Tag Manager",
@@ -87,6 +88,7 @@
       "formatOther": "Other",
       "digitalStorefrontLabel": "Digital Storefront",
       "priceLabel": "Purchase Price",
+      "trackForSalesLabel": "Track for sales",
       "targetPriceLabel": "Target price",
       "targetPriceHelperText": "Get flagged on the On Sale page once the price drops to or below this."
     }
@@ -605,6 +607,22 @@
       "confirmAddDescription": "This will add \"{{name}}\" to your library (PC, Digital, Steam) with {{hours}}h logged.",
       "confirmUpdateDescription": "This will set \"{{name}}\"'s playtime from {{currentHours}}h to {{newHours}}h, straight from Steam — this can overwrite manually-logged time.",
       "confirmBulkDescription": "This will add {{newCount}} new game(s) to your library and update playtime for {{updateCount}} game(s) already there, straight from Steam — this can overwrite manually-logged time."
+    },
+    "salesIgnored": {
+      "heading": "Sales Ignored List",
+      "description": "Wishlisted games that ITAD or PlatPrices couldn't find an exact title match for. They're skipped on every refresh from here on — use Retry to give a title another chance on the next run.",
+      "emptyState": "Nothing here. Every tracked title has either matched or hasn't been searched yet.",
+      "columnName": "Name",
+      "columnProvider": "Provider",
+      "columnCheckedAt": "Last Checked",
+      "columnActions": "Actions",
+      "provider": {
+        "itad": "IsThereAnyDeal",
+        "platprices": "PlatPrices"
+      },
+      "retryButton": "Retry",
+      "retrySuccessToast": "Will be retried on the next refresh.",
+      "retryErrorToast": "Could not retry this title. Please try again."
     },
     "onSale": {
       "description": "Current deals on your wishlisted digital games, matched via IsThereAnyDeal (Windows/Mac/Linux/Android) and PlatPrices (PlayStation). A game with no digital release, or on a platform neither provider covers, just won't show up here.",

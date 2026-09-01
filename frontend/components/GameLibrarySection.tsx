@@ -297,6 +297,7 @@ const GameLibrarySection = ({
                   ratingBoard: dialogItem.ratingBoard ?? undefined,
                   price: dialogItem.price ?? undefined,
                   targetPrice: dialogItem.targetPrice ?? undefined,
+                  trackForSales: dialogItem.trackForSales,
                 }
               : undefined
           }

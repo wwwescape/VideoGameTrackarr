@@ -22,6 +22,7 @@ class LibraryItemResponse(CamelModel):
     edition: str | None
     price: float | None
     target_price: float | None
+    track_for_sales: bool
     acquired_at: date | None
     notes: str | None
     is_on_sale: bool
@@ -44,7 +45,12 @@ def library_item_from_orm(
     elif platprices_cache is not None and is_library_item_platprices_eligible(item):
         cache = platprices_cache
 
-    is_on_sale = cache is not None and cache.current_price_amount is not None
+    # Gated on track_for_sales too (not just eligibility + cache presence) so this stays
+    # consistent with insight_service.get_on_sale_game_ids' same gate — otherwise a stale
+    # cached price from before tracking was turned off (or from the opt-in migration's
+    # backfill) would keep showing "on sale" here even though the game-level badge
+    # everywhere else has already gone dark for the same row.
+    is_on_sale = item.track_for_sales and cache is not None and cache.current_price_amount is not None
     return LibraryItemResponse(
         id=item.id,
         game_id=item.game_id,
@@ -59,6 +65,7 @@ def library_item_from_orm(
         edition=item.edition,
         price=item.price,
         target_price=item.target_price,
+        track_for_sales=item.track_for_sales,
         acquired_at=item.acquired_at,
         notes=item.notes,
         is_on_sale=is_on_sale,
@@ -79,6 +86,7 @@ class LibraryItemCreateRequest(CamelModel):
     edition: str | None = None
     price: float | None = None
     target_price: float | None = None
+    track_for_sales: bool = False
     acquired_at: date | None = None
     notes: str | None = None
 
@@ -93,5 +101,6 @@ class LibraryItemUpdateRequest(CamelModel):
     edition: str | None = None
     price: float | None = None
     target_price: float | None = None
+    track_for_sales: bool | None = None
     acquired_at: date | None = None
     notes: str | None = None

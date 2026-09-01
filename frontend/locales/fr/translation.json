@@ -49,6 +49,7 @@
     "missingDlc": "DLC manquants",
     "orphanedAccessories": "Accessoires orphelins",
     "steamSync": "Synchronisation Steam",
+    "salesIgnored": "Liste des promotions ignorées",
     "onSale": "En promotion",
     "settings": "Paramètres",
     "tagManager": "Gestionnaire d'étiquettes",
@@ -87,6 +88,7 @@
       "formatOther": "Autre",
       "digitalStorefrontLabel": "Boutique numérique",
       "priceLabel": "Prix d'achat",
+      "trackForSalesLabel": "Suivre les promotions",
       "targetPriceLabel": "Prix cible",
       "targetPriceHelperText": "Sera signalé sur la page En promotion dès que le prix descend à ce niveau ou en dessous."
     }
@@ -605,6 +607,22 @@
       "confirmAddDescription": "Ceci ajoutera « {{name}} » à votre bibliothèque (PC, Numérique, Steam) avec {{hours}}h enregistrées.",
       "confirmUpdateDescription": "Ceci fera passer le temps de jeu de « {{name}} » de {{currentHours}}h à {{newHours}}h, directement depuis Steam — cela peut écraser un temps enregistré manuellement.",
       "confirmBulkDescription": "Ceci ajoutera {{newCount}} nouveau(x) jeu(x) à votre bibliothèque et mettra à jour le temps de jeu de {{updateCount}} jeu(x) déjà présents, directement depuis Steam — cela peut écraser un temps enregistré manuellement."
+    },
+    "salesIgnored": {
+      "heading": "Liste des promotions ignorées",
+      "description": "Jeux de votre liste de souhaits pour lesquels ITAD ou PlatPrices n'ont trouvé aucune correspondance exacte de titre. Ils sont ignorés à chaque actualisation à partir de maintenant — utilisez Réessayer pour redonner une chance à un titre lors de la prochaine exécution.",
+      "emptyState": "Rien ici. Chaque titre suivi a soit trouvé une correspondance, soit n'a pas encore été recherché.",
+      "columnName": "Nom",
+      "columnProvider": "Fournisseur",
+      "columnCheckedAt": "Dernière vérification",
+      "columnActions": "Actions",
+      "provider": {
+        "itad": "IsThereAnyDeal",
+        "platprices": "PlatPrices"
+      },
+      "retryButton": "Réessayer",
+      "retrySuccessToast": "Sera réessayé lors de la prochaine actualisation.",
+      "retryErrorToast": "Impossible de réessayer ce titre. Veuillez réessayer."
     },
     "onSale": {
       "description": "Promotions en cours sur vos jeux numériques en liste de souhaits, associés via IsThereAnyDeal (Windows/Mac/Linux/Android) et PlatPrices (PlayStation). Un jeu sans sortie numérique, ou sur une plateforme qu'aucun des deux ne couvre, n'apparaîtra tout simplement pas ici.",

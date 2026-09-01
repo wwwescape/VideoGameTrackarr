@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,6 +19,14 @@ class ItadPriceCache(TimestampMixin, Base):
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), unique=True, nullable=False)
     itad_game_id: Mapped[str | None] = mapped_column(
         String(64), comment="ITAD's internal game id; null = no match found"
+    )
+    ignored: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="Set once a title search comes back with no exact match — stops permanent "
+        "re-search churn on every job run until Retry clears it",
     )
     current_price_amount: Mapped[float | None] = mapped_column()
     current_price_currency: Mapped[str | None] = mapped_column(String(8))

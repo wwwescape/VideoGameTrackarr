@@ -29,6 +29,7 @@ import JobsPage from "./components/JobsPage";
 import PublicGamesPage from "./components/PublicGamesPage";
 import PublicHardwarePage from "./components/PublicHardwarePage";
 import Settings from "./components/Settings";
+import SalesIgnoredListPage from "./components/SalesIgnoredListPage";
 import SteamSyncPage from "./components/SteamSyncPage";
 import OnSalePage from "./components/OnSalePage";
 import TagManagerPage from "./components/TagManagerPage";
@@ -59,6 +60,7 @@ import {
   notFoundCrumbs,
   onSaleCrumbs,
   orphanedAccessoriesCrumbs,
+  salesIgnoredCrumbs,
   seriesCrumbs,
   settingsCrumbs,
   steamSyncCrumbs,
@@ -207,6 +209,11 @@ const router = createBrowserRouter([
             path: "/settings/steam-sync",
             element: <SteamSyncPage />,
             handle: { crumbs: steamSyncCrumbs },
+          },
+          {
+            path: "/settings/sales-ignored",
+            element: <SalesIgnoredListPage />,
+            handle: { crumbs: salesIgnoredCrumbs },
           },
           { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
           { path: "*", element: <NotFoundRouteElement />, handle: { crumbs: notFoundCrumbs } },

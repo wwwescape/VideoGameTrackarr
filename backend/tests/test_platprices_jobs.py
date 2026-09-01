@@ -24,7 +24,11 @@ def _seed_wishlisted_ps5_game(db_session, igdb_id: int, name: str, seed_platform
     db_session.commit()
     db_session.add(
         LibraryItem(
-            game_id=game.id, platform_id=seed_platform.id, format=MediaFormat.DIGITAL, status=LibraryStatus.WISHLIST
+            game_id=game.id,
+            platform_id=seed_platform.id,
+            format=MediaFormat.DIGITAL,
+            status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
         )
     )
     db_session.commit()
@@ -51,6 +55,37 @@ def test_run_skips_a_wishlisted_game_on_a_non_ps_platform(db_session, seed_pc_pl
             platform_id=seed_pc_platform.id,
             format=MediaFormat.DIGITAL,
             status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
+        )
+    )
+    db_session.commit()
+    _configure_platprices(monkeypatch)
+
+    search_calls = []
+
+    async def fake_search(self, title, region):
+        search_calls.append(title)
+        return None
+
+    monkeypatch.setattr(PlatPricesClient, "search_game", fake_search)
+
+    result = platprices_jobs.run(lambda: db_session)
+
+    assert result["total"] == 0
+    assert search_calls == []
+
+
+def test_run_skips_a_wishlisted_ps5_game_with_tracking_off(db_session, seed_platform, monkeypatch):
+    game = Game(igdb_id=1, name="Untracked Game", slug="untracked-game", category=GameCategory.MAIN_GAME)
+    db_session.add(game)
+    db_session.commit()
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_platform.id,
+            format=MediaFormat.DIGITAL,
+            status=LibraryStatus.WISHLIST,
+            track_for_sales=False,
         )
     )
     db_session.commit()
@@ -169,6 +204,7 @@ def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(
             platform_id=seed_platform.id,
             format=MediaFormat.DIGITAL,
             status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
         )
     )
     db_session.add(
@@ -178,6 +214,7 @@ def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(
             format=MediaFormat.DIGITAL,
             region_id=seed_region.id,
             status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
         )
     )
     db_session.commit()
@@ -195,3 +232,41 @@ def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(
 
     assert result["total"] == 1  # one game, not two rows
     assert search_calls == ["Ghost of Tsushima"]
+
+
+def test_run_marks_a_no_match_as_ignored(db_session, seed_platform, monkeypatch):
+    game = _seed_wishlisted_ps5_game(db_session, igdb_id=233, name="Obscure Game", seed_platform=seed_platform)
+    game_id = game.id
+    _configure_platprices(monkeypatch)
+
+    async def fake_search(self, title, region):
+        return None
+
+    monkeypatch.setattr(PlatPricesClient, "search_game", fake_search)
+
+    platprices_jobs.run(lambda: db_session)
+
+    cache = platprices_repository.get_cache(db_session, game_id)
+    assert cache.ppid is None
+    assert cache.ignored is True
+
+
+def test_run_never_researches_an_ignored_title(db_session, seed_platform, monkeypatch):
+    game = _seed_wishlisted_ps5_game(db_session, igdb_id=233, name="Ghost of Tsushima", seed_platform=seed_platform)
+    cache = platprices_repository.get_or_create_cache(db_session, game.id)
+    platprices_repository.set_ppid(db_session, cache, None)  # first attempt: no match, sets ignored=True
+    db_session.commit()
+    assert platprices_repository.get_cache(db_session, game.id).ignored is True
+    _configure_platprices(monkeypatch)
+
+    search_calls = []
+
+    async def fake_search(self, title, region):
+        search_calls.append(title)
+        return "should-not-be-used"
+
+    monkeypatch.setattr(PlatPricesClient, "search_game", fake_search)
+
+    platprices_jobs.run(lambda: db_session)
+
+    assert search_calls == []  # ignored, never re-searched

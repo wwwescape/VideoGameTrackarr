@@ -1,6 +1,6 @@
 {
   "name": "videogametrackarr",
-  "version": "1.11.2",
+  "version": "1.12.0",
   "description": "A self-hosted web application to track your video game collection",
   "private": true,
   "workspaces": [

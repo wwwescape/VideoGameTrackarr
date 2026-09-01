@@ -54,7 +54,7 @@ async def _refresh(db: Session) -> dict[str, Any]:
                 await asyncio.sleep(_PACE_DELAY_SECONDS)
             try:
                 cache = platprices_repository.get_or_create_cache(db, game.id)
-                if cache.ppid is None:
+                if cache.ppid is None and not cache.ignored:
                     ppid = await client.search_game(game.name, settings.platprices_region)
                     platprices_repository.set_ppid(db, cache, ppid)
                 db.commit()

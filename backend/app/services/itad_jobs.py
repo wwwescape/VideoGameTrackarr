@@ -53,7 +53,7 @@ async def _refresh(db: Session) -> dict[str, Any]:
                 await asyncio.sleep(_PACE_DELAY_SECONDS)
             try:
                 cache = itad_repository.get_or_create_cache(db, game.id)
-                if cache.itad_game_id is None:
+                if cache.itad_game_id is None and not cache.ignored:
                     itad_id = await client.lookup_game_id(game.name)
                     itad_repository.set_itad_id(db, cache, itad_id)
                 db.commit()

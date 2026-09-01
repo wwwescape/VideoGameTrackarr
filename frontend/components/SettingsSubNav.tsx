@@ -12,6 +12,7 @@ const SUB_NAV_ITEMS = [
   // Separate from the rest — this is the one item here that isn't app configuration, it's
   // the Steam library sync workflow, which just happens to live under Settings now.
   { to: "/settings/steam-sync", labelKey: "nav.steamSync", separatorBefore: true },
+  { to: "/settings/sales-ignored", labelKey: "nav.salesIgnored" },
 ] as const;
 
 // Mirrors InsightsSubNav.tsx — keeps Tag Manager/Jobs/Integrations/Steam Sync reachable at

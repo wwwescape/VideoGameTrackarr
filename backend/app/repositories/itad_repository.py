@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.catalog import Game
 from app.models.itad import ItadPriceCache
@@ -23,23 +23,42 @@ def get_or_create_cache(db: Session, game_id: int) -> ItadPriceCache:
 
 
 def list_distinct_wishlisted_games(db: Session) -> list[Game]:
-    """Every game with at least one WISHLIST LibraryItem — deduplicated, since the same
-    game can be wishlisted via more than one row (different platforms/regions), but price
-    only needs fetching once per game."""
+    """Every game with at least one WISHLIST, track_for_sales-opted-in LibraryItem —
+    deduplicated, since the same game can be wishlisted via more than one row (different
+    platforms/regions), but price only needs fetching once per game."""
     stmt = (
         select(Game)
         .join(LibraryItem, LibraryItem.game_id == Game.id)
-        .where(LibraryItem.status == LibraryStatus.WISHLIST)
+        .where(LibraryItem.status == LibraryStatus.WISHLIST, LibraryItem.track_for_sales.is_(True))
         .distinct()
     )
     return list(db.scalars(stmt))
 
 
 def set_itad_id(db: Session, cache: ItadPriceCache, itad_game_id: str | None) -> ItadPriceCache:
+    # A None result means this attempt found no exact title match — mark it ignored so future
+    # job runs stop re-searching it forever; a real id always clears any prior ignored flag
+    # (covers the case where a manual Retry now finds a match on a re-attempt).
     cache.itad_game_id = itad_game_id
+    cache.ignored = itad_game_id is None
     cache.checked_at = datetime.now(UTC)
     db.flush()
     return cache
+
+
+def set_ignored(db: Session, cache: ItadPriceCache, ignored: bool) -> ItadPriceCache:
+    cache.ignored = ignored
+    db.flush()
+    return cache
+
+
+def list_ignored(db: Session) -> list[ItadPriceCache]:
+    stmt = (
+        select(ItadPriceCache)
+        .options(joinedload(ItadPriceCache.game))
+        .where(ItadPriceCache.ignored.is_(True))
+    )
+    return list(db.scalars(stmt))
 
 
 def update_price_data(

@@ -20,7 +20,11 @@ def _seed_wishlisted_game(db_session, igdb_id: int, name: str, seed_platform) ->
     game = Game(igdb_id=igdb_id, name=name, slug=name.lower().replace(" ", "-"), category=GameCategory.MAIN_GAME)
     db_session.add(game)
     db_session.commit()
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.add(
+        LibraryItem(
+            game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST, track_for_sales=True
+        )
+    )
     db_session.commit()
     return game
 
@@ -158,10 +162,18 @@ def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(
     game = Game(igdb_id=233, name="Half-Life 2", slug="half-life-2", category=GameCategory.MAIN_GAME)
     db_session.add(game)
     db_session.commit()
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
     db_session.add(
         LibraryItem(
-            game_id=game.id, platform_id=seed_platform.id, region_id=seed_region.id, status=LibraryStatus.WISHLIST
+            game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST, track_for_sales=True
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_platform.id,
+            region_id=seed_region.id,
+            status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
         )
     )
     db_session.commit()
@@ -179,3 +191,67 @@ def test_run_deduplicates_a_game_wishlisted_via_multiple_library_items(
 
     assert result["total"] == 1  # one game, not two rows
     assert lookup_calls == ["Half-Life 2"]
+
+
+def test_run_marks_a_no_match_as_ignored(db_session, seed_platform, monkeypatch):
+    game = _seed_wishlisted_game(db_session, igdb_id=233, name="Obscure Game", seed_platform=seed_platform)
+    game_id = game.id
+    _configure_itad(monkeypatch)
+
+    async def fake_lookup(self, title):
+        return None
+
+    monkeypatch.setattr(ItadClient, "lookup_game_id", fake_lookup)
+
+    itad_jobs.run(lambda: db_session)
+
+    cache = itad_repository.get_cache(db_session, game_id)
+    assert cache.itad_game_id is None
+    assert cache.ignored is True
+
+
+def test_run_never_researches_an_ignored_title(db_session, seed_platform, monkeypatch):
+    game = _seed_wishlisted_game(db_session, igdb_id=233, name="Half-Life 2", seed_platform=seed_platform)
+    cache = itad_repository.get_or_create_cache(db_session, game.id)
+    itad_repository.set_itad_id(db_session, cache, None)  # first attempt: no match, sets ignored=True
+    db_session.commit()
+    assert itad_repository.get_cache(db_session, game.id).ignored is True
+    _configure_itad(monkeypatch)
+
+    lookup_calls = []
+
+    async def fake_lookup(self, title):
+        lookup_calls.append(title)
+        return "should-not-be-used"
+
+    monkeypatch.setattr(ItadClient, "lookup_game_id", fake_lookup)
+
+    itad_jobs.run(lambda: db_session)
+
+    assert lookup_calls == []  # ignored, never re-searched
+
+
+def test_run_skips_a_wishlisted_game_with_tracking_off(db_session, seed_platform, monkeypatch):
+    game = Game(igdb_id=1, name="Untracked Game", slug="untracked-game", category=GameCategory.MAIN_GAME)
+    db_session.add(game)
+    db_session.commit()
+    db_session.add(
+        LibraryItem(
+            game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST, track_for_sales=False
+        )
+    )
+    db_session.commit()
+    _configure_itad(monkeypatch)
+
+    lookup_calls = []
+
+    async def fake_lookup(self, title):
+        lookup_calls.append(title)
+        return None
+
+    monkeypatch.setattr(ItadClient, "lookup_game_id", fake_lookup)
+
+    result = itad_jobs.run(lambda: db_session)
+
+    assert result["total"] == 0
+    assert lookup_calls == []

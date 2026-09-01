@@ -369,6 +369,7 @@ export interface LibraryItem {
   edition: string | null;
   price: number | null;
   targetPrice: number | null;
+  trackForSales: boolean;
   acquiredAt: string | null;
   notes: string | null;
   isOnSale: boolean;
@@ -388,6 +389,7 @@ export interface LibraryItemInput {
   edition?: string | null;
   price?: number | null;
   targetPrice?: number | null;
+  trackForSales?: boolean;
   acquiredAt?: string | null;
   notes?: string | null;
 }

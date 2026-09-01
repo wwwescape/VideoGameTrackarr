@@ -115,6 +115,27 @@ def test_update_library_item_sets_target_price(auth_client, seed_game):
     assert response.json()["targetPrice"] == 9.99
 
 
+def test_add_wishlist_item_with_track_for_sales(auth_client, seed_game):
+    response = auth_client.post(
+        f"/api/games/{seed_game.id}/library", json={"status": "wishlist", "trackForSales": True}
+    )
+
+    assert response.status_code == 201
+    assert response.json()["trackForSales"] is True
+
+
+def test_update_library_item_toggles_track_for_sales_off(auth_client, seed_game):
+    created = auth_client.post(
+        f"/api/games/{seed_game.id}/library", json={"status": "wishlist", "trackForSales": True}
+    ).json()
+    assert created["trackForSales"] is True
+
+    response = auth_client.put(f"/api/library/{created['id']}", json={"trackForSales": False})
+
+    assert response.status_code == 200
+    assert response.json()["trackForSales"] is False
+
+
 def test_list_library_items_reflects_a_current_discount_for_an_eligible_digital_pc_row(
     auth_client, db_session, seed_game, seed_pc_platform
 ):
@@ -132,7 +153,12 @@ def test_list_library_items_reflects_a_current_discount_for_an_eligible_digital_
 
     auth_client.post(
         f"/api/games/{seed_game.id}/library",
-        json={"status": "wishlist", "format": "digital", "platformId": seed_pc_platform.id},
+        json={
+            "status": "wishlist",
+            "format": "digital",
+            "platformId": seed_pc_platform.id,
+            "trackForSales": True,
+        },
     )
 
     response = auth_client.get(f"/api/games/{seed_game.id}/library")
@@ -180,7 +206,12 @@ def test_list_library_items_reflects_a_current_discount_for_an_eligible_digital_
 
     auth_client.post(
         f"/api/games/{seed_game.id}/library",
-        json={"status": "wishlist", "format": "digital", "platformId": seed_platform.id},
+        json={
+            "status": "wishlist",
+            "format": "digital",
+            "platformId": seed_platform.id,
+            "trackForSales": True,
+        },
     )
 
     response = auth_client.get(f"/api/games/{seed_game.id}/library")

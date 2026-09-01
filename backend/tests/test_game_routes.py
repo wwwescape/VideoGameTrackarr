@@ -32,6 +32,7 @@ def test_list_and_detail_expose_is_on_sale_for_a_wishlisted_itad_eligible_game(
             platform_id=seed_pc_platform.id,
             status=LibraryStatus.WISHLIST,
             format=MediaFormat.DIGITAL,
+            track_for_sales=True,
         )
     )
     db_session.add(

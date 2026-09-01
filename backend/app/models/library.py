@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -65,6 +65,13 @@ class LibraryItem(TimestampMixin, Base):
     price: Mapped[float | None] = mapped_column()
     target_price: Mapped[float | None] = mapped_column(
         comment="Only meaningful when status=wishlist — flags this row on sale once the price drops to or below this"
+    )
+    track_for_sales: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="Opt-in: only rows with this set are ever matched against ITAD/PlatPrices",
     )
     acquired_at: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)

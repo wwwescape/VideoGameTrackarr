@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.catalog import Game, Platform
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
@@ -28,17 +28,19 @@ def get_or_create_cache(db: Session, game_id: int) -> PlatPricesCache:
 
 
 def list_distinct_wishlisted_games(db: Session) -> list[Game]:
-    """Every game with at least one WISHLIST LibraryItem that's actually PlatPrices-eligible
-    (digital format, PS4/PS5 platform) — deduplicated. Unlike itad_repository's equivalent
-    (which matches every wishlisted game regardless of platform, since ITAD's quota is
-    generous), PlatPrices' free tier is only 1,000 requests/month, so matching spend must
-    stay proportional to actual PS wishlist size, not total wishlist size."""
+    """Every game with at least one WISHLIST, track_for_sales-opted-in LibraryItem that's
+    actually PlatPrices-eligible (digital format, PS4/PS5 platform) — deduplicated. Unlike
+    itad_repository's equivalent (which matches every opted-in wishlisted game regardless of
+    platform, since ITAD's quota is generous), PlatPrices' free tier is only 1,000
+    requests/month, so matching spend must stay proportional to actual PS wishlist size, not
+    total wishlist size."""
     stmt = (
         select(Game)
         .join(LibraryItem, LibraryItem.game_id == Game.id)
         .join(Platform, Platform.id == LibraryItem.platform_id)
         .where(
             LibraryItem.status == LibraryStatus.WISHLIST,
+            LibraryItem.track_for_sales.is_(True),
             LibraryItem.format == MediaFormat.DIGITAL,
             Platform.slug.in_(_ELIGIBLE_PLATFORM_SLUGS),
         )
@@ -48,10 +50,29 @@ def list_distinct_wishlisted_games(db: Session) -> list[Game]:
 
 
 def set_ppid(db: Session, cache: PlatPricesCache, ppid: str | None) -> PlatPricesCache:
+    # A None result means this attempt found no exact title match — mark it ignored so future
+    # job runs stop re-searching it forever; a real ppid always clears any prior ignored flag
+    # (covers the case where a manual Retry now finds a match on a re-attempt).
     cache.ppid = ppid
+    cache.ignored = ppid is None
     cache.checked_at = datetime.now(UTC)
     db.flush()
     return cache
+
+
+def set_ignored(db: Session, cache: PlatPricesCache, ignored: bool) -> PlatPricesCache:
+    cache.ignored = ignored
+    db.flush()
+    return cache
+
+
+def list_ignored(db: Session) -> list[PlatPricesCache]:
+    stmt = (
+        select(PlatPricesCache)
+        .options(joinedload(PlatPricesCache.game))
+        .where(PlatPricesCache.ignored.is_(True))
+    )
+    return list(db.scalars(stmt))
 
 
 def update_price_data(

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { TFunction } from "i18next";
 import AddIcon from "@mui/icons-material/Add";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import BlockIcon from "@mui/icons-material/Block";
 import CableIcon from "@mui/icons-material/Cable";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -90,6 +91,11 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
           label: t("nav.steamSync"),
           icon: <SteamIcon />,
           separatorBefore: true,
+        },
+        {
+          to: "/settings/sales-ignored",
+          label: t("nav.salesIgnored"),
+          icon: <BlockIcon />,
         },
       ],
     },

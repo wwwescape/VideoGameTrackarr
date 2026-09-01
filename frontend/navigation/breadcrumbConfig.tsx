@@ -192,6 +192,11 @@ export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.steamSync") },
 ];
 
+export const salesIgnoredCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.salesIgnored") },
+];
+
 export const aboutCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.about") }];
 
 export const notFoundCrumbs: CrumbsFn = (_params, t) => [{ label: t("errors.pageNotFoundTitle") }];

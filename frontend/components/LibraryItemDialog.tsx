@@ -8,6 +8,7 @@ import Autocomplete, {
   createFilterOptions,
 } from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -37,6 +38,7 @@ const formSchema = z.object({
     .optional(),
   price: z.number().optional(),
   targetPrice: z.number().optional(),
+  trackForSales: z.boolean().optional(),
 });
 
 export type LibraryItemFormValues = z.infer<typeof formSchema>;
@@ -63,6 +65,19 @@ const PC_DIGITAL_STOREFRONT_OPTIONS = [
   "Microsoft Store",
   "itch.io",
 ];
+
+// Must stay in sync with the backend's ITAD_ELIGIBLE_PLATFORM_SLUGS
+// (app/services/itad_service.py) and PLATPRICES_ELIGIBLE_PLATFORM_SLUGS
+// (app/services/platprices_service.py) — combined into one set since this dialog only needs
+// to know "is either provider able to track this row at all," not which one.
+const SALES_TRACKING_ELIGIBLE_PLATFORM_SLUGS = new Set([
+  "win",
+  "linux",
+  "mac",
+  "android",
+  "ps4",
+  "ps5",
+]);
 
 interface SelectOption {
   value: number | undefined;
@@ -147,12 +162,24 @@ const LibraryItemDialog = ({
   const watchedPlatformId = useWatch({ control, name: "platformId" });
   const selectedPlatform = platforms.find((platform) => platform.id === watchedPlatformId);
   const showDigitalStorefront = watchedFormat === "digital" && selectedPlatform?.slug === "win";
+  const showTrackForSales =
+    watchedFormat === "digital" &&
+    selectedPlatform?.slug != null &&
+    SALES_TRACKING_ELIGIBLE_PLATFORM_SLUGS.has(selectedPlatform.slug);
+  const watchedTrackForSales = useWatch({ control, name: "trackForSales" });
 
   useEffect(() => {
     if (!showDigitalStorefront) {
       setValue("digitalStorefront", undefined);
     }
   }, [showDigitalStorefront, setValue]);
+
+  useEffect(() => {
+    if (!showTrackForSales) {
+      setValue("trackForSales", false);
+      setValue("targetPrice", undefined);
+    }
+  }, [showTrackForSales, setValue]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -247,7 +274,23 @@ const LibraryItemDialog = ({
             />
           </FormControl>
         ) : null}
-        {status === "wishlist" ? (
+        {status === "wishlist" && showTrackForSales ? (
+          <FormControl fullWidth sx={{ margin: "10px 0 0 0" }}>
+            <Controller
+              name="trackForSales"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox checked={field.value ?? false} onChange={(event) => field.onChange(event.target.checked)} />
+                  }
+                  label={t("dialogs.libraryItem.trackForSalesLabel")}
+                />
+              )}
+            />
+          </FormControl>
+        ) : null}
+        {status === "wishlist" && showTrackForSales && watchedTrackForSales ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
             <Controller
               name="targetPrice"

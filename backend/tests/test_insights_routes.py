@@ -198,6 +198,7 @@ def test_on_sale_lists_a_wishlisted_game_with_a_current_discount(auth_client, db
             game_id=seed_game.id,
             status=LibraryStatus.WISHLIST,
             target_price=20.0,
+            track_for_sales=True,
             format=MediaFormat.DIGITAL,
             platform_id=seed_pc_platform.id,
         )
@@ -225,6 +226,28 @@ def test_on_sale_lists_a_wishlisted_game_with_a_current_discount(auth_client, db
     assert item["isTargetHit"] is True
 
 
+def test_on_sale_excludes_a_wishlist_row_with_tracking_off(auth_client, db_session, seed_game, seed_pc_platform):
+    """Same shape as the "lists a wishlisted game" test above, but track_for_sales is left
+    at its default False — proves a live cached discount stays hidden until the user opts in,
+    not just that the refresh job skips fetching for it."""
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+        )
+    )
+    db_session.add(
+        ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=40)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
 def test_on_sale_excludes_a_game_with_no_current_discount(auth_client, db_session, seed_game, seed_pc_platform):
     db_session.add(
         LibraryItem(
@@ -250,6 +273,7 @@ def test_on_sale_is_not_target_hit_when_current_price_is_above_target(
             game_id=seed_game.id,
             status=LibraryStatus.WISHLIST,
             target_price=5.0,
+            track_for_sales=True,
             format=MediaFormat.DIGITAL,
             platform_id=seed_pc_platform.id,
         )
@@ -350,6 +374,7 @@ def test_on_sale_includes_a_wishlisted_ps5_game_with_a_current_discount(
             format=MediaFormat.DIGITAL,
             platform_id=seed_platform.id,
             target_price=25.0,
+            track_for_sales=True,
         )
     )
     db_session.add(
@@ -388,11 +413,16 @@ def test_on_sale_merges_itad_and_platprices_rows_sorted_by_discount(
             status=LibraryStatus.WISHLIST,
             format=MediaFormat.DIGITAL,
             platform_id=seed_pc_platform.id,
+            track_for_sales=True,
         )
     )
     db_session.add(
         LibraryItem(
-            game_id=ps_game.id, status=LibraryStatus.WISHLIST, format=MediaFormat.DIGITAL, platform_id=seed_platform.id
+            game_id=ps_game.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_platform.id,
+            track_for_sales=True,
         )
     )
     db_session.add(ItadPriceCache(game_id=pc_game.id, itad_game_id="itad-1", current_price_amount=10.0, current_cut=20))
