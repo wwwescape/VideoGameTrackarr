@@ -120,28 +120,39 @@ const EnhancedTableHead = ({
             disabled={!(rowCount > 0)}
           />
         </TableCell>
-        {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align={headCell.disableHeader ? "center" : headCell.numeric ? "right" : "left"}
-            padding={headCell.disablePadding ? "none" : "normal"}
-            sortDirection={orderBy === headCell.id ? order : false}
-            sx={{ width: headCell.width, overflow: "hidden" }}
-          >
-            <TableSortLabel
-              active={orderBy === headCell.id}
-              direction={orderBy === headCell.id ? order : "asc"}
-              onClick={createSortHandler(headCell.id)}
+        {headCells.map((headCell, index) => {
+          // The last column's icon(s) should land directly under the toolbar's Add button
+          // (which sits inset by the Toolbar's own `pr`) — right-align it and match that
+          // same inset, rather than centering it within its own column width.
+          const isLastCell = index === headCells.length - 1;
+          return (
+            <TableCell
+              key={headCell.id}
+              align={isLastCell ? "right" : headCell.disableHeader ? "center" : headCell.numeric ? "right" : "left"}
+              padding={headCell.disablePadding ? "none" : "normal"}
+              sortDirection={orderBy === headCell.id ? order : false}
+              sx={{ width: headCell.width, overflow: "hidden", ...(isLastCell ? { pr: 1 } : {}) }}
             >
-              <strong>{headCell.disableHeader ? "" : headCell.label}</strong>
-              {orderBy === headCell.id ? (
-                <Box component="span" sx={visuallyHidden}>
-                  {order === "desc" ? t("table.sortedDescending") : t("table.sortedAscending")}
+              <TableSortLabel
+                active={orderBy === headCell.id}
+                direction={orderBy === headCell.id ? order : "asc"}
+                onClick={createSortHandler(headCell.id)}
+              >
+                <Box
+                  component="strong"
+                  sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {headCell.disableHeader ? "" : headCell.label}
                 </Box>
-              ) : null}
-            </TableSortLabel>
-          </TableCell>
-        ))}
+                {orderBy === headCell.id ? (
+                  <Box component="span" sx={visuallyHidden}>
+                    {order === "desc" ? t("table.sortedDescending") : t("table.sortedAscending")}
+                  </Box>
+                ) : null}
+              </TableSortLabel>
+            </TableCell>
+          );
+        })}
       </TableRow>
     </TableHead>
   );
@@ -154,6 +165,11 @@ interface EnhancedTableToolbarProps {
   onAddClick?: (tableName: string) => void;
   onDeleteClick?: (selected: number[], tableName: string) => void;
   selected: number[];
+  // Matches the table's own computed width (see totalTableWidth below) so the Add/Delete
+  // button sits directly above the table's actual last column — not the Card's full width,
+  // which a narrower sibling table (e.g. Owned next to Wishlist's extra On Sale column)
+  // wouldn't reach.
+  maxWidth?: number;
 }
 
 const EnhancedTableToolbar = ({
@@ -163,6 +179,7 @@ const EnhancedTableToolbar = ({
   onAddClick,
   onDeleteClick,
   selected,
+  maxWidth,
 }: EnhancedTableToolbarProps) => {
   const { t } = useTranslation();
   const handleAddClick = () => {
@@ -178,6 +195,7 @@ const EnhancedTableToolbar = ({
       sx={{
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 },
+        ...(maxWidth ? { maxWidth } : {}),
         ...(numSelected > 0 && {
           bgcolor: (theme) =>
             alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
@@ -340,6 +358,7 @@ const EnhancedTable = ({
           onAddClick={onAddClick}
           onDeleteClick={onDeleteClick}
           selected={selected}
+          maxWidth={totalTableWidth}
         />
         {isMobile ? (
           <Stack spacing={1.5} sx={{ p: 1.5, pt: 0 }}>
@@ -460,11 +479,16 @@ const EnhancedTable = ({
                           slotProps={{ input: { "aria-labelledby": labelId } }}
                         />
                       </TableCell>
-                      {headCells.map((cell) => (
+                      {headCells.map((cell, index) => {
+                        // Same reasoning as the header row: the last column's icon(s) should
+                        // land directly under the toolbar's Add button, not centered in its
+                        // own column — right-align it and match the Toolbar's own inset.
+                        const isLastCell = index === headCells.length - 1;
+                        return (
                         <TableCell
                           key={cell.id}
                           align={
-                            cell.id === "actions"
+                            isLastCell || cell.id === "actions"
                               ? "right"
                               : cell.disableHeader
                                 ? "center"
@@ -472,7 +496,7 @@ const EnhancedTable = ({
                                   ? "right"
                                   : "left"
                           }
-                          sx={{ width: cell.width, overflow: "hidden" }}
+                          sx={{ width: cell.width, overflow: "hidden", ...(isLastCell ? { pr: 1 } : {}) }}
                         >
                           {cell.id === "move" ? (
                             <IconButton onClick={(event) => handleMove(event, row.id)}>
@@ -523,7 +547,8 @@ const EnhancedTable = ({
                             </Box>
                           )}
                         </TableCell>
-                      ))}
+                        );
+                      })}
                     </TableRow>
                   );
                 })}

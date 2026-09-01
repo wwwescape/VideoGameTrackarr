@@ -8,7 +8,6 @@ const SUB_NAV_ITEMS = [
   { to: "/insights/duplicates", labelKey: "nav.duplicates" },
   { to: "/insights/missing-dlc", labelKey: "nav.missingDlc" },
   { to: "/insights/orphaned-accessories", labelKey: "nav.orphanedAccessories" },
-  { to: "/insights/steam-sync", labelKey: "nav.steamSync" },
   { to: "/insights/on-sale", labelKey: "nav.onSale" },
 ] as const;
 

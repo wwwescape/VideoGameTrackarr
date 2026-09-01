@@ -902,7 +902,13 @@
   },
   "screenshotGallery": {
     "title": "Capturas de ecrã",
-    "alt": "Captura de ecrã {{index}} de {{prefix}}"
+    "alt": "Captura de ecrã {{index}} de {{prefix}}",
+    "openAlt": "Ver a captura de ecrã {{index}} de {{prefix}} em tamanho real"
+  },
+  "videoGallery": {
+    "playAlt": "Reproduzir vídeo: {{title}}",
+    "previousVideo": "Vídeo anterior",
+    "nextVideo": "Vídeo seguinte"
   },
   "tags": {
     "title": "Etiquetas",

@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.10.1",
+  "version": "1.11.0",
   "description": "VideoGameTrackarr frontend (TypeScript, Vite, MUI, TanStack Query)",
   "private": true,
   "scripts": {
@@ -39,6 +39,7 @@
     "react-i18next": "^17.0.11",
     "react-router-dom": "^6.21.1",
     "react-toastify": "^9.1.3",
+    "yet-another-react-lightbox": "^3.32.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {

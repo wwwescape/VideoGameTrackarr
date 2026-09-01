@@ -70,7 +70,7 @@ const AddGame = () => {
   const location = useLocation();
   const steamPrefill = (location.state as SteamPrefillState | null)?.steamPrefill;
   const [searchKeyword, setSearchKeyword] = useState("");
-  // Landing here from Insights → Steam Sync's "Add as custom game" (see SteamSyncPage.tsx)
+  // Landing here from Settings → Steam Sync's "Add as custom game" (see SteamSyncPage.tsx)
   // skips straight to the manual form, pre-filled — there's no IGDB entry to search for.
   const [mode, setMode] = useState<AddMode>(steamPrefill ? "manual" : "igdb");
   const navigate = useNavigate();

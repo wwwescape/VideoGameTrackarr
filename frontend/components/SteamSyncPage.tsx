@@ -34,7 +34,7 @@ import {
 import { useJobsList, useRunJob } from "../hooks/useJobs";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
-import InsightsSubNav from "./InsightsSubNav";
+import SettingsSubNav from "./SettingsSubNav";
 
 const STEAM_IMPORT_JOB_ID = "steam_import";
 
@@ -170,7 +170,7 @@ const SteamSyncPage = () => {
 
   return (
     <>
-      <InsightsSubNav />
+      <SettingsSubNav />
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t("insights.steamSync.heading")}

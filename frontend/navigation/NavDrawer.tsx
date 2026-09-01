@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -58,19 +59,22 @@ const NavDrawer = () => {
               {destination.subItems?.map((sub) => {
                 const isSubSelected = location.pathname === sub.to;
                 return (
-                  <ListItem key={sub.to} disablePadding sx={{ mb: 0.5, pl: 2 }}>
-                    <ListItemButton
-                      component={Link}
-                      to={sub.to}
-                      selected={isSubSelected}
-                      aria-current={isSubSelected ? "page" : undefined}
-                      sx={{ borderRadius: 999 }}
-                      dense
-                    >
-                      <ListItemIcon sx={{ minWidth: 32 }}>{sub.icon}</ListItemIcon>
-                      <ListItemText primary={sub.label} slotProps={{ primary: { variant: "body2" } }} />
-                    </ListItemButton>
-                  </ListItem>
+                  <Box key={sub.to}>
+                    {sub.separatorBefore ? <Divider sx={{ my: 0.5, mx: 2 }} /> : null}
+                    <ListItem disablePadding sx={{ mb: 0.5, pl: 2 }}>
+                      <ListItemButton
+                        component={Link}
+                        to={sub.to}
+                        selected={isSubSelected}
+                        aria-current={isSubSelected ? "page" : undefined}
+                        sx={{ borderRadius: 999 }}
+                        dense
+                      >
+                        <ListItemIcon sx={{ minWidth: 32 }}>{sub.icon}</ListItemIcon>
+                        <ListItemText primary={sub.label} slotProps={{ primary: { variant: "body2" } }} />
+                      </ListItemButton>
+                    </ListItem>
+                  </Box>
                 );
               })}
             </Box>

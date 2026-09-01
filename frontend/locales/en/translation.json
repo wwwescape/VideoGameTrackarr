@@ -902,7 +902,13 @@
   },
   "screenshotGallery": {
     "title": "Screenshots",
-    "alt": "{{prefix}} screenshot {{index}}"
+    "alt": "{{prefix}} screenshot {{index}}",
+    "openAlt": "View {{prefix}} screenshot {{index}} full size"
+  },
+  "videoGallery": {
+    "playAlt": "Play video: {{title}}",
+    "previousVideo": "Previous video",
+    "nextVideo": "Next video"
   },
   "tags": {
     "title": "Tags",

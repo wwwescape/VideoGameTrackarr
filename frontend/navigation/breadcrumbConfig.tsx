@@ -161,11 +161,6 @@ export const orphanedAccessoriesCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.orphanedAccessories") },
 ];
 
-export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
-  { label: t("nav.insights"), to: "/insights" },
-  { label: t("nav.steamSync") },
-];
-
 export const onSaleCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.insights"), to: "/insights" },
   { label: t("nav.onSale") },
@@ -190,6 +185,11 @@ export const jobsCrumbs: CrumbsFn = (_params, t) => [
 export const integrationsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.integrations") },
+];
+
+export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.steamSync") },
 ];
 
 export const aboutCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.about") }];

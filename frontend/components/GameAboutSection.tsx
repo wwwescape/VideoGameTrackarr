@@ -15,6 +15,7 @@ import { gameIdentifier } from "../utils/identifiers";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import ExpandableText from "./ExpandableText";
 import ScreenshotGallery from "./ScreenshotGallery";
+import VideoGallery from "./VideoGallery";
 
 interface GameAboutSectionProps {
   game: GameDetail;
@@ -256,22 +257,7 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
         <>
           <Divider />
           <CardContent>
-            <Typography variant="subtitle2" gutterBottom>
-              {t("games.about.videosTitle")}
-            </Typography>
-            <Stack spacing={0.5}>
-              {game.videos.map((video) => (
-                <a
-                  key={video.id}
-                  href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: theme.palette.primary.main }}
-                >
-                  {video.name ?? t("games.about.watchOnYoutube")}
-                </a>
-              ))}
-            </Stack>
+            <VideoGallery videos={game.videos} />
           </CardContent>
         </>
       ) : null}

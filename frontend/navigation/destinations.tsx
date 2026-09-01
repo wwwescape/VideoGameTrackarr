@@ -22,6 +22,9 @@ export interface NavSubDestination {
   to: string;
   label: string;
   icon: ReactNode;
+  // Renders a divider above this item in the desktop drawer (see NavDrawer.tsx) — for a
+  // sub-item that's grouped in the same section but conceptually separate from the rest.
+  separatorBefore?: boolean;
 }
 
 export interface NavDestination {
@@ -71,7 +74,6 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
           label: t("nav.orphanedAccessories"),
           icon: <LinkOffIcon />,
         },
-        { to: "/insights/steam-sync", label: t("nav.steamSync"), icon: <SteamIcon /> },
         { to: "/insights/on-sale", label: t("nav.onSale"), icon: <SellIcon /> },
       ],
     },
@@ -83,6 +85,12 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
         { to: "/settings/tags", label: t("nav.tagManager"), icon: <LocalOfferIcon /> },
         { to: "/settings/jobs", label: t("nav.jobs"), icon: <RefreshIcon /> },
         { to: "/settings/integrations", label: t("nav.integrations"), icon: <CableIcon /> },
+        {
+          to: "/settings/steam-sync",
+          label: t("nav.steamSync"),
+          icon: <SteamIcon />,
+          separatorBefore: true,
+        },
       ],
     },
     { to: "/about", label: t("nav.about"), icon: <InfoIcon /> },

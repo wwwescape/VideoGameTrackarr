@@ -186,11 +186,6 @@ const router = createBrowserRouter([
             handle: { crumbs: orphanedAccessoriesCrumbs },
           },
           {
-            path: "/insights/steam-sync",
-            element: <SteamSyncPage />,
-            handle: { crumbs: steamSyncCrumbs },
-          },
-          {
             path: "/insights/on-sale",
             element: <OnSalePage />,
             handle: { crumbs: onSaleCrumbs },
@@ -207,6 +202,11 @@ const router = createBrowserRouter([
             path: "/settings/integrations",
             element: <IntegrationsPage />,
             handle: { crumbs: integrationsCrumbs },
+          },
+          {
+            path: "/settings/steam-sync",
+            element: <SteamSyncPage />,
+            handle: { crumbs: steamSyncCrumbs },
           },
           { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
           { path: "*", element: <NotFoundRouteElement />, handle: { crumbs: notFoundCrumbs } },
