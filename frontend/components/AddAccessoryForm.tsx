@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -23,6 +24,8 @@ import { useDeviceList } from "../hooks/useDevice";
 import { useColors, useManufacturers } from "../hooks/useHardwareLookups";
 import { useHardwareReferenceEntries } from "../hooks/useHardwareReference";
 import { useUploadAccessoryImage } from "../hooks/useUploads";
+import { useCurrency } from "../theme/CurrencyProvider";
+import { getCurrencySymbol } from "../utils/currency";
 import { CONDITION_LABELS, EXTRA_CUSTOM_ACCESSORY_TYPES, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -74,6 +77,7 @@ const AddAccessoryForm = () => {
   const { data: colors } = useColors();
   const { data: deviceList } = useDeviceList();
   const { data: accessoryList } = useAccessoryList();
+  const { currency } = useCurrency();
 
   const [mode, setMode] = useState<AddMode>("predefined");
   const [predefined, setPredefined] = useState<AccessoryPredefinedValues>(EMPTY_PREDEFINED);
@@ -412,6 +416,9 @@ const AddAccessoryForm = () => {
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start">{getCurrencySymbol(currency)}</InputAdornment> },
+            }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }} />

@@ -16,6 +16,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
+import InputAdornment from "@mui/material/InputAdornment";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
@@ -26,6 +27,8 @@ import type {
   RatingBoard,
   RegionResponse,
 } from "../api/types";
+import { useCurrency } from "../theme/CurrencyProvider";
+import { getCurrencySymbol } from "../utils/currency";
 import { RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 
 const formSchema = z.object({
@@ -118,6 +121,7 @@ const LibraryItemDialog = ({
   submitLabel,
 }: LibraryItemDialogProps) => {
   const { t } = useTranslation();
+  const { currency } = useCurrency();
   const {
     control,
     handleSubmit,
@@ -269,6 +273,11 @@ const LibraryItemDialog = ({
                   onChange={(event) =>
                     field.onChange(event.target.value === "" ? undefined : Number(event.target.value))
                   }
+                  slotProps={{
+                    input: {
+                      startAdornment: <InputAdornment position="start">{getCurrencySymbol(currency)}</InputAdornment>,
+                    },
+                  }}
                 />
               )}
             />
@@ -307,6 +316,11 @@ const LibraryItemDialog = ({
                       event.target.value === "" ? undefined : Number(event.target.value)
                     )
                   }
+                  slotProps={{
+                    input: {
+                      startAdornment: <InputAdornment position="start">{getCurrencySymbol(currency)}</InputAdornment>,
+                    },
+                  }}
                 />
               )}
             />

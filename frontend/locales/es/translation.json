@@ -49,7 +49,8 @@
     "missingDlc": "DLC faltante",
     "orphanedAccessories": "Accesorios huérfanos",
     "steamSync": "Sincronización Steam",
-    "salesIgnored": "Lista de ofertas ignoradas",
+    "saleTracked": "Ofertas - seguidas",
+    "salesIgnored": "Ofertas - ignoradas",
     "onSale": "En oferta",
     "settings": "Configuración",
     "tagManager": "Gestor de etiquetas",
@@ -608,8 +609,22 @@
       "confirmUpdateDescription": "Esto cambiará el tiempo de juego de \"{{name}}\" de {{currentHours}}h a {{newHours}}h, directamente desde Steam — esto puede sobrescribir tiempo registrado manualmente.",
       "confirmBulkDescription": "Esto añadirá {{newCount}} juego(s) nuevo(s) a tu biblioteca y actualizará el tiempo de juego de {{updateCount}} juego(s) ya existentes, directamente desde Steam — esto puede sobrescribir tiempo registrado manualmente."
     },
+    "saleTracked": {
+      "heading": "Ofertas - seguidas",
+      "description": "Todos los juegos o addons de tu lista de deseos con seguimiento de ofertas activado, con su plataforma, formato, tienda y precio objetivo (si está definido). Elimina uno aquí para dejar de seguirlo — su precio objetivo guardado se conserva por si vuelves a activar el seguimiento.",
+      "emptyState": "Nada por aquí todavía. Marca \"Rastrear ofertas\" en el diálogo de edición de un elemento de la lista de deseos para añadirlo.",
+      "columnName": "Nombre",
+      "columnPlatform": "Plataforma",
+      "columnFormat": "Formato",
+      "columnStorefront": "Tienda",
+      "columnTargetPrice": "Precio objetivo",
+      "columnActions": "Acciones",
+      "untrackButton": "Quitar del seguimiento",
+      "untrackSuccessToast": "Eliminado del seguimiento de ofertas.",
+      "untrackErrorToast": "No se pudo quitar este elemento del seguimiento. Inténtalo de nuevo."
+    },
     "salesIgnored": {
-      "heading": "Lista de ofertas ignoradas",
+      "heading": "Ofertas - ignoradas",
       "description": "Juegos en tu lista de deseos para los que ITAD o PlatPrices no encontraron una coincidencia exacta de título. Se omiten en cada actualización a partir de ahora — usa Reintentar para darle otra oportunidad a un título en la próxima ejecución.",
       "emptyState": "No hay nada aquí. Todos los títulos rastreados o bien coincidieron o aún no se han buscado.",
       "columnName": "Nombre",

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -13,6 +14,8 @@ import type { DeviceDetail, HardwareCondition, LibraryStatus, RatingBoard, UserD
 import { useDeviceItem, useUpdateDevice } from "../hooks/useDevice";
 import { useColors, useStorageVariants } from "../hooks/useHardwareLookups";
 import { useAddUserDevice, useUpdateUserDevice, useUserDeviceList } from "../hooks/useUserDevice";
+import { useCurrency } from "../theme/CurrencyProvider";
+import { getCurrencySymbol } from "../utils/currency";
 import { CONDITION_LABELS, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -55,6 +58,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
   const updateUserDevice = useUpdateUserDevice(device.id);
   const { data: storageVariants } = useStorageVariants();
   const { data: colors } = useColors();
+  const { currency } = useCurrency();
 
   const [officialName, setOfficialName] = useState(device.officialName);
   const [model, setModel] = useState(device.model ?? "");
@@ -217,6 +221,9 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start">{getCurrencySymbol(currency)}</InputAdornment> },
+            }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }} />

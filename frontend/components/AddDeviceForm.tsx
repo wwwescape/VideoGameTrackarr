@@ -4,11 +4,14 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import type { HardwareCondition, LibraryStatus, RatingBoard } from "../api/types";
 import { useCreateDevice } from "../hooks/useDevice";
 import { useColors, useStorageVariants } from "../hooks/useHardwareLookups";
+import { useCurrency } from "../theme/CurrencyProvider";
+import { getCurrencySymbol } from "../utils/currency";
 import { CONDITION_LABELS, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -50,6 +53,7 @@ const AddDeviceForm = () => {
   const createDevice = useCreateDevice();
   const { data: storageVariants } = useStorageVariants();
   const { data: colors } = useColors();
+  const { currency } = useCurrency();
 
   const [predefined, setPredefined] = useState<DevicePredefinedValues>(EMPTY_PREDEFINED);
   const [officialName, setOfficialName] = useState("");
@@ -212,6 +216,9 @@ const AddDeviceForm = () => {
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start">{getCurrencySymbol(currency)}</InputAdornment> },
+            }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }} />

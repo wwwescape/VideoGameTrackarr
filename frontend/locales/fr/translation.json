@@ -49,7 +49,8 @@
     "missingDlc": "DLC manquants",
     "orphanedAccessories": "Accessoires orphelins",
     "steamSync": "Synchronisation Steam",
-    "salesIgnored": "Liste des promotions ignorées",
+    "saleTracked": "Promotions - suivies",
+    "salesIgnored": "Promotions - ignorées",
     "onSale": "En promotion",
     "settings": "Paramètres",
     "tagManager": "Gestionnaire d'étiquettes",
@@ -608,8 +609,22 @@
       "confirmUpdateDescription": "Ceci fera passer le temps de jeu de « {{name}} » de {{currentHours}}h à {{newHours}}h, directement depuis Steam — cela peut écraser un temps enregistré manuellement.",
       "confirmBulkDescription": "Ceci ajoutera {{newCount}} nouveau(x) jeu(x) à votre bibliothèque et mettra à jour le temps de jeu de {{updateCount}} jeu(x) déjà présents, directement depuis Steam — cela peut écraser un temps enregistré manuellement."
     },
+    "saleTracked": {
+      "heading": "Promotions - suivies",
+      "description": "Tous les jeux ou addons de votre liste de souhaits pour lesquels le suivi des promotions est activé, avec leur plateforme, format, boutique et prix cible (si défini). Retirez-en un ici pour arrêter de le suivre — son prix cible enregistré est conservé si vous réactivez le suivi plus tard.",
+      "emptyState": "Rien ici pour l'instant. Cochez « Suivre les promotions » dans la boîte de dialogue d'édition d'un élément de votre liste de souhaits pour l'ajouter.",
+      "columnName": "Nom",
+      "columnPlatform": "Plateforme",
+      "columnFormat": "Format",
+      "columnStorefront": "Boutique",
+      "columnTargetPrice": "Prix cible",
+      "columnActions": "Actions",
+      "untrackButton": "Retirer du suivi",
+      "untrackSuccessToast": "Retiré du suivi des promotions.",
+      "untrackErrorToast": "Impossible de retirer cet élément du suivi. Veuillez réessayer."
+    },
     "salesIgnored": {
-      "heading": "Liste des promotions ignorées",
+      "heading": "Promotions - ignorées",
       "description": "Jeux de votre liste de souhaits pour lesquels ITAD ou PlatPrices n'ont trouvé aucune correspondance exacte de titre. Ils sont ignorés à chaque actualisation à partir de maintenant — utilisez Réessayer pour redonner une chance à un titre lors de la prochaine exécution.",
       "emptyState": "Rien ici. Chaque titre suivi a soit trouvé une correspondance, soit n'a pas encore été recherché.",
       "columnName": "Nom",

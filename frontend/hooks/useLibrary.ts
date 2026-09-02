@@ -17,6 +17,8 @@ export function useAddLibraryItem(gameId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -29,6 +31,8 @@ export function useUpdateLibraryItem(gameId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -40,6 +44,8 @@ export function useDeleteLibraryItem(gameId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

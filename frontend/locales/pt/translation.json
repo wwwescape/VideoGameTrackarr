@@ -49,7 +49,8 @@
     "missingDlc": "DLC em Falta",
     "orphanedAccessories": "Acessórios Órfãos",
     "steamSync": "Sincronização Steam",
-    "salesIgnored": "Lista de Promoções Ignoradas",
+    "saleTracked": "Promoções - Monitorizadas",
+    "salesIgnored": "Promoções - Ignoradas",
     "onSale": "Em Promoção",
     "settings": "Definições",
     "tagManager": "Gestor de etiquetas",
@@ -608,8 +609,22 @@
       "confirmUpdateDescription": "Isto irá definir o tempo de jogo de \"{{name}}\" de {{currentHours}}h para {{newHours}}h, diretamente da Steam — isto pode sobrepor tempo registado manualmente.",
       "confirmBulkDescription": "Isto irá adicionar {{newCount}} jogo(s) novo(s) à sua biblioteca e atualizar o tempo de jogo de {{updateCount}} jogo(s) já existentes, diretamente da Steam — isto pode sobrepor tempo registado manualmente."
     },
+    "saleTracked": {
+      "heading": "Promoções - Monitorizadas",
+      "description": "Todos os jogos ou addons da sua lista de desejos com monitorização de promoções ativada, com a sua plataforma, formato, loja e preço-alvo (se definido). Remova um daqui para deixar de o monitorizar — o preço-alvo guardado é mantido caso reative a monitorização mais tarde.",
+      "emptyState": "Ainda não há nada aqui. Marque \"Acompanhar promoções\" na caixa de edição de um item da lista de desejos para o adicionar.",
+      "columnName": "Nome",
+      "columnPlatform": "Plataforma",
+      "columnFormat": "Formato",
+      "columnStorefront": "Loja",
+      "columnTargetPrice": "Preço-Alvo",
+      "columnActions": "Ações",
+      "untrackButton": "Remover da monitorização",
+      "untrackSuccessToast": "Removido da monitorização de promoções.",
+      "untrackErrorToast": "Não foi possível remover este item da monitorização. Tente novamente."
+    },
     "salesIgnored": {
-      "heading": "Lista de Promoções Ignoradas",
+      "heading": "Promoções - Ignoradas",
       "description": "Jogos da sua lista de desejos para os quais o ITAD ou o PlatPrices não encontraram uma correspondência exata de título. São ignorados em todas as atualizações a partir de agora — use Repetir para dar outra oportunidade a um título na próxima execução.",
       "emptyState": "Não há nada aqui. Todos os títulos monitorizados ou já corresponderam ou ainda não foram pesquisados.",
       "columnName": "Nome",

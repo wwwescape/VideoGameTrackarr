@@ -49,7 +49,8 @@
     "missingDlc": "Missing DLC",
     "orphanedAccessories": "Orphaned Accessories",
     "steamSync": "Steam Sync",
-    "salesIgnored": "Sales Ignored List",
+    "saleTracked": "Sale - Tracked",
+    "salesIgnored": "Sale - Ignored List",
     "onSale": "On Sale",
     "settings": "Settings",
     "tagManager": "Tag Manager",
@@ -608,8 +609,22 @@
       "confirmUpdateDescription": "This will set \"{{name}}\"'s playtime from {{currentHours}}h to {{newHours}}h, straight from Steam — this can overwrite manually-logged time.",
       "confirmBulkDescription": "This will add {{newCount}} new game(s) to your library and update playtime for {{updateCount}} game(s) already there, straight from Steam — this can overwrite manually-logged time."
     },
+    "saleTracked": {
+      "heading": "Sale - Tracked",
+      "description": "Every wishlisted game or addon you've opted into sale tracking, with its platform, format, storefront, and target price (if set). Remove one here to stop tracking it — its saved target price is kept in case you re-enable tracking later.",
+      "emptyState": "Nothing here yet. Check \"Track for sales\" on a wishlist item's Edit dialog to add it.",
+      "columnName": "Name",
+      "columnPlatform": "Platform",
+      "columnFormat": "Format",
+      "columnStorefront": "Storefront",
+      "columnTargetPrice": "Target Price",
+      "columnActions": "Actions",
+      "untrackButton": "Remove from tracking",
+      "untrackSuccessToast": "Removed from sale tracking.",
+      "untrackErrorToast": "Could not remove this item from tracking. Please try again."
+    },
     "salesIgnored": {
-      "heading": "Sales Ignored List",
+      "heading": "Sale - Ignored List",
       "description": "Wishlisted games that ITAD or PlatPrices couldn't find an exact title match for. They're skipped on every refresh from here on — use Retry to give a title another chance on the next run.",
       "emptyState": "Nothing here. Every tracked title has either matched or hasn't been searched yet.",
       "columnName": "Name",

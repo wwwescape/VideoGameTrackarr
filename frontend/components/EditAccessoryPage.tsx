@@ -9,6 +9,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -22,6 +23,8 @@ import { useColors, useManufacturers } from "../hooks/useHardwareLookups";
 import { useHardwareReferenceEntries } from "../hooks/useHardwareReference";
 import { useUploadAccessoryImage } from "../hooks/useUploads";
 import { useAddUserAccessory, useUpdateUserAccessory, useUserAccessoryList } from "../hooks/useUserAccessories";
+import { useCurrency } from "../theme/CurrencyProvider";
+import { getCurrencySymbol } from "../utils/currency";
 import { CONDITION_LABELS, EXTRA_CUSTOM_ACCESSORY_TYPES, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -73,6 +76,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
   const { data: colors } = useColors();
   const { data: deviceList } = useDeviceList();
   const { data: accessoryList } = useAccessoryList();
+  const { currency } = useCurrency();
 
   const isPredefined = !!accessory.hardwareReference;
 
@@ -409,6 +413,9 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             fullWidth
             value={price}
             onChange={(event) => setPrice(event.target.value)}
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start">{getCurrencySymbol(currency)}</InputAdornment> },
+            }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }} />

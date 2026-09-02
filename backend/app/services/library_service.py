@@ -12,6 +12,10 @@ def list_library_items(db: Session, game_id: int, status: LibraryStatus | None =
     return library_item_repository.list_library_items(db, game_id, status=status)
 
 
+def list_tracked_items(db: Session) -> list[LibraryItem]:
+    return library_item_repository.list_tracked_items(db)
+
+
 def add_library_item(db: Session, game_id: int, **fields: Any) -> LibraryItem:
     _require_game(db, game_id)
     item = library_item_repository.create_library_item(db, game_id=game_id, **fields)

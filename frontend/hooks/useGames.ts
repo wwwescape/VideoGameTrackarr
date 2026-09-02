@@ -60,6 +60,8 @@ export function useDeleteGame() {
     mutationFn: deleteGame,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -70,6 +72,8 @@ export function useImportGame() {
     mutationFn: importGame,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -80,6 +84,8 @@ export function useCreateManualGame() {
     mutationFn: createManualGame,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -91,6 +97,8 @@ export function useUpdateManualGame(gameId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -103,6 +111,8 @@ export function useResyncGame(gameId: number) {
       queryClient.invalidateQueries({ queryKey: ["games", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games", gameId, "addons"] });
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -115,6 +125,8 @@ export function useLinkGameToIgdb(gameId: number) {
       queryClient.invalidateQueries({ queryKey: ["games", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games", gameId, "addons"] });
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -127,6 +139,8 @@ export function useLinkGameToIgdbViaParent(gameId: number) {
       // The original row (gameId) is deleted by the merge, replaced by a new row — no
       // point invalidating its own id-keyed queries, just the broader games list/addons.
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -139,6 +153,8 @@ export function useMergeGameIntoIgdb(gameId: number) {
       // gameId is deleted by the merge, its data folded into the existing target row — no
       // point invalidating its own id-keyed queries, just the broader games list/addons.
       queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
