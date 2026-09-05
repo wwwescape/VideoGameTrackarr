@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -69,6 +69,11 @@ interface GameCardProps {
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  // Overrides the "add" context's button label/icon (default: common.add / AddIcon) — for a
+  // picker that isn't actually adding a new game, e.g. RelinkSteamEntryDialog.tsx picking an
+  // *existing* local game to repoint a Steam match at. Has no effect on any other context.
+  actionLabel?: string;
+  actionIcon?: ReactNode;
 }
 
 const GameCard = ({
@@ -78,6 +83,8 @@ const GameCard = ({
   selectable,
   selected,
   onToggleSelect,
+  actionLabel,
+  actionIcon,
 }: GameCardProps) => {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -299,10 +306,10 @@ const GameCard = ({
                 color="primary"
                 fullWidth
                 sx={{ mt: 1.25 }}
-                startIcon={<AddIcon />}
+                startIcon={actionIcon ?? <AddIcon />}
                 onClick={contextFunction}
               >
-                {t("common.add")}
+                {actionLabel ?? t("common.add")}
               </Button>
             )}
           </>

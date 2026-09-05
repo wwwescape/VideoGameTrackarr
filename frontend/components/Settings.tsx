@@ -29,10 +29,10 @@ const Settings = () => {
 
   return (
     <Box sx={{ mb: 3 }}>
+      <SettingsSubNav />
       <Typography variant="h4" component="h1" gutterBottom>
         {t("settings.title")}
       </Typography>
-      <SettingsSubNav />
       <Card sx={{ maxWidth: 640 }}>
         <CardContent>
           <Typography variant="subtitle1" gutterBottom>

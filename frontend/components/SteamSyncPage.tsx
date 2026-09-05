@@ -538,8 +538,16 @@ const SteamSyncPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
+                    {/* MUI's own TableCell paddingCheckbox style zeroes out padding on its
+                        *direct* child only ("& > *"), which is how a bare row Checkbox below
+                        ends up sized down to just its icon. The Tooltip here needs to wrap a
+                        span (so it still works while the checkbox is disabled), which makes the
+                        Checkbox a grandchild instead — missing that rule and keeping its full
+                        default padding, rendering visibly larger/misaligned than the row
+                        checkboxes. Replicated explicitly here since the DOM nesting can't match
+                        MUI's selector. */}
                     <Tooltip title={t("insights.steamSync.selectAllTooltip")}>
-                      <span style={{ display: "inline-flex" }}>
+                      <span>
                         <Checkbox
                           indeterminate={
                             selectedOnCurrentPage.length > 0 &&
@@ -551,6 +559,7 @@ const SteamSyncPage = () => {
                           }
                           onChange={toggleSelectAll}
                           disabled={actionableCurrentPageRows.length === 0}
+                          sx={{ padding: 0 }}
                         />
                       </span>
                     </Tooltip>

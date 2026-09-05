@@ -24,6 +24,7 @@ import { useIgdbSearch } from "../hooks/useIgdbSearch";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import GameCard from "./GameCard";
+import GamesSubNav from "./GamesSubNav";
 import ManualGameForm from "./ManualGameForm";
 import SimpleTabPanel from "./SimpleTabPanel";
 import VirtualGameGrid from "./VirtualGameGrid";
@@ -120,6 +121,7 @@ const AddGame = () => {
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
+      <GamesSubNav />
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t("games.add.pageTitle")}

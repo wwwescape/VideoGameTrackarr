@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
+import LinkIcon from "@mui/icons-material/Link";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -93,7 +94,14 @@ const RelinkSteamEntryDialog = ({ target, onClose }: RelinkSteamEntryDialogProps
           ) : (
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 1.5 }}>
               {(results ?? []).map((game) => (
-                <GameCard key={game.id} game={game} context="add" contextFunction={() => void handlePick(game.id)} />
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  context="add"
+                  contextFunction={() => void handlePick(game.id)}
+                  actionLabel={t("insights.steamSync.relinkPickButton")}
+                  actionIcon={<LinkIcon />}
+                />
               ))}
             </Box>
           )}

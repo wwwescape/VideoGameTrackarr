@@ -612,6 +612,7 @@
       "ignoreButton": "Ignorer",
       "ignoreErrorToast": "Impossible d'ignorer cette entrée. Veuillez réessayer.",
       "relinkButton": "Lier à un autre jeu",
+      "relinkPickButton": "Lier",
       "relinkDialogTitle": "Lier à un autre jeu",
       "relinkSearchLabel": "Rechercher dans votre bibliothèque",
       "relinkKeepTyping": "Continuez à taper pour rechercher dans votre bibliothèque…",
