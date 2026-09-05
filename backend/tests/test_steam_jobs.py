@@ -189,7 +189,9 @@ def test_run_caches_and_matches_a_new_wishlist_item(db_session, test_user, monke
     assert entry.steam_name == "Steam App 220"  # GetWishlist gives no name, see SteamClient.get_wishlist
 
 
-def test_run_keeps_an_existing_wishlist_name_instead_of_reverting_to_the_placeholder(db_session, test_user, monkeypatch):
+def test_run_keeps_an_existing_wishlist_name_instead_of_reverting_to_the_placeholder(
+    db_session, test_user, monkeypatch
+):
     db_session.add(SteamWishlistEntry(steam_app_id=220, steam_name="Half-Life 2 (Custom Name)"))
     db_session.commit()
     _configure_steam(monkeypatch, test_user, db_session)
