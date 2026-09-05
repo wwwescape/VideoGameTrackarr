@@ -30,7 +30,7 @@ def upsert_entry(
     return entry
 
 
-def set_game_id(db: Session, entry: SteamWishlistEntry, game_id: int) -> SteamWishlistEntry:
+def set_game_id(db: Session, entry: SteamWishlistEntry, game_id: int | None) -> SteamWishlistEntry:
     entry.game_id = game_id
     db.flush()
     return entry

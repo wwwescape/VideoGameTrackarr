@@ -5,8 +5,12 @@ import {
   getSteamWishlistEntries,
   ignoreSteamEntry,
   ignoreSteamWishlistEntry,
+  relinkSteamEntry,
+  relinkSteamWishlistEntry,
   syncSteamEntries,
   syncSteamWishlistEntries,
+  unlinkSteamEntry,
+  unlinkSteamWishlistEntry,
   updateSteamId,
 } from "../api/integrations";
 
@@ -45,6 +49,23 @@ export function useIgnoreSteamEntry() {
   });
 }
 
+export function useRelinkSteamEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ steamAppId, gameId }: { steamAppId: number; gameId: number }) =>
+      relinkSteamEntry(steamAppId, gameId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-entries"] }),
+  });
+}
+
+export function useUnlinkSteamEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: unlinkSteamEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-entries"] }),
+  });
+}
+
 export function useSteamWishlistEntries() {
   return useQuery({ queryKey: ["steam-wishlist-entries"], queryFn: getSteamWishlistEntries });
 }
@@ -64,6 +85,23 @@ export function useIgnoreSteamWishlistEntry() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ignoreSteamWishlistEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-wishlist-entries"] }),
+  });
+}
+
+export function useRelinkSteamWishlistEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ steamAppId, gameId }: { steamAppId: number; gameId: number }) =>
+      relinkSteamWishlistEntry(steamAppId, gameId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-wishlist-entries"] }),
+  });
+}
+
+export function useUnlinkSteamWishlistEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: unlinkSteamWishlistEntry,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-wishlist-entries"] }),
   });
 }

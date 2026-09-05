@@ -15,10 +15,11 @@ import {
 } from "../api/games";
 import type { ManualGameInput } from "../api/types";
 
-export function useGames(filters: GameListFilters = {}) {
+export function useGames(filters: GameListFilters = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["games", filters],
     queryFn: ({ signal }) => listGames(filters, signal),
+    enabled: options?.enabled ?? true,
   });
 }
 

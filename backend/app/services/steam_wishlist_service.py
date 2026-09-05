@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.models.library import LibraryStatus, MediaFormat
 from app.models.steam import SteamWishlistEntry
-from app.repositories import library_item_repository, platform_repository, steam_wishlist_repository
+from app.repositories import game_repository, library_item_repository, platform_repository, steam_wishlist_repository
 from app.services import library_service
-from app.services.exceptions import NotFoundError
+from app.services.exceptions import ConflictError, NotFoundError
 from app.services.steam_service import PC_IGDB_PLATFORM_ID
 
 
@@ -55,6 +55,27 @@ def sync_entries(db: Session, steam_app_ids: list[int]) -> dict[str, Any]:
 def ignore_entry(db: Session, steam_app_id: int) -> SteamWishlistEntryWithStatus:
     entry = _require_entry(db, steam_app_id)
     steam_wishlist_repository.set_ignored(db, entry, True)
+    db.commit()
+    return _with_status(db, entry)
+
+
+def relink_entry(db: Session, steam_app_id: int, game_id: int) -> SteamWishlistEntryWithStatus:
+    """Same purpose as steam_service.relink_entry — repoints an already-matched wishlist entry
+    at a different local game when the automatic match is wrong or has gone stale."""
+    entry = _require_entry(db, steam_app_id)
+    if game_repository.get_game(db, game_id) is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    existing = steam_wishlist_repository.get_entry_by_game_id(db, game_id)
+    if existing is not None and existing.steam_app_id != steam_app_id:
+        raise ConflictError(f"Game {game_id} is already linked to a different Steam wishlist entry")
+    steam_wishlist_repository.set_game_id(db, entry, game_id)
+    db.commit()
+    return _with_status(db, entry)
+
+
+def unlink_entry(db: Session, steam_app_id: int) -> SteamWishlistEntryWithStatus:
+    entry = _require_entry(db, steam_app_id)
+    steam_wishlist_repository.set_game_id(db, entry, None)
     db.commit()
     return _with_status(db, entry)
 

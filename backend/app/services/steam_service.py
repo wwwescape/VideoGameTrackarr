@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.models.library import LibraryStatus, MediaFormat
 from app.models.steam import SteamLibraryEntry
-from app.repositories import library_item_repository, platform_repository, steam_repository
+from app.repositories import game_repository, library_item_repository, platform_repository, steam_repository
 from app.services import library_service, progress_service
-from app.services.exceptions import NotFoundError
+from app.services.exceptions import ConflictError, NotFoundError
 
 # IGDB's platform id for "PC (Microsoft Windows)" — well-known/stable, confirmed via search
 # during scoping. Resolved lazily via get_or_create_by_igdb rather than assumed present,
@@ -66,6 +66,28 @@ def sync_entries(db: Session, steam_app_ids: list[int]) -> dict[str, Any]:
 def ignore_entry(db: Session, steam_app_id: int) -> SteamEntryWithStatus:
     entry = _require_entry(db, steam_app_id)
     steam_repository.set_ignored(db, entry, True)
+    db.commit()
+    return _with_status(db, entry)
+
+
+def relink_entry(db: Session, steam_app_id: int, game_id: int) -> SteamEntryWithStatus:
+    """Repoints an already-matched entry at a different local game — for when the automatic
+    Steam-appid match is wrong or has gone stale (e.g. a publisher repurposes an old app id for
+    a different release; IGDB's own external_games table can lag behind that indefinitely)."""
+    entry = _require_entry(db, steam_app_id)
+    if game_repository.get_game(db, game_id) is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    existing = steam_repository.get_entry_by_game_id(db, game_id)
+    if existing is not None and existing.steam_app_id != steam_app_id:
+        raise ConflictError(f"Game {game_id} is already linked to a different Steam entry")
+    steam_repository.set_game_id(db, entry, game_id)
+    db.commit()
+    return _with_status(db, entry)
+
+
+def unlink_entry(db: Session, steam_app_id: int) -> SteamEntryWithStatus:
+    entry = _require_entry(db, steam_app_id)
+    steam_repository.set_game_id(db, entry, None)
     db.commit()
     return _with_status(db, entry)
 

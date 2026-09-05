@@ -5,6 +5,7 @@ from app.api.deps import get_current_user, get_db
 from app.models.system import User
 from app.schemas.integrations import (
     IntegrationsStatusResponse,
+    RelinkSteamEntryRequest,
     SteamEntryResponse,
     SteamStoreDetailsResponse,
     SteamWishlistEntryResponse,
@@ -49,6 +50,18 @@ def ignore_steam_entry(steam_app_id: int, db: Session = Depends(get_db)) -> Stea
     return _entry_response(steam_service.ignore_entry(db, steam_app_id))
 
 
+@router.post("/api/integrations/steam/{steam_app_id}/relink", response_model=SteamEntryResponse)
+def relink_steam_entry(
+    steam_app_id: int, payload: RelinkSteamEntryRequest, db: Session = Depends(get_db)
+) -> SteamEntryResponse:
+    return _entry_response(steam_service.relink_entry(db, steam_app_id, payload.game_id))
+
+
+@router.post("/api/integrations/steam/{steam_app_id}/unlink", response_model=SteamEntryResponse)
+def unlink_steam_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamEntryResponse:
+    return _entry_response(steam_service.unlink_entry(db, steam_app_id))
+
+
 @router.get("/api/integrations/steam/{steam_app_id}/store-details", response_model=SteamStoreDetailsResponse)
 async def get_steam_store_details(steam_app_id: int) -> SteamStoreDetailsResponse:
     async with SteamStoreClient() as client:
@@ -75,6 +88,22 @@ def sync_steam_wishlist_entries(
 )
 def ignore_steam_wishlist_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamWishlistEntryResponse:
     return _wishlist_entry_response(steam_wishlist_service.ignore_entry(db, steam_app_id))
+
+
+@router.post(
+    "/api/integrations/steam/wishlist/{steam_app_id}/relink", response_model=SteamWishlistEntryResponse
+)
+def relink_steam_wishlist_entry(
+    steam_app_id: int, payload: RelinkSteamEntryRequest, db: Session = Depends(get_db)
+) -> SteamWishlistEntryResponse:
+    return _wishlist_entry_response(steam_wishlist_service.relink_entry(db, steam_app_id, payload.game_id))
+
+
+@router.post(
+    "/api/integrations/steam/wishlist/{steam_app_id}/unlink", response_model=SteamWishlistEntryResponse
+)
+def unlink_steam_wishlist_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamWishlistEntryResponse:
+    return _wishlist_entry_response(steam_wishlist_service.unlink_entry(db, steam_app_id))
 
 
 def _wishlist_entry_response(

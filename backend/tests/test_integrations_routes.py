@@ -234,6 +234,65 @@ def test_ignore_steam_entry_marks_it_ignored(auth_client, db_session):
     assert response.json()["status"] == "ignored"
 
 
+def test_relink_steam_entry_requires_auth(client):
+    response = client.post("/api/integrations/steam/220/relink", json={"gameId": 1})
+
+    assert response.status_code == 401
+
+
+def test_relink_steam_entry_repoints_it_at_a_different_game(auth_client, db_session):
+    _seed_matched_entry(db_session)  # linked to "Half-Life 2"
+    other_game = Game(igdb_id=234, name="Portal", slug="portal", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/220/relink", json={"gameId": other_game.id})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["gameId"] == other_game.id
+    assert body["gameName"] == "Portal"
+    assert body["gameSlug"] == "portal"
+
+
+def test_relink_steam_entry_returns_404_for_an_unknown_game_id(auth_client, db_session):
+    _seed_matched_entry(db_session)
+
+    response = auth_client.post("/api/integrations/steam/220/relink", json={"gameId": 999999})
+
+    assert response.status_code == 404
+
+
+def test_relink_steam_entry_returns_409_when_the_target_game_is_already_linked(auth_client, db_session):
+    _seed_matched_entry(db_session, steam_app_id=220)  # linked to "Half-Life 2"
+    other_game = Game(igdb_id=234, name="Portal", slug="portal", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+    db_session.add(SteamLibraryEntry(steam_app_id=221, steam_name="Portal", game_id=other_game.id))
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/220/relink", json={"gameId": other_game.id})
+
+    assert response.status_code == 409
+
+
+def test_unlink_steam_entry_requires_auth(client):
+    response = client.post("/api/integrations/steam/220/unlink")
+
+    assert response.status_code == 401
+
+
+def test_unlink_steam_entry_clears_the_match(auth_client, db_session):
+    _seed_matched_entry(db_session)
+
+    response = auth_client.post("/api/integrations/steam/220/unlink")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["gameId"] is None
+    assert body["status"] == "no_match"
+
+
 @respx.mock
 def test_get_steam_store_details_returns_mapped_fields(auth_client):
     respx.get("https://store.steampowered.com/api/appdetails").mock(
@@ -468,3 +527,68 @@ def test_ignore_steam_wishlist_entry_marks_it_ignored(auth_client, db_session):
 
     assert response.status_code == 200
     assert response.json()["status"] == "ignored"
+
+
+def test_relink_steam_wishlist_entry_requires_auth(client):
+    response = client.post("/api/integrations/steam/wishlist/220/relink", json={"gameId": 1})
+
+    assert response.status_code == 401
+
+
+def test_relink_steam_wishlist_entry_repoints_it_at_a_different_game(auth_client, db_session):
+    _seed_matched_wishlist_entry(db_session)  # linked to "Half-Life 2"
+    other_game = Game(igdb_id=234, name="Portal", slug="portal", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    response = auth_client.post(
+        "/api/integrations/steam/wishlist/220/relink", json={"gameId": other_game.id}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["gameId"] == other_game.id
+    assert body["gameName"] == "Portal"
+    assert body["gameSlug"] == "portal"
+
+
+def test_relink_steam_wishlist_entry_returns_404_for_an_unknown_game_id(auth_client, db_session):
+    _seed_matched_wishlist_entry(db_session)
+
+    response = auth_client.post("/api/integrations/steam/wishlist/220/relink", json={"gameId": 999999})
+
+    assert response.status_code == 404
+
+
+def test_relink_steam_wishlist_entry_returns_409_when_the_target_game_is_already_linked(
+    auth_client, db_session
+):
+    _seed_matched_wishlist_entry(db_session, steam_app_id=220)  # linked to "Half-Life 2"
+    other_game = Game(igdb_id=234, name="Portal", slug="portal", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+    db_session.add(SteamWishlistEntry(steam_app_id=221, steam_name="Portal", game_id=other_game.id))
+    db_session.commit()
+
+    response = auth_client.post(
+        "/api/integrations/steam/wishlist/220/relink", json={"gameId": other_game.id}
+    )
+
+    assert response.status_code == 409
+
+
+def test_unlink_steam_wishlist_entry_requires_auth(client):
+    response = client.post("/api/integrations/steam/wishlist/220/unlink")
+
+    assert response.status_code == 401
+
+
+def test_unlink_steam_wishlist_entry_clears_the_match(auth_client, db_session):
+    _seed_matched_wishlist_entry(db_session)
+
+    response = auth_client.post("/api/integrations/steam/wishlist/220/unlink")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["gameId"] is None
+    assert body["status"] == "no_match"

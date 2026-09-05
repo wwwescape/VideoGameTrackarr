@@ -81,6 +81,18 @@ export async function ignoreSteamEntry(steamAppId: number): Promise<SteamEntry> 
   return response.data;
 }
 
+export async function relinkSteamEntry(steamAppId: number, gameId: number): Promise<SteamEntry> {
+  const response = await apiClient.post<SteamEntry>(`/api/integrations/steam/${steamAppId}/relink`, {
+    gameId,
+  });
+  return response.data;
+}
+
+export async function unlinkSteamEntry(steamAppId: number): Promise<SteamEntry> {
+  const response = await apiClient.post<SteamEntry>(`/api/integrations/steam/${steamAppId}/unlink`);
+  return response.data;
+}
+
 export async function getSteamStoreDetails(steamAppId: number): Promise<SteamStoreDetails> {
   const response = await apiClient.get<SteamStoreDetails>(
     `/api/integrations/steam/${steamAppId}/store-details`
@@ -103,6 +115,24 @@ export async function syncSteamWishlistEntries(steamAppIds: number[]): Promise<S
 export async function ignoreSteamWishlistEntry(steamAppId: number): Promise<SteamWishlistEntry> {
   const response = await apiClient.post<SteamWishlistEntry>(
     `/api/integrations/steam/wishlist/${steamAppId}/ignore`
+  );
+  return response.data;
+}
+
+export async function relinkSteamWishlistEntry(
+  steamAppId: number,
+  gameId: number
+): Promise<SteamWishlistEntry> {
+  const response = await apiClient.post<SteamWishlistEntry>(
+    `/api/integrations/steam/wishlist/${steamAppId}/relink`,
+    { gameId }
+  );
+  return response.data;
+}
+
+export async function unlinkSteamWishlistEntry(steamAppId: number): Promise<SteamWishlistEntry> {
+  const response = await apiClient.post<SteamWishlistEntry>(
+    `/api/integrations/steam/wishlist/${steamAppId}/unlink`
   );
   return response.data;
 }

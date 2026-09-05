@@ -2,6 +2,8 @@ import { Fragment, useMemo, useState } from "react";
 import { alpha, useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import BlockIcon from "@mui/icons-material/Block";
+import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SyncIcon from "@mui/icons-material/Sync";
 import Avatar from "@mui/material/Avatar";
@@ -40,10 +42,13 @@ import {
   useSteamWishlistEntries,
   useSyncSteamEntries,
   useSyncSteamWishlistEntries,
+  useUnlinkSteamEntry,
+  useUnlinkSteamWishlistEntry,
 } from "../hooks/useIntegrations";
 import { useJobsList, useRunJob } from "../hooks/useJobs";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
+import RelinkSteamEntryDialog, { type RelinkTarget } from "./RelinkSteamEntryDialog";
 import SettingsSubNav from "./SettingsSubNav";
 
 const STEAM_IMPORT_JOB_ID = "steam_import";
@@ -141,12 +146,17 @@ const SteamSyncPage = () => {
   const syncWishlistEntries = useSyncSteamWishlistEntries();
   const ignoreEntry = useIgnoreSteamEntry();
   const ignoreWishlistEntry = useIgnoreSteamWishlistEntry();
+  const unlinkEntry = useUnlinkSteamEntry();
+  const unlinkWishlistEntry = useUnlinkSteamWishlistEntry();
   const { data: jobs } = useJobsList();
   const runJob = useRunJob();
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<string[]>([]);
+  const [lastClickedKey, setLastClickedKey] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<SyncTarget[] | null>(null);
+  const [relinkTarget, setRelinkTarget] = useState<RelinkTarget | null>(null);
+  const [unlinkTarget, setUnlinkTarget] = useState<SyncRow | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
@@ -158,13 +168,37 @@ const SteamSyncPage = () => {
     return combined;
   }, [ownedEntries, wishlistEntries]);
 
-  // Flattened top-level rows + their DLC children — "select all" and the header checkbox's
-  // checked/indeterminate state operate over every actionable row, not just what's currently
-  // expanded, so bulk-syncing a game's whole DLC catalog doesn't require expanding each one
-  // first (see the selectAllTooltip copy warning about this).
+  const visibleTrees = trees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  // Flattened top-level rows + their DLC children, across every page — used for resolving
+  // "Sync selected" (a selection can span pages even though "select all" itself doesn't, see
+  // below) into the actual rows to sync.
   const allRows = useMemo(() => trees.flatMap((tree) => [tree.row, ...tree.children]), [trees]);
-  const actionableRows = allRows.filter(isRowActionable);
   const selectedRows = allRows.filter((row) => selected.includes(rowKey(row)) && isRowActionable(row));
+
+  // Current page's rows only — this is what the header checkbox and "select all" operate over
+  // (a paginated table selecting rows the user can't currently see would be surprising), but
+  // still reaches into a page row's collapsed DLC children even when not expanded, so bulk-
+  // syncing a game's whole DLC catalog doesn't require expanding each one first (see the
+  // selectAllTooltip copy).
+  const currentPageRows = useMemo(
+    () => visibleTrees.flatMap((tree) => [tree.row, ...tree.children]),
+    [visibleTrees]
+  );
+  const actionableCurrentPageRows = currentPageRows.filter(isRowActionable);
+  const selectedOnCurrentPage = actionableCurrentPageRows.filter((row) => selected.includes(rowKey(row)));
+
+  // The currently *visible* (rendered) row order on this page — top-level rows plus any
+  // expanded children, in on-screen order — used for shift-click range selection, since a
+  // range only makes visual sense over what's actually on screen between the two clicks.
+  const visibleOrderedRows = useMemo(() => {
+    const list: SyncRow[] = [];
+    for (const tree of visibleTrees) {
+      list.push(tree.row);
+      if (expanded.has(rowKey(tree.row))) list.push(...tree.children);
+    }
+    return list;
+  }, [visibleTrees, expanded]);
 
   // A top-level row's own children count, looked up by gameId — used so a bulk sync of a
   // selected parent still surfaces the "N DLC will also sync" note (see confirmAddonNote)
@@ -192,8 +226,45 @@ const SteamSyncPage = () => {
     setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   };
 
+  // Gmail-style shift-click: extends the selection from the last-clicked row to this one,
+  // over the currently *visible* row order (see visibleOrderedRows) — a range only makes
+  // visual sense over what's actually on screen between the two clicks. The whole range takes
+  // on the target checkbox's new state (its state *before* this click, inverted), matching how
+  // a plain click on it would have behaved — so shift-clicking a checked box to uncheck it
+  // unchecks the whole range too, not just checks it. Falls back to a plain toggle when there's
+  // no anchor yet, or the anchor isn't on the current page (e.g. after paginating).
+  const handleRowCheckboxClick = (row: SyncRow, event: React.MouseEvent) => {
+    const key = rowKey(row);
+    if (event.shiftKey && lastClickedKey) {
+      const orderedKeys = visibleOrderedRows.filter(isRowActionable).map(rowKey);
+      const anchorIndex = orderedKeys.indexOf(lastClickedKey);
+      const targetIndex = orderedKeys.indexOf(key);
+      if (anchorIndex !== -1 && targetIndex !== -1) {
+        const [start, end] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+        const rangeKeys = orderedKeys.slice(start, end + 1);
+        const shouldSelect = !selected.includes(key);
+        setSelected((prev) => {
+          const withoutRange = prev.filter((k) => !rangeKeys.includes(k));
+          return shouldSelect ? [...withoutRange, ...rangeKeys] : withoutRange;
+        });
+        setLastClickedKey(key);
+        return;
+      }
+    }
+    toggleRow(key);
+    setLastClickedKey(key);
+  };
+
+  // Scoped to the current page only — reaching across pages to select rows the user can't see
+  // would be surprising. Adds/removes just this page's actionable rows, leaving any selection
+  // on other pages untouched (so paging through and selecting a few rows per page accumulates,
+  // the same way Gmail's per-page "select all" doesn't clear other pages' selections either).
   const toggleSelectAll = () => {
-    setSelected((prev) => (prev.length > 0 ? [] : actionableRows.map(rowKey)));
+    const pageKeys = actionableCurrentPageRows.map(rowKey);
+    const allSelected = pageKeys.length > 0 && pageKeys.every((k) => selected.includes(k));
+    setSelected((prev) =>
+      allSelected ? prev.filter((k) => !pageKeys.includes(k)) : [...new Set([...prev, ...pageKeys])]
+    );
   };
 
   const handleRunImport = async () => {
@@ -248,6 +319,23 @@ const SteamSyncPage = () => {
     }
   };
 
+  const handleConfirmUnlink = async () => {
+    if (!unlinkTarget) return;
+    try {
+      if (unlinkTarget.source === "owned") {
+        await unlinkEntry.mutateAsync(unlinkTarget.entry.steamAppId);
+      } else {
+        await unlinkWishlistEntry.mutateAsync(unlinkTarget.entry.steamAppId);
+      }
+      toast.success(t("insights.steamSync.unlinkSuccessToast"), TOAST_OPTIONS);
+    } catch (error) {
+      console.error(`Error unlinking Steam app ${unlinkTarget.entry.steamAppId}:`, error);
+      toast.error(t("insights.steamSync.unlinkErrorToast"), TOAST_OPTIONS);
+    } finally {
+      setUnlinkTarget(null);
+    }
+  };
+
   const handleAddAsCustomGame = async (row: SyncRow) => {
     try {
       const details = await getSteamStoreDetails(row.entry.steamAppId);
@@ -266,8 +354,6 @@ const SteamSyncPage = () => {
       toast.error(t("insights.steamSync.storeDetailsErrorToast"), TOAST_OPTIONS);
     }
   };
-
-  const visibleTrees = trees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const confirmDescription = (() => {
     if (!confirmTarget) return "";
@@ -343,6 +429,20 @@ const SteamSyncPage = () => {
           <Tooltip title={t("insights.steamSync.addCustomButton")}>
             <IconButton size="small" onClick={() => void handleAddAsCustomGame(row)}>
               <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {row.entry.gameId !== null && (
+          <Tooltip title={t("insights.steamSync.relinkButton")}>
+            <IconButton size="small" onClick={() => setRelinkTarget(row)}>
+              <LinkIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {row.entry.gameId !== null && (
+          <Tooltip title={t("insights.steamSync.unlinkButton")}>
+            <IconButton size="small" onClick={() => setUnlinkTarget(row)}>
+              <LinkOffIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         )}
@@ -439,12 +539,18 @@ const SteamSyncPage = () => {
                 <TableRow>
                   <TableCell padding="checkbox">
                     <Tooltip title={t("insights.steamSync.selectAllTooltip")}>
-                      <span>
+                      <span style={{ display: "inline-flex" }}>
                         <Checkbox
-                          indeterminate={selected.length > 0 && selected.length < actionableRows.length}
-                          checked={actionableRows.length > 0 && selected.length === actionableRows.length}
+                          indeterminate={
+                            selectedOnCurrentPage.length > 0 &&
+                            selectedOnCurrentPage.length < actionableCurrentPageRows.length
+                          }
+                          checked={
+                            actionableCurrentPageRows.length > 0 &&
+                            selectedOnCurrentPage.length === actionableCurrentPageRows.length
+                          }
                           onChange={toggleSelectAll}
-                          disabled={actionableRows.length === 0}
+                          disabled={actionableCurrentPageRows.length === 0}
                         />
                       </span>
                     </Tooltip>
@@ -471,7 +577,8 @@ const SteamSyncPage = () => {
                         <TableCell padding="checkbox">
                           <Checkbox
                             checked={selected.includes(key)}
-                            onChange={() => toggleRow(key)}
+                            onClick={(event) => handleRowCheckboxClick(tree.row, event)}
+                            onChange={() => {}}
                             disabled={!actionable}
                           />
                         </TableCell>
@@ -546,7 +653,8 @@ const SteamSyncPage = () => {
                               <TableCell padding="checkbox">
                                 <Checkbox
                                   checked={selected.includes(childKey)}
-                                  onChange={() => toggleRow(childKey)}
+                                  onClick={(event) => handleRowCheckboxClick(child, event)}
+                                  onChange={() => {}}
                                   disabled={!isRowActionable(child)}
                                 />
                               </TableCell>
@@ -639,6 +747,26 @@ const SteamSyncPage = () => {
         confirmDisabled={syncEntries.isPending || syncWishlistEntries.isPending}
         onClose={() => setConfirmTarget(null)}
         onConfirm={() => void handleConfirmSync()}
+      />
+
+      <RelinkSteamEntryDialog target={relinkTarget} onClose={() => setRelinkTarget(null)} />
+
+      <ConfirmDialog
+        open={unlinkTarget !== null}
+        title={
+          unlinkTarget
+            ? t("insights.steamSync.unlinkConfirmTitle", { name: unlinkTarget.entry.gameName })
+            : ""
+        }
+        description={
+          unlinkTarget
+            ? t("insights.steamSync.unlinkConfirmDescription", { name: unlinkTarget.entry.gameName })
+            : ""
+        }
+        confirmLabel={t("insights.steamSync.unlinkButton")}
+        confirmDisabled={unlinkEntry.isPending || unlinkWishlistEntry.isPending}
+        onClose={() => setUnlinkTarget(null)}
+        onConfirm={() => void handleConfirmUnlink()}
       />
     </>
   );

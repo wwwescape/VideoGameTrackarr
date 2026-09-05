@@ -35,6 +35,10 @@ class SyncSteamEntriesRequest(CamelModel):
     steam_app_ids: list[int]
 
 
+class RelinkSteamEntryRequest(CamelModel):
+    game_id: int
+
+
 class SyncResultFailure(CamelModel):
     steam_app_id: int
     error: str
