@@ -14,7 +14,7 @@ from app.services.exceptions import NotFoundError
 # during scoping. Resolved lazily via get_or_create_by_igdb rather than assumed present,
 # same as every other IGDB-sourced platform in this app; a console-only library may never
 # have imported it before now.
-_PC_IGDB_PLATFORM_ID = 6
+PC_IGDB_PLATFORM_ID = 6
 
 
 class SteamEntryStatus(enum.StrEnum):
@@ -33,10 +33,13 @@ class SteamEntryWithStatus:
 
 
 def list_entries(db: Session) -> list[SteamEntryWithStatus]:
-    """Every cached Steam entry with a computed status — the full table the Steam Sync page
-    renders. Nothing here is filtered out; NO_MATCH and ignored entries stay visible so the
-    user has the complete picture of what Steam has versus what VGT knows."""
-    return [_with_status(db, entry) for entry in steam_repository.list_all_entries(db)]
+    """Every cached Steam entry with a computed status — the table the Steam Sync page
+    renders, DLC/expansion/pack entries included (the page nests them under their matched
+    parent's row via each entry's game.parent_game_id, rather than hiding them or folding
+    them into a bare count). NO_MATCH and ignored entries stay visible too, so the user has
+    the complete picture of what Steam has versus what VGT knows."""
+    entries = steam_repository.list_all_entries(db)
+    return [_with_status(db, entry) for entry in entries]
 
 
 def sync_entries(db: Session, steam_app_ids: list[int]) -> dict[str, Any]:
@@ -69,7 +72,7 @@ def ignore_entry(db: Session, steam_app_id: int) -> SteamEntryWithStatus:
 
 def _sync_one(db: Session, entry: SteamLibraryEntry) -> None:
     pc_platform = platform_repository.get_or_create_by_igdb(
-        db, igdb_id=_PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
+        db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
     )
     already_tracked = len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
     if not already_tracked:
@@ -97,6 +100,18 @@ def _sync_one(db: Session, entry: SteamLibraryEntry) -> None:
         last_played_at=entry.steam_last_played_at.date() if entry.steam_last_played_at else None,
     )
 
+    # Syncing a parent also syncs any of its DLC/expansion/pack children that are themselves
+    # owned on Steam — one level only (Game.addons is already scoped to hierarchical
+    # parent_game_id children, and addons don't have addons of their own in this app's
+    # model), each addon going through the exact same owned-library-item + progress logic as
+    # the parent, just recursively. This still applies even though addons now get their own
+    # row in the table too (see list_entries) — a bulk "Sync selected" of just the parent
+    # should still bring its owned DLC along automatically, same as before.
+    for addon in entry.game.addons:
+        addon_entry = steam_repository.get_entry_by_game_id(db, addon.id)
+        if addon_entry is not None and not addon_entry.dismissed:
+            _sync_one(db, addon_entry)
+
 
 def _with_status(db: Session, entry: SteamLibraryEntry) -> SteamEntryWithStatus:
     if entry.dismissed:
@@ -106,7 +121,7 @@ def _with_status(db: Session, entry: SteamLibraryEntry) -> SteamEntryWithStatus:
         return SteamEntryWithStatus(entry, SteamEntryStatus.NO_MATCH, None)
 
     pc_platform = platform_repository.get_or_create_by_igdb(
-        db, igdb_id=_PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
+        db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
     )
     progress = progress_service.get_progress_for_platform(db, entry.game_id, pc_platform.id)
     already_tracked = len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0

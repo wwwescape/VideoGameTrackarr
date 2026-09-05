@@ -32,6 +32,7 @@ def test_add_owned_library_item(auth_client, seed_game, seed_platform, seed_regi
     assert body["gameId"] == seed_game.id
     assert body["status"] == "owned"
     assert body["platformName"] == "PlayStation 5"
+    assert body["platformSlug"] == "ps5"
     assert body["regionName"] == "PAL"
     assert body["format"] == "physical"
     assert body["edition"] == "Game of the Year"

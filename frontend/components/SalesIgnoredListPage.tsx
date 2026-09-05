@@ -1,3 +1,4 @@
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import ReplayIcon from "@mui/icons-material/Replay";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -18,7 +19,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import type { SalesProvider } from "../api/salesTracking";
-import { useIgnoredSalesTitles, useRetryIgnoredSalesTitle } from "../hooks/useSalesTracking";
+import {
+  useIgnoredSalesTitles,
+  useRemoveIgnoredSalesTitle,
+  useRetryIgnoredSalesTitle,
+} from "../hooks/useSalesTracking";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import SettingsSubNav from "./SettingsSubNav";
@@ -32,6 +37,7 @@ const SalesIgnoredListPage = () => {
   const { t } = useTranslation();
   const { data: items } = useIgnoredSalesTitles();
   const retryTitle = useRetryIgnoredSalesTitle();
+  const removeTitle = useRemoveIgnoredSalesTitle();
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
@@ -46,6 +52,16 @@ const SalesIgnoredListPage = () => {
     } catch (error) {
       console.error(`Error retrying ${provider} game ${gameId}:`, error);
       toast.error(t("insights.salesIgnored.retryErrorToast"), TOAST_OPTIONS);
+    }
+  };
+
+  const handleRemove = async (provider: SalesProvider, gameId: number) => {
+    try {
+      await removeTitle.mutateAsync({ provider, gameId });
+      toast.success(t("insights.salesIgnored.removeSuccessToast"), TOAST_OPTIONS);
+    } catch (error) {
+      console.error(`Error removing ${provider} game ${gameId}:`, error);
+      toast.error(t("insights.salesIgnored.removeErrorToast"), TOAST_OPTIONS);
     }
   };
 
@@ -108,6 +124,14 @@ const SalesIgnoredListPage = () => {
                           onClick={() => void handleRetry(row.provider, row.gameId)}
                         >
                           <ReplayIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t("insights.salesIgnored.removeButton")}>
+                        <IconButton
+                          size="small"
+                          onClick={() => void handleRemove(row.provider, row.gameId)}
+                        >
+                          <RemoveCircleIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </TableCell>

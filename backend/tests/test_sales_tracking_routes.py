@@ -122,6 +122,107 @@ def test_retry_rejects_an_unknown_provider(auth_client, seed_game):
     assert response.status_code == 422
 
 
+def test_remove_ignored_requires_auth(client):
+    response = client.post("/api/sales-tracking/ignored/itad/1/remove")
+
+    assert response.status_code == 401
+
+
+def test_remove_itad_deletes_the_cache_row_and_untracks_wishlist_items(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    db_session.add(ItadPriceCache(game_id=seed_game.id, itad_game_id=None, ignored=True))
+    item = LibraryItem(
+        game_id=seed_game.id,
+        platform_id=seed_pc_platform.id,
+        status=LibraryStatus.WISHLIST,
+        format=MediaFormat.DIGITAL,
+        track_for_sales=True,
+    )
+    db_session.add(item)
+    db_session.commit()
+    item_id = item.id
+
+    response = auth_client.post(f"/api/sales-tracking/ignored/itad/{seed_game.id}/remove")
+
+    assert response.status_code == 204
+    assert db_session.query(ItadPriceCache).filter(ItadPriceCache.game_id == seed_game.id).one_or_none() is None
+    db_session.expire_all()
+    assert db_session.get(LibraryItem, item_id).track_for_sales is False
+
+    follow_up = auth_client.get("/api/sales-tracking/ignored")
+    assert follow_up.json() == []
+
+
+def test_remove_platprices_deletes_the_cache_row_and_untracks_wishlist_items(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    db_session.add(PlatPricesCache(game_id=seed_game.id, ppid=None, ignored=True))
+    item = LibraryItem(
+        game_id=seed_game.id,
+        platform_id=seed_pc_platform.id,
+        status=LibraryStatus.WISHLIST,
+        format=MediaFormat.DIGITAL,
+        track_for_sales=True,
+    )
+    db_session.add(item)
+    db_session.commit()
+    item_id = item.id
+
+    response = auth_client.post(f"/api/sales-tracking/ignored/platprices/{seed_game.id}/remove")
+
+    assert response.status_code == 204
+    assert (
+        db_session.query(PlatPricesCache).filter(PlatPricesCache.game_id == seed_game.id).one_or_none() is None
+    )
+    db_session.expire_all()
+    assert db_session.get(LibraryItem, item_id).track_for_sales is False
+
+
+def test_remove_leaves_an_owned_item_alone(auth_client, db_session, seed_game, seed_pc_platform):
+    """remove only turns off track_for_sales on WISHLIST rows — an OWNED row for the same
+    game (e.g. the user later bought it elsewhere) has no bearing on sale tracking and
+    shouldn't be touched."""
+    db_session.add(ItadPriceCache(game_id=seed_game.id, itad_game_id=None, ignored=True))
+    owned_item = LibraryItem(
+        game_id=seed_game.id,
+        platform_id=seed_pc_platform.id,
+        status=LibraryStatus.OWNED,
+        format=MediaFormat.DIGITAL,
+        track_for_sales=True,
+    )
+    db_session.add(owned_item)
+    db_session.commit()
+    owned_item_id = owned_item.id
+
+    response = auth_client.post(f"/api/sales-tracking/ignored/itad/{seed_game.id}/remove")
+
+    assert response.status_code == 204
+    db_session.expire_all()
+    assert db_session.get(LibraryItem, owned_item_id).track_for_sales is True
+
+
+def test_remove_404s_for_a_nonexistent_cache_row(auth_client, seed_game):
+    response = auth_client.post(f"/api/sales-tracking/ignored/itad/{seed_game.id}/remove")
+
+    assert response.status_code == 404
+
+
+def test_remove_404s_for_a_row_that_is_not_ignored(auth_client, db_session, seed_game):
+    db_session.add(ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", ignored=False))
+    db_session.commit()
+
+    response = auth_client.post(f"/api/sales-tracking/ignored/itad/{seed_game.id}/remove")
+
+    assert response.status_code == 404
+
+
+def test_remove_rejects_an_unknown_provider(auth_client, seed_game):
+    response = auth_client.post(f"/api/sales-tracking/ignored/steam/{seed_game.id}/remove")
+
+    assert response.status_code == 422
+
+
 def test_list_tracked_requires_auth(client):
     response = client.get("/api/sales-tracking/tracked")
 

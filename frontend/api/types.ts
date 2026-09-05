@@ -44,6 +44,9 @@ export interface GameSummary {
   playStatus: PlayStatus | null;
   rating: number | null;
   isOnSale: boolean;
+  steamStoreUrl: string | null;
+  xboxStoreUrl: string | null;
+  playstationStoreUrl: string | null;
 }
 
 export interface GameProgress {
@@ -360,6 +363,7 @@ export interface LibraryItem {
   gameId: number;
   platformId: number | null;
   platformName: string | null;
+  platformSlug: string | null;
   regionId: number | null;
   regionName: string | null;
   status: LibraryStatus;

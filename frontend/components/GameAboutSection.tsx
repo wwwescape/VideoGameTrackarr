@@ -9,9 +9,16 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
+import playstationLogo from "../assets/playstation-logo.png";
 import steamLogo from "../assets/steam-logo.png";
-import type { GameCompany, GameDetail, IgdbReleaseRegion } from "../api/types";
+import xboxLogo from "../assets/xbox-logo.png";
+import type { GameCompany, GameDetail, IgdbReleaseRegion, LibraryItem } from "../api/types";
 import { gameIdentifier } from "../utils/identifiers";
+import {
+  PC_FAMILY_PLATFORM_SLUGS,
+  PLAYSTATION_FAMILY_PLATFORM_SLUGS,
+  XBOX_FAMILY_PLATFORM_SLUGS,
+} from "../utils/platformFamilies";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import ExpandableText from "./ExpandableText";
 import ScreenshotGallery from "./ScreenshotGallery";
@@ -19,12 +26,22 @@ import VideoGallery from "./VideoGallery";
 
 interface GameAboutSectionProps {
   game: GameDetail;
+  libraryItems: LibraryItem[] | undefined;
 }
 
-const GameAboutSection = ({ game }: GameAboutSectionProps) => {
+const GameAboutSection = ({ game, libraryItems }: GameAboutSectionProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isAddonGame = isAddon(game);
+
+  // A store logo only makes sense to show once the game is actually in the user's
+  // Collection or Wishlist for that platform family — an IGDB-derived store link existing
+  // (game.steamStoreUrl etc.) is necessary but not sufficient on its own.
+  const hasPlatformFamilyEntry = (slugs: ReadonlySet<string>) =>
+    (libraryItems ?? []).some((item) => item.platformSlug != null && slugs.has(item.platformSlug));
+  const hasPcEntry = hasPlatformFamilyEntry(PC_FAMILY_PLATFORM_SLUGS);
+  const hasXboxEntry = hasPlatformFamilyEntry(XBOX_FAMILY_PLATFORM_SLUGS);
+  const hasPlayStationEntry = hasPlatformFamilyEntry(PLAYSTATION_FAMILY_PLATFORM_SLUGS);
 
   const companyRoleLabel: Record<string, string> = {
     developer: t("games.about.companyRoleDeveloper"),
@@ -276,15 +293,43 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
               </a>
             </Tooltip>
           )}
-          {game.steamAppId && (
+          {game.steamStoreUrl && hasPcEntry && (
             <Tooltip title={t("games.about.viewOnSteam")}>
               <a
-                href={`https://store.steampowered.com/app/${game.steamAppId}`}
+                href={game.steamStoreUrl}
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: theme.palette.text.primary }}
               >
                 <img src={steamLogo} alt={t("games.about.viewOnSteam")} style={{ width: "64px" }} />
+              </a>
+            </Tooltip>
+          )}
+          {game.xboxStoreUrl && hasXboxEntry && (
+            <Tooltip title={t("games.about.viewOnXbox")}>
+              <a
+                href={game.xboxStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img src={xboxLogo} alt={t("games.about.viewOnXbox")} style={{ width: "64px" }} />
+              </a>
+            </Tooltip>
+          )}
+          {game.playstationStoreUrl && hasPlayStationEntry && (
+            <Tooltip title={t("games.about.viewOnPlaystation")}>
+              <a
+                href={game.playstationStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img
+                  src={playstationLogo}
+                  alt={t("games.about.viewOnPlaystation")}
+                  style={{ width: "64px" }}
+                />
               </a>
             </Tooltip>
           )}

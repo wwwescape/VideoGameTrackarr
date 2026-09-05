@@ -75,6 +75,11 @@ def list_ignored(db: Session) -> list[PlatPricesCache]:
     return list(db.scalars(stmt))
 
 
+def delete_cache(db: Session, cache: PlatPricesCache) -> None:
+    db.delete(cache)
+    db.flush()
+
+
 def update_price_data(
     db: Session, cache: PlatPricesCache, deal: PlatPricesDeal | None, historical: PlatPricesHistoricalLow | None
 ) -> PlatPricesCache:

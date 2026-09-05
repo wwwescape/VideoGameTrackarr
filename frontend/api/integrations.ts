@@ -33,6 +33,23 @@ export interface SteamEntry {
   gameSlug: string | null;
   gameCoverUrl: string | null;
   vgtPlaytimeMinutes: number | null;
+  // The matched game's parent (if any) — lets the Steam Sync page nest a DLC/expansion/pack
+  // row under its parent's row instead of listing it flat.
+  parentGameId: number | null;
+}
+
+export type SteamWishlistEntryStatus = "no_match" | "new" | "already_wishlisted" | "ignored";
+
+export interface SteamWishlistEntry {
+  steamAppId: number;
+  steamName: string;
+  wishlistAddedAt: string | null;
+  status: SteamWishlistEntryStatus;
+  gameId: number | null;
+  gameName: string | null;
+  gameSlug: string | null;
+  gameCoverUrl: string | null;
+  parentGameId: number | null;
 }
 
 export interface SyncResult {
@@ -67,6 +84,25 @@ export async function ignoreSteamEntry(steamAppId: number): Promise<SteamEntry> 
 export async function getSteamStoreDetails(steamAppId: number): Promise<SteamStoreDetails> {
   const response = await apiClient.get<SteamStoreDetails>(
     `/api/integrations/steam/${steamAppId}/store-details`
+  );
+  return response.data;
+}
+
+export async function getSteamWishlistEntries(): Promise<SteamWishlistEntry[]> {
+  const response = await apiClient.get<SteamWishlistEntry[]>("/api/integrations/steam/wishlist/entries");
+  return response.data;
+}
+
+export async function syncSteamWishlistEntries(steamAppIds: number[]): Promise<SyncResult> {
+  const response = await apiClient.post<SyncResult>("/api/integrations/steam/wishlist/sync", {
+    steamAppIds,
+  });
+  return response.data;
+}
+
+export async function ignoreSteamWishlistEntry(steamAppId: number): Promise<SteamWishlistEntry> {
+  const response = await apiClient.post<SteamWishlistEntry>(
+    `/api/integrations/steam/wishlist/${steamAppId}/ignore`
   );
   return response.data;
 }

@@ -76,3 +76,40 @@ async def test_get_owned_games_handles_a_genuinely_empty_library():
     result = await make_client().get_owned_games("76561197960287930")
 
     assert result == []
+
+
+async def test_get_wishlist_requires_an_api_key(monkeypatch):
+    monkeypatch.setattr(get_settings(), "steam_api_key", None)
+    client = make_client(api_key=None)
+
+    with pytest.raises(SteamCredentialsError):
+        await client.get_wishlist("76561197960287930")
+
+
+@respx.mock
+async def test_get_wishlist_parses_appid_and_date_added():
+    respx.get(f"{STEAM_API_BASE}/IWishlistService/GetWishlist/v1/").mock(
+        return_value=httpx.Response(
+            200, json={"response": {"items": [{"appid": 220, "priority": 1, "date_added": 1690000000}]}}
+        )
+    )
+
+    items = await make_client().get_wishlist("76561197960287930")
+
+    assert len(items) == 1
+    assert items[0].app_id == 220
+    assert items[0].added_at is not None
+
+
+@respx.mock
+async def test_get_wishlist_handles_an_empty_response():
+    # Confirmed live against the real API: a private wishlist and a genuinely empty one both
+    # return a bare `{"response": {}}` with no way to tell them apart — always a plain empty
+    # list here, never an error (see SteamClient.get_wishlist's docstring).
+    respx.get(f"{STEAM_API_BASE}/IWishlistService/GetWishlist/v1/").mock(
+        return_value=httpx.Response(200, json={"response": {}})
+    )
+
+    result = await make_client().get_wishlist("76561197960287930")
+
+    assert result == []

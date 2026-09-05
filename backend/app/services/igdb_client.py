@@ -57,8 +57,45 @@ GAME_FIELDS = (
     # queries against) — expanding it here means a game added directly, rather than
     # discovered via its parent's relation arrays, still carries its conceptual parent's
     # name/url, even when we don't have that parent imported locally ourselves.
-    "parent_game.name,parent_game.slug,parent_game.url;"
+    "parent_game.name,parent_game.slug,parent_game.url,"
+    # Store page links (see extract_store_urls) — expanded here rather than fetched via a
+    # separate request, same free-ride-on-the-existing-query treatment as every other
+    # relation above.
+    "external_games.url,external_games.external_game_source;"
 )
+
+# IGDB's external_game_source ids for the storefronts this app links out to, confirmed live
+# against the real API (2026-09-04) rather than trusted from IGDB's docs, which have drifted
+# before (see get_igdb_id_for_steam_appid's comment on the same issue). Notably,
+# external_game_source 31 ("Xbox Marketplace") is *not* the modern Xbox/Microsoft store — it's
+# the defunct Xbox 360 marketplace catalog (dead marketplace.xbox.com links); 11 ("Microsoft")
+# is the one that actually carries current xbox.com/microsoft.com store links.
+_STORE_EXTERNAL_GAME_SOURCES = {
+    "steam_store_url": 1,
+    "xbox_store_url": 11,
+    "playstation_store_url": 36,
+}
+
+
+def extract_store_urls(igdb_game: dict) -> dict[str, str | None]:
+    """Picks one store URL per storefront out of a game payload's expanded external_games
+    list (see GAME_FIELDS). IGDB sometimes lists more than one entry for the same storefront —
+    Xbox in particular turns up both an xbox.com and a microsoft.com/p/-1-/... link for the
+    same game — so where there's a choice, prefer the more specific/readable xbox.com one;
+    otherwise just take the first URL found for that source."""
+    urls_by_source: dict[int, list[str]] = {}
+    for external_game in igdb_game.get("external_games") or []:
+        url = external_game.get("url")
+        source = external_game.get("external_game_source")
+        if url and source is not None:
+            urls_by_source.setdefault(source, []).append(url)
+
+    result: dict[str, str | None] = {}
+    for field_name, source_id in _STORE_EXTERNAL_GAME_SOURCES.items():
+        candidates = urls_by_source.get(source_id, [])
+        preferred = next((url for url in candidates if "xbox.com" in url), None)
+        result[field_name] = preferred or (candidates[0] if candidates else None)
+    return result
 
 # IGDB/Twitch hiccups and transient network errors are worth retrying; a 4xx (bad
 # credentials, malformed query) never gets better on retry, so only retry on

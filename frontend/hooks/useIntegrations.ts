@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getIntegrationsStatus,
   getSteamEntries,
+  getSteamWishlistEntries,
   ignoreSteamEntry,
+  ignoreSteamWishlistEntry,
   syncSteamEntries,
+  syncSteamWishlistEntries,
   updateSteamId,
 } from "../api/integrations";
 
@@ -39,5 +42,28 @@ export function useIgnoreSteamEntry() {
   return useMutation({
     mutationFn: ignoreSteamEntry,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-entries"] }),
+  });
+}
+
+export function useSteamWishlistEntries() {
+  return useQuery({ queryKey: ["steam-wishlist-entries"], queryFn: getSteamWishlistEntries });
+}
+
+export function useSyncSteamWishlistEntries() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: syncSteamWishlistEntries,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["steam-wishlist-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+    },
+  });
+}
+
+export function useIgnoreSteamWishlistEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ignoreSteamWishlistEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-wishlist-entries"] }),
   });
 }

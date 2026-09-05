@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.catalog import Game
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.models.platprices import PlatPricesCache
-from app.repositories import platprices_repository
+from app.repositories import library_item_repository, platprices_repository
 from app.services.exceptions import NotFoundError
 
 # PlatPrices only tracks the PlayStation Store — a wishlist row for any other platform, or a
@@ -79,4 +79,20 @@ def retry_ignored_item(db: Session, game_id: int) -> None:
     if cache is None or not cache.ignored:
         raise NotFoundError(f"No ignored PlatPrices entry for game {game_id}")
     platprices_repository.set_ignored(db, cache, False)
+    db.commit()
+
+
+def remove_ignored_item(db: Session, game_id: int) -> None:
+    """Unlike retry_ignored_item, this is meant to stick: turns off track_for_sales on every
+    wishlist row for this game (the same op the Sale - Tracked page's Untrack button does) so
+    the refresh job never reconsiders it, then drops the ignored cache row so it disappears
+    from this list immediately rather than lingering until the next job run notices it's no
+    longer a tracked candidate."""
+    cache = platprices_repository.get_cache(db, game_id)
+    if cache is None or not cache.ignored:
+        raise NotFoundError(f"No ignored PlatPrices entry for game {game_id}")
+    for item in library_item_repository.list_library_items(db, game_id, status=LibraryStatus.WISHLIST):
+        if item.track_for_sales:
+            library_item_repository.update_library_item(db, item, track_for_sales=False)
+    platprices_repository.delete_cache(db, cache)
     db.commit()

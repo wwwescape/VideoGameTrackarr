@@ -22,6 +22,10 @@ export async function retryIgnoredSalesTitle(provider: SalesProvider, gameId: nu
   await apiClient.post(`/api/sales-tracking/ignored/${provider}/${gameId}/retry`);
 }
 
+export async function removeIgnoredSalesTitle(provider: SalesProvider, gameId: number): Promise<void> {
+  await apiClient.post(`/api/sales-tracking/ignored/${provider}/${gameId}/remove`);
+}
+
 export interface TrackedSalesItem {
   libraryItemId: number;
   gameId: number;

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -30,6 +30,13 @@ import type {
 import { useCurrency } from "../theme/CurrencyProvider";
 import { getCurrencySymbol } from "../utils/currency";
 import { RATING_BOARD_LABELS } from "../utils/hardwareLabels";
+import {
+  ANDROID_PLATFORM_SLUGS,
+  APPLE_PLATFORM_SLUGS,
+  PC_FAMILY_PLATFORM_SLUGS,
+  PLAYSTATION_FAMILY_PLATFORM_SLUGS,
+  XBOX_FAMILY_PLATFORM_SLUGS,
+} from "../utils/platformFamilies";
 
 const formSchema = z.object({
   platformId: z.number({ message: "Platform is required" }),
@@ -55,18 +62,32 @@ const FORMAT_OPTIONS: { value: MediaFormat; labelKey: string }[] = [
   { value: "other", labelKey: "dialogs.libraryItem.formatOther" },
 ];
 
-// PC is the only platform with more than one realistic digital storefront — consoles are
-// tied to their manufacturer's own store, so this list only needs to cover PC. Free text
-// (via Autocomplete's freeSolo) still works for anything not on the list.
-const PC_DIGITAL_STOREFRONT_OPTIONS = [
-  "Steam",
-  "Epic Games Store",
-  "GOG",
-  "Ubisoft Connect",
-  "EA App",
-  "Battle.net",
-  "Microsoft Store",
-  "itch.io",
+// PC-family platforms are the only ones with more than one realistic digital storefront —
+// consoles are tied to their manufacturer's own store, so this list only needs to cover
+// win/mac/linux. Free text (via Autocomplete's freeSolo) still works for anything not on
+// the list. Not every storefront is available on every PC platform — Steam and GOG ship on
+// Windows, Mac, and Linux; Epic Games Store only ships on Windows and Mac (no Linux client).
+// The rest haven't been asked about, so they stay Windows-only, same as before this list was
+// split per platform.
+const DIGITAL_STOREFRONT_PLATFORM_SLUGS: Record<string, ReadonlySet<string>> = {
+  Steam: new Set(["win", "mac", "linux"]),
+  GOG: new Set(["win", "mac", "linux"]),
+  "Epic Games Store": new Set(["win", "mac"]),
+  "Ubisoft Connect": new Set(["win"]),
+  "EA App": new Set(["win"]),
+  "Battle.net": new Set(["win"]),
+  "Microsoft Store": new Set(["win"]),
+  "itch.io": new Set(["win"]),
+};
+
+// Everything outside the PC family only ever has one real digital storefront — shown as a
+// disabled/readonly dropdown (rather than editable, like the PC list above) since there's
+// nothing for the user to actually choose.
+const FIXED_DIGITAL_STOREFRONTS: { slugs: ReadonlySet<string>; storefront: string }[] = [
+  { slugs: PLAYSTATION_FAMILY_PLATFORM_SLUGS, storefront: "PlayStation Store" },
+  { slugs: XBOX_FAMILY_PLATFORM_SLUGS, storefront: "Xbox Store" },
+  { slugs: ANDROID_PLATFORM_SLUGS, storefront: "Google Play" },
+  { slugs: APPLE_PLATFORM_SLUGS, storefront: "App Store" },
 ];
 
 // Must stay in sync with the backend's ITAD_ELIGIBLE_PLATFORM_SLUGS
@@ -146,12 +167,14 @@ const LibraryItemDialog = ({
   const noneOption: SelectOption = { value: undefined, label: t("common.none") };
   const ratingBoardOptions: RatingBoardOption[] = [
     { value: undefined, label: t("common.none") },
-    ...(Object.entries(RATING_BOARD_LABELS) as [RatingBoard, string][]).map(([value, label]) => ({
-      value,
-      label,
-    })),
+    ...(Object.entries(RATING_BOARD_LABELS) as [RatingBoard, string][])
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
   ];
 
+  // Platform/region already come back alphabetically sorted from the API (Platform.name /
+  // Region.name order_by) — "None" is deliberately pinned first on Region rather than sorted
+  // into the alphabet, a standard UX convention for a "no selection" entry.
   const platformOptions: SelectOption[] = platforms.map((platform) => ({
     value: platform.id,
     label: platform.name,
@@ -165,18 +188,44 @@ const LibraryItemDialog = ({
   const watchedFormat = useWatch({ control, name: "format" });
   const watchedPlatformId = useWatch({ control, name: "platformId" });
   const selectedPlatform = platforms.find((platform) => platform.id === watchedPlatformId);
-  const showDigitalStorefront = watchedFormat === "digital" && selectedPlatform?.slug === "win";
+  const isDigital = watchedFormat === "digital";
+  const showEditableStorefront =
+    isDigital && selectedPlatform?.slug != null && PC_FAMILY_PLATFORM_SLUGS.has(selectedPlatform.slug);
+  const fixedStorefront = isDigital
+    ? FIXED_DIGITAL_STOREFRONTS.find(
+        ({ slugs }) => selectedPlatform?.slug != null && slugs.has(selectedPlatform.slug)
+      )?.storefront
+    : undefined;
+  const digitalStorefrontOptions = Object.entries(DIGITAL_STOREFRONT_PLATFORM_SLUGS)
+    .filter(([, slugs]) => selectedPlatform?.slug != null && slugs.has(selectedPlatform.slug))
+    .map(([storefront]) => storefront)
+    .sort((a, b) => a.localeCompare(b));
   const showTrackForSales =
     watchedFormat === "digital" &&
     selectedPlatform?.slug != null &&
     SALES_TRACKING_ELIGIBLE_PLATFORM_SLUGS.has(selectedPlatform.slug);
   const watchedTrackForSales = useWatch({ control, name: "trackForSales" });
 
+  // "fixed" (a locked single-choice store, e.g. Xbox Store), "editable" (the PC-family
+  // freeSolo list), or "none" (field hidden). Tracked so a value only ever gets cleared on
+  // a genuine mode *transition* — switching between PC-family platforms while "editable"
+  // the whole time (Windows -> Mac) should keep whatever the user already typed/picked,
+  // but switching away from a "fixed" platform (Xbox -> PC) must not leave that platform's
+  // locked store name sitting in the field as if the user had chosen it themselves.
+  const storefrontMode = fixedStorefront != null ? "fixed" : showEditableStorefront ? "editable" : "none";
+  const previousStorefrontMode = useRef(storefrontMode);
   useEffect(() => {
-    if (!showDigitalStorefront) {
-      setValue("digitalStorefront", undefined);
+    if (storefrontMode === "fixed") {
+      setValue("digitalStorefront", fixedStorefront);
+    } else if (previousStorefrontMode.current !== storefrontMode) {
+      // Empty string, not undefined — react-hook-form's setValue does not reliably
+      // propagate `undefined` to an already-mounted Controller (confirmed empirically: the
+      // MUI Autocomplete kept showing the previous platform's fixed store name even though
+      // this effect had run). onSubmit below treats "" the same as "not set".
+      setValue("digitalStorefront", "");
     }
-  }, [showDigitalStorefront, setValue]);
+    previousStorefrontMode.current = storefrontMode;
+  }, [storefrontMode, fixedStorefront, setValue]);
 
   useEffect(() => {
     if (!showTrackForSales) {
@@ -184,6 +233,13 @@ const LibraryItemDialog = ({
       setValue("targetPrice", undefined);
     }
   }, [showTrackForSales, setValue]);
+
+  // The "" digitalStorefront sentinel above (see that effect) is purely a workaround for
+  // react-hook-form/MUI Autocomplete's display sync — callers should still only ever see
+  // "not set" as undefined, never a literal empty string reaching the API.
+  const handleFormSubmit = (values: LibraryItemFormValues) => {
+    onSubmit({ ...values, digitalStorefront: values.digitalStorefront || undefined });
+  };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -234,7 +290,7 @@ const LibraryItemDialog = ({
             )}
           />
         </FormControl>
-        {showDigitalStorefront ? (
+        {showEditableStorefront ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
             <Controller
               name="digitalStorefront"
@@ -242,8 +298,14 @@ const LibraryItemDialog = ({
               render={({ field }) => (
                 <Autocomplete
                   freeSolo
-                  options={PC_DIGITAL_STOREFRONT_OPTIONS}
+                  options={digitalStorefrontOptions}
                   value={field.value ?? null}
+                  // freeSolo Autocomplete keeps its displayed text as separate internal
+                  // state from `value` — without also controlling `inputValue`, a
+                  // programmatic value change (e.g. this dialog clearing the field when the
+                  // platform switches away from a fixed-storefront one) leaves the old text
+                  // visibly stuck even though the underlying form value did change.
+                  inputValue={field.value ?? ""}
                   onChange={(_event, value) => field.onChange(value ?? undefined)}
                   onInputChange={(_event, value, reason) => {
                     if (reason === "input") field.onChange(value || undefined);
@@ -255,6 +317,19 @@ const LibraryItemDialog = ({
                     />
                   )}
                 />
+              )}
+            />
+          </FormControl>
+        ) : fixedStorefront != null ? (
+          // Every non-PC-family digital platform has exactly one real storefront — shown
+          // as a disabled dropdown rather than editable, since there's nothing to choose.
+          <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
+            <Autocomplete
+              disabled
+              options={[fixedStorefront]}
+              value={fixedStorefront}
+              renderInput={(params) => (
+                <TextField {...params} label={t("dialogs.libraryItem.digitalStorefrontLabel")} />
               )}
             />
           </FormControl>
@@ -370,7 +445,7 @@ const LibraryItemDialog = ({
         <Button onClick={onClose} color="primary">
           {t("common.cancel")}
         </Button>
-        <Button onClick={handleSubmit(onSubmit)} color="primary">
+        <Button onClick={handleSubmit(handleFormSubmit)} color="primary">
           {submitLabel}
         </Button>
       </DialogActions>

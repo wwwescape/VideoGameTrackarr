@@ -26,6 +26,9 @@ class SteamEntryResponse(CamelModel):
     game_slug: str | None
     game_cover_url: str | None
     vgt_playtime_minutes: int | None
+    # The matched game's parent (if any) — lets the Steam Sync page nest a DLC/expansion/
+    # pack row under its parent's row instead of listing it flat.
+    parent_game_id: int | None
 
 
 class SyncSteamEntriesRequest(CamelModel):
@@ -47,3 +50,15 @@ class SteamStoreDetailsResponse(CamelModel):
     name: str
     summary: str | None
     cover_url: str | None
+
+
+class SteamWishlistEntryResponse(CamelModel):
+    steam_app_id: int
+    steam_name: str
+    wishlist_added_at: datetime | None
+    status: str
+    game_id: int | None
+    game_name: str | None
+    game_slug: str | None
+    game_cover_url: str | None
+    parent_game_id: int | None

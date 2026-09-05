@@ -5,11 +5,11 @@ import pytest
 from app.core.config import get_settings
 from app.models.catalog import Game, GameCategory
 from app.models.library import GameProgress, LibraryItem, LibraryStatus
-from app.models.steam import SteamLibraryEntry
-from app.repositories import steam_repository
+from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
+from app.repositories import steam_repository, steam_wishlist_repository
 from app.services import steam_jobs
 from app.services.igdb_client import IGDBClient
-from app.services.steam_client import SteamClient, SteamOwnedGame
+from app.services.steam_client import SteamClient, SteamOwnedGame, SteamWishlistItem
 
 
 def _configure_steam(monkeypatch, test_user, db_session, steam_id_64="76561197960287930"):
@@ -17,6 +17,13 @@ def _configure_steam(monkeypatch, test_user, db_session, steam_id_64="7656119796
     db_session.commit()
     monkeypatch.setattr(get_settings(), "steam_api_key", "test-steam-key")
     monkeypatch.setattr(steam_jobs, "_PACE_DELAY_SECONDS", 0)
+
+    # Defaults every test to an empty wishlist so it never makes a real network call to
+    # Steam's wishlist API — tests that actually care about wishlist behavior override this.
+    async def fake_get_wishlist(self, steam_id_64):
+        return []
+
+    monkeypatch.setattr(SteamClient, "get_wishlist", fake_get_wishlist)
 
 
 def _seed_game(db_session, igdb_id: int, name: str) -> Game:
@@ -71,7 +78,13 @@ def test_run_never_writes_progress_for_an_already_owned_game(db_session, test_us
 
     result = steam_jobs.run(lambda: db_session)
 
-    assert result == {"total": 1, "succeeded": 1, "failed": 0, "failures": []}
+    assert result == {
+        "total": 1,
+        "succeeded": 1,
+        "failed": 0,
+        "failures": [],
+        "wishlist": {"total": 0, "succeeded": 0, "failed": 0, "failures": []},
+    }
     assert db_session.query(GameProgress).filter_by(game_id=game_id).count() == 0
     entry = steam_repository.get_entry(db_session, 220)
     assert entry.game_id == game_id
@@ -146,3 +159,93 @@ def test_run_skips_matching_for_an_ignored_entry(db_session, test_user, monkeypa
     steam_jobs.run(lambda: db_session)
 
     assert match_calls == []  # an ignored entry is never re-matched
+
+
+async def _empty_owned_games(self, steam_id_64):
+    return []
+
+
+def test_run_caches_and_matches_a_new_wishlist_item(db_session, test_user, monkeypatch):
+    game = _seed_game(db_session, igdb_id=233, name="Half-Life 2")
+    game_id = game.id  # captured before run() below closes db_session
+    _configure_steam(monkeypatch, test_user, db_session)
+
+    async def fake_get_wishlist(self, steam_id_64):
+        return [SteamWishlistItem(app_id=220, added_at=datetime(2026, 1, 1, tzinfo=UTC))]
+
+    async def fake_get_igdb_id(self, steam_app_id):
+        assert steam_app_id == 220
+        return 233
+
+    monkeypatch.setattr(SteamClient, "get_owned_games", _empty_owned_games)
+    monkeypatch.setattr(SteamClient, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(IGDBClient, "get_igdb_id_for_steam_appid", fake_get_igdb_id)
+
+    result = steam_jobs.run(lambda: db_session)
+
+    assert result["wishlist"] == {"total": 1, "succeeded": 1, "failed": 0, "failures": []}
+    entry = steam_wishlist_repository.get_entry(db_session, 220)
+    assert entry.game_id == game_id
+    assert entry.steam_name == "Steam App 220"  # GetWishlist gives no name, see SteamClient.get_wishlist
+
+
+def test_run_keeps_an_existing_wishlist_name_instead_of_reverting_to_the_placeholder(db_session, test_user, monkeypatch):
+    db_session.add(SteamWishlistEntry(steam_app_id=220, steam_name="Half-Life 2 (Custom Name)"))
+    db_session.commit()
+    _configure_steam(monkeypatch, test_user, db_session)
+
+    async def fake_get_wishlist(self, steam_id_64):
+        return [SteamWishlistItem(app_id=220, added_at=None)]
+
+    monkeypatch.setattr(SteamClient, "get_owned_games", _empty_owned_games)
+    monkeypatch.setattr(SteamClient, "get_wishlist", fake_get_wishlist)
+
+    steam_jobs.run(lambda: db_session)
+
+    entry = steam_wishlist_repository.get_entry(db_session, 220)
+    assert entry.steam_name == "Half-Life 2 (Custom Name)"
+
+
+def test_run_skips_matching_for_a_dismissed_wishlist_entry(db_session, test_user, monkeypatch):
+    db_session.add(SteamWishlistEntry(steam_app_id=220, steam_name="Half-Life 2", dismissed=True))
+    db_session.commit()
+    _configure_steam(monkeypatch, test_user, db_session)
+
+    match_calls = []
+
+    async def fake_get_wishlist(self, steam_id_64):
+        return [SteamWishlistItem(app_id=220, added_at=None)]
+
+    async def fake_get_igdb_id(self, steam_app_id):
+        match_calls.append(steam_app_id)
+        return 233
+
+    monkeypatch.setattr(SteamClient, "get_owned_games", _empty_owned_games)
+    monkeypatch.setattr(SteamClient, "get_wishlist", fake_get_wishlist)
+    monkeypatch.setattr(IGDBClient, "get_igdb_id_for_steam_appid", fake_get_igdb_id)
+
+    steam_jobs.run(lambda: db_session)
+
+    assert match_calls == []
+
+
+def test_run_isolates_a_wishlist_failure_from_the_owned_games_result(db_session, test_user, monkeypatch):
+    _configure_steam(monkeypatch, test_user, db_session)
+
+    async def fake_get_owned_games(self, steam_id_64):
+        return [SteamOwnedGame(app_id=1, name="Good Game", playtime_minutes=10, last_played_at=None)]
+
+    async def failing_get_wishlist(self, steam_id_64):
+        raise RuntimeError("wishlist request failed")
+
+    async def fake_get_igdb_id(self, steam_app_id):
+        return None
+
+    monkeypatch.setattr(SteamClient, "get_owned_games", fake_get_owned_games)
+    monkeypatch.setattr(SteamClient, "get_wishlist", failing_get_wishlist)
+    monkeypatch.setattr(IGDBClient, "get_igdb_id_for_steam_appid", fake_get_igdb_id)
+
+    result = steam_jobs.run(lambda: db_session)
+
+    assert result["succeeded"] == 1  # owned-games import still completed
+    assert result["wishlist"]["error"] == "wishlist request failed"

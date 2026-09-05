@@ -36,6 +36,9 @@ class GameSummaryResponse(CamelModel):
     play_status: PlayStatus | None
     rating: float | None
     is_on_sale: bool
+    steam_store_url: str | None
+    xbox_store_url: str | None
+    playstation_store_url: str | None
 
 
 class GameDetailResponse(GameSummaryResponse):
@@ -81,6 +84,9 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "wishlisted": status.wishlisted,
         "play_status": status.play_status,
         "rating": status.rating,
+        "steam_store_url": game.steam_store_url,
+        "xbox_store_url": game.xbox_store_url,
+        "playstation_store_url": game.playstation_store_url,
     }
 
 

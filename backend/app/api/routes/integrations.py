@@ -7,11 +7,12 @@ from app.schemas.integrations import (
     IntegrationsStatusResponse,
     SteamEntryResponse,
     SteamStoreDetailsResponse,
+    SteamWishlistEntryResponse,
     SyncResultResponse,
     SyncSteamEntriesRequest,
     UpdateSteamIdRequest,
 )
-from app.services import integrations_service, steam_service
+from app.services import integrations_service, steam_service, steam_wishlist_service
 from app.services.exceptions import NotFoundError
 from app.services.steam_store_client import SteamStoreClient
 
@@ -57,6 +58,43 @@ async def get_steam_store_details(steam_app_id: int) -> SteamStoreDetailsRespons
     return SteamStoreDetailsResponse(name=details.name, summary=details.summary, cover_url=details.cover_url)
 
 
+@router.get("/api/integrations/steam/wishlist/entries", response_model=list[SteamWishlistEntryResponse])
+def get_steam_wishlist_entries(db: Session = Depends(get_db)) -> list[SteamWishlistEntryResponse]:
+    return [_wishlist_entry_response(item) for item in steam_wishlist_service.list_entries(db)]
+
+
+@router.post("/api/integrations/steam/wishlist/sync", response_model=SyncResultResponse)
+def sync_steam_wishlist_entries(
+    payload: SyncSteamEntriesRequest, db: Session = Depends(get_db)
+) -> SyncResultResponse:
+    return SyncResultResponse.model_validate(steam_wishlist_service.sync_entries(db, payload.steam_app_ids))
+
+
+@router.post(
+    "/api/integrations/steam/wishlist/{steam_app_id}/ignore", response_model=SteamWishlistEntryResponse
+)
+def ignore_steam_wishlist_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamWishlistEntryResponse:
+    return _wishlist_entry_response(steam_wishlist_service.ignore_entry(db, steam_app_id))
+
+
+def _wishlist_entry_response(
+    item: "steam_wishlist_service.SteamWishlistEntryWithStatus",
+) -> SteamWishlistEntryResponse:
+    entry = item.entry
+    game = entry.game
+    return SteamWishlistEntryResponse(
+        steam_app_id=entry.steam_app_id,
+        steam_name=entry.steam_name,
+        wishlist_added_at=entry.wishlist_added_at,
+        status=item.status.value,
+        game_id=game.id if game else None,
+        game_name=game.name if game else None,
+        game_slug=game.slug if game else None,
+        game_cover_url=game.cover_url if game else None,
+        parent_game_id=game.parent_game_id if game else None,
+    )
+
+
 def _entry_response(item: "steam_service.SteamEntryWithStatus") -> SteamEntryResponse:
     entry = item.entry
     game = entry.game
@@ -71,4 +109,5 @@ def _entry_response(item: "steam_service.SteamEntryWithStatus") -> SteamEntryRes
         game_slug=game.slug if game else None,
         game_cover_url=game.cover_url if game else None,
         vgt_playtime_minutes=item.vgt_playtime_minutes,
+        parent_game_id=game.parent_game_id if game else None,
     )

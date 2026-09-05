@@ -45,6 +45,11 @@ def retry_ignored_sales_title(provider: SalesProvider, game_id: int, db: Session
     _SERVICE_BY_PROVIDER[provider].retry_ignored_item(db, game_id)
 
 
+@router.post("/ignored/{provider}/{game_id}/remove", status_code=status.HTTP_204_NO_CONTENT)
+def remove_ignored_sales_title(provider: SalesProvider, game_id: int, db: Session = Depends(get_db)) -> None:
+    _SERVICE_BY_PROVIDER[provider].remove_ignored_item(db, game_id)
+
+
 @router.get("/tracked", response_model=list[TrackedSalesItemResponse])
 def list_tracked_sales_items(db: Session = Depends(get_db)) -> list[TrackedSalesItemResponse]:
     items = library_service.list_tracked_items(db)

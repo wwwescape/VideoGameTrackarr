@@ -462,7 +462,9 @@
       "videosTitle": "Videos",
       "watchOnYoutube": "Watch on YouTube",
       "viewOnIgdb": "View more details on IGDB.com",
-      "viewOnSteam": "View on Steam"
+      "viewOnSteam": "View on Steam",
+      "viewOnXbox": "View on Xbox",
+      "viewOnPlaystation": "View on PlayStation Store"
     },
     "actions": {
       "removeSuccessToast": "Game removed from your library!",
@@ -572,20 +574,26 @@
     },
     "steamSync": {
       "heading": "Steam Sync",
-      "description": "Every game Steam knows you own, matched against your VGT catalog. Nothing changes here until you explicitly Sync a row — Import only fetches and matches, it never writes to your library on its own.",
-      "tableHeading": "Steam Library",
+      "description": "Every game Steam knows you own or have wishlisted, matched against your VGT catalog. Nothing changes here until you explicitly Sync a row — Import only fetches and matches, it never writes to your library on its own.",
+      "tableHeading": "Steam Library & Wishlist",
       "emptyState": "Nothing here yet. Set your SteamID64 in Settings → Integrations, then run Import.",
       "columnName": "Name",
-      "columnSteamPlaytime": "Steam",
-      "columnVgtPlaytime": "VGT",
-      "columnStatus": "Status",
+      "columnSteamStatus": "Steam Status",
+      "columnSteamPlaytime": "Steam Playtime",
+      "columnVgtPlaytime": "VGT Playtime",
+      "columnVgtStatus": "VGT Status",
       "columnActions": "Actions",
       "hoursValue": "{{hours}}h",
+      "steamStatusOwned": "Owned",
+      "steamStatusWishlisted": "Wishlisted",
+      "expandAddonsLabel": "Show DLC",
+      "collapseAddonsLabel": "Hide DLC",
       "status": {
         "noMatch": "No catalog match",
         "new": "New",
         "updateAvailable": "Update available",
         "upToDate": "Up to date",
+        "alreadyWishlisted": "Already wishlisted",
         "ignored": "Ignored"
       },
       "selectedCount_one": "{{count}} selected",
@@ -599,15 +607,26 @@
       "ignoreButton": "Ignore",
       "ignoreErrorToast": "Could not ignore this entry. Please try again.",
       "storeDetailsErrorToast": "Could not fetch this game's Steam store page. Please try again.",
-      "syncSuccessToast_one": "Synced {{count}} game.",
-      "syncSuccessToast_other": "Synced {{count}} games.",
-      "syncPartialErrorToast": "{{failed}} game(s) failed to sync. Please try again.",
+      "syncSuccessToast_one": "Synced {{count}} entry.",
+      "syncSuccessToast_other": "Synced {{count}} entries.",
+      "syncPartialErrorToast": "{{failed}} item(s) failed to sync. Please try again.",
       "syncErrorToast": "Could not sync. Please try again.",
       "confirmSingleTitle": "Sync \"{{name}}\"?",
-      "confirmBulkTitle": "Sync {{count}} games?",
+      "confirmBulkTitle": "Sync {{count}} entries?",
       "confirmAddDescription": "This will add \"{{name}}\" to your library (PC, Digital, Steam) with {{hours}}h logged.",
       "confirmUpdateDescription": "This will set \"{{name}}\"'s playtime from {{currentHours}}h to {{newHours}}h, straight from Steam — this can overwrite manually-logged time.",
-      "confirmBulkDescription": "This will add {{newCount}} new game(s) to your library and update playtime for {{updateCount}} game(s) already there, straight from Steam — this can overwrite manually-logged time."
+      "confirmBulkIntro": "This will add {{list}}, straight from Steam.",
+      "confirmBulkOwnedNewPart_one": "{{count}} new game to your library",
+      "confirmBulkOwnedNewPart_other": "{{count}} new games to your library",
+      "confirmBulkOwnedUpdatePart_one": "a playtime update for {{count}} game already in your library",
+      "confirmBulkOwnedUpdatePart_other": "playtime updates for {{count}} games already in your library",
+      "confirmBulkWishlistNewPart_one": "{{count}} game to your wishlist",
+      "confirmBulkWishlistNewPart_other": "{{count}} games to your wishlist",
+      "confirmAddonNote_one": "This will also sync {{count}} DLC.",
+      "confirmAddonNote_other": "This will also sync {{count}} DLC.",
+      "wishlist": {
+        "confirmAddDescription": "This will add \"{{name}}\" to your Wishlist (PC, Digital, Steam)."
+      }
     },
     "saleTracked": {
       "heading": "Sale - Tracked",
@@ -637,7 +656,10 @@
       },
       "retryButton": "Retry",
       "retrySuccessToast": "Will be retried on the next refresh.",
-      "retryErrorToast": "Could not retry this title. Please try again."
+      "retryErrorToast": "Could not retry this title. Please try again.",
+      "removeButton": "Remove",
+      "removeSuccessToast": "Sale tracking turned off for this title.",
+      "removeErrorToast": "Could not remove this title. Please try again."
     },
     "onSale": {
       "description": "Current deals on your wishlisted digital games, matched via IsThereAnyDeal (Windows/Mac/Linux/Android) and PlatPrices (PlayStation). A game with no digital release, or on a platform neither provider covers, just won't show up here.",

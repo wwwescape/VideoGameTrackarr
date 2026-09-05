@@ -13,6 +13,7 @@ class LibraryItemResponse(CamelModel):
     game_id: int
     platform_id: int | None
     platform_name: str | None
+    platform_slug: str | None
     region_id: int | None
     region_name: str | None
     status: LibraryStatus
@@ -56,6 +57,7 @@ def library_item_from_orm(
         game_id=item.game_id,
         platform_id=item.platform_id,
         platform_name=item.platform.name if item.platform else None,
+        platform_slug=item.platform.slug if item.platform else None,
         region_id=item.region_id,
         region_name=item.region.name if item.region else None,
         status=item.status,

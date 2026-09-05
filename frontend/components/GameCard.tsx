@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -6,6 +7,7 @@ import CardMedia from "@mui/material/CardMedia";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import { green } from "@mui/material/colors";
+import Skeleton from "@mui/material/Skeleton";
 import { styled, useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -79,6 +81,11 @@ const GameCard = ({
 }: GameCardProps) => {
   const theme = useTheme();
   const { t } = useTranslation();
+  // Resets on every mount, including the virtualized grid recycling a card as it scrolls
+  // back into view (e.g. after a fast scroll + browser back-navigation) — a cached image
+  // still resolves near-instantly, so the skeleton is only visible for genuinely-loading
+  // covers, not a permanent flash on every re-render.
+  const [coverLoaded, setCoverLoaded] = useState(false);
   const showsBadges =
     (context === "list" || context === "addon" || context === "public") && !selectable;
   const isClickable = context === "list" || context === "addon" || context === "added";
@@ -151,18 +158,32 @@ const GameCard = ({
           }}
         >
           {game.coverUrl ? (
-            <CardMedia
-              component="img"
-              alt={game.name}
-              image={resolveAssetUrl(game.coverUrl) ?? undefined}
-              sx={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
+            <>
+              {!coverLoaded && (
+                <Skeleton
+                  variant="rectangular"
+                  animation="wave"
+                  sx={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+                />
+              )}
+              <CardMedia
+                component="img"
+                alt={game.name}
+                image={resolveAssetUrl(game.coverUrl) ?? undefined}
+                loading="lazy"
+                onLoad={() => setCoverLoaded(true)}
+                onError={() => setCoverLoaded(true)}
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  opacity: coverLoaded ? 1 : 0,
+                  transition: "opacity 150ms ease",
+                }}
+              />
+            </>
           ) : (
             <Box
               sx={{

@@ -462,7 +462,9 @@
       "videosTitle": "Vídeos",
       "watchOnYoutube": "Ver en YouTube",
       "viewOnIgdb": "Ver más detalles en IGDB.com",
-      "viewOnSteam": "Ver en Steam"
+      "viewOnSteam": "Ver en Steam",
+      "viewOnXbox": "Ver en Xbox",
+      "viewOnPlaystation": "Ver en PlayStation Store"
     },
     "actions": {
       "removeSuccessToast": "¡Juego eliminado de tu biblioteca!",
@@ -572,20 +574,26 @@
     },
     "steamSync": {
       "heading": "Sincronización Steam",
-      "description": "Todos los juegos que Steam dice que posees, comparados con tu catálogo de VGT. Nada cambia aquí hasta que sincronices una fila explícitamente — Importar solo obtiene y empareja datos, nunca escribe en tu biblioteca por sí solo.",
-      "tableHeading": "Biblioteca de Steam",
+      "description": "Todos los juegos que Steam dice que posees o tienes en tu lista de deseos, comparados con tu catálogo de VGT. Nada cambia aquí hasta que sincronices una fila explícitamente — Importar solo obtiene y empareja datos, nunca escribe en tu biblioteca por sí solo.",
+      "tableHeading": "Biblioteca y lista de deseos de Steam",
       "emptyState": "Todavía no hay nada aquí. Configura tu SteamID64 en Ajustes → Integraciones y luego ejecuta Importar.",
       "columnName": "Nombre",
-      "columnSteamPlaytime": "Steam",
-      "columnVgtPlaytime": "VGT",
-      "columnStatus": "Estado",
+      "columnSteamStatus": "Estado en Steam",
+      "columnSteamPlaytime": "Tiempo de juego en Steam",
+      "columnVgtPlaytime": "Tiempo de juego en VGT",
+      "columnVgtStatus": "Estado en VGT",
       "columnActions": "Acciones",
       "hoursValue": "{{hours}}h",
+      "steamStatusOwned": "Poseído",
+      "steamStatusWishlisted": "En lista de deseos",
+      "expandAddonsLabel": "Mostrar DLC",
+      "collapseAddonsLabel": "Ocultar DLC",
       "status": {
         "noMatch": "Sin coincidencia en el catálogo",
         "new": "Nuevo",
         "updateAvailable": "Actualización disponible",
         "upToDate": "Al día",
+        "alreadyWishlisted": "Ya en la lista de deseos",
         "ignored": "Ignorado"
       },
       "selectedCount_one": "{{count}} seleccionado",
@@ -599,15 +607,26 @@
       "ignoreButton": "Ignorar",
       "ignoreErrorToast": "No se pudo ignorar esta entrada. Inténtalo de nuevo.",
       "storeDetailsErrorToast": "No se pudo obtener la página de Steam de este juego. Inténtalo de nuevo.",
-      "syncSuccessToast_one": "Se sincronizó {{count}} juego.",
-      "syncSuccessToast_other": "Se sincronizaron {{count}} juegos.",
-      "syncPartialErrorToast": "{{failed}} juego(s) no se pudieron sincronizar. Inténtalo de nuevo.",
+      "syncSuccessToast_one": "Se sincronizó {{count}} entrada.",
+      "syncSuccessToast_other": "Se sincronizaron {{count}} entradas.",
+      "syncPartialErrorToast": "{{failed}} elemento(s) no se pudieron sincronizar. Inténtalo de nuevo.",
       "syncErrorToast": "No se pudo sincronizar. Inténtalo de nuevo.",
       "confirmSingleTitle": "¿Sincronizar \"{{name}}\"?",
-      "confirmBulkTitle": "¿Sincronizar {{count}} juegos?",
+      "confirmBulkTitle": "¿Sincronizar {{count}} entradas?",
       "confirmAddDescription": "Esto añadirá \"{{name}}\" a tu biblioteca (PC, Digital, Steam) con {{hours}}h registradas.",
       "confirmUpdateDescription": "Esto cambiará el tiempo de juego de \"{{name}}\" de {{currentHours}}h a {{newHours}}h, directamente desde Steam — esto puede sobrescribir tiempo registrado manualmente.",
-      "confirmBulkDescription": "Esto añadirá {{newCount}} juego(s) nuevo(s) a tu biblioteca y actualizará el tiempo de juego de {{updateCount}} juego(s) ya existentes, directamente desde Steam — esto puede sobrescribir tiempo registrado manualmente."
+      "confirmBulkIntro": "Esto añadirá {{list}}, directamente desde Steam.",
+      "confirmBulkOwnedNewPart_one": "{{count}} juego nuevo a tu biblioteca",
+      "confirmBulkOwnedNewPart_other": "{{count}} juegos nuevos a tu biblioteca",
+      "confirmBulkOwnedUpdatePart_one": "una actualización de tiempo de juego para {{count}} juego ya en tu biblioteca",
+      "confirmBulkOwnedUpdatePart_other": "actualizaciones de tiempo de juego para {{count}} juegos ya en tu biblioteca",
+      "confirmBulkWishlistNewPart_one": "{{count}} juego a tu lista de deseos",
+      "confirmBulkWishlistNewPart_other": "{{count}} juegos a tu lista de deseos",
+      "confirmAddonNote_one": "Esto también sincronizará {{count}} DLC.",
+      "confirmAddonNote_other": "Esto también sincronizará {{count}} DLC.",
+      "wishlist": {
+        "confirmAddDescription": "Esto añadirá \"{{name}}\" a tu Lista de deseos (PC, Digital, Steam)."
+      }
     },
     "saleTracked": {
       "heading": "Ofertas - seguidas",
@@ -637,7 +656,10 @@
       },
       "retryButton": "Reintentar",
       "retrySuccessToast": "Se reintentará en la próxima actualización.",
-      "retryErrorToast": "No se pudo reintentar este título. Inténtalo de nuevo."
+      "retryErrorToast": "No se pudo reintentar este título. Inténtalo de nuevo.",
+      "removeButton": "Eliminar",
+      "removeSuccessToast": "Se desactivó el seguimiento de ofertas para este título.",
+      "removeErrorToast": "No se pudo eliminar este título. Inténtalo de nuevo."
     },
     "onSale": {
       "description": "Ofertas actuales de tus juegos digitales en la lista de deseos, emparejados mediante IsThereAnyDeal (Windows/Mac/Linux/Android) y PlatPrices (PlayStation). Un juego sin lanzamiento digital, o en una plataforma que ningún proveedor cubre, simplemente no aparecerá aquí.",

@@ -30,6 +30,12 @@ class SteamOwnedGame:
     last_played_at: datetime | None
 
 
+@dataclass
+class SteamWishlistItem:
+    app_id: int
+    added_at: datetime | None
+
+
 class SteamClient:
     def __init__(self, api_key: str | None = None, http_client: httpx.AsyncClient | None = None) -> None:
         settings = get_settings()
@@ -85,4 +91,33 @@ class SteamClient:
                 ),
             )
             for game in payload["games"]
+        ]
+
+    async def get_wishlist(self, steam_id_64: str) -> list[SteamWishlistItem]:
+        """Unlike get_owned_games, there's no reliable way to tell "wishlist is private" apart
+        from "wishlist is genuinely empty" here — confirmed live against several public
+        profiles during scoping, all returning the same bare `{"response": {}}` regardless of
+        which applied. So this always returns a plain list (never None): a missing/empty
+        `items` key is just treated as zero wishlisted items, not an error. Also unlike
+        GetOwnedGames, this endpoint never returns a name — only appid/priority/date_added
+        (confirmed against Steam's own Web API docs) — so the caller is responsible for
+        resolving a display name (IGDB match, or a placeholder)."""
+        if not self._api_key:
+            raise SteamCredentialsError("STEAM_API_KEY is not configured")
+
+        response = await self._request(
+            "GET",
+            f"{STEAM_API_BASE}/IWishlistService/GetWishlist/v1/",
+            params={"key": self._api_key, "steamid": steam_id_64},
+        )
+        items = response.json().get("response", {}).get("items", [])
+
+        return [
+            SteamWishlistItem(
+                app_id=item["appid"],
+                added_at=(
+                    datetime.fromtimestamp(item["date_added"], tz=UTC) if item.get("date_added") else None
+                ),
+            )
+            for item in items
         ]

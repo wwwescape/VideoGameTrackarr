@@ -17,7 +17,7 @@ from app.repositories import (
 from app.repositories.game_repository import GameWithStatus
 from app.services import upload_service
 from app.services.exceptions import ConflictError, NotFoundError
-from app.services.igdb_client import IGDBClient
+from app.services.igdb_client import IGDBClient, extract_store_urls
 
 _COMPANY_ROLE_FLAGS = (
     ("developer", CompanyRole.DEVELOPER),
@@ -44,7 +44,9 @@ class CatalogSyncScope(enum.Enum):
 # (hidden from the main games list, cascade-deleted/resynced with it) is actually correct.
 # Standalone expansions, bundles, remasters, etc. found via the parent_game backlink (see
 # _upsert_from_igdb_payload) get a display-only link instead, via display_parent_game_id.
-_HIERARCHICAL_ADDON_CATEGORIES = {GameCategory.DLC_ADDON, GameCategory.EXPANSION, GameCategory.PACK}
+# Public (not module-private) — steam_service also uses this to hide DLC/expansion/pack
+# entries from the main Steam Sync table.
+HIERARCHICAL_ADDON_CATEGORIES = {GameCategory.DLC_ADDON, GameCategory.EXPANSION, GameCategory.PACK}
 
 
 def search_local_games(
@@ -288,7 +290,7 @@ def _upsert_from_igdb_payload(
     parent_game_id = None
     display_parent_game_id = None
     if candidate_parent_id is not None:
-        if category in _HIERARCHICAL_ADDON_CATEGORIES:
+        if category in HIERARCHICAL_ADDON_CATEGORIES:
             parent_game_id = candidate_parent_id
         else:
             display_parent_game_id = candidate_parent_id
@@ -310,6 +312,7 @@ def _upsert_from_igdb_payload(
         external_parent_name=external_parent_name,
         external_parent_igdb_url=external_parent_igdb_url,
         similar_game_igdb_ids=igdb_game.get("similar_games"),
+        **extract_store_urls(igdb_game),
     )
 
     _sync_catalog_richness(db, game, igdb_game, scope=scope)
