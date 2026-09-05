@@ -7,6 +7,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import PublicSubNav from "./components/PublicSubNav";
+import { useScrollResetOnNavigate } from "./hooks/useScrollResetOnNavigate";
 import { useColorMode } from "./theme/ColorModeProvider";
 
 // Deliberately minimal, not a stripped-down AppShell — no logout/user menu (there's no
@@ -15,6 +16,7 @@ import { useColorMode } from "./theme/ColorModeProvider";
 const PublicShell = () => {
   const { t } = useTranslation();
   const { mode, toggleColorMode } = useColorMode();
+  useScrollResetOnNavigate();
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>

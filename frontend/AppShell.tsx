@@ -17,6 +17,7 @@ import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
 import RestoreGuard from "./components/RestoreGuard";
 import UpdateAvailableChip from "./components/UpdateAvailableChip";
 import { useLogout } from "./hooks/useAuth";
+import { useScrollResetOnNavigate } from "./hooks/useScrollResetOnNavigate";
 import BottomNavBar, { BOTTOM_NAV_HEIGHT } from "./navigation/BottomNavBar";
 import Breadcrumbs, { BREADCRUMBS_HEIGHT } from "./navigation/Breadcrumbs";
 import NavDrawer, { NAV_DRAWER_WIDTH } from "./navigation/NavDrawer";
@@ -35,6 +36,7 @@ const AppShell = () => {
   const isExpanded = useMediaQuery(theme.breakpoints.up("lg"));
   const navigate = useNavigate();
   const logoutMutation = useLogout();
+  useScrollResetOnNavigate();
 
   const handleLogout = () => {
     // Clearing tokens/cache alone doesn't move the user off the current (now-stale)

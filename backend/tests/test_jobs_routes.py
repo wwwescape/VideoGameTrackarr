@@ -33,7 +33,7 @@ def test_list_jobs_shows_all_four_registered_jobs_idle(auth_client):
 def test_run_job_transitions_to_completed(auth_client, monkeypatch):
     from app.services import resync_jobs
 
-    async def fake_resync_all(db, scope):
+    async def fake_resync_all(db, scope, report_progress):
         return {"total": 0, "succeeded": 0, "failed": 0, "failures": []}
 
     monkeypatch.setattr(resync_jobs, "_resync_all", fake_resync_all)

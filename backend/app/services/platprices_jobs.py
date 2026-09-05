@@ -22,15 +22,18 @@ class PlatPricesNotConfiguredError(Exception):
     """Raised when PLATPRICES_API_KEY isn't set yet."""
 
 
-def run(session_factory: Callable[[], Session]) -> dict[str, Any]:
+def run(
+    session_factory: Callable[[], Session],
+    report_progress: Callable[[int, int], None] | None = None,
+) -> dict[str, Any]:
     db = session_factory()
     try:
-        return asyncio.run(_refresh(db))
+        return asyncio.run(_refresh(db, report_progress or (lambda current, total: None)))
     finally:
         db.close()
 
 
-async def _refresh(db: Session) -> dict[str, Any]:
+async def _refresh(db: Session, report_progress: Callable[[int, int], None]) -> dict[str, Any]:
     """Fetches + caches PlatPrices data for every PlatPrices-eligible wishlisted game (PS4/PS5
     + digital — see platprices_repository.list_distinct_wishlisted_games, deliberately
     pre-filtered unlike itad_jobs.py's equivalent, since PlatPrices' free tier is only 1,000
@@ -62,6 +65,7 @@ async def _refresh(db: Session) -> dict[str, Any]:
             except Exception as exc:  # noqa: BLE001 - one bad title lookup must not abort the batch
                 db.rollback()
                 failures.append({"gameId": game.id, "gameName": game.name, "error": str(exc)})
+            report_progress(index + 1, len(games))
 
         # One batched call for everything matched this run — PlatPrices' /games/batch response
         # already carries both current price and historical-low data on the same game object,

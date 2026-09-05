@@ -128,12 +128,15 @@ class Game(TimestampMixin, Base):
     first_release_date: Mapped[int | None] = mapped_column(BigInteger)  # unix timestamp, from IGDB
     cover_url: Mapped[str | None] = mapped_column(String(1024))
 
-    # Store page links, cached at import/resync time from IGDB's external_games relation
-    # (see igdb_client.extract_store_urls) — same "fetch from IGDB once, persist, serve from
-    # DB" treatment as igdb_url above, not fetched live per request.
+    # Store page links, cached at import/resync time from IGDB's websites relation (see
+    # igdb_client.extract_store_urls) — same "fetch from IGDB once, persist, serve from DB"
+    # treatment as igdb_url above, not fetched live per request.
     steam_store_url: Mapped[str | None] = mapped_column(String(1024))
     xbox_store_url: Mapped[str | None] = mapped_column(String(1024))
     playstation_store_url: Mapped[str | None] = mapped_column(String(1024))
+    nintendo_store_url: Mapped[str | None] = mapped_column(String(1024))
+    epic_games_store_url: Mapped[str | None] = mapped_column(String(1024))
+    gog_store_url: Mapped[str | None] = mapped_column(String(1024))
 
     category: Mapped[GameCategory | None] = mapped_column(enum_column(GameCategory))
     igdb_category_id: Mapped[int | None] = mapped_column(Integer)

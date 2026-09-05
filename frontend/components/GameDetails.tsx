@@ -112,7 +112,7 @@ const GameDetails = () => {
       <Grid size={{ xs: 12, md: 9 }}>
         <Stack spacing={3}>
           <Card id="about" sx={sectionCardSx}>
-            <GameAboutSection game={game} libraryItems={libraryItems} />
+            <GameAboutSection game={game} />
           </Card>
           <Card id="tags" sx={sectionCardSx}>
             <TagsSection

@@ -24,18 +24,25 @@ JOB_SERIES = "resync_series"
 _PACE_DELAY_SECONDS = 0.5
 
 
-def _make_run(scope: CatalogSyncScope) -> Callable[[Callable[[], Session]], dict[str, Any]]:
-    def run(session_factory: Callable[[], Session]) -> dict[str, Any]:
+def _make_run(
+    scope: CatalogSyncScope,
+) -> Callable[[Callable[[], Session], Callable[[int, int], None]], dict[str, Any]]:
+    def run(
+        session_factory: Callable[[], Session],
+        report_progress: Callable[[int, int], None] | None = None,
+    ) -> dict[str, Any]:
         db = session_factory()
         try:
-            return asyncio.run(_resync_all(db, scope))
+            return asyncio.run(_resync_all(db, scope, report_progress or (lambda current, total: None)))
         finally:
             db.close()
 
     return run
 
 
-async def _resync_all(db: Session, scope: CatalogSyncScope) -> dict[str, Any]:
+async def _resync_all(
+    db: Session, scope: CatalogSyncScope, report_progress: Callable[[int, int], None]
+) -> dict[str, Any]:
     # Snapshotted up front so a failure record can still carry a human-readable name even
     # after a later db.rollback().
     games = game_repository.list_igdb_linked_games(db)
@@ -60,6 +67,7 @@ async def _resync_all(db: Session, scope: CatalogSyncScope) -> dict[str, Any]:
                 # isolate failures themselves.
                 db.rollback()
                 failures.append({"game_id": game_id, "game_name": game_name, "error": str(exc)})
+            report_progress(index + 1, len(games))
     finally:
         await client.aclose()
 

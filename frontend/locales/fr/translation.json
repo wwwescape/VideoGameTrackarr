@@ -168,6 +168,7 @@
       "nextRun": "Prochaine exécution : {{date}}",
       "neverScheduled": "Non planifiée",
       "resultSummary": "{{succeeded}} sur {{total}} réussis ({{failed}} échoués)",
+      "progress": "{{current}} sur {{total}}",
       "runError": "Impossible de démarrer la tâche. Veuillez réessayer.",
       "scheduleSaveError": "Impossible d'enregistrer la planification. Vérifiez l'expression cron et réessayez.",
       "status": {
@@ -464,7 +465,10 @@
       "viewOnIgdb": "Voir plus de détails sur IGDB.com",
       "viewOnSteam": "Voir sur Steam",
       "viewOnXbox": "Voir sur Xbox",
-      "viewOnPlaystation": "Voir sur PlayStation Store"
+      "viewOnPlaystation": "Voir sur PlayStation Store",
+      "viewOnNintendo": "Voir sur Nintendo eShop",
+      "viewOnEpicGames": "Voir sur Epic Games Store",
+      "viewOnGog": "Voir sur GOG.com"
     },
     "actions": {
       "removeSuccessToast": "Jeu retiré de votre bibliothèque !",

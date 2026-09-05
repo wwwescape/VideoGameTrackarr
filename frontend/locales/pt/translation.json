@@ -168,6 +168,7 @@
       "nextRun": "Próxima execução: {{date}}",
       "neverScheduled": "Não agendada",
       "resultSummary": "{{succeeded}} de {{total}} com sucesso ({{failed}} com falha)",
+      "progress": "{{current}} de {{total}}",
       "runError": "Não foi possível iniciar a tarefa. Por favor, tente novamente.",
       "scheduleSaveError": "Não foi possível guardar o agendamento. Verifique a expressão cron e tente novamente.",
       "status": {
@@ -464,7 +465,10 @@
       "viewOnIgdb": "Ver mais detalhes em IGDB.com",
       "viewOnSteam": "Ver na Steam",
       "viewOnXbox": "Ver na Xbox",
-      "viewOnPlaystation": "Ver na PlayStation Store"
+      "viewOnPlaystation": "Ver na PlayStation Store",
+      "viewOnNintendo": "Ver na Nintendo eShop",
+      "viewOnEpicGames": "Ver na Epic Games Store",
+      "viewOnGog": "Ver na GOG.com"
     },
     "actions": {
       "removeSuccessToast": "Jogo removido da sua biblioteca!",

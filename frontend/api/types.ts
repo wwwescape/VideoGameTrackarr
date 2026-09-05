@@ -47,6 +47,9 @@ export interface GameSummary {
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;
+  nintendoStoreUrl: string | null;
+  epicGamesStoreUrl: string | null;
+  gogStoreUrl: string | null;
 }
 
 export interface GameProgress {
@@ -325,6 +328,11 @@ export interface ResyncJobResult {
   failures: ResyncJobFailure[];
 }
 
+export interface JobProgress {
+  current: number;
+  total: number;
+}
+
 export interface JobRun {
   status: JobRunStatus;
   startedAt: string | null;
@@ -333,6 +341,9 @@ export interface JobRun {
   // ResyncJobResult, but a future job's result shape is unconstrained.
   result: Record<string, unknown> | null;
   error: string | null;
+  // Only set while status is "running" — cleared back to null once a job finishes, since
+  // the final counts already live in `result`.
+  progress: JobProgress | null;
 }
 
 export interface JobSchedule {

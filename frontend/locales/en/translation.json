@@ -168,6 +168,7 @@
       "nextRun": "Next run: {{date}}",
       "neverScheduled": "Not scheduled",
       "resultSummary": "{{succeeded}} of {{total}} succeeded ({{failed}} failed)",
+      "progress": "{{current}} of {{total}}",
       "runError": "Could not start the job. Please try again.",
       "scheduleSaveError": "Could not save the schedule. Check the cron expression and try again.",
       "status": {
@@ -464,7 +465,10 @@
       "viewOnIgdb": "View more details on IGDB.com",
       "viewOnSteam": "View on Steam",
       "viewOnXbox": "View on Xbox",
-      "viewOnPlaystation": "View on PlayStation Store"
+      "viewOnPlaystation": "View on PlayStation Store",
+      "viewOnNintendo": "View on Nintendo eShop",
+      "viewOnEpicGames": "View on Epic Games Store",
+      "viewOnGog": "View on GOG.com"
     },
     "actions": {
       "removeSuccessToast": "Game removed from your library!",

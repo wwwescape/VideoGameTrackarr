@@ -168,6 +168,7 @@
       "nextRun": "Próxima ejecución: {{date}}",
       "neverScheduled": "Sin programar",
       "resultSummary": "{{succeeded}} de {{total}} completados correctamente ({{failed}} fallidos)",
+      "progress": "{{current}} de {{total}}",
       "runError": "No se pudo iniciar la tarea. Inténtalo de nuevo.",
       "scheduleSaveError": "No se pudo guardar la programación. Comprueba la expresión cron e inténtalo de nuevo.",
       "status": {
@@ -464,7 +465,10 @@
       "viewOnIgdb": "Ver más detalles en IGDB.com",
       "viewOnSteam": "Ver en Steam",
       "viewOnXbox": "Ver en Xbox",
-      "viewOnPlaystation": "Ver en PlayStation Store"
+      "viewOnPlaystation": "Ver en PlayStation Store",
+      "viewOnNintendo": "Ver en Nintendo eShop",
+      "viewOnEpicGames": "Ver en Epic Games Store",
+      "viewOnGog": "Ver en GOG.com"
     },
     "actions": {
       "removeSuccessToast": "¡Juego eliminado de tu biblioteca!",

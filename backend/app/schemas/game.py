@@ -39,6 +39,9 @@ class GameSummaryResponse(CamelModel):
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
+    nintendo_store_url: str | None
+    epic_games_store_url: str | None
+    gog_store_url: str | None
 
 
 class GameDetailResponse(GameSummaryResponse):
@@ -87,6 +90,9 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,
+        "nintendo_store_url": game.nintendo_store_url,
+        "epic_games_store_url": game.epic_games_store_url,
+        "gog_store_url": game.gog_store_url,
     }
 
 

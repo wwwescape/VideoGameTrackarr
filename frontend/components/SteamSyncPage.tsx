@@ -94,38 +94,40 @@ const WISHLIST_STATUS_CHIP: Record<
 
 const formatHours = (minutes: number) => (minutes / 60).toFixed(1);
 
-// Groups one source's flat entry list into top-level rows + their DLC/expansion/pack
-// children (matched via each entry's parentGameId, scoped to *this same list* — an owned
-// DLC only ever nests under an owned parent, a wishlisted DLC only under a wishlisted
-// parent; see steam_service.py/steam_wishlist_service.py's matching cascade for why the two
-// never cross). An entry whose parent isn't present in this same list (parent not on Steam
-// at all, or only present in the other list) is treated as its own top-level row.
-function buildTreesForSource<T extends SteamEntry | SteamWishlistEntry>(
-  entries: T[],
-  source: "owned" | "wishlist"
-): TreeRow[] {
-  const byGameId = new Map<number, T>();
-  for (const entry of entries) {
-    if (entry.gameId !== null) byGameId.set(entry.gameId, entry);
+// Groups the combined owned+wishlist entry list into top-level rows + their DLC/expansion/
+// pack children (matched via each entry's parentGameId). Nesting deliberately spans *both*
+// sources — you commonly own a base game while a specific DLC pack for it only sits on your
+// wishlist (or vice versa), so an owned parent can have wishlisted children and a wishlisted
+// parent can have owned children; the two rows just keep whichever Steam Status/Playtime
+// values actually belong to that specific entry. An entry whose parent isn't present in
+// either list at all (or has no parent) is treated as its own top-level row.
+function buildTrees(owned: SteamEntry[], wishlist: SteamWishlistEntry[]): TreeRow[] {
+  const allRows: SyncRow[] = [
+    ...owned.map((entry): SyncRow => ({ source: "owned", entry })),
+    ...wishlist.map((entry): SyncRow => ({ source: "wishlist", entry })),
+  ];
+
+  const byGameId = new Map<number, SyncRow>();
+  for (const row of allRows) {
+    if (row.entry.gameId !== null) byGameId.set(row.entry.gameId, row);
   }
 
-  const childrenByParent = new Map<number, T[]>();
-  const topLevel: T[] = [];
-  for (const entry of entries) {
-    if (entry.parentGameId !== null && byGameId.has(entry.parentGameId)) {
-      const siblings = childrenByParent.get(entry.parentGameId) ?? [];
-      siblings.push(entry);
-      childrenByParent.set(entry.parentGameId, siblings);
+  const childrenByParent = new Map<number, SyncRow[]>();
+  const topLevel: SyncRow[] = [];
+  for (const row of allRows) {
+    const parentGameId = row.entry.parentGameId;
+    if (parentGameId !== null && byGameId.has(parentGameId)) {
+      const siblings = childrenByParent.get(parentGameId) ?? [];
+      siblings.push(row);
+      childrenByParent.set(parentGameId, siblings);
     } else {
-      topLevel.push(entry);
+      topLevel.push(row);
     }
   }
 
-  return topLevel.map((entry) => ({
-    row: { source, entry } as SyncRow,
-    children: (entry.gameId !== null ? (childrenByParent.get(entry.gameId) ?? []) : []).map(
-      (child) => ({ source, entry: child }) as SyncRow
-    ),
+  return topLevel.map((row) => ({
+    row,
+    children: row.entry.gameId !== null ? (childrenByParent.get(row.entry.gameId) ?? []) : [],
   }));
 }
 
@@ -151,10 +153,7 @@ const SteamSyncPage = () => {
   const isImporting = jobs?.find((job) => job.id === STEAM_IMPORT_JOB_ID)?.run.status === "running";
 
   const trees = useMemo(() => {
-    const combined = [
-      ...buildTreesForSource(ownedEntries ?? [], "owned"),
-      ...buildTreesForSource(wishlistEntries ?? [], "wishlist"),
-    ];
+    const combined = buildTrees(ownedEntries ?? [], wishlistEntries ?? []);
     combined.sort((a, b) => rowName(a.row).localeCompare(rowName(b.row)));
     return combined;
   }, [ownedEntries, wishlistEntries]);
@@ -430,6 +429,7 @@ const SteamSyncPage = () => {
                       disabled={actionableTrees.length === 0}
                     />
                   </TableCell>
+                  <TableCell padding="checkbox" />
                   <TableCell />
                   <TableCell>{t("insights.steamSync.columnName")}</TableCell>
                   <TableCell>{t("insights.steamSync.columnSteamStatus")}</TableCell>
@@ -455,6 +455,22 @@ const SteamSyncPage = () => {
                             disabled={!actionable}
                           />
                         </TableCell>
+                        <TableCell padding="checkbox">
+                          {hasChildren && (
+                            <IconButton
+                              size="small"
+                              onClick={() => toggleExpanded(key)}
+                              aria-label={
+                                isExpanded
+                                  ? t("insights.steamSync.collapseAddonsLabel")
+                                  : t("insights.steamSync.expandAddonsLabel")
+                              }
+                              sx={{ fontFamily: "monospace", fontWeight: "bold" }}
+                            >
+                              {isExpanded ? "−" : "+"}
+                            </IconButton>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Avatar
                             variant="rounded"
@@ -465,29 +481,11 @@ const SteamSyncPage = () => {
                           </Avatar>
                         </TableCell>
                         <TableCell>
-                          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                            {hasChildren ? (
-                              <IconButton
-                                size="small"
-                                onClick={() => toggleExpanded(key)}
-                                aria-label={
-                                  isExpanded
-                                    ? t("insights.steamSync.collapseAddonsLabel")
-                                    : t("insights.steamSync.expandAddonsLabel")
-                                }
-                                sx={{ fontFamily: "monospace", fontWeight: "bold" }}
-                              >
-                                {isExpanded ? "−" : "+"}
-                              </IconButton>
-                            ) : (
-                              <Box sx={{ width: 34 }} />
-                            )}
-                            {tree.row.entry.gameSlug ? (
-                              <Link to={`/game/${tree.row.entry.gameSlug}`}>{tree.row.entry.gameName}</Link>
-                            ) : (
-                              tree.row.entry.steamName
-                            )}
-                          </Stack>
+                          {tree.row.entry.gameSlug ? (
+                            <Link to={`/game/${tree.row.entry.gameSlug}`}>{tree.row.entry.gameName}</Link>
+                          ) : (
+                            tree.row.entry.steamName
+                          )}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -524,6 +522,7 @@ const SteamSyncPage = () => {
                           const isLast = index === tree.children.length - 1;
                           return (
                             <TableRow key={rowKey(child)} hover>
+                              <TableCell padding="checkbox" />
                               <TableCell padding="checkbox" />
                               <TableCell>
                                 <Avatar

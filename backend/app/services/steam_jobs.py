@@ -30,10 +30,13 @@ class SteamProfilePrivateError(Exception):
     profile, not "this account owns 0 games" (see SteamClient.get_owned_games)."""
 
 
-def run(session_factory: Callable[[], Session]) -> dict[str, Any]:
+def run(
+    session_factory: Callable[[], Session],
+    report_progress: Callable[[int, int], None] | None = None,
+) -> dict[str, Any]:
     db = session_factory()
     try:
-        return asyncio.run(_import(db))
+        return asyncio.run(_import(db, report_progress or (lambda current, total: None)))
     finally:
         db.close()
 
@@ -53,7 +56,7 @@ async def _match_to_igdb(db: Session, igdb_client: IGDBClient, steam_app_id: int
     return game.id
 
 
-async def _import(db: Session) -> dict[str, Any]:
+async def _import(db: Session, report_progress: Callable[[int, int], None]) -> dict[str, Any]:
     """Fetches + caches + IGDB-matches the user's Steam library and wishlist — nothing more.
     This job never writes to LibraryItem/GameProgress, for tracked or untracked games alike;
     applying Steam's data to VGT is always a separate, explicit, user-confirmed action (see
@@ -101,6 +104,7 @@ async def _import(db: Session) -> dict[str, Any]:
             except Exception as exc:  # noqa: BLE001 - one bad match/game must not abort the batch
                 db.rollback()
                 failures.append({"gameId": steam_game.app_id, "gameName": steam_game.name, "error": str(exc)})
+            report_progress(index + 1, len(owned_games))
 
         result: dict[str, Any] = {
             "total": len(owned_games),
@@ -113,7 +117,9 @@ async def _import(db: Session) -> dict[str, Any]:
         # transient network error) must never roll back or hide the owned-games results
         # already committed above.
         try:
-            result["wishlist"] = await _import_wishlist(db, steam_client, igdb_client, user.steam_id_64)
+            result["wishlist"] = await _import_wishlist(
+                db, steam_client, igdb_client, user.steam_id_64, report_progress
+            )
         except Exception as exc:  # noqa: BLE001 - see comment above
             result["wishlist"] = {"total": 0, "succeeded": 0, "failed": 0, "failures": [], "error": str(exc)}
 
@@ -124,7 +130,11 @@ async def _import(db: Session) -> dict[str, Any]:
 
 
 async def _import_wishlist(
-    db: Session, steam_client: SteamClient, igdb_client: IGDBClient, steam_id_64: str
+    db: Session,
+    steam_client: SteamClient,
+    igdb_client: IGDBClient,
+    steam_id_64: str,
+    report_progress: Callable[[int, int], None],
 ) -> dict[str, Any]:
     wishlist_items = await steam_client.get_wishlist(steam_id_64)
 
@@ -152,6 +162,7 @@ async def _import_wishlist(
         except Exception as exc:  # noqa: BLE001 - one bad match/game must not abort the batch
             db.rollback()
             failures.append({"gameId": item.app_id, "error": str(exc)})
+        report_progress(index + 1, len(wishlist_items))
 
     return {
         "total": len(wishlist_items),

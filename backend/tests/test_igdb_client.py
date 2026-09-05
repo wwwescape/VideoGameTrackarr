@@ -5,7 +5,13 @@ import respx
 from app.core.config import Settings
 from app.services import igdb_client as igdb_client_module
 from app.services.cache import InMemoryTTLCache
-from app.services.igdb_client import IGDB_API_BASE, IGDB_TOKEN_URL, IGDBClient, IGDBCredentialsError
+from app.services.igdb_client import (
+    IGDB_API_BASE,
+    IGDB_TOKEN_URL,
+    IGDBClient,
+    IGDBCredentialsError,
+    extract_store_urls,
+)
 
 TOKEN_RESPONSE = httpx.Response(200, json={"access_token": "test-token", "expires_in": 3600})
 
@@ -212,3 +218,49 @@ async def test_get_games_by_ids_batches_in_one_request():
 
     assert games_route.call_count == 1
     assert {g["id"] for g in games} == {1, 2}
+
+
+def test_extract_store_urls_reads_the_websites_relation():
+    igdb_game = {
+        "websites": [
+            {"url": "https://store.steampowered.com/app/1271700", "type": 13},
+            {"url": "https://www.xbox.com/en-us/games/store/hot-wheels-unleashed/9NLCVDB447QZ", "type": 22},
+            {"url": "https://store.playstation.com/en-us/concept/10001874", "type": 23},
+            {"url": "https://www.nintendo.com/games/detail/hot-wheels-unleashed-switch/", "type": 24},
+            {"url": "https://www.epicgames.com/store/p/hot-wheels-unleashed", "type": 16},
+            {"url": "https://en.wikipedia.org/wiki/Hot_Wheels_Unleashed", "type": 3},
+        ],
+    }
+
+    assert extract_store_urls(igdb_game) == {
+        "steam_store_url": "https://store.steampowered.com/app/1271700",
+        "xbox_store_url": "https://www.xbox.com/en-us/games/store/hot-wheels-unleashed/9NLCVDB447QZ",
+        "playstation_store_url": "https://store.playstation.com/en-us/concept/10001874",
+        "nintendo_store_url": "https://www.nintendo.com/games/detail/hot-wheels-unleashed-switch/",
+        "epic_games_store_url": "https://www.epicgames.com/store/p/hot-wheels-unleashed",
+        "gog_store_url": None,
+    }
+
+
+def test_extract_store_urls_prefers_xbox_dot_com_over_other_xbox_typed_links():
+    igdb_game = {
+        "websites": [
+            {"url": "https://www.microsoft.com/p/some-game/9abc123", "type": 22},
+            {"url": "https://www.xbox.com/en-us/games/store/some-game/9abc123", "type": 22},
+        ],
+    }
+
+    result = extract_store_urls(igdb_game)
+
+    assert result["xbox_store_url"] == "https://www.xbox.com/en-us/games/store/some-game/9abc123"
+
+
+def test_extract_store_urls_handles_a_game_with_no_websites():
+    assert extract_store_urls({}) == {
+        "steam_store_url": None,
+        "xbox_store_url": None,
+        "playstation_store_url": None,
+        "nintendo_store_url": None,
+        "epic_games_store_url": None,
+        "gog_store_url": None,
+    }

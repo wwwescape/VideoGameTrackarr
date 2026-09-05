@@ -60,39 +60,43 @@ GAME_FIELDS = (
     "parent_game.name,parent_game.slug,parent_game.url,"
     # Store page links (see extract_store_urls) — expanded here rather than fetched via a
     # separate request, same free-ride-on-the-existing-query treatment as every other
-    # relation above.
-    "external_games.url,external_games.external_game_source;"
+    # relation above. Deliberately the `websites` relation, not `external_games`:
+    # external_games only ever carries Steam/Xbox/PlayStation for a handful of source ids
+    # (see get_igdb_id_for_steam_appid's comment) and is frequently missing entirely for
+    # addons/DLC even when a game has one; `websites` is IGDB's richer, per-storefront-typed
+    # list (it's what actually powers the store icons shown on a game's own igdb.com page)
+    # and reliably has entries — including Nintendo, which external_games never had at all —
+    # confirmed live (2026-09-05) against both a base game and one of its addons.
+    "websites.url,websites.type;"
 )
 
-# IGDB's external_game_source ids for the storefronts this app links out to, confirmed live
-# against the real API (2026-09-04) rather than trusted from IGDB's docs, which have drifted
-# before (see get_igdb_id_for_steam_appid's comment on the same issue). Notably,
-# external_game_source 31 ("Xbox Marketplace") is *not* the modern Xbox/Microsoft store — it's
-# the defunct Xbox 360 marketplace catalog (dead marketplace.xbox.com links); 11 ("Microsoft")
-# is the one that actually carries current xbox.com/microsoft.com store links.
-_STORE_EXTERNAL_GAME_SOURCES = {
-    "steam_store_url": 1,
-    "xbox_store_url": 11,
-    "playstation_store_url": 36,
+# IGDB's website_types ids for the storefronts this app links out to, confirmed live against
+# the real API (2026-09-05) by cross-referencing the `type.type` labels IGDB's own site shows.
+_STORE_WEBSITE_TYPES = {
+    "steam_store_url": 13,
+    "xbox_store_url": 22,
+    "playstation_store_url": 23,
+    "nintendo_store_url": 24,
+    "epic_games_store_url": 16,
+    "gog_store_url": 17,
 }
 
 
 def extract_store_urls(igdb_game: dict) -> dict[str, str | None]:
-    """Picks one store URL per storefront out of a game payload's expanded external_games
-    list (see GAME_FIELDS). IGDB sometimes lists more than one entry for the same storefront —
-    Xbox in particular turns up both an xbox.com and a microsoft.com/p/-1-/... link for the
-    same game — so where there's a choice, prefer the more specific/readable xbox.com one;
-    otherwise just take the first URL found for that source."""
-    urls_by_source: dict[int, list[str]] = {}
-    for external_game in igdb_game.get("external_games") or []:
-        url = external_game.get("url")
-        source = external_game.get("external_game_source")
-        if url and source is not None:
-            urls_by_source.setdefault(source, []).append(url)
+    """Picks one store URL per storefront out of a game payload's expanded websites list (see
+    GAME_FIELDS). Where a storefront has more than one entry, prefer the more specific/readable
+    xbox.com one over any other Xbox-typed URL (mirrors the same tie-break external_games used
+    to need); otherwise just take the first URL found for that type."""
+    urls_by_type: dict[int, list[str]] = {}
+    for website in igdb_game.get("websites") or []:
+        url = website.get("url")
+        website_type = website.get("type")
+        if url and website_type is not None:
+            urls_by_type.setdefault(website_type, []).append(url)
 
     result: dict[str, str | None] = {}
-    for field_name, source_id in _STORE_EXTERNAL_GAME_SOURCES.items():
-        candidates = urls_by_source.get(source_id, [])
+    for field_name, type_id in _STORE_WEBSITE_TYPES.items():
+        candidates = urls_by_type.get(type_id, [])
         preferred = next((url for url in candidates if "xbox.com" in url), None)
         result[field_name] = preferred or (candidates[0] if candidates else None)
     return result

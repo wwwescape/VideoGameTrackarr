@@ -18,18 +18,30 @@ class JobRunStatus(StrEnum):
 
 
 @dataclass(frozen=True)
+class JobProgress:
+    current: int
+    total: int
+
+
+@dataclass(frozen=True)
 class JobRunState:
     status: JobRunStatus = JobRunStatus.IDLE
     started_at: datetime | None = None
     finished_at: datetime | None = None
     result: dict[str, Any] | None = None
     error: str | None = None
+    progress: JobProgress | None = None
 
 
 @dataclass(frozen=True)
 class JobDefinition:
     id: str
-    run: Callable[[Callable[[], Session]], dict[str, Any]]
+    # The second argument lets a job report {current, total} back as it works through a
+    # list, so the Jobs UI can show a live progress bar instead of just an indefinite
+    # "running" chip — see set_progress below. Optional on the job's own side (every job
+    # function defaults it to a no-op) so existing direct/unit-test callers that only pass
+    # session_factory keep working unchanged.
+    run: Callable[[Callable[[], Session], Callable[[int, int], None]], dict[str, Any]]
 
 
 # Process-global, in-memory — generalizes app/services/restore_job.py's single global slot
@@ -86,20 +98,39 @@ def trigger_run(job_id: str, session_factory: Callable[[], Session]) -> JobRunSt
     return snapshot
 
 
+def set_progress(job_id: str, current: int, total: int) -> None:
+    lock = _lock_for(job_id)
+    with lock:
+        # Guards against a stray report arriving after the job already finished (e.g. one
+        # queued right as a failure short-circuits the run) from resurrecting progress on a
+        # state that's no longer RUNNING.
+        if _states[job_id].status == JobRunStatus.RUNNING:
+            _states[job_id] = replace(_states[job_id], progress=JobProgress(current=current, total=total))
+
+
 def _run(job_id: str, session_factory: Callable[[], Session]) -> None:
     lock = _locks[job_id]
+    reporter = lambda current, total: set_progress(job_id, current, total)  # noqa: E731
     try:
-        result = _definitions[job_id].run(session_factory)
+        result = _definitions[job_id].run(session_factory, reporter)
         with lock:
             _states[job_id] = replace(
-                _states[job_id], status=JobRunStatus.COMPLETED, result=result, finished_at=datetime.now(UTC)
+                _states[job_id],
+                status=JobRunStatus.COMPLETED,
+                result=result,
+                finished_at=datetime.now(UTC),
+                progress=None,
             )
     except Exception as exc:  # noqa: BLE001 - any failure here must flip status to FAILED
         # rather than leaving the job stuck RUNNING forever with nothing observing this
         # thread.
         with lock:
             _states[job_id] = replace(
-                _states[job_id], status=JobRunStatus.FAILED, error=str(exc), finished_at=datetime.now(UTC)
+                _states[job_id],
+                status=JobRunStatus.FAILED,
+                error=str(exc),
+                finished_at=datetime.now(UTC),
+                progress=None,
             )
 
 

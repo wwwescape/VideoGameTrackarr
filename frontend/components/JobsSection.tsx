@@ -10,6 +10,7 @@ import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -142,6 +143,27 @@ function JobCard({ job }: { job: JobSummary }) {
       >
         {t("settings.jobs.runNow")}
       </Button>
+
+      {isRunning && (
+        <Box sx={{ mt: 1.5 }}>
+          <LinearProgress
+            variant={job.run.progress ? "determinate" : "indeterminate"}
+            value={
+              job.run.progress && job.run.progress.total > 0
+                ? (job.run.progress.current / job.run.progress.total) * 100
+                : undefined
+            }
+          />
+          {job.run.progress && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+              {t("settings.jobs.progress", {
+                current: job.run.progress.current,
+                total: job.run.progress.total,
+              })}
+            </Typography>
+          )}
+        </Box>
+      )}
 
       {result && (
         <Box sx={{ mt: 1.5 }}>

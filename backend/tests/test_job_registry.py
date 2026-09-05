@@ -19,8 +19,8 @@ DUMMY_JOB_ID = "dummy_job_for_tests"
 _run: object = None
 
 
-def _run_dispatch(session_factory):
-    return _run(session_factory)
+def _run_dispatch(session_factory, report_progress):
+    return _run(session_factory, report_progress)
 
 
 job_registry.register(JobDefinition(id=DUMMY_JOB_ID, run=_run_dispatch))
@@ -30,7 +30,7 @@ def test_trigger_run_rejects_a_concurrent_run():
     global _run
     release = threading.Event()
 
-    def blocking_run(session_factory):
+    def blocking_run(session_factory, report_progress):
         release.wait(timeout=2)
         return {"ok": True}
 
@@ -60,7 +60,7 @@ def test_get_state_raises_not_found_for_unregistered_job():
 def test_a_failing_job_flips_to_failed_with_the_error_captured():
     global _run
 
-    def failing_run(session_factory):
+    def failing_run(session_factory, report_progress):
         raise RuntimeError("boom")
 
     _run = failing_run
@@ -75,7 +75,7 @@ def test_a_failing_job_flips_to_failed_with_the_error_captured():
 
 def test_acknowledge_resets_completed_to_idle():
     global _run
-    _run = lambda session_factory: {"succeeded": 1}  # noqa: E731
+    _run = lambda session_factory, report_progress: {"succeeded": 1}  # noqa: E731
 
     job_registry.trigger_run(DUMMY_JOB_ID, session_factory=MagicMock)
     time.sleep(0.1)
@@ -85,11 +85,36 @@ def test_acknowledge_resets_completed_to_idle():
     assert job_registry.get_state(DUMMY_JOB_ID).status == job_registry.JobRunStatus.IDLE
 
 
+def test_report_progress_is_visible_while_running_and_cleared_on_completion():
+    global _run
+    release = threading.Event()
+
+    def reporting_run(session_factory, report_progress):
+        report_progress(1, 2)
+        release.wait(timeout=2)
+        return {"ok": True}
+
+    _run = reporting_run
+
+    try:
+        job_registry.trigger_run(DUMMY_JOB_ID, session_factory=MagicMock)
+        deadline = time.monotonic() + 2
+        while job_registry.get_state(DUMMY_JOB_ID).progress is None and time.monotonic() < deadline:
+            time.sleep(0.01)
+        state = job_registry.get_state(DUMMY_JOB_ID)
+        assert state.progress == job_registry.JobProgress(current=1, total=2)
+    finally:
+        release.set()
+        time.sleep(0.05)
+
+    assert job_registry.get_state(DUMMY_JOB_ID).progress is None
+
+
 def test_acknowledge_is_a_no_op_while_running():
     global _run
     release = threading.Event()
 
-    def blocking_run(session_factory):
+    def blocking_run(session_factory, report_progress):
         release.wait(timeout=2)
         return {"ok": True}
 

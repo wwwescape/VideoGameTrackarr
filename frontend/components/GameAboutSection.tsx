@@ -8,17 +8,15 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import epicGamesLogo from "../assets/epic-games-logo.png";
+import gogLogo from "../assets/gog.com-logo.png";
 import igdbLogo from "../assets/igdb-logo.png";
+import nintendoLogo from "../assets/nintendo-logo.png";
 import playstationLogo from "../assets/playstation-logo.png";
 import steamLogo from "../assets/steam-logo.png";
 import xboxLogo from "../assets/xbox-logo.png";
-import type { GameCompany, GameDetail, IgdbReleaseRegion, LibraryItem } from "../api/types";
+import type { GameCompany, GameDetail, IgdbReleaseRegion } from "../api/types";
 import { gameIdentifier } from "../utils/identifiers";
-import {
-  PC_FAMILY_PLATFORM_SLUGS,
-  PLAYSTATION_FAMILY_PLATFORM_SLUGS,
-  XBOX_FAMILY_PLATFORM_SLUGS,
-} from "../utils/platformFamilies";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import ExpandableText from "./ExpandableText";
 import ScreenshotGallery from "./ScreenshotGallery";
@@ -26,22 +24,12 @@ import VideoGallery from "./VideoGallery";
 
 interface GameAboutSectionProps {
   game: GameDetail;
-  libraryItems: LibraryItem[] | undefined;
 }
 
-const GameAboutSection = ({ game, libraryItems }: GameAboutSectionProps) => {
+const GameAboutSection = ({ game }: GameAboutSectionProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isAddonGame = isAddon(game);
-
-  // A store logo only makes sense to show once the game is actually in the user's
-  // Collection or Wishlist for that platform family — an IGDB-derived store link existing
-  // (game.steamStoreUrl etc.) is necessary but not sufficient on its own.
-  const hasPlatformFamilyEntry = (slugs: ReadonlySet<string>) =>
-    (libraryItems ?? []).some((item) => item.platformSlug != null && slugs.has(item.platformSlug));
-  const hasPcEntry = hasPlatformFamilyEntry(PC_FAMILY_PLATFORM_SLUGS);
-  const hasXboxEntry = hasPlatformFamilyEntry(XBOX_FAMILY_PLATFORM_SLUGS);
-  const hasPlayStationEntry = hasPlatformFamilyEntry(PLAYSTATION_FAMILY_PLATFORM_SLUGS);
 
   const companyRoleLabel: Record<string, string> = {
     developer: t("games.about.companyRoleDeveloper"),
@@ -293,7 +281,7 @@ const GameAboutSection = ({ game, libraryItems }: GameAboutSectionProps) => {
               </a>
             </Tooltip>
           )}
-          {game.steamStoreUrl && hasPcEntry && (
+          {game.steamStoreUrl && (
             <Tooltip title={t("games.about.viewOnSteam")}>
               <a
                 href={game.steamStoreUrl}
@@ -305,7 +293,7 @@ const GameAboutSection = ({ game, libraryItems }: GameAboutSectionProps) => {
               </a>
             </Tooltip>
           )}
-          {game.xboxStoreUrl && hasXboxEntry && (
+          {game.xboxStoreUrl && (
             <Tooltip title={t("games.about.viewOnXbox")}>
               <a
                 href={game.xboxStoreUrl}
@@ -317,7 +305,7 @@ const GameAboutSection = ({ game, libraryItems }: GameAboutSectionProps) => {
               </a>
             </Tooltip>
           )}
-          {game.playstationStoreUrl && hasPlayStationEntry && (
+          {game.playstationStoreUrl && (
             <Tooltip title={t("games.about.viewOnPlaystation")}>
               <a
                 href={game.playstationStoreUrl}
@@ -330,6 +318,42 @@ const GameAboutSection = ({ game, libraryItems }: GameAboutSectionProps) => {
                   alt={t("games.about.viewOnPlaystation")}
                   style={{ width: "64px" }}
                 />
+              </a>
+            </Tooltip>
+          )}
+          {game.nintendoStoreUrl && (
+            <Tooltip title={t("games.about.viewOnNintendo")}>
+              <a
+                href={game.nintendoStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img src={nintendoLogo} alt={t("games.about.viewOnNintendo")} style={{ width: "64px" }} />
+              </a>
+            </Tooltip>
+          )}
+          {game.epicGamesStoreUrl && (
+            <Tooltip title={t("games.about.viewOnEpicGames")}>
+              <a
+                href={game.epicGamesStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img src={epicGamesLogo} alt={t("games.about.viewOnEpicGames")} style={{ width: "64px" }} />
+              </a>
+            </Tooltip>
+          )}
+          {game.gogStoreUrl && (
+            <Tooltip title={t("games.about.viewOnGog")}>
+              <a
+                href={game.gogStoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.palette.text.primary }}
+              >
+                <img src={gogLogo} alt={t("games.about.viewOnGog")} style={{ width: "64px" }} />
               </a>
             </Tooltip>
           )}

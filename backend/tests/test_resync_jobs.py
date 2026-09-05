@@ -41,6 +41,21 @@ def test_run_isolates_a_per_game_failure_and_attempts_every_game(db_session, mon
     assert result["failures"] == [{"game_id": failing_id, "game_name": failing_name, "error": "IGDB game not found"}]
 
 
+def test_run_reports_progress_after_each_game(db_session, monkeypatch):
+    _seed_games(db_session, 3)
+
+    async def fake_resync_game(db, igdb_client, game_id, scope=None):
+        return None
+
+    monkeypatch.setattr(game_service, "resync_game", fake_resync_game)
+    monkeypatch.setattr(resync_jobs, "_PACE_DELAY_SECONDS", 0)
+
+    reported: list[tuple[int, int]] = []
+    resync_jobs.DEFINITION_ALL.run(lambda: db_session, lambda current, total: reported.append((current, total)))
+
+    assert reported == [(1, 3), (2, 3), (3, 3)]
+
+
 def test_run_skips_manually_added_games(db_session, monkeypatch):
     manual_game = Game(name="Manually Added Game", category=GameCategory.MAIN_GAME)
     db_session.add(manual_game)

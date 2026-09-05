@@ -6,12 +6,18 @@ from app.schemas.base import CamelModel
 from app.services.job_registry import JobRunState
 
 
+class JobProgressResponse(CamelModel):
+    current: int
+    total: int
+
+
 class JobRunResponse(CamelModel):
     status: str
     started_at: str | None
     finished_at: str | None
     result: dict[str, Any] | None
     error: str | None
+    progress: JobProgressResponse | None
 
 
 class JobScheduleResponse(CamelModel):
@@ -38,6 +44,9 @@ def job_run_from_state(state: JobRunState) -> JobRunResponse:
         finished_at=state.finished_at.isoformat() if state.finished_at else None,
         result=state.result,
         error=state.error,
+        progress=JobProgressResponse(current=state.progress.current, total=state.progress.total)
+        if state.progress
+        else None,
     )
 
 
