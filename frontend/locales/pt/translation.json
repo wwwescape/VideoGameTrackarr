@@ -600,6 +600,7 @@
         "alreadyWishlisted": "Já na lista de desejos",
         "ignored": "Ignorado"
       },
+      "selectAllTooltip": "Selecionar tudo também seleciona as DLCs, mesmo ocultas",
       "selectedCount_one": "{{count}} selecionado",
       "selectedCount_other": "{{count}} selecionados",
       "syncSelectedButton": "Sincronizar selecionados",

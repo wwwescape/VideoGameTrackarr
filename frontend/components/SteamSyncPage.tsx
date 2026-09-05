@@ -158,10 +158,26 @@ const SteamSyncPage = () => {
     return combined;
   }, [ownedEntries, wishlistEntries]);
 
-  const actionableTrees = trees.filter((tree) => isRowActionable(tree.row));
-  const actionableSelected = trees.filter(
-    (tree) => selected.includes(rowKey(tree.row)) && isRowActionable(tree.row)
-  );
+  // Flattened top-level rows + their DLC children — "select all" and the header checkbox's
+  // checked/indeterminate state operate over every actionable row, not just what's currently
+  // expanded, so bulk-syncing a game's whole DLC catalog doesn't require expanding each one
+  // first (see the selectAllTooltip copy warning about this).
+  const allRows = useMemo(() => trees.flatMap((tree) => [tree.row, ...tree.children]), [trees]);
+  const actionableRows = allRows.filter(isRowActionable);
+  const selectedRows = allRows.filter((row) => selected.includes(rowKey(row)) && isRowActionable(row));
+
+  // A top-level row's own children count, looked up by gameId — used so a bulk sync of a
+  // selected parent still surfaces the "N DLC will also sync" note (see confirmAddonNote)
+  // even though children can now be selected/synced independently of their parent.
+  const childCountByGameId = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const tree of trees) {
+      if (tree.row.entry.gameId !== null) map.set(tree.row.entry.gameId, tree.children.length);
+    }
+    return map;
+  }, [trees]);
+  const childCountFor = (row: SyncRow) =>
+    row.entry.gameId !== null ? (childCountByGameId.get(row.entry.gameId) ?? 0) : 0;
 
   const toggleExpanded = (key: string) => {
     setExpanded((prev) => {
@@ -177,7 +193,7 @@ const SteamSyncPage = () => {
   };
 
   const toggleSelectAll = () => {
-    setSelected((prev) => (prev.length > 0 ? [] : actionableTrees.map((tree) => rowKey(tree.row))));
+    setSelected((prev) => (prev.length > 0 ? [] : actionableRows.map(rowKey)));
   };
 
   const handleRunImport = async () => {
@@ -398,14 +414,14 @@ const SteamSyncPage = () => {
               startIcon={<SyncIcon />}
               onClick={() =>
                 setConfirmTarget(
-                  actionableSelected.map((tree) => ({
-                    source: tree.row.source,
-                    entry: tree.row.entry,
-                    childCount: tree.children.length,
+                  selectedRows.map((row) => ({
+                    source: row.source,
+                    entry: row.entry,
+                    childCount: childCountFor(row),
                   }))
                 )
               }
-              disabled={actionableSelected.length === 0}
+              disabled={selectedRows.length === 0}
             >
               {t("insights.steamSync.syncSelectedButton")}
             </Button>
@@ -422,12 +438,16 @@ const SteamSyncPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
-                    <Checkbox
-                      indeterminate={selected.length > 0 && selected.length < actionableTrees.length}
-                      checked={actionableTrees.length > 0 && selected.length === actionableTrees.length}
-                      onChange={toggleSelectAll}
-                      disabled={actionableTrees.length === 0}
-                    />
+                    <Tooltip title={t("insights.steamSync.selectAllTooltip")}>
+                      <span>
+                        <Checkbox
+                          indeterminate={selected.length > 0 && selected.length < actionableRows.length}
+                          checked={actionableRows.length > 0 && selected.length === actionableRows.length}
+                          onChange={toggleSelectAll}
+                          disabled={actionableRows.length === 0}
+                        />
+                      </span>
+                    </Tooltip>
                   </TableCell>
                   <TableCell padding="checkbox" />
                   <TableCell />
@@ -520,9 +540,16 @@ const SteamSyncPage = () => {
                       {isExpanded &&
                         tree.children.map((child, index) => {
                           const isLast = index === tree.children.length - 1;
+                          const childKey = rowKey(child);
                           return (
-                            <TableRow key={rowKey(child)} hover>
-                              <TableCell padding="checkbox" />
+                            <TableRow key={childKey} hover selected={selected.includes(childKey)}>
+                              <TableCell padding="checkbox">
+                                <Checkbox
+                                  checked={selected.includes(childKey)}
+                                  onChange={() => toggleRow(childKey)}
+                                  disabled={!isRowActionable(child)}
+                                />
+                              </TableCell>
                               <TableCell padding="checkbox" />
                               <TableCell>
                                 <Avatar

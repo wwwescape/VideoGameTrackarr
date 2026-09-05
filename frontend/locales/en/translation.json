@@ -600,6 +600,7 @@
         "alreadyWishlisted": "Already wishlisted",
         "ignored": "Ignored"
       },
+      "selectAllTooltip": "Selecting all also selects any DLC, even while collapsed",
       "selectedCount_one": "{{count}} selected",
       "selectedCount_other": "{{count}} selected",
       "syncSelectedButton": "Sync selected",
