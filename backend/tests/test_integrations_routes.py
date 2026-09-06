@@ -2,8 +2,8 @@ import httpx
 import respx
 
 from app.core.config import get_settings
-from app.models.catalog import Game, GameCategory
-from app.models.library import GameProgress, LibraryItem, LibraryStatus
+from app.models.catalog import Game, GameCategory, Platform
+from app.models.library import GameProgress, LibraryItem, LibraryStatus, MediaFormat
 from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
 
 
@@ -111,10 +111,19 @@ def test_get_steam_entries_reports_new_for_a_matched_untracked_game(auth_client,
 
 
 def test_get_steam_entries_reports_up_to_date_when_playtime_matches(auth_client, db_session, seed_pc_platform):
-    # Steam Sync's status comparison is PC-platform-scoped, so the seeded progress row
-    # must be on the PC platform for it to be the one compared against Steam's number.
+    # Steam Sync's status comparison follows the Format: Digital, Storefront: Steam entry's
+    # own platform, so the seeded progress row must be on that same platform to be the one
+    # compared against Steam's number.
     game = _seed_matched_entry(db_session, steam_playtime_minutes=100)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_pc_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="Steam",
+        )
+    )
     db_session.add(GameProgress(game_id=game.id, platform_id=seed_pc_platform.id, playtime_minutes=100))
     db_session.commit()
 
@@ -126,7 +135,15 @@ def test_get_steam_entries_reports_up_to_date_when_playtime_matches(auth_client,
 
 def test_get_steam_entries_reports_update_available_when_playtime_differs(auth_client, db_session, seed_pc_platform):
     game = _seed_matched_entry(db_session, steam_playtime_minutes=500)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_pc_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="Steam",
+        )
+    )
     db_session.add(GameProgress(game_id=game.id, platform_id=seed_pc_platform.id, playtime_minutes=100))
     db_session.commit()
 
@@ -176,7 +193,15 @@ def test_sync_steam_entries_overwrites_playtime_even_downward(auth_client, db_se
     # Sync is now an explicit, confirmed action — it sets playtime straight to Steam's
     # number, it doesn't cap at the higher of the two like the old auto-sync policy did.
     game = _seed_matched_entry(db_session, steam_playtime_minutes=50)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_pc_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="Steam",
+        )
+    )
     db_session.add(GameProgress(game_id=game.id, platform_id=seed_pc_platform.id, playtime_minutes=500))
     db_session.commit()
 
@@ -184,6 +209,8 @@ def test_sync_steam_entries_overwrites_playtime_even_downward(auth_client, db_se
 
     progress = db_session.query(GameProgress).filter(GameProgress.game_id == game.id).first()
     assert progress.playtime_minutes == 50
+    # A pre-existing Steam entry must be reused, never duplicated.
+    assert db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).count() == 1
 
 
 def test_sync_steam_entries_preserves_progress_on_another_platform(auth_client, db_session, seed_platform):
@@ -211,6 +238,87 @@ def test_sync_steam_entries_preserves_progress_on_another_platform(auth_client, 
         .one()
     )
     assert pc_progress.playtime_minutes == 754
+
+
+def test_sync_steam_entries_adds_pc_platform_when_already_owned_on_another_platform(
+    auth_client, db_session, seed_platform
+):
+    # GH #13: a game already OWNED on another platform (e.g. PS5) was treated as
+    # "already tracked" for PC too, so Steam Sync updated progress but never actually
+    # added the PC platform as a separate owned copy.
+    game = _seed_matched_entry(db_session, steam_playtime_minutes=754)
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
+    assert response.status_code == 200
+
+    library_items = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    platform_ids = {item.platform_id for item in library_items}
+    assert seed_platform.id in platform_ids
+    pc_items = [item for item in library_items if item.platform_id != seed_platform.id]
+    assert len(pc_items) == 1
+    assert pc_items[0].status == LibraryStatus.OWNED
+    assert pc_items[0].digital_storefront == "Steam"
+
+
+def test_sync_steam_entries_adds_a_steam_entry_even_when_already_owned_digitally_on_pc(
+    auth_client, db_session, seed_pc_platform
+):
+    # The check must be "does a Format: Digital, Storefront: Steam entry already exist",
+    # not merely "is this owned on PC at all" — a GOG or Epic copy of the same game on the
+    # same PC platform is a different purchase and must not suppress Steam Sync's own entry.
+    game = _seed_matched_entry(db_session, steam_playtime_minutes=754)
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_pc_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="GOG",
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
+    assert response.status_code == 200
+
+    library_items = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    assert len(library_items) == 2
+    gog_item = next(item for item in library_items if item.digital_storefront == "GOG")
+    steam_item = next(item for item in library_items if item.digital_storefront == "Steam")
+    assert gog_item.platform_id == seed_pc_platform.id
+    assert steam_item.platform_id == seed_pc_platform.id
+
+
+def test_sync_steam_entries_follows_a_steam_entry_repointed_to_another_platform(auth_client, db_session):
+    # A user can repoint the auto-created Steam entry's platform (e.g. PC -> Mac, since
+    # Steam itself runs on Windows/Mac/Linux) — a later sync must keep updating that same
+    # row's progress rather than creating a second entry back on PC.
+    mac_platform = Platform(name="Mac", slug="mac")
+    db_session.add(mac_platform)
+    db_session.commit()
+    game = _seed_matched_entry(db_session, steam_playtime_minutes=900)
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=mac_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="Steam",
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
+    assert response.status_code == 200
+
+    library_items = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    assert len(library_items) == 1
+    assert library_items[0].platform_id == mac_platform.id
+    progress = db_session.query(GameProgress).filter(GameProgress.game_id == game.id).one()
+    assert progress.platform_id == mac_platform.id
+    assert progress.playtime_minutes == 900
 
 
 def test_sync_steam_entries_bulk_isolates_a_failure(auth_client, db_session):

@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.models.library import LibraryStatus, MediaFormat
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.models.steam import SteamLibraryEntry
 from app.repositories import game_repository, library_item_repository, platform_repository, steam_repository
 from app.services import library_service, progress_service
@@ -92,32 +92,60 @@ def unlink_entry(db: Session, steam_app_id: int) -> SteamEntryWithStatus:
     return _with_status(db, entry)
 
 
-def _sync_one(db: Session, entry: SteamLibraryEntry) -> None:
-    pc_platform = platform_repository.get_or_create_by_igdb(
-        db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
+def _find_steam_library_item(db: Session, game_id: int) -> LibraryItem | None:
+    """The OWNED library item Steam Sync itself is responsible for (Format: Digital,
+    Storefront: Steam) — not merely "owned on PC", since a PC copy can just as easily be a
+    GOG/Epic digital purchase or a physical disc that has nothing to do with this Steam
+    account. Matching on format+storefront (rather than platform) is also what lets a user
+    re-point a Steam entry's platform to Mac/Linux (see _sync_one) without it silently
+    looking untracked again on the next sync."""
+    return next(
+        (
+            item
+            for item in library_item_repository.list_library_items(db, game_id, status=LibraryStatus.OWNED)
+            if item.format == MediaFormat.DIGITAL and item.digital_storefront == "Steam"
+        ),
+        None,
     )
-    already_tracked = len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
-    if not already_tracked:
-        library_service.add_library_item(
-            db,
-            entry.game_id,
-            platform_id=pc_platform.id,
-            status=LibraryStatus.OWNED,
-            format=MediaFormat.DIGITAL,
-            digital_storefront="Steam",
+
+
+def _sync_one(db: Session, entry: SteamLibraryEntry) -> None:
+    steam_item = _find_steam_library_item(db, entry.game_id)
+    if steam_item is None or steam_item.platform_id is None:
+        # Steam itself runs on Windows, Mac, and Linux, but most users are on Windows, so a
+        # brand-new entry defaults to PC (Microsoft Windows) — the user can repoint its
+        # platform afterward like any other library item, and _find_steam_library_item above
+        # will keep recognizing it as "the Steam copy" wherever they move it. Also covers the
+        # edge case of a manually-created Steam entry with no platform set yet (platform_id
+        # is an optional field on every library item) — progress has to land somewhere.
+        pc_platform = platform_repository.get_or_create_by_igdb(
+            db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
         )
+        if steam_item is None:
+            library_service.add_library_item(
+                db,
+                entry.game_id,
+                platform_id=pc_platform.id,
+                status=LibraryStatus.OWNED,
+                format=MediaFormat.DIGITAL,
+                digital_storefront="Steam",
+            )
+        sync_platform_id = pc_platform.id
+    else:
+        sync_platform_id = steam_item.platform_id
 
     # A straight set to Steam's numbers, not a merge — Sync is now an explicit, confirmed
     # action (the confirmation popup shows the current-vs-new delta before this ever runs),
     # so it's allowed to actually overwrite, including downward, rather than silently
-    # capping at the higher of the two like Phase 2 did. Scoped to the PC platform row only —
-    # a copy owned on another platform (e.g. PS5) keeps its own separate progress untouched.
-    # play_status is deliberately left at its model default (NONE) — playtime alone can't
-    # tell VGT whether the user considers this backlog/playing/completed/abandoned.
+    # capping at the higher of the two like Phase 2 did. Scoped to the Steam item's own
+    # platform row only — a copy owned on another platform (e.g. PS5) keeps its own separate
+    # progress untouched. play_status is deliberately left at its model default (NONE) —
+    # playtime alone can't tell VGT whether the user considers this backlog/playing/
+    # completed/abandoned.
     progress_service.upsert_progress_for_platform(
         db,
         entry.game_id,
-        pc_platform.id,
+        sync_platform_id,
         playtime_minutes=entry.steam_playtime_minutes,
         last_played_at=entry.steam_last_played_at.date() if entry.steam_last_played_at else None,
     )
@@ -142,13 +170,17 @@ def _with_status(db: Session, entry: SteamLibraryEntry) -> SteamEntryWithStatus:
     if entry.game_id is None:
         return SteamEntryWithStatus(entry, SteamEntryStatus.NO_MATCH, None)
 
-    pc_platform = platform_repository.get_or_create_by_igdb(
-        db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
-    )
-    progress = progress_service.get_progress_for_platform(db, entry.game_id, pc_platform.id)
-    already_tracked = len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.OWNED)) > 0
-    if not already_tracked:
+    steam_item = _find_steam_library_item(db, entry.game_id)
+    if steam_item is None:
         return SteamEntryWithStatus(entry, SteamEntryStatus.NEW, None)
+
+    status_platform_id = steam_item.platform_id
+    if status_platform_id is None:
+        pc_platform = platform_repository.get_or_create_by_igdb(
+            db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
+        )
+        status_platform_id = pc_platform.id
+    progress = progress_service.get_progress_for_platform(db, entry.game_id, status_platform_id)
 
     vgt_minutes = progress.playtime_minutes if progress else 0
     is_up_to_date = vgt_minutes == entry.steam_playtime_minutes
