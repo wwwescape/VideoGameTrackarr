@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.repositories import platprices_repository
 from app.services.job_registry import JobDefinition
-from app.services.platprices_client import PlatPricesClient
+from app.services.platprices_client import PlatPricesClient, PlatPricesRegionNotInPlanError
 
 JOB_PLATPRICES_REFRESH = "platprices_refresh"
 
@@ -39,7 +39,10 @@ async def _refresh(db: Session, report_progress: Callable[[int, int], None]) -> 
     pre-filtered unlike itad_jobs.py's equivalent, since PlatPrices' free tier is only 1,000
     requests/month and matching spend must stay proportional to actual PS wishlist size).
     Purely informational, same as itad_jobs.py — no confirm-before-applying concern, since
-    this only ever writes to the read-only PlatPricesCache."""
+    this only ever writes to the read-only PlatPricesCache. If PLATPRICES_REGION isn't one
+    of the account's currently-tracked regions, the batched price fetch below clears every
+    matched game's cached price before re-raising, rather than leaving stale pricing from a
+    previously-tracked region displayed as if it were current."""
     settings = get_settings()
     if not settings.platprices_api_key:
         raise PlatPricesNotConfiguredError(
@@ -79,7 +82,22 @@ async def _refresh(db: Session, report_progress: Callable[[int, int], None]) -> 
                 matched[cache.ppid] = game.id
 
         if matched:
-            price_data = await client.get_price_data(list(matched.keys()), settings.platprices_region)
+            try:
+                price_data = await client.get_price_data(list(matched.keys()), settings.platprices_region)
+            except PlatPricesRegionNotInPlanError:
+                # PLATPRICES_REGION isn't one of the (up to 2, free tier) regions this
+                # account currently tracks on PlatPrices' own dashboard. Whatever's cached is
+                # stale pricing from a region that *was* tracked as of the last successful
+                # run — left in place, it would keep showing as a live discount (wrong
+                # currency/amount) indefinitely, since a failed run otherwise never touches
+                # the cache at all. Clear it for every game this run would have refreshed,
+                # then let the job still surface as FAILED (below) with the region error.
+                for game_id in matched.values():
+                    cache = platprices_repository.get_cache(db, game_id)
+                    if cache:
+                        platprices_repository.update_price_data(db, cache, None, None)
+                db.commit()
+                raise
             for ppid, game_id in matched.items():
                 cache = platprices_repository.get_cache(db, game_id)
                 if cache:

@@ -5,7 +5,13 @@ from app.models.catalog import Game, GameCategory
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.repositories import platprices_repository
 from app.services import platprices_jobs
-from app.services.platprices_client import PlatPricesClient, PlatPricesDeal, PlatPricesGameData, PlatPricesHistoricalLow
+from app.services.platprices_client import (
+    PlatPricesClient,
+    PlatPricesDeal,
+    PlatPricesGameData,
+    PlatPricesHistoricalLow,
+    PlatPricesRegionNotInPlanError,
+)
 
 
 def _configure_platprices(monkeypatch):
@@ -140,6 +146,40 @@ def test_run_matches_and_caches_price_for_a_wishlisted_ps5_game(db_session, seed
     assert cache.current_price_amount == 29.99
     assert cache.current_shop_name == "PlayStation Store"
     assert cache.historical_low_amount == 19.99
+
+
+def test_run_clears_stale_cached_price_when_region_not_in_plan(db_session, seed_platform, monkeypatch):
+    """Regression test: if PLATPRICES_REGION isn't one of the account's currently-tracked
+    regions, the batched price fetch fails with PlatPricesRegionNotInPlanError — the job
+    must clear the now-untrustworthy cached price (from a region that *was* tracked as of
+    the last successful run) rather than silently leaving it displayed as a live discount,
+    and must still surface as a failed job run so the problem is visible."""
+    game = _seed_wishlisted_ps5_game(db_session, igdb_id=233, name="Ghost of Tsushima", seed_platform=seed_platform)
+    game_id = game.id
+    cache = platprices_repository.get_or_create_cache(db_session, game.id)
+    platprices_repository.set_ppid(db_session, cache, "222")
+    platprices_repository.update_price_data(
+        db_session,
+        cache,
+        PlatPricesDeal(shop_name="PlayStation Store", price_amount=31.99, price_currency="USD", cut=20),
+        None,
+    )
+    db_session.commit()
+    _configure_platprices(monkeypatch)
+
+    async def fake_get_price_data(self, ppids, region):
+        raise PlatPricesRegionNotInPlanError("Region not enabled for this PlatPrices plan")
+
+    monkeypatch.setattr(PlatPricesClient, "get_price_data", fake_get_price_data)
+
+    with pytest.raises(PlatPricesRegionNotInPlanError):
+        platprices_jobs.run(lambda: db_session)
+
+    cache = platprices_repository.get_cache(db_session, game_id)
+    assert cache.current_price_amount is None
+    assert cache.current_price_currency is None
+    assert cache.current_shop_name is None
+    assert cache.current_cut is None
 
 
 def test_run_does_not_refetch_a_match_that_already_exists(db_session, seed_platform, monkeypatch):
