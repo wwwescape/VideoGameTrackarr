@@ -84,7 +84,9 @@ async def _refresh(db: Session, report_progress: Callable[[int, int], None]) -> 
             for itad_id, game_id in matched.items():
                 cache = itad_repository.get_cache(db, game_id)
                 if cache:
-                    itad_repository.update_price_data(db, cache, prices.get(itad_id), historical.get(itad_id))
+                    itad_repository.update_price_data(
+                        db, cache, prices.get(itad_id, []), historical.get(itad_id)
+                    )
             db.commit()
 
         return {

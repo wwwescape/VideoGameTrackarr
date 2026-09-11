@@ -226,6 +226,81 @@ def test_on_sale_lists_a_wishlisted_game_with_a_current_discount(auth_client, db
     assert item["isTargetHit"] is True
 
 
+def test_on_sale_matches_the_wishlisted_rows_own_storefront_not_the_cheapest_shop(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    """Regression test for a real reported bug: a game wishlisted on Steam showed as on sale
+    at Epic Games Store on the On Sale page, because Epic happened to be cheaper than Steam
+    right now — the price/shop shown must come from the row's own tracked storefront, not
+    whichever shop ITAD reports as globally cheapest."""
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+            digital_storefront="Steam",
+        )
+    )
+    db_session.add(
+        ItadPriceCache(
+            game_id=seed_game.id,
+            itad_game_id="itad-1",
+            current_price_amount=8.0,
+            current_price_currency="USD",
+            current_shop_name="Epic Games Store",
+            current_cut=60,
+            deals=[
+                {"shop_name": "Steam", "price_amount": 12.0, "price_currency": "USD", "cut": 40},
+                {"shop_name": "Epic Game Store", "price_amount": 8.0, "price_currency": "USD", "cut": 60},
+            ],
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.status_code == 200
+    [item] = response.json()
+    assert item["currentShopName"] == "Steam"
+    assert item["currentPriceAmount"] == 12.0
+    assert item["currentCut"] == 40
+
+
+def test_on_sale_excludes_a_wishlisted_row_whose_storefront_has_no_current_deal(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    """Same shape as the previous regression test, but this row's own storefront (Steam)
+    isn't among ITAD's currently reported deals at all (only Epic Games Store is on sale
+    right now) — must not show up as on sale just because some other shop has a discount."""
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            status=LibraryStatus.WISHLIST,
+            track_for_sales=True,
+            format=MediaFormat.DIGITAL,
+            platform_id=seed_pc_platform.id,
+            digital_storefront="Steam",
+        )
+    )
+    db_session.add(
+        ItadPriceCache(
+            game_id=seed_game.id,
+            itad_game_id="itad-1",
+            current_price_amount=8.0,
+            current_shop_name="Epic Games Store",
+            current_cut=60,
+            deals=[{"shop_name": "Epic Game Store", "price_amount": 8.0, "price_currency": "USD", "cut": 60}],
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/on-sale")
+
+    assert response.json() == []
+
+
 def test_on_sale_excludes_a_wishlist_row_with_tracking_off(auth_client, db_session, seed_game, seed_pc_platform):
     """Same shape as the "lists a wishlisted game" test above, but track_for_sales is left
     at its default False — proves a live cached discount stays hidden until the user opts in,

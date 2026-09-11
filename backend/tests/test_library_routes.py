@@ -171,6 +171,47 @@ def test_list_library_items_reflects_a_current_discount_for_an_eligible_digital_
     assert item["saleCut"] == 40
 
 
+def test_list_library_items_matches_the_rows_own_storefront_not_the_cheapest_shop(
+    auth_client, db_session, seed_game, seed_pc_platform
+):
+    """Regression test: a Steam wishlist row must show Steam's own price/discount, not Epic
+    Games Store's, even when Epic happens to be cheaper right now."""
+    db_session.add(
+        ItadPriceCache(
+            game_id=seed_game.id,
+            itad_game_id="itad-1",
+            current_price_amount=8.0,
+            current_price_currency="USD",
+            current_shop_name="Epic Games Store",
+            current_cut=60,
+            deals=[
+                {"shop_name": "Steam", "price_amount": 12.0, "price_currency": "USD", "cut": 40},
+                {"shop_name": "Epic Game Store", "price_amount": 8.0, "price_currency": "USD", "cut": 60},
+            ],
+        )
+    )
+    db_session.commit()
+
+    auth_client.post(
+        f"/api/games/{seed_game.id}/library",
+        json={
+            "status": "wishlist",
+            "format": "digital",
+            "platformId": seed_pc_platform.id,
+            "trackForSales": True,
+            "digitalStorefront": "Steam",
+        },
+    )
+
+    response = auth_client.get(f"/api/games/{seed_game.id}/library")
+
+    [item] = response.json()
+    assert item["isOnSale"] is True
+    assert item["saleShopName"] == "Steam"
+    assert item["salePriceAmount"] == 12.0
+    assert item["saleCut"] == 40
+
+
 def test_list_library_items_is_not_on_sale_for_a_non_itad_platform(auth_client, db_session, seed_game, seed_platform):
     db_session.add(
         ItadPriceCache(game_id=seed_game.id, itad_game_id="itad-1", current_price_amount=14.99, current_cut=40)

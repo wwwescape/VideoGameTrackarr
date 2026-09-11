@@ -52,7 +52,7 @@ def test_run_matches_and_caches_price_for_a_wishlisted_game(db_session, seed_pla
     async def fake_get_prices(self, itad_ids, country):
         assert itad_ids == ["itad-id-1"]
         assert country == "US"
-        return {"itad-id-1": ItadDeal(shop_name="GOG", price_amount=14.99, price_currency="USD", cut=40)}
+        return {"itad-id-1": [ItadDeal(shop_name="GOG", price_amount=14.99, price_currency="USD", cut=40)]}
 
     async def fake_get_historical_low(self, itad_ids, country):
         return {
@@ -72,6 +72,7 @@ def test_run_matches_and_caches_price_for_a_wishlisted_game(db_session, seed_pla
     assert cache.itad_game_id == "itad-id-1"
     assert cache.current_price_amount == 14.99
     assert cache.current_shop_name == "GOG"
+    assert cache.deals == [{"shop_name": "GOG", "price_amount": 14.99, "price_currency": "USD", "cut": 40}]
     assert cache.historical_low_amount == 9.99
 
 

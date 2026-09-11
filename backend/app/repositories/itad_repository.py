@@ -67,12 +67,27 @@ def delete_cache(db: Session, cache: ItadPriceCache) -> None:
 
 
 def update_price_data(
-    db: Session, cache: ItadPriceCache, deal: ItadDeal | None, historical: ItadHistoricalLow | None
+    db: Session, cache: ItadPriceCache, deals: list[ItadDeal], historical: ItadHistoricalLow | None
 ) -> ItadPriceCache:
-    cache.current_price_amount = deal.price_amount if deal else None
-    cache.current_price_currency = deal.price_currency if deal else None
-    cache.current_shop_name = deal.shop_name if deal else None
-    cache.current_cut = deal.cut if deal else None
+    # current_* stays the cheapest deal across every shop — a coarse "something's on sale
+    # somewhere" signal used to pre-filter candidates in list_on_sale_items' SQL query — while
+    # `deals` keeps every shop so a specific wishlist row can match its own tracked storefront
+    # (see storefront_matching.py) instead of every row assuming the globally cheapest shop is
+    # the one the user meant.
+    best = min(deals, key=lambda deal: deal.price_amount) if deals else None
+    cache.current_price_amount = best.price_amount if best else None
+    cache.current_price_currency = best.price_currency if best else None
+    cache.current_shop_name = best.shop_name if best else None
+    cache.current_cut = best.cut if best else None
+    cache.deals = [
+        {
+            "shop_name": deal.shop_name,
+            "price_amount": deal.price_amount,
+            "price_currency": deal.price_currency,
+            "cut": deal.cut,
+        }
+        for deal in deals
+    ]
     cache.historical_low_amount = historical.price_amount if historical else None
     cache.historical_low_currency = historical.price_currency if historical else None
     cache.historical_low_shop_name = historical.shop_name if historical else None

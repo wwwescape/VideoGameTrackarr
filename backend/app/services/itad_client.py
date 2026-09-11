@@ -77,28 +77,30 @@ class ItadClient:
             return None
         return data["game"]["id"]
 
-    async def get_prices(self, itad_ids: list[str], country: str) -> dict[str, ItadDeal | None]:
-        """Batched — one request for every id, not one call per game. None for an id with
-        no current deals (nothing on sale right now, not an error)."""
+    async def get_prices(self, itad_ids: list[str], country: str) -> dict[str, list[ItadDeal]]:
+        """Batched — one request for every id, not one call per game. Returns every shop's
+        current deal for each id (an empty list = nothing on sale right now, not an error) —
+        not just the cheapest, since a wishlist row is only buyable through the one shop its
+        own digital_storefront names and callers need to match against that specific shop
+        (see storefront_matching.py) rather than assume the globally cheapest shop is the one
+        the user meant."""
         if not itad_ids:
             return {}
         key = self._require_key()
         response = await self._request(
             "POST", f"{ITAD_API_BASE}/games/prices/v3", params={"key": key, "country": country}, json=itad_ids
         )
-        result: dict[str, ItadDeal | None] = {}
+        result: dict[str, list[ItadDeal]] = {}
         for entry in response.json():
-            deals = entry.get("deals") or []
-            if not deals:
-                result[entry["id"]] = None
-                continue
-            best = min(deals, key=lambda deal: deal["price"]["amount"])
-            result[entry["id"]] = ItadDeal(
-                shop_name=best["shop"]["name"],
-                price_amount=best["price"]["amount"],
-                price_currency=best["price"]["currency"],
-                cut=best.get("cut", 0),
-            )
+            result[entry["id"]] = [
+                ItadDeal(
+                    shop_name=deal["shop"]["name"],
+                    price_amount=deal["price"]["amount"],
+                    price_currency=deal["price"]["currency"],
+                    cut=deal.get("cut", 0),
+                )
+                for deal in (entry.get("deals") or [])
+            ]
         return result
 
     async def get_historical_low(self, itad_ids: list[str], country: str) -> dict[str, ItadHistoricalLow | None]:

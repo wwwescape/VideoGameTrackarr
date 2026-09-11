@@ -8,6 +8,7 @@ from app.models.catalog import Game
 from app.models.itad import ItadPriceCache
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.repositories import itad_repository, library_item_repository
+from app.services import storefront_matching
 from app.services.exceptions import NotFoundError
 
 # ITAD only tracks digital storefronts for Windows, Linux, Mac, and Android (IGDB slugs) —
@@ -26,17 +27,35 @@ def is_library_item_itad_eligible(item: LibraryItem) -> bool:
 
 
 @dataclass
+class MatchedItadDeal:
+    """Duck-types the subset of ItadPriceCache's fields on_sale_item_from_orm reads, but
+    holds the specific shop's deal that matches a row's own digital_storefront — not
+    whichever shop ITAD happened to report as globally cheapest. Historical low stays the
+    shared per-game value, since ITAD's historylow endpoint isn't broken out per shop."""
+
+    current_price_amount: float
+    current_price_currency: str | None
+    current_shop_name: str | None
+    current_cut: int | None
+    historical_low_amount: float | None
+    historical_low_currency: str | None
+    historical_low_shop_name: str | None
+    historical_low_at: datetime | None
+
+
+@dataclass
 class OnSaleItem:
     library_item: LibraryItem
-    cache: ItadPriceCache
+    cache: MatchedItadDeal
     is_target_hit: bool
 
 
 def list_on_sale_items(db: Session) -> list[OnSaleItem]:
-    """Every wishlisted, track_for_sales-opted-in, ITAD-eligible row ITAD currently has a
-    discount for — visibility isn't gated on having a target_price set; a target just flags a
-    row as "hit" and sorts it first. Rows with tracking off, no ITAD match, not currently
-    discounted, or not ITAD-eligible (see is_library_item_itad_eligible) are simply excluded
+    """Every wishlisted, track_for_sales-opted-in, ITAD-eligible row whose own tracked
+    storefront (see storefront_matching.find_deal) currently has a discount — visibility
+    isn't gated on having a target_price set; a target just flags a row as "hit" and sorts it
+    first. Rows with tracking off, no ITAD match, not currently discounted on their own
+    storefront, or not ITAD-eligible (see is_library_item_itad_eligible) are simply excluded
     (a silent no-op, not an error) — gating on track_for_sales here too (not just the refresh
     job's candidate list) means turning tracking off hides a stale cached discount
     immediately, rather than leaving it visible until the cache happens to go stale."""
@@ -47,20 +66,37 @@ def list_on_sale_items(db: Session) -> list[OnSaleItem]:
         .where(
             LibraryItem.status == LibraryStatus.WISHLIST,
             LibraryItem.track_for_sales.is_(True),
+            # Coarse pre-filter only ("something's on sale somewhere") — the precise
+            # per-storefront match happens below in Python via storefront_matching.find_deal.
             ItadPriceCache.current_price_amount.is_not(None),
         )
     )
     rows = db.execute(stmt).all()
 
-    items = [
-        OnSaleItem(
-            library_item=item,
-            cache=cache,
-            is_target_hit=item.target_price is not None and cache.current_price_amount <= item.target_price,
+    items: list[OnSaleItem] = []
+    for item, cache in rows:
+        if not is_library_item_itad_eligible(item):
+            continue
+        deal = storefront_matching.find_deal(cache, item.digital_storefront)
+        if deal is None:
+            continue
+        matched = MatchedItadDeal(
+            current_price_amount=deal.price_amount,
+            current_price_currency=deal.price_currency,
+            current_shop_name=deal.shop_name,
+            current_cut=deal.cut,
+            historical_low_amount=cache.historical_low_amount,
+            historical_low_currency=cache.historical_low_currency,
+            historical_low_shop_name=cache.historical_low_shop_name,
+            historical_low_at=cache.historical_low_at,
         )
-        for item, cache in rows
-        if is_library_item_itad_eligible(item)
-    ]
+        items.append(
+            OnSaleItem(
+                library_item=item,
+                cache=matched,
+                is_target_hit=item.target_price is not None and matched.current_price_amount <= item.target_price,
+            )
+        )
     items.sort(key=lambda entry: (not entry.is_target_hit, -(entry.cache.current_cut or 0)))
     return items
 

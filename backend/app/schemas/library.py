@@ -4,6 +4,7 @@ from app.models.itad import ItadPriceCache
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat, RatingBoard
 from app.models.platprices import PlatPricesCache
 from app.schemas.base import CamelModel
+from app.services import storefront_matching
 from app.services.itad_service import is_library_item_itad_eligible
 from app.services.platprices_service import is_library_item_platprices_eligible
 
@@ -40,18 +41,42 @@ def library_item_from_orm(
 ) -> LibraryItemResponse:
     # Each row's platform determines at most one eligible provider — never both, since
     # itad_service/platprices_service's eligible-platform sets are disjoint by construction.
-    cache: ItadPriceCache | PlatPricesCache | None = None
-    if itad_cache is not None and is_library_item_itad_eligible(item):
-        cache = itad_cache
-    elif platprices_cache is not None and is_library_item_platprices_eligible(item):
-        cache = platprices_cache
+    # Gated on track_for_sales too (not just eligibility + a match) so this stays consistent
+    # with insight_service.get_on_sale_game_ids' same gate — otherwise a stale cached price
+    # from before tracking was turned off (or from the opt-in migration's backfill) would
+    # keep showing "on sale" here even though the game-level badge everywhere else has
+    # already gone dark for the same row.
+    is_on_sale = False
+    sale_price_amount: float | None = None
+    sale_price_currency: str | None = None
+    sale_shop_name: str | None = None
+    sale_cut: int | None = None
+    if item.track_for_sales and itad_cache is not None and is_library_item_itad_eligible(item):
+        # ITAD can have several shops' deals live at once at different prices — only the
+        # shop this row's own digital_storefront names is a deal this row can actually
+        # redeem, not whichever shop happens to be globally cheapest (see
+        # storefront_matching.find_deal).
+        deal = storefront_matching.find_deal(itad_cache, item.digital_storefront)
+        if deal is not None:
+            is_on_sale = True
+            sale_price_amount = deal.price_amount
+            sale_price_currency = deal.price_currency
+            sale_shop_name = deal.shop_name
+            sale_cut = deal.cut
+    elif (
+        item.track_for_sales
+        and platprices_cache is not None
+        and is_library_item_platprices_eligible(item)
+        and platprices_cache.current_price_amount is not None
+    ):
+        # PlatPrices only ever covers the PlayStation Store — no multi-shop ambiguity to
+        # resolve, so its aggregate current_* fields are always the right ones to use.
+        is_on_sale = True
+        sale_price_amount = platprices_cache.current_price_amount
+        sale_price_currency = platprices_cache.current_price_currency
+        sale_shop_name = platprices_cache.current_shop_name
+        sale_cut = platprices_cache.current_cut
 
-    # Gated on track_for_sales too (not just eligibility + cache presence) so this stays
-    # consistent with insight_service.get_on_sale_game_ids' same gate — otherwise a stale
-    # cached price from before tracking was turned off (or from the opt-in migration's
-    # backfill) would keep showing "on sale" here even though the game-level badge
-    # everywhere else has already gone dark for the same row.
-    is_on_sale = item.track_for_sales and cache is not None and cache.current_price_amount is not None
     return LibraryItemResponse(
         id=item.id,
         game_id=item.game_id,
@@ -71,10 +96,10 @@ def library_item_from_orm(
         acquired_at=item.acquired_at,
         notes=item.notes,
         is_on_sale=is_on_sale,
-        sale_price_amount=cache.current_price_amount if is_on_sale else None,
-        sale_price_currency=cache.current_price_currency if is_on_sale else None,
-        sale_shop_name=cache.current_shop_name if is_on_sale else None,
-        sale_cut=cache.current_cut if is_on_sale else None,
+        sale_price_amount=sale_price_amount,
+        sale_price_currency=sale_price_currency,
+        sale_shop_name=sale_shop_name,
+        sale_cut=sale_cut,
     )
 
 

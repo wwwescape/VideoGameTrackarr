@@ -47,7 +47,7 @@ async def test_lookup_game_id_returns_none_when_not_found():
 
 
 @respx.mock
-async def test_get_prices_picks_the_cheapest_deal():
+async def test_get_prices_returns_every_shops_deal():
     respx.post(f"{ITAD_API_BASE}/games/prices/v3").mock(
         return_value=httpx.Response(
             200,
@@ -65,20 +65,24 @@ async def test_get_prices_picks_the_cheapest_deal():
 
     prices = await make_client().get_prices(["game-1"], "US")
 
-    assert prices["game-1"].shop_name == "GOG"
-    assert prices["game-1"].price_amount == 14.99
-    assert prices["game-1"].cut == 40
+    # Every shop's deal comes back, not just the cheapest — callers match a specific
+    # wishlist row's own tracked storefront against these (see storefront_matching.py)
+    # rather than assume the globally cheapest shop is the one the user meant.
+    assert [(deal.shop_name, deal.price_amount, deal.cut) for deal in prices["game-1"]] == [
+        ("Steam", 19.99, 20),
+        ("GOG", 14.99, 40),
+    ]
 
 
 @respx.mock
-async def test_get_prices_is_none_when_no_deals():
+async def test_get_prices_is_empty_list_when_no_deals():
     respx.post(f"{ITAD_API_BASE}/games/prices/v3").mock(
         return_value=httpx.Response(200, json=[{"id": "game-1", "deals": []}])
     )
 
     prices = await make_client().get_prices(["game-1"], "US")
 
-    assert prices["game-1"] is None
+    assert prices["game-1"] == []
 
 
 async def test_get_prices_returns_empty_for_no_ids():
