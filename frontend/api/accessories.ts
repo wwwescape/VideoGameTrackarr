@@ -3,14 +3,26 @@ import type { AccessoryDetail, AccessoryInput, AccessorySummary, LibraryStatus }
 
 export interface AccessoryListParams {
   search?: string;
-  manufacturerId?: number;
-  accessoryTypeId?: number;
-  hardwarePlatformId?: number;
+  manufacturerIds?: number[];
+  accessoryTypeIds?: number[];
+  hardwarePlatformIds?: number[];
   status?: LibraryStatus;
 }
 
 export async function listAccessories(params: AccessoryListParams = {}): Promise<AccessorySummary[]> {
-  const response = await apiClient.get<AccessorySummary[]>("/api/accessories", { params });
+  const { search, manufacturerIds, accessoryTypeIds, hardwarePlatformIds, status } = params;
+  const response = await apiClient.get<AccessorySummary[]>("/api/accessories", {
+    params: {
+      search: search || undefined,
+      manufacturerId: manufacturerIds?.length ? manufacturerIds : undefined,
+      accessoryTypeId: accessoryTypeIds?.length ? accessoryTypeIds : undefined,
+      hardwarePlatformId: hardwarePlatformIds?.length ? hardwarePlatformIds : undefined,
+      status,
+    },
+    // Same reasoning as device.ts/games.ts: repeat the bare query key rather than axios's
+    // default `key[]=` array serialization, matching FastAPI's `list[int]` Query binding.
+    paramsSerializer: { indexes: null },
+  });
   return response.data;
 }
 

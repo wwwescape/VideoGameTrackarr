@@ -20,9 +20,8 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { CatalogRefSummary, PlatformResponse, Tag } from "../api/types";
+import type { CatalogRefSummary, GameCategory, PlatformResponse, Tag } from "../api/types";
 import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
-import AutocompleteSelect from "./AutocompleteSelect";
 import TagChip from "./TagChip";
 
 function platformOptionLabel(option: PlatformResponse): string {
@@ -35,6 +34,26 @@ const FILTER_OPTIONS: { value: GameFilter; labelKey: string }[] = [
   { value: "all", labelKey: "games.listToolbar.filterAll" },
   { value: "owned", labelKey: "games.listToolbar.filterOwned" },
   { value: "wishlist", labelKey: "games.listToolbar.filterWishlist" },
+];
+
+interface GameTypeOption {
+  value: GameCategory;
+  label: string;
+}
+
+// Mirrors the backend's _BROWSABLE_CATEGORIES (game_repository.py) exactly — the only
+// categories the Games list (and this filter) ever shows a row for. Labels stay hardcoded
+// English rather than i18n keys, matching this codebase's existing precedent for category
+// value labels (ManualGameForm.tsx's CATEGORY_OPTIONS, utils.ts's ADDON_TYPE_LABELS) — only
+// the filter's own label/placeholder chrome is translated, same as every other filter here.
+const GAME_TYPE_OPTIONS: GameTypeOption[] = [
+  { value: "main_game", label: "Main Game" },
+  { value: "bundle", label: "Bundle" },
+  { value: "standalone_expansion", label: "Standalone Expansion" },
+  { value: "remake", label: "Remake" },
+  { value: "remaster", label: "Remaster" },
+  { value: "expanded_game", label: "Expanded Game" },
+  { value: "port", label: "Port" },
 ];
 
 interface GameListToolbarProps {
@@ -57,11 +76,13 @@ interface GameListToolbarProps {
   tagIds: number[];
   onTagIdsChange: (value: number[]) => void;
   collectionOptions: CatalogRefSummary[];
-  collectionId: number | "";
-  onCollectionChange: (value: number | "") => void;
+  collectionIds: number[];
+  onCollectionIdsChange: (value: number[]) => void;
   franchiseOptions: CatalogRefSummary[];
-  franchiseId: number | "";
-  onFranchiseChange: (value: number | "") => void;
+  franchiseIds: number[];
+  onFranchiseIdsChange: (value: number[]) => void;
+  gameTypes: GameCategory[];
+  onGameTypesChange: (value: GameCategory[]) => void;
 }
 
 // Sticky-feeling toolbar (rendered once, above the virtualized grid) that swaps between
@@ -87,18 +108,23 @@ const GameListToolbar = ({
   tagIds,
   onTagIdsChange,
   collectionOptions,
-  collectionId,
-  onCollectionChange,
+  collectionIds,
+  onCollectionIdsChange,
   franchiseOptions,
-  franchiseId,
-  onFranchiseChange,
+  franchiseIds,
+  onFranchiseIdsChange,
+  gameTypes,
+  onGameTypesChange,
 }: GameListToolbarProps) => {
   const { t } = useTranslation();
   const allPlaceholder = t("games.listToolbar.allOption");
   const selectedTags = tagOptions.filter((tag) => tagIds.includes(tag.id));
   const selectedPlatforms = platformOptions.filter((platform) => platformIds.includes(platform.id));
+  const selectedCollections = collectionOptions.filter((collection) => collectionIds.includes(collection.id));
+  const selectedFranchises = franchiseOptions.filter((franchise) => franchiseIds.includes(franchise.id));
+  const selectedGameTypes = GAME_TYPE_OPTIONS.filter((option) => gameTypes.includes(option.value));
   const activeFilterCount =
-    platformIds.length + tagIds.length + (collectionId ? 1 : 0) + (franchiseId ? 1 : 0);
+    platformIds.length + tagIds.length + collectionIds.length + franchiseIds.length + gameTypes.length;
   const hasActiveFilters = activeFilterCount > 0;
 
   const [filtersAnchorEl, setFiltersAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -107,8 +133,9 @@ const GameListToolbar = ({
   const handleClearFilters = () => {
     onPlatformIdsChange([]);
     onTagIdsChange([]);
-    onCollectionChange("");
-    onFranchiseChange("");
+    onCollectionIdsChange([]);
+    onFranchiseIdsChange([]);
+    onGameTypesChange([]);
   };
 
   if (selectionMode) {
@@ -243,23 +270,33 @@ const GameListToolbar = ({
                 })
               }
             />
-            <AutocompleteSelect<CatalogRefSummary>
+            <AutocompleteMultiSelect<CatalogRefSummary>
               label={t("games.listToolbar.collectionLabel")}
               options={collectionOptions}
-              value={collectionOptions.find((option) => option.id === collectionId) ?? null}
-              onChange={(newValue) => onCollectionChange(newValue ? newValue.id : "")}
+              value={selectedCollections}
+              onChange={(newValue) => onCollectionIdsChange(newValue.map((collection) => collection.id))}
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, val) => option.id === val.id}
               placeholder={allPlaceholder}
               fullWidth
             />
-            <AutocompleteSelect<CatalogRefSummary>
+            <AutocompleteMultiSelect<CatalogRefSummary>
               label={t("games.listToolbar.seriesLabel")}
               options={franchiseOptions}
-              value={franchiseOptions.find((option) => option.id === franchiseId) ?? null}
-              onChange={(newValue) => onFranchiseChange(newValue ? newValue.id : "")}
+              value={selectedFranchises}
+              onChange={(newValue) => onFranchiseIdsChange(newValue.map((franchise) => franchise.id))}
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, val) => option.id === val.id}
+              placeholder={allPlaceholder}
+              fullWidth
+            />
+            <AutocompleteMultiSelect<GameTypeOption>
+              label={t("games.listToolbar.gameTypeLabel")}
+              options={GAME_TYPE_OPTIONS}
+              value={selectedGameTypes}
+              onChange={(newValue) => onGameTypesChange(newValue.map((option) => option.value))}
+              getOptionLabel={(option) => option.label}
+              isOptionEqualToValue={(option, val) => option.value === val.value}
               placeholder={allPlaceholder}
               fullWidth
             />

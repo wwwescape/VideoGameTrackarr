@@ -127,6 +127,7 @@ const GameDetails = () => {
               libraryItems={libraryItems}
               platforms={platforms}
               regions={regions}
+              gameCategory={game.category}
             />
           </Card>
           {!hasParentGame ? (

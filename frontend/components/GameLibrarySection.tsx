@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type {
+  GameCategory,
   LibraryItem,
   LibraryStatus,
   MediaFormat,
@@ -44,6 +45,7 @@ interface GameLibrarySectionProps {
   libraryItems: LibraryItem[] | undefined;
   platforms: PlatformResponse[] | undefined;
   regions: RegionResponse[] | undefined;
+  gameCategory?: GameCategory | null;
 }
 
 const GameLibrarySection = ({
@@ -51,6 +53,7 @@ const GameLibrarySection = ({
   libraryItems,
   platforms,
   regions,
+  gameCategory,
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
   const addLibraryItem = useAddLibraryItem(gameId);
@@ -287,6 +290,7 @@ const GameLibrarySection = ({
           status={dialogStatus}
           platforms={platforms ?? []}
           regions={regions ?? []}
+          gameCategory={gameCategory}
           defaultValues={
             dialogItem
               ? {

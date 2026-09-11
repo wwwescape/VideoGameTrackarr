@@ -2,6 +2,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import type { NamedLookup } from "../api/types";
+import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
 import AutocompleteSelect from "./AutocompleteSelect";
 
 export type HardwareStatusFilter = "all" | "owned" | "wishlist";
@@ -15,21 +16,21 @@ interface SortOption {
 interface LookupFilterProps {
   label: string;
   options: NamedLookup[];
-  value: number | "";
-  onChange: (value: number | "") => void;
+  value: number[];
+  onChange: (value: number[]) => void;
   placeholder: string;
 }
 
 const LookupFilter = ({ label, options, value, onChange, placeholder }: LookupFilterProps) => (
-  <AutocompleteSelect<NamedLookup>
+  <AutocompleteMultiSelect<NamedLookup>
     label={label}
     options={options}
-    value={options.find((option) => option.id === value) ?? null}
-    onChange={(newValue) => onChange(newValue ? newValue.id : "")}
+    value={options.filter((option) => value.includes(option.id))}
+    onChange={(newValue) => onChange(newValue.map((option) => option.id))}
     getOptionLabel={(option) => option.name}
     isOptionEqualToValue={(option, val) => option.id === val.id}
     placeholder={placeholder}
-    sx={{ minWidth: 160 }}
+    sx={{ minWidth: 200 }}
   />
 );
 
@@ -37,15 +38,15 @@ interface HardwareListToolbarProps {
   sort: HardwareSort;
   onSortChange: (sort: HardwareSort) => void;
   manufacturerOptions: NamedLookup[];
-  manufacturerId: number | "";
-  onManufacturerChange: (id: number | "") => void;
+  manufacturerIds: number[];
+  onManufacturerIdsChange: (ids: number[]) => void;
   typeLabel: string;
   typeOptions: NamedLookup[];
-  typeId: number | "";
-  onTypeChange: (id: number | "") => void;
+  typeIds: number[];
+  onTypeIdsChange: (ids: number[]) => void;
   platformOptions: NamedLookup[];
-  platformId: number | "";
-  onPlatformChange: (id: number | "") => void;
+  platformIds: number[];
+  onPlatformIdsChange: (ids: number[]) => void;
 }
 
 // Lookup-table filter dropdowns + a client-side sort dropdown, shown once per section
@@ -56,15 +57,15 @@ const HardwareListToolbar = ({
   sort,
   onSortChange,
   manufacturerOptions,
-  manufacturerId,
-  onManufacturerChange,
+  manufacturerIds,
+  onManufacturerIdsChange,
   typeLabel,
   typeOptions,
-  typeId,
-  onTypeChange,
+  typeIds,
+  onTypeIdsChange,
   platformOptions,
-  platformId,
-  onPlatformChange,
+  platformIds,
+  onPlatformIdsChange,
 }: HardwareListToolbarProps) => {
   const { t } = useTranslation();
 
@@ -81,22 +82,22 @@ const HardwareListToolbar = ({
         <LookupFilter
           label={t("hardware.listToolbar.manufacturerLabel")}
           options={manufacturerOptions}
-          value={manufacturerId}
-          onChange={onManufacturerChange}
+          value={manufacturerIds}
+          onChange={onManufacturerIdsChange}
           placeholder={allPlaceholder}
         />
         <LookupFilter
           label={typeLabel}
           options={typeOptions}
-          value={typeId}
-          onChange={onTypeChange}
+          value={typeIds}
+          onChange={onTypeIdsChange}
           placeholder={allPlaceholder}
         />
         <LookupFilter
           label={t("hardware.listToolbar.platformLabel")}
           options={platformOptions}
-          value={platformId}
-          onChange={onPlatformChange}
+          value={platformIds}
+          onChange={onPlatformIdsChange}
           placeholder={allPlaceholder}
         />
         <AutocompleteSelect<SortOption>

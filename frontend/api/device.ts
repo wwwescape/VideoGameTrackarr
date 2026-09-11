@@ -3,14 +3,28 @@ import type { DeviceDetail, DeviceInput, DeviceSummary, LibraryStatus } from "./
 
 export interface DeviceListParams {
   search?: string;
-  manufacturerId?: number;
-  deviceTypeId?: number;
-  hardwarePlatformId?: number;
+  manufacturerIds?: number[];
+  deviceTypeIds?: number[];
+  hardwarePlatformIds?: number[];
   status?: LibraryStatus;
 }
 
 export async function listDevices(params: DeviceListParams = {}): Promise<DeviceSummary[]> {
-  const response = await apiClient.get<DeviceSummary[]>("/api/devices", { params });
+  const { search, manufacturerIds, deviceTypeIds, hardwarePlatformIds, status } = params;
+  const response = await apiClient.get<DeviceSummary[]>("/api/devices", {
+    params: {
+      search: search || undefined,
+      manufacturerId: manufacturerIds?.length ? manufacturerIds : undefined,
+      deviceTypeId: deviceTypeIds?.length ? deviceTypeIds : undefined,
+      hardwarePlatformId: hardwarePlatformIds?.length ? hardwarePlatformIds : undefined,
+      status,
+    },
+    // Axios's default array serialization emits `manufacturerId[]=1`, which FastAPI's
+    // `list[int]` Query param won't bind under the `manufacturerId` alias — this repeats
+    // the bare key instead (`manufacturerId=1&manufacturerId=2`), matching what the backend
+    // actually parses (same reasoning as games.ts's listGames).
+    paramsSerializer: { indexes: null },
+  });
   return response.data;
 }
 

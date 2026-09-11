@@ -54,16 +54,18 @@ def search_local_games(
     search: str | None = None,
     platform_ids: list[int] | None = None,
     tag_ids: list[int] | None = None,
-    collection_id: int | None = None,
-    franchise_id: int | None = None,
+    collection_ids: list[int] | None = None,
+    franchise_ids: list[int] | None = None,
+    categories: list[GameCategory] | None = None,
 ) -> list[GameWithStatus]:
     return game_repository.list_top_level_games(
         db,
         search=search,
         platform_ids=platform_ids,
         tag_ids=tag_ids,
-        collection_id=collection_id,
-        franchise_id=franchise_id,
+        collection_ids=collection_ids,
+        franchise_ids=franchise_ids,
+        categories=categories,
     )
 
 

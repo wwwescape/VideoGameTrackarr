@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_igdb_client
+from app.models.catalog import GameCategory
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.game import (
@@ -37,8 +38,9 @@ def list_games(
     search: str | None = Query(default=None),
     platform_ids: list[int] | None = Query(default=None, alias="platformId"),
     tag_ids: list[int] | None = Query(default=None, alias="tagId"),
-    collection_id: int | None = Query(default=None, alias="collectionId"),
-    franchise_id: int | None = Query(default=None, alias="franchiseId"),
+    collection_ids: list[int] | None = Query(default=None, alias="collectionId"),
+    franchise_ids: list[int] | None = Query(default=None, alias="franchiseId"),
+    categories: list[GameCategory] | None = Query(default=None, alias="category"),
     db: Session = Depends(get_db),
 ) -> list[GameSummaryResponse]:
     games = game_service.search_local_games(
@@ -46,8 +48,9 @@ def list_games(
         search=search,
         platform_ids=platform_ids,
         tag_ids=tag_ids,
-        collection_id=collection_id,
-        franchise_id=franchise_id,
+        collection_ids=collection_ids,
+        franchise_ids=franchise_ids,
+        categories=categories,
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     return [game_summary_from_orm(game, on_sale_game_ids) for game in games]

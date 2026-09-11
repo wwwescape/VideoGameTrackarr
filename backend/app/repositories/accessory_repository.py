@@ -65,9 +65,9 @@ _STATUS_COLUMNS = (
 def list_accessories(
     db: Session,
     search: str | None = None,
-    manufacturer_id: int | None = None,
-    accessory_type_id: int | None = None,
-    hardware_platform_id: int | None = None,
+    manufacturer_ids: list[int] | None = None,
+    accessory_type_ids: list[int] | None = None,
+    hardware_platform_ids: list[int] | None = None,
     status: LibraryStatus | None = None,
 ) -> list[AccessoryWithStatus]:
     stmt = select(Accessory, *_STATUS_COLUMNS)
@@ -80,15 +80,15 @@ def list_accessories(
                 HardwareReferenceEntry.generation_short.ilike(f"%{search}%"),
             )
         )
-    if manufacturer_id is not None:
-        stmt = stmt.where(Accessory.manufacturer_id == manufacturer_id)
-    if accessory_type_id is not None:
-        stmt = stmt.where(Accessory.accessory_type_id == accessory_type_id)
-    if hardware_platform_id is not None:
+    if manufacturer_ids:
+        stmt = stmt.where(Accessory.manufacturer_id.in_(manufacturer_ids))
+    if accessory_type_ids:
+        stmt = stmt.where(Accessory.accessory_type_id.in_(accessory_type_ids))
+    if hardware_platform_ids:
         stmt = stmt.where(
             exists().where(
                 AccessoryCompatibility.accessory_id == Accessory.id,
-                AccessoryCompatibility.hardware_platform_id == hardware_platform_id,
+                AccessoryCompatibility.hardware_platform_id.in_(hardware_platform_ids),
             )
         )
     if status is not None:

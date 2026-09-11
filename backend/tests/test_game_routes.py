@@ -156,6 +156,66 @@ def test_list_games_filters_by_tag_id_matches_any_selected_tag(auth_client, db_s
     assert names == {"Test Game", "Other Game"}
 
 
+def test_list_games_filters_by_collection_id_matches_any_selected_collection(auth_client, db_session, seed_game):
+    other_game = Game(igdb_id=2205, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    collection_a = Collection(name="Age of Empires Series", slug="age-of-empires")
+    collection_b = Collection(name="Halo Series", slug="halo")
+    db_session.add_all([collection_a, collection_b])
+    db_session.commit()
+
+    db_session.add(GameCollection(game_id=seed_game.id, collection_id=collection_a.id))
+    db_session.add(GameCollection(game_id=other_game.id, collection_id=collection_b.id))
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games", params=[("collectionId", collection_a.id), ("collectionId", collection_b.id)]
+    )
+    names = {g["name"] for g in response.json()}
+    assert names == {"Test Game", "Other Game"}
+
+
+def test_list_games_filters_by_franchise_id_matches_any_selected_franchise(auth_client, db_session, seed_game):
+    other_game = Game(igdb_id=2206, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    franchise_a = Franchise(name="Final Fantasy", slug="final-fantasy")
+    franchise_b = Franchise(name="Dragon Quest", slug="dragon-quest")
+    db_session.add_all([franchise_a, franchise_b])
+    db_session.commit()
+
+    db_session.add(GameFranchise(game_id=seed_game.id, franchise_id=franchise_a.id))
+    db_session.add(GameFranchise(game_id=other_game.id, franchise_id=franchise_b.id))
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games", params=[("franchiseId", franchise_a.id), ("franchiseId", franchise_b.id)]
+    )
+    names = {g["name"] for g in response.json()}
+    assert names == {"Test Game", "Other Game"}
+
+
+def test_list_games_filters_by_category_matches_any_selected_category(auth_client, db_session, seed_game):
+    # seed_game is category MAIN_GAME (see conftest.seed_game). remaster_game is a different
+    # *browsable* category left out of the filter's selection — proves the category filter
+    # itself is narrowing the result, not just piggybacking on the base browsable-only filter
+    # that would already exclude a non-browsable category like MOD regardless.
+    bundle_game = Game(igdb_id=2203, name="Bundle Game", category=GameCategory.BUNDLE)
+    remaster_game = Game(igdb_id=2204, name="Remaster Game", category=GameCategory.REMASTER)
+    db_session.add_all([bundle_game, remaster_game])
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games", params=[("category", "main_game"), ("category", "bundle")]
+    )
+
+    names = {g["name"] for g in response.json()}
+    assert names == {"Test Game", "Bundle Game"}
+
+
 def test_list_games_filters_by_platform_id_matches_any_selected_platform(
     auth_client, db_session, seed_game, seed_platform
 ):

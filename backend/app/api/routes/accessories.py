@@ -37,18 +37,18 @@ def _accessory_detail_response(db: Session, item: AccessoryWithStatus) -> Access
 @router.get("/api/accessories", response_model=list[AccessorySummaryResponse])
 def list_accessories(
     search: str | None = Query(default=None),
-    manufacturer_id: int | None = Query(default=None, alias="manufacturerId"),
-    accessory_type_id: int | None = Query(default=None, alias="accessoryTypeId"),
-    hardware_platform_id: int | None = Query(default=None, alias="hardwarePlatformId"),
+    manufacturer_ids: list[int] | None = Query(default=None, alias="manufacturerId"),
+    accessory_type_ids: list[int] | None = Query(default=None, alias="accessoryTypeId"),
+    hardware_platform_ids: list[int] | None = Query(default=None, alias="hardwarePlatformId"),
     status_filter: LibraryStatus | None = Query(default=None, alias="status"),
     db: Session = Depends(get_db),
 ) -> list[AccessorySummaryResponse]:
     items = accessory_service.list_accessories(
         db,
         search=search,
-        manufacturer_id=manufacturer_id,
-        accessory_type_id=accessory_type_id,
-        hardware_platform_id=hardware_platform_id,
+        manufacturer_ids=manufacturer_ids,
+        accessory_type_ids=accessory_type_ids,
+        hardware_platform_ids=hardware_platform_ids,
         status=status_filter,
     )
     return [accessory_summary_from_orm(item) for item in items]

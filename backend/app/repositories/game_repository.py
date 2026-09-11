@@ -84,14 +84,16 @@ def _row_to_game_with_status(row: Any) -> GameWithStatus:
     return GameWithStatus(game=row[0], owned=bool(row[1]), wishlisted=bool(row[2]), play_status=row[3], rating=row[4])
 
 
-# What counts as a browsable "game" in the main games list / Dashboard, as opposed to
-# something only reachable through a parent's Addons tab (DLC/expansion/pack — kept off this
-# list via parent_game_id already) or that's just metadata noise around a real game rather
-# than something a user tracks as its own entry — community mods, seasons, updates, forks,
-# episodes. Mirrors igdb_client._BROWSABLE_GAME_TYPES (search/import only ever offer these
-# same categories to add in the first place) and frontend AddGame.tsx's ADDABLE_CATEGORIES —
-# keep all three in sync. NULL stays included: better to show an unclassifiable game than
-# silently hide it because IGDB never returned a category for it.
+# What counts as a browsable "game" in the main games list / Dashboard / a Collection's or
+# Series' own Details page (see _is_browsable_game's other callers in
+# collection_repository.py/franchise_repository.py), as opposed to something only reachable
+# through a parent's Addons tab (DLC/expansion/pack — kept off this list via parent_game_id
+# already) or that's just metadata noise around a real game rather than something a user
+# tracks as its own entry — community mods, seasons, updates, forks, episodes. Mirrors
+# igdb_client._BROWSABLE_GAME_TYPES (search/import only ever offer these same categories to
+# add in the first place) and frontend AddGame.tsx's ADDABLE_CATEGORIES — keep all three in
+# sync. NULL stays included: better to show an unclassifiable game than silently hide it
+# because IGDB never returned a category for it.
 _BROWSABLE_CATEGORIES = (
     GameCategory.MAIN_GAME,
     GameCategory.BUNDLE,
@@ -112,8 +114,9 @@ def list_top_level_games(
     search: str | None = None,
     platform_ids: list[int] | None = None,
     tag_ids: list[int] | None = None,
-    collection_id: int | None = None,
-    franchise_id: int | None = None,
+    collection_ids: list[int] | None = None,
+    franchise_ids: list[int] | None = None,
+    categories: list[GameCategory] | None = None,
 ) -> list[GameWithStatus]:
     stmt = select(
         Game,
@@ -130,12 +133,19 @@ def list_top_level_games(
         stmt = stmt.where(exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(platform_ids)))
     if tag_ids:
         stmt = stmt.where(exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(tag_ids)))
-    if collection_id is not None:
+    if categories:
+        # No need to also validate against _BROWSABLE_CATEGORIES here — the base .where()
+        # above already restricts every row to that set (or NULL), so an out-of-range value
+        # here would just AND down to zero rows rather than leaking a non-browsable category.
+        stmt = stmt.where(Game.category.in_(categories))
+    if collection_ids:
         stmt = stmt.where(
-            exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id == collection_id)
+            exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id.in_(collection_ids))
         )
-    if franchise_id is not None:
-        stmt = stmt.where(exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id == franchise_id))
+    if franchise_ids:
+        stmt = stmt.where(
+            exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id.in_(franchise_ids))
+        )
     stmt = stmt.order_by(Game.name)
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.catalog import Franchise, Game, GameFranchise
 from app.repositories.game_repository import (
     GameWithStatus,
+    _is_browsable_game,
     _owned_exists,
     _play_status_subquery,
     _rating_subquery,
@@ -42,11 +43,16 @@ def get_by_slug(db: Session, slug: str) -> Franchise | None:
 
 
 def list_franchises_with_counts(db: Session) -> list[tuple[Franchise, int]]:
-    """Every franchise with at least one locally-known game — the join against
-    GameFranchise is what excludes franchises nothing has ever been synced into."""
+    """Every franchise with at least one locally-known, browsable (non-addon) game — same
+    _is_browsable_game/parent_game_id filter as list_games_for_franchise below, so this count
+    always matches what the franchise's own Details page actually shows; a franchise whose
+    only locally-known members are addons is excluded entirely rather than showing a non-zero
+    count that leads to an empty Details page."""
     stmt = (
         select(Franchise, func.count(func.distinct(GameFranchise.game_id)))
         .join(GameFranchise, GameFranchise.franchise_id == Franchise.id)
+        .join(Game, Game.id == GameFranchise.game_id)
+        .where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
         .group_by(Franchise.id)
         .order_by(Franchise.name)
     )
@@ -54,11 +60,14 @@ def list_franchises_with_counts(db: Session) -> list[tuple[Franchise, int]]:
 
 
 def list_games_for_franchise(db: Session, franchise_id: int) -> list[GameWithStatus]:
-    """Only games already locally known — a franchise can have dozens of entries on IGDB,
-    most of which this app has never heard of unless the user imported them. Computes
-    owned/wishlisted/play_status/rating in the same query, same pattern as
-    game_repository.list_top_level_games, rather than returning bare Game rows a caller
-    would have to re-enrich."""
+    """Only games already locally known, and only browsable (non-addon) ones — a franchise
+    can have dozens of entries on IGDB, most of which this app has never heard of unless the
+    user imported them. Same parent_game_id/category filter as
+    game_repository.list_top_level_games, so a DLC/expansion/pack that happens to share this
+    franchise with its parent game doesn't clutter the franchise's game grid; it's still
+    reachable via its parent's own Addons tab. Computes owned/wishlisted/play_status/rating
+    in the same query, same pattern as list_top_level_games, rather than returning bare Game
+    rows a caller would have to re-enrich."""
     stmt = (
         select(
             Game,
@@ -68,7 +77,11 @@ def list_games_for_franchise(db: Session, franchise_id: int) -> list[GameWithSta
             _rating_subquery(Game.id),
         )
         .join(GameFranchise, GameFranchise.game_id == Game.id)
-        .where(GameFranchise.franchise_id == franchise_id)
+        .where(
+            GameFranchise.franchise_id == franchise_id,
+            Game.parent_game_id.is_(None),
+            _is_browsable_game(Game.category),
+        )
         .order_by(Game.name)
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

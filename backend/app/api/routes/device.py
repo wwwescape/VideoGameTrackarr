@@ -37,18 +37,18 @@ def _device_detail_response(db: Session, item: DeviceWithStatus) -> DeviceDetail
 @router.get("/api/devices", response_model=list[DeviceSummaryResponse])
 def list_devices(
     search: str | None = Query(default=None),
-    manufacturer_id: int | None = Query(default=None, alias="manufacturerId"),
-    device_type_id: int | None = Query(default=None, alias="deviceTypeId"),
-    hardware_platform_id: int | None = Query(default=None, alias="hardwarePlatformId"),
+    manufacturer_ids: list[int] | None = Query(default=None, alias="manufacturerId"),
+    device_type_ids: list[int] | None = Query(default=None, alias="deviceTypeId"),
+    hardware_platform_ids: list[int] | None = Query(default=None, alias="hardwarePlatformId"),
     status_filter: LibraryStatus | None = Query(default=None, alias="status"),
     db: Session = Depends(get_db),
 ) -> list[DeviceSummaryResponse]:
     items = device_service.list_devices(
         db,
         search=search,
-        manufacturer_id=manufacturer_id,
-        device_type_id=device_type_id,
-        hardware_platform_id=hardware_platform_id,
+        manufacturer_ids=manufacturer_ids,
+        device_type_ids=device_type_ids,
+        hardware_platform_ids=hardware_platform_ids,
         status=status_filter,
     )
     return [device_summary_from_orm(item) for item in items]

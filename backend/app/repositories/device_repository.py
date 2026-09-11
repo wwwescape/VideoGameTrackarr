@@ -59,9 +59,9 @@ _STATUS_COLUMNS = (
 def list_devices(
     db: Session,
     search: str | None = None,
-    manufacturer_id: int | None = None,
-    device_type_id: int | None = None,
-    hardware_platform_id: int | None = None,
+    manufacturer_ids: list[int] | None = None,
+    device_type_ids: list[int] | None = None,
+    hardware_platform_ids: list[int] | None = None,
     status: LibraryStatus | None = None,
 ) -> list[DeviceWithStatus]:
     stmt = select(Device, *_STATUS_COLUMNS)
@@ -74,12 +74,12 @@ def list_devices(
                 HardwareReferenceEntry.generation_short.ilike(f"%{search}%"),
             )
         )
-    if manufacturer_id is not None:
-        stmt = stmt.where(Device.manufacturer_id == manufacturer_id)
-    if device_type_id is not None:
-        stmt = stmt.where(Device.device_type_id == device_type_id)
-    if hardware_platform_id is not None:
-        stmt = stmt.where(Device.hardware_platform_id == hardware_platform_id)
+    if manufacturer_ids:
+        stmt = stmt.where(Device.manufacturer_id.in_(manufacturer_ids))
+    if device_type_ids:
+        stmt = stmt.where(Device.device_type_id.in_(device_type_ids))
+    if hardware_platform_ids:
+        stmt = stmt.where(Device.hardware_platform_id.in_(hardware_platform_ids))
     if status is not None:
         stmt = stmt.where(
             exists().where(UserDevice.device_id == Device.id, UserDevice.status == status)

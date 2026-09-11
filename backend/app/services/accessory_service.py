@@ -58,17 +58,17 @@ def _require_accessory_ids_exist(db: Session, accessory_ids: list[int]) -> None:
 def list_accessories(
     db: Session,
     search: str | None = None,
-    manufacturer_id: int | None = None,
-    accessory_type_id: int | None = None,
-    hardware_platform_id: int | None = None,
+    manufacturer_ids: list[int] | None = None,
+    accessory_type_ids: list[int] | None = None,
+    hardware_platform_ids: list[int] | None = None,
     status: LibraryStatus | None = None,
 ) -> list[AccessoryWithStatus]:
     return accessory_repository.list_accessories(
         db,
         search=search,
-        manufacturer_id=manufacturer_id,
-        accessory_type_id=accessory_type_id,
-        hardware_platform_id=hardware_platform_id,
+        manufacturer_ids=manufacturer_ids,
+        accessory_type_ids=accessory_type_ids,
+        hardware_platform_ids=hardware_platform_ids,
         status=status,
     )
 

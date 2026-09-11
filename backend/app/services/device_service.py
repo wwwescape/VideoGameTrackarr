@@ -45,17 +45,17 @@ def _resolve_lookup_fields(db: Session, fields: dict[str, Any]) -> dict[str, Any
 def list_devices(
     db: Session,
     search: str | None = None,
-    manufacturer_id: int | None = None,
-    device_type_id: int | None = None,
-    hardware_platform_id: int | None = None,
+    manufacturer_ids: list[int] | None = None,
+    device_type_ids: list[int] | None = None,
+    hardware_platform_ids: list[int] | None = None,
     status: LibraryStatus | None = None,
 ) -> list[DeviceWithStatus]:
     return device_repository.list_devices(
         db,
         search=search,
-        manufacturer_id=manufacturer_id,
-        device_type_id=device_type_id,
-        hardware_platform_id=hardware_platform_id,
+        manufacturer_ids=manufacturer_ids,
+        device_type_ids=device_type_ids,
+        hardware_platform_ids=hardware_platform_ids,
         status=status,
     )
 

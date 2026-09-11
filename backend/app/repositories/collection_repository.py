@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.catalog import Collection, Game, GameCollection
 from app.repositories.game_repository import (
     GameWithStatus,
+    _is_browsable_game,
     _owned_exists,
     _play_status_subquery,
     _rating_subquery,
@@ -42,11 +43,16 @@ def get_by_slug(db: Session, slug: str) -> Collection | None:
 
 
 def list_collections_with_counts(db: Session) -> list[tuple[Collection, int]]:
-    """Every collection with at least one locally-known game — the join against
-    GameCollection is what excludes collections nothing has ever been synced into."""
+    """Every collection with at least one locally-known, browsable (non-addon) game — same
+    _is_browsable_game/parent_game_id filter as list_games_for_collection below, so this
+    count always matches what the collection's own Details page actually shows; a collection
+    whose only locally-known members are addons is excluded entirely rather than showing a
+    non-zero count that leads to an empty Details page."""
     stmt = (
         select(Collection, func.count(func.distinct(GameCollection.game_id)))
         .join(GameCollection, GameCollection.collection_id == Collection.id)
+        .join(Game, Game.id == GameCollection.game_id)
+        .where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
         .group_by(Collection.id)
         .order_by(Collection.name)
     )
@@ -54,8 +60,10 @@ def list_collections_with_counts(db: Session) -> list[tuple[Collection, int]]:
 
 
 def list_games_for_collection(db: Session, collection_id: int) -> list[GameWithStatus]:
-    """Only games already locally known — same caveat as franchise_repository's
-    list_games_for_franchise, which this mirrors."""
+    """Only games already locally known, and only browsable (non-addon) ones — same
+    parent_game_id/category filter as game_repository.list_top_level_games, so a DLC/
+    expansion/pack that happens to share this collection with its parent game doesn't clutter
+    the collection's game grid; it's still reachable via its parent's own Addons tab."""
     stmt = (
         select(
             Game,
@@ -65,7 +73,11 @@ def list_games_for_collection(db: Session, collection_id: int) -> list[GameWithS
             _rating_subquery(Game.id),
         )
         .join(GameCollection, GameCollection.game_id == Game.id)
-        .where(GameCollection.collection_id == collection_id)
+        .where(
+            GameCollection.collection_id == collection_id,
+            Game.parent_game_id.is_(None),
+            _is_browsable_game(Game.category),
+        )
         .order_by(Game.name)
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

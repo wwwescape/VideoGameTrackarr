@@ -370,6 +370,7 @@
       "tagLabel": "Etiqueta",
       "collectionLabel": "Coleção",
       "seriesLabel": "Série",
+      "gameTypeLabel": "Tipo de jogo",
       "allOption": "Todos",
       "filtersButtonLabel": "Filtros",
       "clearFiltersButton": "Limpar filtros"

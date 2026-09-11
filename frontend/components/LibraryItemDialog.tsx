@@ -21,6 +21,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
 import type {
+  GameCategory,
   LibraryStatus,
   MediaFormat,
   PlatformResponse,
@@ -52,6 +53,15 @@ const formSchema = z.object({
 });
 
 export type LibraryItemFormValues = z.infer<typeof formSchema>;
+
+// DLC/Addon, Expansion, and Pack are always sold digitally — never boxed/cartridge — so the
+// Format field is locked to "digital" rather than left editable for these. Mirrors the
+// backend's HIERARCHICAL_ADDON_CATEGORIES (game_service.py) and this app's other
+// ADDON_TYPE_CATEGORIES definitions (AddGame.tsx, ManualGameForm.tsx, LinkToIgdbDialog.tsx) —
+// deliberately narrower than the generic isAddon() util (utils.ts), which also counts
+// Bundle/Remake/Remaster/Standalone Expansion as "addons" for display purposes even though
+// those are routinely sold physically too.
+const ALWAYS_DIGITAL_CATEGORIES: GameCategory[] = ["dlc_addon", "expansion", "pack"];
 
 const FORMAT_OPTIONS: { value: MediaFormat; labelKey: string }[] = [
   { value: "physical", labelKey: "dialogs.libraryItem.formatPhysical" },
@@ -124,6 +134,7 @@ interface LibraryItemDialogProps {
   status: LibraryStatus;
   platforms: PlatformResponse[];
   regions: RegionResponse[];
+  gameCategory?: GameCategory | null;
   defaultValues?: Partial<LibraryItemFormValues>;
   onClose: () => void;
   onSubmit: (values: LibraryItemFormValues) => void;
@@ -136,6 +147,7 @@ const LibraryItemDialog = ({
   status,
   platforms,
   regions,
+  gameCategory,
   defaultValues,
   onClose,
   onSubmit,
@@ -143,6 +155,7 @@ const LibraryItemDialog = ({
 }: LibraryItemDialogProps) => {
   const { t } = useTranslation();
   const { currency } = useCurrency();
+  const lockFormatToDigital = gameCategory != null && ALWAYS_DIGITAL_CATEGORIES.includes(gameCategory);
   const {
     control,
     handleSubmit,
@@ -151,12 +164,16 @@ const LibraryItemDialog = ({
     formState: { errors },
   } = useForm<LibraryItemFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { format: "physical", ...defaultValues },
+    defaultValues: { format: lockFormatToDigital ? "digital" : "physical", ...defaultValues },
   });
 
   useEffect(() => {
     if (open) {
-      reset({ format: "physical", ...defaultValues });
+      reset({
+        format: "physical",
+        ...defaultValues,
+        ...(lockFormatToDigital ? { format: "digital" } : {}),
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -273,22 +290,29 @@ const LibraryItemDialog = ({
         </FormControl>
         <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
           <FormLabel id="format">{t("dialogs.libraryItem.formatLabel")}</FormLabel>
-          <Controller
-            name="format"
-            control={control}
-            render={({ field }) => (
-              <RadioGroup row aria-label="format" {...field}>
-                {FORMAT_OPTIONS.map((option) => (
-                  <FormControlLabel
-                    key={option.value}
-                    value={option.value}
-                    control={<Radio />}
-                    label={t(option.labelKey)}
-                  />
-                ))}
-              </RadioGroup>
-            )}
-          />
+          {lockFormatToDigital ? (
+            // Addons (DLC/Expansion/Pack) are always digital — same "locked, nothing to
+            // choose" treatment as the Digital Storefront field below for a non-PC platform,
+            // rather than an editable RadioGroup where every other option would be wrong.
+            <TextField disabled value={t("dialogs.libraryItem.formatDigital")} sx={{ mt: 1 }} />
+          ) : (
+            <Controller
+              name="format"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup row aria-label="format" {...field}>
+                  {FORMAT_OPTIONS.map((option) => (
+                    <FormControlLabel
+                      key={option.value}
+                      value={option.value}
+                      control={<Radio />}
+                      label={t(option.labelKey)}
+                    />
+                  ))}
+                </RadioGroup>
+              )}
+            />
+          )}
         </FormControl>
         {showEditableStorefront ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>

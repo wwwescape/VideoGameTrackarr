@@ -19,9 +19,9 @@ const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [sort, setSort] = useState<HardwareSort>("name");
-  const [manufacturerId, setManufacturerId] = useState<number | "">("");
-  const [deviceTypeId, setDeviceTypeId] = useState<number | "">("");
-  const [hardwarePlatformId, setHardwarePlatformId] = useState<number | "">("");
+  const [manufacturerIds, setManufacturerIds] = useState<number[]>([]);
+  const [deviceTypeIds, setDeviceTypeIds] = useState<number[]>([]);
+  const [hardwarePlatformIds, setHardwarePlatformIds] = useState<number[]>([]);
 
   const { data: manufacturers } = useManufacturers();
   const { data: deviceTypes } = useDeviceTypes();
@@ -29,9 +29,9 @@ const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
 
   const { data: devices, isLoading } = useDeviceList({
     search: searchKeyword || undefined,
-    manufacturerId: manufacturerId || undefined,
-    deviceTypeId: deviceTypeId || undefined,
-    hardwarePlatformId: hardwarePlatformId || undefined,
+    manufacturerIds: manufacturerIds.length > 0 ? manufacturerIds : undefined,
+    deviceTypeIds: deviceTypeIds.length > 0 ? deviceTypeIds : undefined,
+    hardwarePlatformIds: hardwarePlatformIds.length > 0 ? hardwarePlatformIds : undefined,
     status: status === "all" ? undefined : status,
   });
 
@@ -50,15 +50,15 @@ const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
         sort={sort}
         onSortChange={setSort}
         manufacturerOptions={manufacturers ?? []}
-        manufacturerId={manufacturerId}
-        onManufacturerChange={setManufacturerId}
+        manufacturerIds={manufacturerIds}
+        onManufacturerIdsChange={setManufacturerIds}
         typeLabel={t("hardware.deviceList.typeLabel")}
         typeOptions={deviceTypes ?? []}
-        typeId={deviceTypeId}
-        onTypeChange={setDeviceTypeId}
+        typeIds={deviceTypeIds}
+        onTypeIdsChange={setDeviceTypeIds}
         platformOptions={hardwarePlatforms ?? []}
-        platformId={hardwarePlatformId}
-        onPlatformChange={setHardwarePlatformId}
+        platformIds={hardwarePlatformIds}
+        onPlatformIdsChange={setHardwarePlatformIds}
       />
       {isLoading ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>

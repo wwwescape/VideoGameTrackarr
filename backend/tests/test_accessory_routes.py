@@ -2,9 +2,11 @@ from app.models.hardware import (
     Accessory,
     AccessoryNote,
     AccessoryTag,
+    AccessoryType,
     Device,
     HardwarePlatform,
     HardwareReferenceEntry,
+    Manufacturer,
     UserAccessory,
 )
 
@@ -452,6 +454,90 @@ def test_list_accessories_filters_by_compatible_platform(auth_client, db_session
 
     filtered = auth_client.get("/api/accessories", params={"hardwarePlatformId": platform.id}).json()
     assert [a["officialName"] for a in filtered] == ["DualSense"]
+
+
+def test_list_accessories_filters_by_hardware_platform_id_matches_any_selected_platform(
+    auth_client, db_session
+):
+    auth_client.post(
+        "/api/accessories",
+        json={
+            "manufacturer": "Sony",
+            "accessoryType": "Controller",
+            "officialName": "DualSense",
+            "compatiblePlatforms": ["PlayStation 5"],
+        },
+    )
+    auth_client.post(
+        "/api/accessories",
+        json={
+            "manufacturer": "Microsoft",
+            "accessoryType": "Controller",
+            "officialName": "Xbox Wireless Controller",
+            "compatiblePlatforms": ["Xbox Series X"],
+        },
+    )
+
+    ps5 = db_session.query(HardwarePlatform).filter_by(name="PlayStation 5").one()
+    xbox = db_session.query(HardwarePlatform).filter_by(name="Xbox Series X").one()
+
+    response = auth_client.get(
+        "/api/accessories", params=[("hardwarePlatformId", ps5.id), ("hardwarePlatformId", xbox.id)]
+    )
+    names = {a["officialName"] for a in response.json()}
+    assert names == {"DualSense", "Xbox Wireless Controller"}
+
+
+def test_list_accessories_filters_by_manufacturer_id_matches_any_selected_manufacturer(
+    auth_client, db_session, seed_accessory_type
+):
+    manufacturer_a = Manufacturer(name="Sony")
+    manufacturer_b = Manufacturer(name="Microsoft")
+    db_session.add_all([manufacturer_a, manufacturer_b])
+    db_session.commit()
+    db_session.add_all(
+        [
+            Accessory(
+                manufacturer_id=manufacturer_a.id,
+                accessory_type_id=seed_accessory_type.id,
+                official_name="DualSense",
+            ),
+            Accessory(
+                manufacturer_id=manufacturer_b.id,
+                accessory_type_id=seed_accessory_type.id,
+                official_name="Xbox Wireless Controller",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/accessories", params=[("manufacturerId", manufacturer_a.id), ("manufacturerId", manufacturer_b.id)]
+    )
+    names = {a["officialName"] for a in response.json()}
+    assert names == {"DualSense", "Xbox Wireless Controller"}
+
+
+def test_list_accessories_filters_by_accessory_type_id_matches_any_selected_type(
+    auth_client, db_session, seed_manufacturer
+):
+    type_a = AccessoryType(name="Controller")
+    type_b = AccessoryType(name="Headset")
+    db_session.add_all([type_a, type_b])
+    db_session.commit()
+    db_session.add_all(
+        [
+            Accessory(manufacturer_id=seed_manufacturer.id, accessory_type_id=type_a.id, official_name="DualSense"),
+            Accessory(manufacturer_id=seed_manufacturer.id, accessory_type_id=type_b.id, official_name="Pulse 3D"),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/accessories", params=[("accessoryTypeId", type_a.id), ("accessoryTypeId", type_b.id)]
+    )
+    names = {a["officialName"] for a in response.json()}
+    assert names == {"DualSense", "Pulse 3D"}
 
 
 def test_list_accessories_search_matches_hardware_reference_generation_short(

@@ -6,7 +6,7 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { GameSummary } from "../api/types";
+import type { GameCategory, GameSummary } from "../api/types";
 import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDeleteGame, useGames } from "../hooks/useGames";
@@ -28,8 +28,9 @@ const GameList = () => {
   const [filter, setFilter] = useState<GameFilter>("all");
   const [platformIds, setPlatformIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
-  const [collectionId, setCollectionId] = useState<number | "">("");
-  const [franchiseId, setFranchiseId] = useState<number | "">("");
+  const [collectionIds, setCollectionIds] = useState<number[]>([]);
+  const [franchiseIds, setFranchiseIds] = useState<number[]>([]);
+  const [gameTypes, setGameTypes] = useState<GameCategory[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
   const navigate = useNavigate();
@@ -49,10 +50,11 @@ const GameList = () => {
       search: isSearchActive ? debouncedKeyword : undefined,
       platformIds: platformIds.length > 0 ? platformIds : undefined,
       tagIds: tagIds.length > 0 ? tagIds : undefined,
-      collectionId: collectionId || undefined,
-      franchiseId: franchiseId || undefined,
+      collectionIds: collectionIds.length > 0 ? collectionIds : undefined,
+      franchiseIds: franchiseIds.length > 0 ? franchiseIds : undefined,
+      categories: gameTypes.length > 0 ? gameTypes : undefined,
     }),
-    [isSearchActive, debouncedKeyword, platformIds, tagIds, collectionId, franchiseId]
+    [isSearchActive, debouncedKeyword, platformIds, tagIds, collectionIds, franchiseIds, gameTypes]
   );
   const { data: games, isLoading, isFetching } = useGames(gameListFilters);
   const isSearching = isPendingDebounce || (isSearchActive && isFetching);
@@ -183,11 +185,13 @@ const GameList = () => {
           tagIds={tagIds}
           onTagIdsChange={setTagIds}
           collectionOptions={collections}
-          collectionId={collectionId}
-          onCollectionChange={setCollectionId}
+          collectionIds={collectionIds}
+          onCollectionIdsChange={setCollectionIds}
           franchiseOptions={franchises}
-          franchiseId={franchiseId}
-          onFranchiseChange={setFranchiseId}
+          franchiseIds={franchiseIds}
+          onFranchiseIdsChange={setFranchiseIds}
+          gameTypes={gameTypes}
+          onGameTypesChange={setGameTypes}
         />
       </Box>
       {/* Contains z-index in here to its own stacking context — otherwise MUI's
@@ -203,7 +207,12 @@ const GameList = () => {
           <Paper sx={{ p: 3, textAlign: "center" }}>
             {isSearchActive
               ? t("games.list.noGamesFound")
-              : filter !== "all" || platformIds.length > 0 || tagIds.length > 0 || collectionId || franchiseId
+              : filter !== "all" ||
+                  platformIds.length > 0 ||
+                  tagIds.length > 0 ||
+                  collectionIds.length > 0 ||
+                  franchiseIds.length > 0 ||
+                  gameTypes.length > 0
                 ? t("games.list.noGamesMatchFilter")
                 : t("games.list.pleaseAddGames")}
           </Paper>

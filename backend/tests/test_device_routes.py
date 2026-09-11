@@ -243,6 +243,36 @@ def test_list_devices_filters_by_manufacturer_type_platform_and_search(
     assert [d["officialName"] for d in response.json()] == ["Sony PlayStation 5"]
 
 
+def test_list_devices_filters_by_manufacturer_id_matches_any_selected_manufacturer(
+    auth_client, db_session, seed_device_type
+):
+    manufacturer_a = Manufacturer(name="Sony")
+    manufacturer_b = Manufacturer(name="Microsoft")
+    db_session.add_all([manufacturer_a, manufacturer_b])
+    db_session.commit()
+    db_session.add_all(
+        [
+            Device(
+                manufacturer_id=manufacturer_a.id,
+                device_type_id=seed_device_type.id,
+                official_name="Sony PlayStation 5",
+            ),
+            Device(
+                manufacturer_id=manufacturer_b.id,
+                device_type_id=seed_device_type.id,
+                official_name="Microsoft Xbox Series X",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/devices", params=[("manufacturerId", manufacturer_a.id), ("manufacturerId", manufacturer_b.id)]
+    )
+    names = {d["officialName"] for d in response.json()}
+    assert names == {"Sony PlayStation 5", "Microsoft Xbox Series X"}
+
+
 def test_list_devices_search_matches_hardware_reference_generation_short(
     auth_client, db_session, seed_manufacturer, seed_device_type
 ):
