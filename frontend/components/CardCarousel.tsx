@@ -7,18 +7,16 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { useResponsiveColumns } from "../hooks/useResponsiveColumns";
 
-// Fixed per-breakpoint card width — a carousel item is sized by flex-basis, not MUI Grid's
-// `size` prop (which only makes sense inside a wrapping grid).
-const CARD_WIDTH = { xs: 140, sm: 160, md: 180, lg: 200 };
+// Same breakpoint -> column-count mapping the Games/Hardware grid uses (useResponsiveColumns,
+// via VirtualGameGrid) — cards are sized as an even percentage-of-row-width share, not a fixed
+// pixel width, so a "page" of the carousel always shows exactly `columns` full cards edge to
+// edge, matching the grid pages look identical instead of ending mid-card.
 const GAP_PX = 16; // matches sx `gap: 2` (MUI spacing unit = 8px)
-const MAX_VISIBLE_CARDS = 15;
 
-// Caps the scroll container's own width so it never shows more than MAX_VISIBLE_CARDS at
-// once, even on an ultrawide monitor — bounding the container, not just relying on cards
-// happening not to fit.
-function maxWidthForBreakpoint(cardWidth: number): string {
-  return `calc(${MAX_VISIBLE_CARDS} * ${cardWidth}px + ${MAX_VISIBLE_CARDS - 1} * ${GAP_PX}px)`;
+function itemFlexBasis(columns: number): string {
+  return `calc((100% - ${(columns - 1) * GAP_PX}px) / ${columns})`;
 }
 
 interface CardCarouselProps<T> {
@@ -39,6 +37,7 @@ function CardCarousel<T>({
   viewAllHref,
 }: CardCarouselProps<T>) {
   const { t } = useTranslation();
+  const columns = useResponsiveColumns();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -52,15 +51,18 @@ function CardCarousel<T>({
 
   useEffect(() => {
     updateScrollState();
-    // items.length is enough to trigger a recheck when the row's content changes — the
-    // items themselves aren't referenced inside updateScrollState.
+    // items.length/columns are enough to trigger a recheck when the row's content or the
+    // per-breakpoint column count changes — neither is referenced inside updateScrollState
+    // itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length]);
+  }, [items.length, columns]);
 
   const scrollByPage = (direction: 1 | -1) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
+    // A full page now holds exactly `columns` complete cards (no partial one at the edge),
+    // so scrolling by the container's own width moves cleanly from one full page to the next.
+    el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
   };
 
   if (items.length === 0) return null;
@@ -110,24 +112,13 @@ function CardCarousel<T>({
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" },
-          maxWidth: {
-            xs: maxWidthForBreakpoint(CARD_WIDTH.xs),
-            sm: maxWidthForBreakpoint(CARD_WIDTH.sm),
-            md: maxWidthForBreakpoint(CARD_WIDTH.md),
-            lg: maxWidthForBreakpoint(CARD_WIDTH.lg),
-          },
         }}
       >
         {items.map((item) => (
           <Box
             key={getItemKey(item)}
             sx={{
-              flex: {
-                xs: `0 0 ${CARD_WIDTH.xs}px`,
-                sm: `0 0 ${CARD_WIDTH.sm}px`,
-                md: `0 0 ${CARD_WIDTH.md}px`,
-                lg: `0 0 ${CARD_WIDTH.lg}px`,
-              },
+              flex: `0 0 ${itemFlexBasis(columns)}`,
               // Without this, a flex item's automatic minimum size defaults to its content's
               // min-content width — a long, unwrapped (white-space: nowrap) game title can
               // exceed the fixed flex-basis above and silently blow the card up past its

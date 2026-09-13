@@ -78,7 +78,10 @@ const OnSaleSection = ({ limit }: OnSaleSectionProps) => {
   }
 
   return (
-    <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+    // Fixed 16px gap at every breakpoint, matching VirtualGameGrid/CardCarousel's own
+    // GRID_GAP_PX — keeps this grid's card width consistent with every other GameCard surface,
+    // not just its own column counts.
+    <Grid container spacing={2}>
       {visibleItems.map((item) => (
         <Grid key={item.libraryItemId} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
           <OnSaleTile item={item} />
