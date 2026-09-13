@@ -128,6 +128,14 @@ function CardCarousel<T>({
                 md: `0 0 ${CARD_WIDTH.md}px`,
                 lg: `0 0 ${CARD_WIDTH.lg}px`,
               },
+              // Without this, a flex item's automatic minimum size defaults to its content's
+              // min-content width — a long, unwrapped (white-space: nowrap) game title can
+              // exceed the fixed flex-basis above and silently blow the card up past its
+              // intended width despite flex-grow: 0. minWidth: 0 (the standard fix for this
+              // exact flexbox gotcha) forces the item to respect its fixed width regardless of
+              // title length; overflow: hidden is the belt-and-suspenders backstop.
+              minWidth: 0,
+              overflow: "hidden",
               scrollSnapAlign: "start",
             }}
           >
