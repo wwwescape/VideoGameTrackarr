@@ -17,6 +17,7 @@ from app.api.routes import (
     companies,
     dashboard,
     device,
+    events,
     franchises,
     games,
     hardware_lookups,
@@ -132,6 +133,7 @@ app.include_router(import_export.router)
 app.include_router(insights.router)
 app.include_router(franchises.router)
 app.include_router(collections.router)
+app.include_router(events.router)
 app.include_router(dashboard.router)
 app.include_router(hardware_lookups.router)
 app.include_router(device.router)

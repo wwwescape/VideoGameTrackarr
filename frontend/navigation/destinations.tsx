@@ -7,6 +7,7 @@ import CableIcon from "@mui/icons-material/Cable";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import EventIcon from "@mui/icons-material/Event";
 import ExtensionOffIcon from "@mui/icons-material/ExtensionOff";
 import GamesIcon from "@mui/icons-material/Games";
 import InfoIcon from "@mui/icons-material/Info";
@@ -45,6 +46,7 @@ export interface NavDestination {
 export function getNavDestinations(t: TFunction): NavDestination[] {
   return [
     { to: "/", label: t("nav.dashboard"), icon: <DashboardIcon /> },
+    { to: "/events", label: t("nav.events"), icon: <EventIcon /> },
     {
       to: "/games",
       label: t("nav.games"),

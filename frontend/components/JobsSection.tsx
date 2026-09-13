@@ -59,6 +59,10 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
     nameKey: "settings.jobs.jobs.platpricesRefresh.name",
     descriptionKey: "settings.jobs.jobs.platpricesRefresh.description",
   },
+  events_sync: {
+    nameKey: "settings.jobs.jobs.eventsSync.name",
+    descriptionKey: "settings.jobs.jobs.eventsSync.description",
+  },
 };
 
 const STATUS_CHIP_COLOR: Record<JobRunStatus, ChipProps["color"]> = {

@@ -19,7 +19,10 @@
     "none": "Aucun",
     "unknown": "Inconnu",
     "logOut": "Déconnexion",
-    "actions": "Actions"
+    "actions": "Actions",
+    "viewAll": "Tout afficher",
+    "scrollPrevious": "Défiler vers la gauche",
+    "scrollNext": "Défiler vers la droite"
   },
   "errors": {
     "pageNotFoundTitle": "Page introuvable",
@@ -33,10 +36,12 @@
     "deviceNotFoundTitle": "Appareil introuvable",
     "accessoryNotFoundTitle": "Accessoire introuvable",
     "seriesNotFoundTitle": "Série introuvable",
-    "collectionNotFoundTitle": "Collection introuvable"
+    "collectionNotFoundTitle": "Collection introuvable",
+    "eventNotFoundTitle": "Événement introuvable"
   },
   "nav": {
     "dashboard": "Tableau de bord",
+    "events": "Événements",
     "games": "Jeux",
     "addGame": "Ajouter un jeu",
     "collections": "Collections",
@@ -179,7 +184,7 @@
       },
       "jobs": {
         "resyncAll": {
-          "name": "Tout resynchroniser",
+          "name": "Resynchroniser jeux, collections et séries",
           "description": "Récupère à nouveau toutes les données de catalogue de chaque jeu lié à IGDB (genres, sociétés, plateformes, médias, collections, séries) — restaure tout après une restauration de sauvegarde, qui ne conserve rien de tout cela."
         },
         "resyncGames": {
@@ -205,6 +210,10 @@
         "platpricesRefresh": {
           "name": "Actualisation des prix PlatPrices",
           "description": "Actualise les prix promotionnels pour les jeux PlayStation de votre liste de souhaits via PlatPrices — alimente les badges En promotion et Insights → En promotion."
+        },
+        "eventsSync": {
+          "name": "Synchroniser les événements",
+          "description": "Récupère les événements de l'industrie du jeu vidéo actuellement à venir depuis IGDB et supprime tout événement précédemment synchronisé qui est terminé — alimente la page Événements et le résumé du tableau de bord."
         }
       }
     },
@@ -549,13 +558,40 @@
       "breakdownCountLabel": "{{name}} : {{count}}"
     }
   },
+  "events": {
+    "page": {
+      "description": "Événements à venir de l'industrie du jeu vidéo depuis IGDB (E3, Gamescom et similaires) — synchronisés automatiquement, du plus proche au plus lointain. Un événement disparaît de cette liste une fois terminé.",
+      "emptyState": "Aucun événement à venir pour le moment.",
+      "ongoingHeading": "En cours",
+      "upcomingHeading": "À venir"
+    },
+    "about": {
+      "lastUpdatedLabel": "Dernière mise à jour : {{date}}",
+      "localTimeLabel": "Heure locale : {{range}}",
+      "liveStreamButton": "Regarder le direct"
+    },
+    "networks": {
+      "heading": "Liens"
+    },
+    "games": {
+      "heading": "Jeux à l'honneur"
+    },
+    "actions": {
+      "resyncButton": "Resynchroniser l'événement",
+      "resyncConfirmTitle": "Confirmer la resynchronisation",
+      "resyncConfirmDescription": "Voulez-vous vraiment resynchroniser cet événement ? Cela récupère à nouveau ses données depuis IGDB.",
+      "resyncConfirmLabel": "Resynchroniser",
+      "resyncSuccessToast": "Événement resynchronisé avec succès !",
+      "resyncErrorToast": "Erreur lors de la resynchronisation de l'événement. Veuillez réessayer.",
+      "igdbNotConfiguredError": "IGDB n'est pas configuré sur ce serveur."
+    }
+  },
   "insights": {
     "dashboard": {
       "gamesCalendarHeading": "Calendrier de sortie des jeux",
       "hardwareCalendarHeading": "Calendrier de sortie du matériel",
       "onSaleHeading": "En promotion",
-      "onSaleSeeAll_one": "Voir le {{count}} jeu en promotion de votre liste de souhaits",
-      "onSaleSeeAll_other": "Voir les {{count}} jeux en promotion de votre liste de souhaits",
+      "eventsHeading": "Événements en cours/à venir",
       "welcomeMessage": "Bienvenue sur VideoGameTrackarr"
     },
     "page": {

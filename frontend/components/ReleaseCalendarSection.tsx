@@ -1,17 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useReleaseCalendar } from "../hooks/useDashboard";
 import { gameIdentifier, hardwareIdentifier } from "../utils/identifiers";
+import CardCarousel from "./CardCarousel";
 import GameCard from "./GameCard";
 import HardwareCard from "./HardwareCard";
 
 interface ReleaseCalendarSectionProps {
   scope: "games" | "hardware";
+  title: string;
 }
 
-const ReleaseCalendarSection = ({ scope }: ReleaseCalendarSectionProps) => {
+const ReleaseCalendarSection = ({ scope, title }: ReleaseCalendarSectionProps) => {
   const { t } = useTranslation();
   const { data, isLoading } = useReleaseCalendar();
   const navigate = useNavigate();
@@ -20,71 +21,85 @@ const ReleaseCalendarSection = ({ scope }: ReleaseCalendarSectionProps) => {
     return <Typography color="text.secondary">{t("releaseCalendar.loading")}</Typography>;
   }
 
-  const releases = (data ?? []).filter((item) => (scope === "games" ? item.kind === "game" : item.kind !== "game"));
+  const releases = (data ?? []).filter((item) =>
+    scope === "games" ? item.kind === "game" : item.kind !== "game"
+  );
 
   if (releases.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
         {t("releaseCalendar.empty", {
-          itemType: scope === "games" ? t("releaseCalendar.itemTypeGame") : t("releaseCalendar.itemTypeHardware"),
+          itemType:
+            scope === "games"
+              ? t("releaseCalendar.itemTypeGame")
+              : t("releaseCalendar.itemTypeHardware"),
         })}
       </Typography>
     );
   }
 
   return (
-    <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-      {releases.map((item) => {
+    <CardCarousel
+      items={releases}
+      getItemKey={(item) =>
+        item.kind === "game"
+          ? `game-${item.game!.id}`
+          : item.kind === "device"
+            ? `device-${item.device!.id}`
+            : `accessory-${item.accessory!.id}`
+      }
+      title={title}
+      renderItem={(item) => {
         if (item.kind === "game" && item.game) {
           return (
-            <Grid key={`game-${item.game.id}`} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-              <GameCard
-                game={item.game}
-                context="list"
-                contextFunction={() => navigate(`/game/${gameIdentifier(item.game!)}`)}
-              />
-            </Grid>
+            <GameCard
+              game={item.game}
+              context="list"
+              contextFunction={() => navigate(`/game/${gameIdentifier(item.game!)}`)}
+            />
           );
         }
         if (item.kind === "device" && item.device) {
           return (
-            <Grid key={`device-${item.device.id}`} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-              <HardwareCard
-                name={item.device.officialName}
-                subtitle={[item.device.manufacturerName, item.device.hardwarePlatformName].filter(Boolean).join(" · ")}
-                imageUrl={item.device.imageUrl}
-                owned={item.device.owned}
-                wishlisted={item.device.wishlisted}
-                ownedQuantity={item.device.ownedQuantity}
-                onClick={() =>
-                  navigate(`/hardware/device/${hardwareIdentifier(item.device!.officialName, item.device!.uuid)}`)
-                }
-              />
-            </Grid>
+            <HardwareCard
+              name={item.device.officialName}
+              subtitle={[item.device.manufacturerName, item.device.hardwarePlatformName]
+                .filter(Boolean)
+                .join(" · ")}
+              imageUrl={item.device.imageUrl}
+              owned={item.device.owned}
+              wishlisted={item.device.wishlisted}
+              ownedQuantity={item.device.ownedQuantity}
+              onClick={() =>
+                navigate(
+                  `/hardware/device/${hardwareIdentifier(item.device!.officialName, item.device!.uuid)}`
+                )
+              }
+            />
           );
         }
         if (item.kind === "accessory" && item.accessory) {
           return (
-            <Grid key={`accessory-${item.accessory.id}`} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-              <HardwareCard
-                name={item.accessory.officialName}
-                subtitle={[item.accessory.manufacturerName, item.accessory.accessoryTypeName].filter(Boolean).join(" · ")}
-                imageUrl={item.accessory.imageUrl}
-                owned={item.accessory.owned}
-                wishlisted={item.accessory.wishlisted}
-                ownedQuantity={item.accessory.ownedQuantity}
-                onClick={() =>
-                  navigate(
-                    `/hardware/accessory/${hardwareIdentifier(item.accessory!.officialName, item.accessory!.uuid)}`
-                  )
-                }
-              />
-            </Grid>
+            <HardwareCard
+              name={item.accessory.officialName}
+              subtitle={[item.accessory.manufacturerName, item.accessory.accessoryTypeName]
+                .filter(Boolean)
+                .join(" · ")}
+              imageUrl={item.accessory.imageUrl}
+              owned={item.accessory.owned}
+              wishlisted={item.accessory.wishlisted}
+              ownedQuantity={item.accessory.ownedQuantity}
+              onClick={() =>
+                navigate(
+                  `/hardware/accessory/${hardwareIdentifier(item.accessory!.officialName, item.accessory!.uuid)}`
+                )
+              }
+            />
           );
         }
         return null;
-      })}
-    </Grid>
+      }}
+    />
   );
 };
 

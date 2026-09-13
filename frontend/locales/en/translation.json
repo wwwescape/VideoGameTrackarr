@@ -19,7 +19,10 @@
     "none": "None",
     "unknown": "Unknown",
     "logOut": "Log out",
-    "actions": "Actions"
+    "actions": "Actions",
+    "viewAll": "View all",
+    "scrollPrevious": "Scroll previous",
+    "scrollNext": "Scroll next"
   },
   "errors": {
     "pageNotFoundTitle": "Page not found",
@@ -33,10 +36,12 @@
     "deviceNotFoundTitle": "Device not found",
     "accessoryNotFoundTitle": "Accessory not found",
     "seriesNotFoundTitle": "Series not found",
-    "collectionNotFoundTitle": "Collection not found"
+    "collectionNotFoundTitle": "Collection not found",
+    "eventNotFoundTitle": "Event not found"
   },
   "nav": {
     "dashboard": "Dashboard",
+    "events": "Events",
     "games": "Games",
     "addGame": "Add Game",
     "collections": "Collections",
@@ -179,7 +184,7 @@
       },
       "jobs": {
         "resyncAll": {
-          "name": "Resync everything",
+          "name": "Resync Games, Collections & Series",
           "description": "Re-fetches every IGDB-linked game's full catalog data (genres, companies, platforms, media, Collections, Series) — restores everything after a backup restore, which doesn't carry any of it over."
         },
         "resyncGames": {
@@ -205,6 +210,10 @@
         "platpricesRefresh": {
           "name": "PlatPrices price refresh",
           "description": "Refreshes sale prices for wishlisted PlayStation games via PlatPrices — powers the On Sale badges and Insights → On Sale."
+        },
+        "eventsSync": {
+          "name": "Sync Events",
+          "description": "Fetches currently-upcoming gaming-industry events from IGDB and drops any previously-synced event that has since ended — powers the Events page and Dashboard teaser."
         }
       }
     },
@@ -549,13 +558,40 @@
       "breakdownCountLabel": "{{name}}: {{count}}"
     }
   },
+  "events": {
+    "page": {
+      "description": "Upcoming gaming-industry events from IGDB (E3, Gamescom, and similar) — synced automatically, soonest first. An event drops off this list once it ends.",
+      "emptyState": "No upcoming events right now.",
+      "ongoingHeading": "Ongoing",
+      "upcomingHeading": "Upcoming"
+    },
+    "about": {
+      "lastUpdatedLabel": "Last updated: {{date}}",
+      "localTimeLabel": "Local time: {{range}}",
+      "liveStreamButton": "Watch live stream"
+    },
+    "networks": {
+      "heading": "Links"
+    },
+    "games": {
+      "heading": "Featured Games"
+    },
+    "actions": {
+      "resyncButton": "Resync Event",
+      "resyncConfirmTitle": "Confirm Resync",
+      "resyncConfirmDescription": "Are you sure you want to resync this event? This re-fetches its data from IGDB.",
+      "resyncConfirmLabel": "Resync",
+      "resyncSuccessToast": "Event resynced successfully!",
+      "resyncErrorToast": "Error resyncing event. Please try again.",
+      "igdbNotConfiguredError": "IGDB isn't configured on this server."
+    }
+  },
   "insights": {
     "dashboard": {
       "gamesCalendarHeading": "Games Release Calendar",
       "hardwareCalendarHeading": "Hardware Release Calendar",
       "onSaleHeading": "On Sale Now",
-      "onSaleSeeAll_one": "See all {{count}} on-sale wishlist game",
-      "onSaleSeeAll_other": "See all {{count}} on-sale wishlist games",
+      "eventsHeading": "Ongoing/Upcoming Events",
       "welcomeMessage": "Welcome to VideoGameTrackarr"
     },
     "page": {

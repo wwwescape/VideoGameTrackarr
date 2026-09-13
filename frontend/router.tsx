@@ -13,6 +13,8 @@ import DuplicatesPage from "./components/DuplicatesPage";
 import EditAccessoryPage from "./components/EditAccessoryPage";
 import EditDevicePage from "./components/EditDevicePage";
 import EditGamePage from "./components/EditGamePage";
+import EventDetails from "./components/EventDetails";
+import EventsPage from "./components/EventsPage";
 import GameDetails from "./components/GameDetails";
 import GameList from "./components/GameList";
 import HardwarePage from "./components/HardwarePage";
@@ -49,6 +51,8 @@ import {
   editAccessoryCrumbs,
   editDeviceCrumbs,
   editGameCrumbs,
+  eventDetailCrumbs,
+  eventsCrumbs,
   franchiseCrumbs,
   aboutCrumbs,
   gameDetailCrumbs,
@@ -109,6 +113,12 @@ const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { path: "/", element: <DashboardPage />, handle: { crumbs: dashboardCrumbs } },
+          { path: "/events", element: <EventsPage />, handle: { crumbs: eventsCrumbs } },
+          {
+            path: "/events/:identifier",
+            element: <EventDetails />,
+            handle: { crumbs: eventDetailCrumbs },
+          },
           { path: "/games", element: <GameList />, handle: { crumbs: gamesCrumbs } },
           { path: "/games/add", element: <AddGame />, handle: { crumbs: addGameCrumbs } },
           {

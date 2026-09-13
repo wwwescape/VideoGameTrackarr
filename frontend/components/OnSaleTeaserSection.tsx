@@ -1,10 +1,9 @@
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { useOnSale } from "../hooks/useInsights";
-import OnSaleSection from "./OnSaleSection";
+import CardCarousel from "./CardCarousel";
+import { OnSaleTile } from "./OnSaleSection";
 
-const TEASER_LIMIT = 5;
+const TEASER_LIMIT = 15;
 
 // Shows nothing at all (heading included) when there's nothing on sale — an always-empty
 // "0 games on sale" block would just be noise on a dashboard. DashboardPage itself also
@@ -19,19 +18,13 @@ const OnSaleTeaserSection = () => {
   }
 
   return (
-    <>
-      <Typography variant="h5" component="h2" gutterBottom>
-        {t("insights.dashboard.onSaleHeading")}
-      </Typography>
-      <OnSaleSection limit={TEASER_LIMIT} />
-      {items.length > TEASER_LIMIT && (
-        <Typography variant="body2" sx={{ mt: 1.5 }}>
-          <Link to="/insights/on-sale">
-            {t("insights.dashboard.onSaleSeeAll", { count: items.length })}
-          </Link>
-        </Typography>
-      )}
-    </>
+    <CardCarousel
+      items={items.slice(0, TEASER_LIMIT)}
+      getItemKey={(item) => item.libraryItemId}
+      renderItem={(item) => <OnSaleTile item={item} />}
+      title={t("insights.dashboard.onSaleHeading")}
+      viewAllHref="/insights/on-sale"
+    />
   );
 };
 

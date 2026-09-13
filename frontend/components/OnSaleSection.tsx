@@ -16,7 +16,7 @@ interface OnSaleSectionProps {
   limit?: number;
 }
 
-const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
+export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const addon = isAddon(item.game);

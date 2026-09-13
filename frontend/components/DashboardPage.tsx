@@ -4,7 +4,9 @@ import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useReleaseCalendar } from "../hooks/useDashboard";
+import { useEvents } from "../hooks/useEvents";
 import { useOnSale } from "../hooks/useInsights";
+import EventsTeaserSection from "./EventsTeaserSection";
 import OnSaleTeaserSection from "./OnSaleTeaserSection";
 import ReleaseCalendarSection from "./ReleaseCalendarSection";
 
@@ -17,39 +19,38 @@ const DashboardPage = () => {
   const { t } = useTranslation();
   const { data: releases, isLoading: releasesLoading } = useReleaseCalendar();
   const { data: onSaleItems, isLoading: onSaleLoading } = useOnSale();
+  const { data: events, isLoading: eventsLoading } = useEvents();
 
-  if (releasesLoading || onSaleLoading) {
+  if (releasesLoading || onSaleLoading || eventsLoading) {
     return <Typography color="text.secondary">{t("common.loading")}</Typography>;
   }
 
   const hasGameReleases = (releases ?? []).some((item) => item.kind === "game");
   const hasHardwareReleases = (releases ?? []).some((item) => item.kind !== "game");
   const hasOnSale = Boolean(onSaleItems && onSaleItems.length > 0);
+  const hasEvents = Boolean(events && events.length > 0);
 
   const sections = [
+    hasEvents && { key: "events", node: <EventsTeaserSection /> },
+    hasOnSale && { key: "onSale", node: <OnSaleTeaserSection /> },
     hasGameReleases && {
       key: "games",
       node: (
-        <>
-          <Typography variant="h5" component="h2" gutterBottom>
-            {t("insights.dashboard.gamesCalendarHeading")}
-          </Typography>
-          <ReleaseCalendarSection scope="games" />
-        </>
+        <ReleaseCalendarSection
+          scope="games"
+          title={t("insights.dashboard.gamesCalendarHeading")}
+        />
       ),
     },
     hasHardwareReleases && {
       key: "hardware",
       node: (
-        <>
-          <Typography variant="h5" component="h2" gutterBottom>
-            {t("insights.dashboard.hardwareCalendarHeading")}
-          </Typography>
-          <ReleaseCalendarSection scope="hardware" />
-        </>
+        <ReleaseCalendarSection
+          scope="hardware"
+          title={t("insights.dashboard.hardwareCalendarHeading")}
+        />
       ),
     },
-    hasOnSale && { key: "onSale", node: <OnSaleTeaserSection /> },
   ].filter(Boolean) as DashboardSection[];
 
   if (sections.length === 0) {

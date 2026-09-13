@@ -70,6 +70,20 @@ GAME_FIELDS = (
     "websites.url,websites.type;"
 )
 
+# Events' nested relations, expanded the same dot-notation way GAME_FIELDS expands
+# genres/companies/etc. — confirmed live (2026-09-13): event_logo and games[].cover both
+# expand inline with no separate batched lookup needed (unlike game covers, which don't
+# carry a usable url this way and need get_covers_by_ids); event_networks.network_type is
+# its own reference entity and needs the explicit `.name` dot-path, or it comes back as a
+# bare ordinal int instead of a string.
+EVENT_FIELDS = (
+    "fields *,"
+    "event_logo.url,"
+    "event_networks.url,event_networks.network_type.name,"
+    "videos.video_id,videos.name,"
+    "games.id,games.name,games.cover.url;"
+)
+
 # IGDB's website_types ids for the storefronts this app links out to, confirmed live against
 # the real API (2026-09-05) by cross-referencing the `type.type` labels IGDB's own site shows.
 _STORE_WEBSITE_TYPES = {
@@ -269,6 +283,32 @@ class IGDBClient:
         matches = response.json()
         return matches[0]["game"] if matches and "game" in matches[0] else None
 
+    async def get_upcoming_events(self) -> list[dict]:
+        """Events whose end_time hasn't passed yet, soonest first — matches the app's
+        "upcoming only, drops off once it ends" scoping (no historical archive). A single
+        call: unlike search/covers, EVENT_FIELDS already expands everything needed inline, so
+        there's no per-item follow-up fetch and no caching (only ever called from the daily
+        sync job or an explicit per-event resync, never a hot request path)."""
+        headers = await self._auth_headers()
+        now = int(datetime.now(UTC).timestamp())
+        body = f"{EVENT_FIELDS}\nwhere end_time > {now};\nsort start_time asc;\nlimit 500;"
+        response = await self._request("POST", f"{IGDB_API_BASE}/events", headers=headers, content=body)
+        events = response.json()
+        _normalize_event_image_urls(events)
+        return events
+
+    async def get_event_by_igdb_id(self, igdb_id: int) -> dict | None:
+        """Single-event fetch for the per-event Resync action — re-fetches fresh data by id
+        rather than relying on whatever the last daily sync happened to cache."""
+        headers = await self._auth_headers()
+        body = f"{EVENT_FIELDS}\nwhere id = {int(igdb_id)};\nlimit 1;"
+        response = await self._request("POST", f"{IGDB_API_BASE}/events", headers=headers, content=body)
+        events = response.json()
+        if not events:
+            return None
+        _normalize_event_image_urls(events)
+        return events[0]
+
     async def _attach_covers(self, games: list[dict], headers: dict[str, str]) -> None:
         cover_ids = [game["cover"] for game in games if game.get("cover")]
         if not cover_ids:
@@ -343,3 +383,17 @@ def _normalize_nested_image_urls(games: list[dict]) -> None:
             logo = company.get("logo")
             if logo:
                 logo["url"] = _normalize_image_url(logo.get("url"), "t_thumb")
+
+
+def _normalize_event_image_urls(events: list[dict]) -> None:
+    """event_logo (a landscape banner, confirmed live — not a portrait cover like games) and
+    each event-game's cover arrive as full objects via EVENT_FIELDS' dot-path expansion, same
+    treatment as _normalize_nested_image_urls above."""
+    for event in events:
+        logo = event.get("event_logo")
+        if logo:
+            logo["url"] = _normalize_image_url(logo.get("url"), "t_1080p")
+        for game in event.get("games") or []:
+            cover = game.get("cover")
+            if cover:
+                cover["url"] = _normalize_cover_url(cover.get("url"))

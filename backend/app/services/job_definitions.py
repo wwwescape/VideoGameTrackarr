@@ -1,11 +1,13 @@
-from app.services import itad_jobs, job_registry, platprices_jobs, resync_jobs, steam_jobs
+from app.services import event_sync_jobs, itad_jobs, job_registry, platprices_jobs, resync_jobs, steam_jobs
 
 
 def register_builtin_jobs() -> None:
     """Called once from app/main.py's lifespan, before the scheduler starts (so a persisted
     schedule referencing a job id can resolve it). Adding a future job is exactly one more
     import + register() call here. Registration order drives job_registry.list_jobs()'s
-    order, which drives the Jobs UI list order — broadest scope first."""
+    order, which drives the Jobs UI list order — Events Sync pinned first per explicit
+    product choice, then the resync jobs broadest-scope-first, then the rest."""
+    job_registry.register(event_sync_jobs.DEFINITION_EVENTS_SYNC)
     job_registry.register(resync_jobs.DEFINITION_ALL)
     job_registry.register(resync_jobs.DEFINITION_GAMES)
     job_registry.register(resync_jobs.DEFINITION_COLLECTIONS)

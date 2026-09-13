@@ -4,6 +4,7 @@ import type { Params } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccessoryItem } from "../hooks/useAccessories";
 import { useCollection, useFranchise } from "../hooks/useCatalogBrowse";
+import { useEvent } from "../hooks/useEvents";
 import { useGame } from "../hooks/useGames";
 import { useDeviceItem } from "../hooks/useDevice";
 
@@ -62,6 +63,12 @@ const AccessoryCrumbLabel = ({ identifier }: { identifier: string | undefined })
         : (accessory?.officialName ?? t("common.loading"))}
     </>
   );
+};
+
+const EventCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
+  const { t } = useTranslation();
+  const { data: event, isError } = useEvent(identifier);
+  return <>{isError ? t("errors.eventNotFoundTitle") : (event?.name ?? t("common.loading"))}</>;
 };
 
 // Each leaf route in router.tsx owns its full trail (rather than nested routes inheriting
@@ -167,6 +174,13 @@ export const onSaleCrumbs: CrumbsFn = (_params, t) => [
 ];
 
 export const dashboardCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.dashboard") }];
+
+export const eventsCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.events") }];
+
+export const eventDetailCrumbs: CrumbsFn = (params, t) => [
+  { label: t("nav.events"), to: "/events" },
+  { label: <EventCrumbLabel identifier={params.identifier} /> },
+];
 
 export const compareCrumbs: CrumbsFn = (_params, t) => [{ label: t("breadcrumbs.compareGames") }];
 

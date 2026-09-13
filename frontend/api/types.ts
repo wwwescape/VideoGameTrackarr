@@ -698,3 +698,44 @@ export interface HardwareStats {
   collectionValue: number;
   recentlyAdded: RecentlyAddedHardwareItem[];
 }
+
+export interface EventSummary {
+  id: number;
+  name: string;
+  slug: string | null;
+  startTime: number | null;
+  endTime: number | null;
+  eventLogoUrl: string | null;
+}
+
+// Shaped identically to GameVideo — the existing VideoGallery/VideoDialog components accept
+// an event's videos array unmodified.
+export type EventVideo = GameVideo;
+
+export interface EventNetwork {
+  id: number;
+  networkType: string | null;
+  url: string;
+}
+
+export interface EventGameTile {
+  igdbGameId: number;
+  gameId: number | null;
+  name: string | null;
+  coverUrl: string | null;
+  // Only set when gameId is set — combine with gameIdentifier({slug, uuid, name}) to link to
+  // the local game's own details page.
+  gameSlug: string | null;
+  gameUuid: string | null;
+}
+
+export interface EventDetail extends EventSummary {
+  igdbId: number;
+  timeZone: string | null;
+  description: string | null;
+  liveStreamUrl: string | null;
+  igdbUpdatedAt: number | null;
+  videos: EventVideo[];
+  networks: EventNetwork[];
+  games: EventGameTile[];
+}
