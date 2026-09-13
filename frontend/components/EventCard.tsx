@@ -50,12 +50,24 @@ const EventCard = ({ event }: EventCardProps) => {
             </Box>
           )}
         </Box>
-        <CardContent>
-          <Typography variant="subtitle1" noWrap>
-            {event.name}
+        <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+          {/* Same variant/weight/line-height as GameCard's title Typography, so an Events row
+              and a Games row read as visually consistent, not just equally wide. */}
+          <Typography
+            variant="subtitle2"
+            component="div"
+            sx={{
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              lineHeight: 1.35,
+            }}
+          >
+            <strong>{event.name}</strong>
           </Typography>
           {dateRange ? (
-            <Typography variant="body2" color="text.secondary">
+            // Same variant/color as GameCard's release-year Typography.
+            <Typography variant="caption" color="text.secondary" component="div">
               {dateRange}
             </Typography>
           ) : null}
