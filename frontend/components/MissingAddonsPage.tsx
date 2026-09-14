@@ -2,9 +2,9 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import InsightsSubNav from "./InsightsSubNav";
-import MissingDlcSection from "./MissingDlcSection";
+import MissingAddonsSection from "./MissingAddonsSection";
 
-const MissingDlcPage = () => {
+const MissingAddonsPage = () => {
   const { t } = useTranslation();
 
   return (
@@ -12,12 +12,12 @@ const MissingDlcPage = () => {
       <InsightsSubNav />
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          {t("nav.missingDlc")}
+          {t("nav.missingAddons")}
         </Typography>
       </Box>
-      <MissingDlcSection />
+      <MissingAddonsSection />
     </>
   );
 };
 
-export default MissingDlcPage;
+export default MissingAddonsPage;

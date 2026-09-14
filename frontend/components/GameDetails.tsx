@@ -87,6 +87,11 @@ const GameDetails = () => {
   // Resyncing a game also re-fetches all of its addons from IGDB, so an addon resyncs via
   // its parent's id rather than its own — see GameActionButtons' resyncGameId prop.
   const resyncGameId = hasParentGame ? (game.parentGameId as number) : gameId;
+  // Only exists locally because a Collection/Series "what's missing" resync discovered it —
+  // see GameActionButtons.tsx and api/types.ts's GameDetail.autoDiscovered for what this
+  // gates: no Resync/Remove (nothing to resync/remove from a library that was never asked
+  // for) and no Tags/Your Library/Progress/Notes (nothing to tag, own, or track yet).
+  const isAutoDiscovered = game.autoDiscovered;
 
   const handleAddonClick = (addon: GameSummary) => {
     navigate(`/addon/${gameIdentifier(addon)}`);
@@ -105,6 +110,7 @@ const GameDetails = () => {
             hasParentGame={hasParentGame}
             hasIgdbId={game.igdbId !== null}
             resyncGameId={resyncGameId}
+            isAutoDiscovered={isAutoDiscovered}
             onGameRemoved={() => navigate("/")}
           />
         </Stack>
@@ -114,28 +120,32 @@ const GameDetails = () => {
           <Card id="about" sx={sectionCardSx}>
             <GameAboutSection game={game} />
           </Card>
-          <Card id="tags" sx={sectionCardSx}>
-            <TagsSection
-              tags={game.tags}
-              onAttach={(tagId) => attachTag.mutateAsync(tagId)}
-              onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-            />
-          </Card>
-          <Card id="library" sx={sectionCardSx}>
-            <GameLibrarySection
-              gameId={gameId}
-              libraryItems={libraryItems}
-              platforms={platforms}
-              regions={regions}
-              gameCategory={game.category}
-            />
-          </Card>
+          {!isAutoDiscovered ? (
+            <Card id="tags" sx={sectionCardSx}>
+              <TagsSection
+                tags={game.tags}
+                onAttach={(tagId) => attachTag.mutateAsync(tagId)}
+                onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+              />
+            </Card>
+          ) : null}
+          {!isAutoDiscovered ? (
+            <Card id="library" sx={sectionCardSx}>
+              <GameLibrarySection
+                gameId={gameId}
+                libraryItems={libraryItems}
+                platforms={platforms}
+                regions={regions}
+                gameCategory={game.category}
+              />
+            </Card>
+          ) : null}
           {!hasParentGame ? (
             <Card id="addons" sx={sectionCardSx}>
               <GameAddonsSection addons={addons} onAddonClick={handleAddonClick} />
             </Card>
           ) : null}
-          {!hasParentGame ? (
+          {!hasParentGame && !isAutoDiscovered ? (
             <Card id="progress" sx={sectionCardSx}>
               <GameProgressSection
                 gameId={gameId}
@@ -144,15 +154,17 @@ const GameDetails = () => {
               />
             </Card>
           ) : null}
-          <Card id="notes" sx={sectionCardSx}>
-            <NotesSection
-              notes={notes}
-              isCreating={createNote.isPending}
-              onCreate={(body) => createNote.mutateAsync(body)}
-              onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-              onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-            />
-          </Card>
+          {!isAutoDiscovered ? (
+            <Card id="notes" sx={sectionCardSx}>
+              <NotesSection
+                notes={notes}
+                isCreating={createNote.isPending}
+                onCreate={(body) => createNote.mutateAsync(body)}
+                onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+                onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+              />
+            </Card>
+          ) : null}
         </Stack>
       </Grid>
     </Grid>

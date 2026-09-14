@@ -36,6 +36,14 @@ class GameSummaryResponse(CamelModel):
     play_status: PlayStatus | None
     rating: float | None
     is_on_sale: bool
+    # True only for a game (or addon) that only exists locally because a Collection/Series
+    # "what's missing" resync discovered it, and hasn't been claimed since — see
+    # Game.auto_discovered's comment. On the summary (not just the detail response) because
+    # GameCard needs it wherever a cover renders: it's what tells apart a discovered-but-
+    # unclaimed game (greyscale + "Missing" chip) from a manually-added one that just isn't
+    # owned/wishlisted yet (greyscale, no chip) — both look identical via owned/wishlisted
+    # alone.
+    auto_discovered: bool
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
@@ -87,6 +95,7 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "wishlisted": status.wishlisted,
         "play_status": status.play_status,
         "rating": status.rating,
+        "auto_discovered": game.auto_discovered,
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,

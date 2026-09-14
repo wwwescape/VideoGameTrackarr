@@ -6,13 +6,13 @@ import { useTranslation } from "react-i18next";
 const SUB_NAV_ITEMS = [
   { to: "/insights", labelKey: "insights.subNav.overview" },
   { to: "/insights/duplicates", labelKey: "nav.duplicates" },
-  { to: "/insights/missing-dlc", labelKey: "nav.missingDlc" },
+  { to: "/insights/missing-addons", labelKey: "nav.missingAddons" },
   { to: "/insights/orphaned-accessories", labelKey: "nav.orphanedAccessories" },
   { to: "/insights/on-sale", labelKey: "nav.onSale" },
 ] as const;
 
-// Mirrors GamesSubNav.tsx — keeps Duplicates/Missing DLC/Orphaned Accessories reachable at
-// every breakpoint, since NavDrawer's nested sub-items are desktop-only.
+// Mirrors GamesSubNav.tsx — keeps Duplicates/Missing Addons/Orphaned Accessories reachable
+// at every breakpoint, since NavDrawer's nested sub-items are desktop-only.
 const InsightsSubNav = () => {
   const { t } = useTranslation();
   const location = useLocation();

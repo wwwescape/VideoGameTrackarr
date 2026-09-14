@@ -20,7 +20,7 @@ import GameList from "./components/GameList";
 import HardwarePage from "./components/HardwarePage";
 import InsightsPage from "./components/InsightsPage";
 import IntegrationsPage from "./components/IntegrationsPage";
-import MissingDlcPage from "./components/MissingDlcPage";
+import MissingAddonsPage from "./components/MissingAddonsPage";
 import NotFoundPage from "./components/NotFoundPage";
 import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
 import RouteErrorBoundary from "./components/RouteErrorBoundary";
@@ -61,7 +61,7 @@ import {
   insightsCrumbs,
   integrationsCrumbs,
   jobsCrumbs,
-  missingDlcCrumbs,
+  missingAddonsCrumbs,
   notFoundCrumbs,
   onSaleCrumbs,
   orphanedAccessoriesCrumbs,
@@ -190,9 +190,9 @@ const router = createBrowserRouter([
             handle: { crumbs: duplicatesCrumbs },
           },
           {
-            path: "/insights/missing-dlc",
-            element: <MissingDlcPage />,
-            handle: { crumbs: missingDlcCrumbs },
+            path: "/insights/missing-addons",
+            element: <MissingAddonsPage />,
+            handle: { crumbs: missingAddonsCrumbs },
           },
           {
             path: "/insights/orphaned-accessories",

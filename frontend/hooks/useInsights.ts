@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import {
   listAccessoriesWithoutOwnedHardware,
   listDuplicateLibraryItems,
-  listMissingDlc,
+  listMissingAddons,
   listOnSale,
 } from "../api/insights";
+import type { GameListFilters } from "../api/games";
 
 export function useDuplicateLibraryItems() {
   return useQuery({
@@ -13,8 +14,11 @@ export function useDuplicateLibraryItems() {
   });
 }
 
-export function useMissingDlc() {
-  return useQuery({ queryKey: ["insights", "missing-dlc"], queryFn: listMissingDlc });
+export function useMissingAddons(filters: GameListFilters = {}) {
+  return useQuery({
+    queryKey: ["insights", "missing-addons", filters],
+    queryFn: ({ signal }) => listMissingAddons(filters, signal),
+  });
 }
 
 export function useAccessoriesWithoutOwnedHardware() {

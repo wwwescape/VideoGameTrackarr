@@ -2,14 +2,15 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.api.routes.game_filters import GameFilterParams
 from app.schemas.insights import (
     DuplicateLibraryItemGroupResponse,
     InsightAccessoryRefResponse,
-    MissingDlcResponse,
+    MissingAddonsResponse,
     OnSaleItemResponse,
     duplicate_group_from_orm,
     insight_accessory_ref_from_orm,
-    missing_dlc_from_orm,
+    missing_addons_from_orm,
     on_sale_item_from_orm,
 )
 from app.services import insight_service, itad_service, platprices_service
@@ -23,10 +24,12 @@ def list_duplicate_library_items(db: Session = Depends(get_db)) -> list[Duplicat
     return [duplicate_group_from_orm(group) for group in groups]
 
 
-@router.get("/missing-dlc", response_model=list[MissingDlcResponse])
-def list_missing_dlc(db: Session = Depends(get_db)) -> list[MissingDlcResponse]:
-    results = insight_service.find_missing_dlc(db)
-    return [missing_dlc_from_orm(game, missing) for game, missing in results]
+@router.get("/missing-addons", response_model=list[MissingAddonsResponse])
+def list_missing_addons(
+    params: GameFilterParams = Depends(), db: Session = Depends(get_db)
+) -> list[MissingAddonsResponse]:
+    results = insight_service.find_missing_addons(db, **vars(params))
+    return [missing_addons_from_orm(game, missing) for game, missing in results]
 
 
 @router.get("/accessories-without-owned-hardware", response_model=list[InsightAccessoryRefResponse])

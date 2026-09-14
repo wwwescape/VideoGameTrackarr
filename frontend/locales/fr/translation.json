@@ -51,7 +51,7 @@
     "addAccessory": "Ajouter un accessoire",
     "insights": "Statistiques",
     "duplicates": "Doublons",
-    "missingDlc": "DLC manquants",
+    "missingAddons": "Extensions manquantes",
     "orphanedAccessories": "Accessoires orphelins",
     "steamSync": "Synchronisation Steam",
     "saleTracked": "Promotions - suivies",
@@ -106,6 +106,12 @@
     "failedTitle": "Échec de la restauration",
     "unknownError": "Une erreur inconnue s'est produite.",
     "dismissButton": "Ignorer"
+  },
+  "catalogResync": {
+    "completedToast": "Resynchronisation terminée : {{added}} jeu(x) ajouté(s), {{skipped}} déjà dans votre bibliothèque.",
+    "progressLabel": "{{current}} / {{total}} jeux vérifiés",
+    "unknownError": "Une erreur inconnue s'est produite.",
+    "partialFailureTitle": "{{count}} jeu(x) n'ont pas pu être importés :"
   },
   "undo": {
     "undoButton": "Annuler"
@@ -372,17 +378,30 @@
       "searchLabel": "Rechercher des jeux",
       "searchPlaceholder": "Saisissez le nom d'un jeu",
       "selectGames": "Sélectionner des jeux",
-      "filterAll": "Tous",
       "filterOwned": "Possédés",
       "filterWishlist": "Liste de souhaits",
-      "consoleLabel": "Console",
-      "tagLabel": "Étiquette",
-      "collectionLabel": "Collection",
+      "ownershipLabel": "Possession",
+      "consoleLabel": "Plateformes",
+      "tagLabel": "Étiquettes",
+      "collectionLabel": "Collections",
       "seriesLabel": "Série",
-      "gameTypeLabel": "Type de jeu",
+      "gameTypeLabel": "Types de jeu",
+      "formatLabel": "Formats",
+      "storefrontLabel": "Plateforme d'achat",
+      "excludeLabel": "Exclure",
       "allOption": "Tous",
-      "filtersButtonLabel": "Filtres",
-      "clearFiltersButton": "Effacer les filtres"
+      "filtersButtonLabel": "Filtres et plus",
+      "filterTabLabel": "Filtre",
+      "moreTabLabel": "Plus",
+      "sortByLabel": "Trier par",
+      "sortNameAsc": "Nom (ASC)",
+      "sortNameDesc": "Nom (DESC)",
+      "sortReleaseDateAsc": "Date de sortie (ASC)",
+      "sortReleaseDateDesc": "Date de sortie (DESC)",
+      "showMissingLabel": "Afficher ce qu'il me manque ?",
+      "clearFiltersButton": "Effacer les filtres",
+      "noFiltersAvailable": "Aucun filtre disponible",
+      "noSearchMatches": "Aucun résultat trouvé."
     },
     "card": {
       "playStatusBacklog": "À faire",
@@ -395,7 +414,8 @@
       "selectAriaLabel": "Sélectionner {{name}}",
       "deselectAriaLabel": "Désélectionner {{name}}",
       "nameYearTooltip": "{{name}} ({{year}})",
-      "onSaleLabel": "En promotion"
+      "onSaleLabel": "En promotion",
+      "missingLabel": "Manquant"
     },
     "subNav": {
       "allGames": "Tous les jeux",
@@ -430,20 +450,26 @@
       "addError": "Erreur lors de l'ajout du jeu. Veuillez réessayer."
     },
     "collectionPage": {
-      "kindLabel": "Collection"
+      "kindLabel": "Collection",
+      "resyncButton": "Resynchroniser la collection"
     },
     "collectionsPage": {
       "title": "Collections",
       "description": "Collections IGDB comportant au moins un jeu dans votre bibliothèque.",
-      "emptyMessage": "Aucune collection pour l'instant — elles apparaîtront ici dès que vous aurez importé un jeu qui en fait partie."
+      "emptyMessage": "Aucune collection pour l'instant — elles apparaîtront ici dès que vous aurez importé un jeu qui en fait partie.",
+      "searchLabel": "Rechercher des collections",
+      "searchPlaceholder": "Entrez le nom de la collection"
     },
     "seriesDetailPage": {
-      "kindLabel": "Série"
+      "kindLabel": "Série",
+      "resyncButton": "Resynchroniser la série"
     },
     "seriesPage": {
       "title": "Séries",
       "description": "Séries de jeux (franchises IGDB) comportant au moins un jeu dans votre bibliothèque.",
-      "emptyMessage": "Aucune série pour l'instant — elles apparaîtront ici dès que vous aurez importé un jeu qui en fait partie."
+      "emptyMessage": "Aucune série pour l'instant — elles apparaîtront ici dès que vous aurez importé un jeu qui en fait partie.",
+      "searchLabel": "Rechercher des séries",
+      "searchPlaceholder": "Entrez le nom de la série"
     },
     "about": {
       "companyRoleDeveloper": "Développé par",
@@ -498,7 +524,13 @@
       "linkToIgdbButton": "Lier à IGDB",
       "removeGameButton": "Retirer le jeu",
       "removeConfirmTitle": "Confirmer le retrait",
-      "removeConfirmDescription": "Voulez-vous vraiment retirer « {{name}} » ? Cela le supprime définitivement ainsi que tous ses compléments (DLC, extensions, packs), ses entrées de collection/liste de souhaits, sa progression et ses notes. Cette action est irréversible."
+      "removeConfirmDescription": "Voulez-vous vraiment retirer « {{name}} » ? Cela le supprime définitivement ainsi que tous ses compléments (DLC, extensions, packs), ses entrées de collection/liste de souhaits, sa progression et ses notes. Cette action est irréversible.",
+      "addGameButton": "Ajouter le jeu",
+      "addAddonButton": "Ajouter le complément",
+      "claimGameSuccessToast": "Jeu ajouté !",
+      "claimAddonSuccessToast": "Complément ajouté !",
+      "claimGameErrorToast": "Erreur lors de l'ajout du jeu. Veuillez réessayer.",
+      "claimAddonErrorToast": "Erreur lors de l'ajout du complément. Veuillez réessayer."
     },
     "addons": {
       "title": "Compléments",
@@ -610,8 +642,8 @@
       "anyRegion": "Toutes régions",
       "removeEntryTooltip": "Retirer cette entrée"
     },
-    "missingDlc": {
-      "noneFound": "Aucun DLC manquant — vous possédez tout ce qui a été importé pour les jeux que vous possédez."
+    "missingAddons": {
+      "noneFound": "Aucune extension manquante — vous possédez tout ce qui a été importé pour les jeux que vous possédez."
     },
     "steamSync": {
       "heading": "Synchronisation Steam",
@@ -729,7 +761,10 @@
   "catalog": {
     "browseGrid": {
       "importedOnlyNotice": "Seuls les jeux que vous avez déjà importés apparaissent ici.",
-      "emptyMessage": "Aucun jeu connu localement dans cette {{kind}} pour l'instant."
+      "emptyMessage": "Aucun jeu connu localement dans cette {{kind}} pour l'instant.",
+      "includeAddonsLabel": "Inclure les extensions",
+      "gamesSectionTitle": "Jeux",
+      "addonsSectionTitle": "Extensions"
     },
     "refCard": {
       "gameCountSingular": "{{count}} jeu",

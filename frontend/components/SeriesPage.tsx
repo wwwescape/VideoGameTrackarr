@@ -14,6 +14,8 @@ const SeriesPage = () => {
         title={t("games.seriesPage.title")}
         description={t("games.seriesPage.description")}
         emptyMessage={t("games.seriesPage.emptyMessage")}
+        searchLabel={t("games.seriesPage.searchLabel")}
+        searchPlaceholder={t("games.seriesPage.searchPlaceholder")}
         entries={franchises}
         isLoading={isLoading}
         getHref={(entry) => `/games/series/${entry.slug ?? ""}`}

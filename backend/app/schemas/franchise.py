@@ -9,6 +9,7 @@ class FranchiseDetailResponse(CamelModel):
     name: str
     slug: str | None
     games: list[GameSummaryResponse]
+    addons: list[GameSummaryResponse]
 
 
 class FranchiseSummaryResponse(CamelModel):
@@ -19,13 +20,17 @@ class FranchiseSummaryResponse(CamelModel):
 
 
 def franchise_detail_from_orm(
-    franchise: Franchise, games: list[GameWithStatus], on_sale_game_ids: frozenset[int] = frozenset()
+    franchise: Franchise,
+    games: list[GameWithStatus],
+    addons: list[GameWithStatus],
+    on_sale_game_ids: frozenset[int] = frozenset(),
 ) -> FranchiseDetailResponse:
     return FranchiseDetailResponse(
         id=franchise.id,
         name=franchise.name,
         slug=franchise.slug,
         games=[game_summary_from_orm(game, on_sale_game_ids) for game in games],
+        addons=[game_summary_from_orm(addon, on_sale_game_ids) for addon in addons],
     )
 
 

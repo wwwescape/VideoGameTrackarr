@@ -51,7 +51,7 @@
     "addAccessory": "Add Accessory",
     "insights": "Insights",
     "duplicates": "Duplicates",
-    "missingDlc": "Missing DLC",
+    "missingAddons": "Missing Addons",
     "orphanedAccessories": "Orphaned Accessories",
     "steamSync": "Steam Sync",
     "saleTracked": "Sale - Tracked",
@@ -106,6 +106,12 @@
     "failedTitle": "Restore failed",
     "unknownError": "An unknown error occurred.",
     "dismissButton": "Dismiss"
+  },
+  "catalogResync": {
+    "completedToast": "Resync complete — {{added}} game(s) added, {{skipped}} already in your library.",
+    "progressLabel": "{{current}} / {{total}} games checked",
+    "unknownError": "An unknown error occurred.",
+    "partialFailureTitle": "{{count}} game(s) failed to import:"
   },
   "undo": {
     "undoButton": "Undo"
@@ -372,17 +378,30 @@
       "searchLabel": "Search games",
       "searchPlaceholder": "Enter game name",
       "selectGames": "Select games",
-      "filterAll": "All",
       "filterOwned": "Owned",
-      "filterWishlist": "Wishlist",
-      "consoleLabel": "Console",
-      "tagLabel": "Tag",
-      "collectionLabel": "Collection",
+      "filterWishlist": "Wishlisted",
+      "ownershipLabel": "Ownership",
+      "consoleLabel": "Platforms",
+      "tagLabel": "Tags",
+      "collectionLabel": "Collections",
       "seriesLabel": "Series",
-      "gameTypeLabel": "Game Type",
+      "gameTypeLabel": "Game Types",
+      "formatLabel": "Formats",
+      "storefrontLabel": "Storefront",
+      "excludeLabel": "Exclude",
       "allOption": "All",
-      "filtersButtonLabel": "Filters",
-      "clearFiltersButton": "Clear filters"
+      "filtersButtonLabel": "Filters & More",
+      "filterTabLabel": "Filter",
+      "moreTabLabel": "More",
+      "sortByLabel": "Sort By",
+      "sortNameAsc": "Name (ASC)",
+      "sortNameDesc": "Name (DESC)",
+      "sortReleaseDateAsc": "Release Date (ASC)",
+      "sortReleaseDateDesc": "Release Date (DESC)",
+      "showMissingLabel": "Show what I am missing?",
+      "clearFiltersButton": "Clear filters",
+      "noFiltersAvailable": "No filters available",
+      "noSearchMatches": "No matches found."
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -395,7 +414,8 @@
       "selectAriaLabel": "Select {{name}}",
       "deselectAriaLabel": "Deselect {{name}}",
       "nameYearTooltip": "{{name}} ({{year}})",
-      "onSaleLabel": "On Sale"
+      "onSaleLabel": "On Sale",
+      "missingLabel": "Missing"
     },
     "subNav": {
       "allGames": "All Games",
@@ -430,20 +450,26 @@
       "addError": "Error adding game. Please try again."
     },
     "collectionPage": {
-      "kindLabel": "Collection"
+      "kindLabel": "Collection",
+      "resyncButton": "Resync Collection"
     },
     "collectionsPage": {
       "title": "Collections",
       "description": "IGDB collections with at least one game in your library.",
-      "emptyMessage": "No collections yet — they show up here once you've imported a game that belongs to one."
+      "emptyMessage": "No collections yet — they show up here once you've imported a game that belongs to one.",
+      "searchLabel": "Search collections",
+      "searchPlaceholder": "Enter collection name"
     },
     "seriesDetailPage": {
-      "kindLabel": "Series"
+      "kindLabel": "Series",
+      "resyncButton": "Resync Series"
     },
     "seriesPage": {
       "title": "Series",
       "description": "Game series (IGDB franchises) with at least one game in your library.",
-      "emptyMessage": "No series yet — they show up here once you've imported a game that belongs to one."
+      "emptyMessage": "No series yet — they show up here once you've imported a game that belongs to one.",
+      "searchLabel": "Search series",
+      "searchPlaceholder": "Enter series name"
     },
     "about": {
       "companyRoleDeveloper": "Developed by",
@@ -498,7 +524,13 @@
       "linkToIgdbButton": "Link to IGDB",
       "removeGameButton": "Remove Game",
       "removeConfirmTitle": "Confirm Removal",
-      "removeConfirmDescription": "Are you sure you want to remove \"{{name}}\"? This permanently deletes it along with all of its addons (DLC, expansions, packs), collection/wishlist entries, progress, and notes. This cannot be undone."
+      "removeConfirmDescription": "Are you sure you want to remove \"{{name}}\"? This permanently deletes it along with all of its addons (DLC, expansions, packs), collection/wishlist entries, progress, and notes. This cannot be undone.",
+      "addGameButton": "Add Game",
+      "addAddonButton": "Add Addon",
+      "claimGameSuccessToast": "Game added!",
+      "claimAddonSuccessToast": "Addon added!",
+      "claimGameErrorToast": "Error adding game. Please try again.",
+      "claimAddonErrorToast": "Error adding addon. Please try again."
     },
     "addons": {
       "title": "Addons",
@@ -610,8 +642,8 @@
       "anyRegion": "Any region",
       "removeEntryTooltip": "Remove this entry"
     },
-    "missingDlc": {
-      "noneFound": "No missing DLC found — you have everything that's been imported for the games you own."
+    "missingAddons": {
+      "noneFound": "No missing addons found — you have everything that's been imported for the games you own."
     },
     "steamSync": {
       "heading": "Steam Sync",
@@ -729,7 +761,10 @@
   "catalog": {
     "browseGrid": {
       "importedOnlyNotice": "Only games you've already imported show up here.",
-      "emptyMessage": "No locally-known games in this {{kind}} yet."
+      "emptyMessage": "No locally-known games in this {{kind}} yet.",
+      "includeAddonsLabel": "Include Addons",
+      "gamesSectionTitle": "Games",
+      "addonsSectionTitle": "Addons"
     },
     "refCard": {
       "gameCountSingular": "{{count}} game",

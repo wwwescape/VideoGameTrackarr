@@ -1,8 +1,9 @@
 import { apiClient } from "./client";
+import { buildGameFilterParams, type GameListFilters } from "./games";
 import type {
   DuplicateLibraryItemGroup,
   InsightAccessoryRef,
-  MissingDlcEntry,
+  MissingAddonsEntry,
   OnSaleItem,
 } from "./types";
 
@@ -13,8 +14,15 @@ export async function listDuplicateLibraryItems(): Promise<DuplicateLibraryItemG
   return response.data;
 }
 
-export async function listMissingDlc(): Promise<MissingDlcEntry[]> {
-  const response = await apiClient.get<MissingDlcEntry[]>("/api/insights/missing-dlc");
+export async function listMissingAddons(
+  filters: GameListFilters = {},
+  signal?: AbortSignal
+): Promise<MissingAddonsEntry[]> {
+  const response = await apiClient.get<MissingAddonsEntry[]>("/api/insights/missing-addons", {
+    params: buildGameFilterParams(filters),
+    paramsSerializer: { indexes: null },
+    signal,
+  });
   return response.data;
 }
 

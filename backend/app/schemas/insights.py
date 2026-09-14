@@ -35,9 +35,17 @@ class InsightGameRefResponse(CamelModel):
     cover_url: str | None
     category: GameCategory | None
     first_release_date: int | None
+    # GameCard needs these to decide greyscale/chip — every insights surface that builds one
+    # of these refs must pass the real values (defaults below are only a safety net, not
+    # something any real caller should rely on).
+    owned: bool
+    wishlisted: bool
+    auto_discovered: bool
 
 
-def insight_game_ref_from_orm(game: Game) -> InsightGameRefResponse:
+def insight_game_ref_from_orm(
+    game: Game, *, owned: bool = False, wishlisted: bool = False
+) -> InsightGameRefResponse:
     return InsightGameRefResponse(
         id=game.id,
         uuid=game.uuid,
@@ -46,18 +54,26 @@ def insight_game_ref_from_orm(game: Game) -> InsightGameRefResponse:
         cover_url=game.cover_url,
         category=game.category,
         first_release_date=game.first_release_date,
+        owned=owned,
+        wishlisted=wishlisted,
+        auto_discovered=game.auto_discovered,
     )
 
 
-class MissingDlcResponse(CamelModel):
+class MissingAddonsResponse(CamelModel):
     game: InsightGameRefResponse
     missing_addons: list[InsightGameRefResponse]
 
 
-def missing_dlc_from_orm(game: Game, missing_addons: list[Game]) -> MissingDlcResponse:
-    return MissingDlcResponse(
-        game=insight_game_ref_from_orm(game),
-        missing_addons=[insight_game_ref_from_orm(addon) for addon in missing_addons],
+def missing_addons_from_orm(game: Game, missing_addons: list[tuple[Game, bool]]) -> MissingAddonsResponse:
+    return MissingAddonsResponse(
+        # The repository's own game_owned filter already guarantees this — see
+        # insight_repository.find_missing_addons.
+        game=insight_game_ref_from_orm(game, owned=True),
+        missing_addons=[
+            insight_game_ref_from_orm(addon, owned=False, wishlisted=wishlisted)
+            for addon, wishlisted in missing_addons
+        ],
     )
 
 
@@ -101,7 +117,13 @@ def on_sale_item_from_orm(item: OnSaleItem | PlatPricesOnSaleItem) -> OnSaleItem
     cache = item.cache
     return OnSaleItemResponse(
         library_item_id=library_item.id,
-        game=insight_game_ref_from_orm(library_item.game),
+        # On-sale tracking only ever applies to a wishlisted library_item (see
+        # LibraryItem.track_for_sales) — this game is always at least wishlisted here,
+        # regardless of whether it's *also* owned via a different library_item/platform,
+        # which this ref alone can't distinguish. Frontend's OnSaleSection.tsx sets
+        # wishlisted: true itself too (defensively, from before this field existed) — kept,
+        # harmless now that both agree.
+        game=insight_game_ref_from_orm(library_item.game, wishlisted=True),
         current_price_amount=cache.current_price_amount,
         current_price_currency=cache.current_price_currency,
         current_shop_name=cache.current_shop_name,

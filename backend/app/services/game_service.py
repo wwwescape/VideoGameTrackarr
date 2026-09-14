@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.identifiers import extract_uuid
 from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion
+from app.models.library import MediaFormat
 from app.repositories import (
     collection_repository,
     company_repository,
@@ -53,19 +54,43 @@ def search_local_games(
     db: Session,
     search: str | None = None,
     platform_ids: list[int] | None = None,
+    platform_exclude: bool = False,
     tag_ids: list[int] | None = None,
+    tag_exclude: bool = False,
     collection_ids: list[int] | None = None,
+    collection_exclude: bool = False,
     franchise_ids: list[int] | None = None,
+    franchise_exclude: bool = False,
     categories: list[GameCategory] | None = None,
+    category_exclude: bool = False,
+    formats: list[MediaFormat] | None = None,
+    format_exclude: bool = False,
+    storefronts: list[str] | None = None,
+    storefront_exclude: bool = False,
+    sort: game_repository.GameSortOption = game_repository.GameSortOption.NAME_ASC,
+    required_collection_id: int | None = None,
+    required_franchise_id: int | None = None,
 ) -> list[GameWithStatus]:
     return game_repository.list_top_level_games(
         db,
         search=search,
         platform_ids=platform_ids,
+        platform_exclude=platform_exclude,
         tag_ids=tag_ids,
+        tag_exclude=tag_exclude,
         collection_ids=collection_ids,
+        collection_exclude=collection_exclude,
         franchise_ids=franchise_ids,
+        franchise_exclude=franchise_exclude,
         categories=categories,
+        category_exclude=category_exclude,
+        formats=formats,
+        format_exclude=format_exclude,
+        storefronts=storefronts,
+        storefront_exclude=storefront_exclude,
+        sort=sort,
+        required_collection_id=required_collection_id,
+        required_franchise_id=required_franchise_id,
     )
 
 
@@ -97,6 +122,20 @@ def list_addons(db: Session, game_id: int) -> list[GameWithStatus]:
     return game_repository.list_addons(db, game_id)
 
 
+def claim_discovered_game(db: Session, game_id: int) -> GameWithStatus:
+    """Backs the Game Detail page's "Add Game" action for a game (or addon) that only exists
+    locally because a Collection/Series 'what's missing' resync discovered it — formally
+    claims it into the tracked catalog by clearing Game.auto_discovered, mirroring how the
+    normal search-and-add flow already works (import first, ownership is a separate later
+    step via "Your Library"). Idempotent: a no-op if the game was never auto_discovered."""
+    game = db.get(Game, game_id)
+    if game is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    game.auto_discovered = False
+    db.commit()
+    return get_game_detail(db, game_id)
+
+
 def delete_game(db: Session, game_id: int) -> None:
     game_with_status = get_game_detail(db, game_id)
     game_repository.delete_game_with_addons(db, game_with_status.game)
@@ -104,16 +143,25 @@ def delete_game(db: Session, game_id: int) -> None:
 
 
 async def import_game_from_igdb(
-    db: Session, igdb_client: IGDBClient, igdb_id: int, scope: CatalogSyncScope = CatalogSyncScope.ALL
+    db: Session,
+    igdb_client: IGDBClient,
+    igdb_id: int,
+    scope: CatalogSyncScope = CatalogSyncScope.ALL,
+    auto_discovered: bool = False,
 ) -> GameWithStatus:
     """Imports (or re-syncs, if it already exists) a game and every game IGDB links back to
     it via parent_game. One commit for the whole operation — either the game and all its
-    children land together, or none of them do."""
+    children land together, or none of them do.
+
+    auto_discovered is only ever True from catalog_resync_job.py's "what's missing" resync —
+    every other caller (manual add, resync, link-to-igdb, steam sync) keeps the default,
+    which is correct even when re-syncing an already-discovered game: see
+    game_repository.upsert_game_from_igdb, which only applies this on a genuine insert."""
     igdb_games = await igdb_client.get_games_by_ids([igdb_id])
     if not igdb_games:
         raise NotFoundError(f"IGDB game {igdb_id} not found")
 
-    game = _upsert_from_igdb_payload(db, igdb_games[0], scope=scope)
+    game = _upsert_from_igdb_payload(db, igdb_games[0], scope=scope, auto_discovered=auto_discovered)
 
     # get_addons_by_parent_igdb_id only returns the hierarchical addon types (DLC/expansion/
     # pack) now — siblings a parent_game backlink also turns up (remasters, bundles,
@@ -124,7 +172,9 @@ async def import_game_from_igdb(
     # display-only based on the *child's own* category, same as the direct-import path.
     addons = await igdb_client.get_addons_by_parent_igdb_id(igdb_id)
     for addon in addons:
-        _upsert_from_igdb_payload(db, addon, candidate_parent_id=game.id, scope=scope)
+        _upsert_from_igdb_payload(
+            db, addon, candidate_parent_id=game.id, scope=scope, auto_discovered=auto_discovered
+        )
 
     db.commit()
     return get_game_detail(db, game.id)
@@ -262,6 +312,7 @@ def _upsert_from_igdb_payload(
     igdb_game: dict[str, Any],
     candidate_parent_id: int | None = None,
     scope: CatalogSyncScope = CatalogSyncScope.ALL,
+    auto_discovered: bool = False,
 ) -> Game:
     igdb_category_id, category = resolve_igdb_category(igdb_game)
 
@@ -300,6 +351,7 @@ def _upsert_from_igdb_payload(
     game = game_repository.upsert_game_from_igdb(
         db,
         igdb_id=igdb_game["id"],
+        auto_discovered=auto_discovered,
         name=igdb_game.get("name"),
         slug=igdb_game.get("slug"),
         summary=igdb_game.get("summary"),

@@ -1,7 +1,8 @@
+import enum
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, case, delete, exists, select, update
+from sqlalchemy import ColumnElement, Select, case, delete, exists, select, update
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import (
@@ -17,7 +18,16 @@ from app.models.catalog import (
     ReleaseDate,
     Screenshot,
 )
-from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, Note, PlaySession, PlayStatus
+from app.models.library import (
+    GameProgress,
+    GameTag,
+    LibraryItem,
+    LibraryStatus,
+    MediaFormat,
+    Note,
+    PlaySession,
+    PlayStatus,
+)
 
 # Repositories only add/flush/delete — they never commit. The service (or script) that
 # calls them owns the transaction boundary, so a multi-step use case (e.g. importing a
@@ -109,14 +119,113 @@ def _is_browsable_game(category_column: ColumnElement[GameCategory | None]) -> C
     return category_column.in_(_BROWSABLE_CATEGORIES) | category_column.is_(None)
 
 
+class GameSortOption(enum.Enum):
+    """The Games list previously had no sort options at all (always a hardcoded
+    Game.name ascending) — a genuinely new capability, not an extension of an existing one."""
+
+    NAME_ASC = "name_asc"
+    NAME_DESC = "name_desc"
+    RELEASE_DATE_ASC = "release_date_asc"
+    RELEASE_DATE_DESC = "release_date_desc"
+
+
+def _order_by_for_sort(sort: GameSortOption) -> ColumnElement[Any]:
+    if sort == GameSortOption.NAME_DESC:
+        return Game.name.desc()
+    if sort == GameSortOption.RELEASE_DATE_ASC:
+        return Game.first_release_date.asc()
+    if sort == GameSortOption.RELEASE_DATE_DESC:
+        return Game.first_release_date.desc()
+    return Game.name.asc()
+
+
+def _maybe_negate(clause: ColumnElement[bool], exclude: bool) -> ColumnElement[bool]:
+    """Flips a filter's own predicate when its "Exclude" toggle is on — "show everything
+    except what's selected" is just the logical negation of the same clause inclusion
+    already uses, so every filter gets negative filtering for free with no new query shape."""
+    return ~clause if exclude else clause
+
+
+def _apply_optional_game_filters(
+    stmt: Select[Any],
+    *,
+    search: str | None = None,
+    platform_ids: list[int] | None = None,
+    platform_exclude: bool = False,
+    tag_ids: list[int] | None = None,
+    tag_exclude: bool = False,
+    collection_ids: list[int] | None = None,
+    collection_exclude: bool = False,
+    franchise_ids: list[int] | None = None,
+    franchise_exclude: bool = False,
+    categories: list[GameCategory] | None = None,
+    category_exclude: bool = False,
+    formats: list[MediaFormat] | None = None,
+    format_exclude: bool = False,
+    storefronts: list[str] | None = None,
+    storefront_exclude: bool = False,
+    sort: GameSortOption = GameSortOption.NAME_ASC,
+) -> Select[Any]:
+    """The Games list's whole optional filter set (search + 7 dimensions + sort), factored
+    out of list_top_level_games so the Collection/Series "Addons" queries
+    (collection_repository.list_addons_for_collection / franchise_repository.list_addons_for_franchise)
+    can offer the exact same filters against a differently-scoped base query, with zero
+    duplicated clause-building logic to drift out of sync."""
+    if search:
+        stmt = stmt.where(Game.name.ilike(f"%{search}%"))
+    if platform_ids:
+        # The platform of the user's *owned/wishlisted copy* (library_items), not
+        # game_platforms — IGDB's full list of platforms a game was ever released on.
+        clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(platform_ids))
+        stmt = stmt.where(_maybe_negate(clause, platform_exclude))
+    if tag_ids:
+        clause = exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(tag_ids))
+        stmt = stmt.where(_maybe_negate(clause, tag_exclude))
+    if categories:
+        # No need to also validate against _BROWSABLE_CATEGORIES here — list_top_level_games'
+        # own base .where() already restricts every row to that set (or NULL) before this
+        # runs, so an out-of-range value here would just AND down to zero rows rather than
+        # leaking a non-browsable category. The addons queries have no such base restriction,
+        # but addons are never browsable-category anyway, so the same reasoning holds.
+        stmt = stmt.where(_maybe_negate(Game.category.in_(categories), category_exclude))
+    if collection_ids:
+        clause = exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id.in_(collection_ids))
+        stmt = stmt.where(_maybe_negate(clause, collection_exclude))
+    if franchise_ids:
+        clause = exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id.in_(franchise_ids))
+        stmt = stmt.where(_maybe_negate(clause, franchise_exclude))
+    if formats:
+        # Same "does this game have *any* library copy matching" shape as platform_ids above
+        # — an independent exists() subquery, not correlated to the platform/storefront
+        # filters' own matched row.
+        clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.format.in_(formats))
+        stmt = stmt.where(_maybe_negate(clause, format_exclude))
+    if storefronts:
+        clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.digital_storefront.in_(storefronts))
+        stmt = stmt.where(_maybe_negate(clause, storefront_exclude))
+    return stmt.order_by(_order_by_for_sort(sort))
+
+
 def list_top_level_games(
     db: Session,
     search: str | None = None,
     platform_ids: list[int] | None = None,
+    platform_exclude: bool = False,
     tag_ids: list[int] | None = None,
+    tag_exclude: bool = False,
     collection_ids: list[int] | None = None,
+    collection_exclude: bool = False,
     franchise_ids: list[int] | None = None,
+    franchise_exclude: bool = False,
     categories: list[GameCategory] | None = None,
+    category_exclude: bool = False,
+    formats: list[MediaFormat] | None = None,
+    format_exclude: bool = False,
+    storefronts: list[str] | None = None,
+    storefront_exclude: bool = False,
+    sort: GameSortOption = GameSortOption.NAME_ASC,
+    required_collection_id: int | None = None,
+    required_franchise_id: int | None = None,
 ) -> list[GameWithStatus]:
     stmt = select(
         Game,
@@ -125,28 +234,37 @@ def list_top_level_games(
         _play_status_subquery(Game.id),
         _rating_subquery(Game.id),
     ).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
-    if search:
-        stmt = stmt.where(Game.name.ilike(f"%{search}%"))
-    if platform_ids:
-        # The platform of the user's *owned/wishlisted copy* (library_items), not
-        # game_platforms — IGDB's full list of platforms a game was ever released on.
-        stmt = stmt.where(exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(platform_ids)))
-    if tag_ids:
-        stmt = stmt.where(exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(tag_ids)))
-    if categories:
-        # No need to also validate against _BROWSABLE_CATEGORIES here — the base .where()
-        # above already restricts every row to that set (or NULL), so an out-of-range value
-        # here would just AND down to zero rows rather than leaking a non-browsable category.
-        stmt = stmt.where(Game.category.in_(categories))
-    if collection_ids:
+    # Always-applied AND-scope, independent of the user-editable collection_ids/franchise_ids
+    # OR-filter above/below — this is what lets a Collection/Series detail page hard-scope to
+    # "games in *this* collection" while still letting the Series/Collections filter field
+    # narrow further on top, rather than the two colliding into one OR-list.
+    if required_collection_id is not None:
         stmt = stmt.where(
-            exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id.in_(collection_ids))
+            exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id == required_collection_id)
         )
-    if franchise_ids:
+    if required_franchise_id is not None:
         stmt = stmt.where(
-            exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id.in_(franchise_ids))
+            exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id == required_franchise_id)
         )
-    stmt = stmt.order_by(Game.name)
+    stmt = _apply_optional_game_filters(
+        stmt,
+        search=search,
+        platform_ids=platform_ids,
+        platform_exclude=platform_exclude,
+        tag_ids=tag_ids,
+        tag_exclude=tag_exclude,
+        collection_ids=collection_ids,
+        collection_exclude=collection_exclude,
+        franchise_ids=franchise_ids,
+        franchise_exclude=franchise_exclude,
+        categories=categories,
+        category_exclude=category_exclude,
+        formats=formats,
+        format_exclude=format_exclude,
+        storefronts=storefronts,
+        storefront_exclude=storefront_exclude,
+        sort=sort,
+    )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 
 
@@ -265,10 +383,14 @@ def update_manual_game(db: Session, game: Game, **fields: Any) -> Game:
     return game
 
 
-def upsert_game_from_igdb(db: Session, igdb_id: int, **fields: Any) -> Game:
+def upsert_game_from_igdb(db: Session, igdb_id: int, auto_discovered: bool = False, **fields: Any) -> Game:
+    # auto_discovered is a real param, not folded into **fields, deliberately: it must only
+    # ever be set at insert time (see Game.auto_discovered's comment) — if it were just
+    # another key in fields, a plain resync of an already-graduated (or still-undiscovered)
+    # game would blindly overwrite its flag on every call instead of leaving it alone.
     game = get_game_by_igdb_id(db, igdb_id)
     if game is None:
-        game = Game(igdb_id=igdb_id)
+        game = Game(igdb_id=igdb_id, auto_discovered=auto_discovered)
         db.add(game)
 
     for key, value in fields.items():

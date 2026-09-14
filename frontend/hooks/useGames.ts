@@ -1,5 +1,6 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  claimDiscoveredGame,
   createManualGame,
   deleteGame,
   getGame,
@@ -108,6 +109,20 @@ export function useResyncGame(gameId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => resyncGame(gameId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games", gameId] });
+      queryClient.invalidateQueries({ queryKey: ["games", gameId, "addons"] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useClaimDiscoveredGame(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => claimDiscoveredGame(gameId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games", gameId, "addons"] });

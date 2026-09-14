@@ -39,8 +39,8 @@ you know what's worth grabbing next.
 - **Public share links** — generate an unauthenticated, unlisted read-only link to your Games
   or Hardware collection from Settings → Share, for showing it off without giving out your
   login.
-- **Library intelligence** — duplicate detection, missing-DLC detection, and flagging accessories
-  that aren't linked to hardware you own.
+- **Library intelligence** — duplicate detection, missing-addon detection, and flagging
+  accessories that aren't linked to hardware you own.
 - **Dashboard** — collection stats, an upcoming-release calendar for your wishlist, and
   side-by-side game comparison.
 - **Data portability** — CSV export (library and hardware), and a full JSON backup/restore (with

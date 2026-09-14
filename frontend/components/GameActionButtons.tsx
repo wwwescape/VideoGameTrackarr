@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
+import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -12,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameCategory } from "../api/types";
-import { useDeleteGame, useResyncGame } from "../hooks/useGames";
+import { useClaimDiscoveredGame, useDeleteGame, useResyncGame } from "../hooks/useGames";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import LinkToIgdbDialog from "./LinkToIgdbDialog";
@@ -31,6 +32,11 @@ interface GameActionButtonsProps {
   // an addon's own "Resync" button just triggers that same cascade instead of resyncing
   // itself directly (which would also wrongly re-fetch "addons of this addon" from IGDB).
   resyncGameId: number;
+  // True for a game/addon that only exists locally because a Collection/Series "what's
+  // missing" resync discovered it — nothing to resync/remove from a personal library that
+  // was never asked for, so this replaces the whole Resync/Remove/Edit/Link block below with
+  // a single claim action.
+  isAutoDiscovered: boolean;
   onGameRemoved: () => void;
 }
 
@@ -42,12 +48,14 @@ const GameActionButtons = ({
   hasParentGame,
   hasIgdbId,
   resyncGameId,
+  isAutoDiscovered,
   onGameRemoved,
 }: GameActionButtonsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const deleteGameMutation = useDeleteGame();
   const resyncGameMutation = useResyncGame(resyncGameId);
+  const claimGameMutation = useClaimDiscoveredGame(gameId);
 
   const [resyncGameDialogOpen, setResyncGameDialogOpen] = useState(false);
   const [linkIgdbDialogOpen, setLinkIgdbDialogOpen] = useState(false);
@@ -62,6 +70,22 @@ const GameActionButtons = ({
     } catch (error) {
       console.error("Error removing game:", error);
       toast.error(t("games.actions.removeErrorToast"), TOAST_OPTIONS);
+    }
+  };
+
+  const handleClaimGame = async () => {
+    try {
+      await claimGameMutation.mutateAsync();
+      toast.success(
+        hasParentGame ? t("games.actions.claimAddonSuccessToast") : t("games.actions.claimGameSuccessToast"),
+        TOAST_OPTIONS
+      );
+    } catch (error) {
+      console.error("Error adding game:", error);
+      toast.error(
+        hasParentGame ? t("games.actions.claimAddonErrorToast") : t("games.actions.claimGameErrorToast"),
+        TOAST_OPTIONS
+      );
     }
   };
 
@@ -92,7 +116,18 @@ const GameActionButtons = ({
         </Backdrop>
       )}
       <Stack spacing={1.5}>
-        {hasIgdbId ? (
+        {isAutoDiscovered ? (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => void handleClaimGame()}
+            disabled={claimGameMutation.isPending}
+            fullWidth
+          >
+            {hasParentGame ? t("games.actions.addAddonButton") : t("games.actions.addGameButton")}
+          </Button>
+        ) : hasIgdbId ? (
           <>
             <Button
               variant="contained"
@@ -144,7 +179,7 @@ const GameActionButtons = ({
             />
           </>
         )}
-        {!hasParentGame ? (
+        {!hasParentGame && !isAutoDiscovered ? (
           <>
             <Button
               variant="contained"

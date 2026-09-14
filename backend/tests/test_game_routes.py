@@ -23,6 +23,23 @@ def test_list_games_returns_top_level_games_only(auth_client, db_session, seed_g
     assert names == ["Test Game"]
 
 
+def test_list_games_exposes_auto_discovered_on_the_summary(auth_client, db_session, seed_game):
+    """Regression test: autoDiscovered must be on GameSummaryResponse, not just the detail
+    response — GameCard needs it wherever a cover renders (Games list, Collection/Series
+    browse), to tell a still-unclaimed "what's missing" discovery (greyscale + chip) apart
+    from a manually-added game that just isn't owned/wishlisted yet (greyscale, no chip)."""
+    discovered = Game(
+        igdb_id=2003, name="Discovered Game", category=GameCategory.MAIN_GAME, auto_discovered=True
+    )
+    db_session.add(discovered)
+    db_session.commit()
+
+    response = auth_client.get("/api/games")
+
+    by_name = {g["name"]: g["autoDiscovered"] for g in response.json()}
+    assert by_name == {"Test Game": False, "Discovered Game": True}
+
+
 def test_list_and_detail_expose_is_on_sale_for_a_wishlisted_itad_eligible_game(
     auth_client, db_session, seed_game, seed_pc_platform
 ):
@@ -238,6 +255,172 @@ def test_list_games_filters_by_platform_id_matches_any_selected_platform(
     assert names == {"Test Game", "Other Game"}
 
 
+def test_list_games_filters_by_format(auth_client, db_session, seed_game, seed_platform):
+    physical_game = Game(igdb_id=2210, name="Physical Game", category=GameCategory.MAIN_GAME)
+    db_session.add(physical_game)
+    db_session.commit()
+
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=physical_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.PHYSICAL,
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"format": "digital"})
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    response = auth_client.get("/api/games", params={"format": "physical"})
+    assert [g["name"] for g in response.json()] == ["Physical Game"]
+
+
+def test_list_games_filters_by_storefront(auth_client, db_session, seed_game, seed_platform):
+    other_game = Game(igdb_id=2211, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="Steam",
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=other_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="GOG",
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"storefront": "Steam"})
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+
+def test_list_storefronts_returns_distinct_values_only(auth_client, db_session, seed_game, seed_platform):
+    other_game = Game(igdb_id=2212, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            digital_storefront="Steam",
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=other_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            digital_storefront="Steam",
+        )
+    )
+    db_session.add(
+        LibraryItem(game_id=other_game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST)
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/storefronts")
+
+    assert response.status_code == 200
+    assert response.json() == ["Steam"]
+
+
+def test_list_games_platform_exclude_shows_everything_except_selected(
+    auth_client, db_session, seed_game, seed_platform
+):
+    other_game = Game(igdb_id=2213, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games", params={"platformId": seed_platform.id, "platformExclude": "true"}
+    )
+
+    # Test Game is on seed_platform (excluded); Other Game has no library item at all, so it
+    # has no copy on seed_platform either and correctly stays in the "everything else" result.
+    assert [g["name"] for g in response.json()] == ["Other Game"]
+
+
+def test_list_games_category_exclude_shows_everything_except_selected(auth_client, db_session, seed_game):
+    # seed_game is MAIN_GAME (see conftest.seed_game).
+    bundle_game = Game(igdb_id=2214, name="Bundle Game", category=GameCategory.BUNDLE)
+    db_session.add(bundle_game)
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games", params={"category": "main_game", "categoryExclude": "true"}
+    )
+
+    assert [g["name"] for g in response.json()] == ["Bundle Game"]
+
+
+def test_list_games_defaults_to_name_ascending(auth_client, db_session):
+    db_session.add_all(
+        [
+            Game(igdb_id=2300, name="Zelda", category=GameCategory.MAIN_GAME),
+            Game(igdb_id=2301, name="Astro Bot", category=GameCategory.MAIN_GAME),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games")
+
+    assert [g["name"] for g in response.json()] == ["Astro Bot", "Zelda"]
+
+
+def test_list_games_sort_by_name(auth_client, db_session):
+    db_session.add_all(
+        [
+            Game(igdb_id=2302, name="Zelda", category=GameCategory.MAIN_GAME),
+            Game(igdb_id=2303, name="Astro Bot", category=GameCategory.MAIN_GAME),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"sort": "name_asc"})
+    assert [g["name"] for g in response.json()] == ["Astro Bot", "Zelda"]
+
+    response = auth_client.get("/api/games", params={"sort": "name_desc"})
+    assert [g["name"] for g in response.json()] == ["Zelda", "Astro Bot"]
+
+
+def test_list_games_sort_by_release_date(auth_client, db_session):
+    older = Game(igdb_id=2304, name="Older Game", category=GameCategory.MAIN_GAME, first_release_date=1000)
+    newer = Game(igdb_id=2305, name="Newer Game", category=GameCategory.MAIN_GAME, first_release_date=2000)
+    db_session.add_all([older, newer])
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"sort": "release_date_asc"})
+    assert [g["name"] for g in response.json()] == ["Older Game", "Newer Game"]
+
+    response = auth_client.get("/api/games", params={"sort": "release_date_desc"})
+    assert [g["name"] for g in response.json()] == ["Newer Game", "Older Game"]
+
+
 def test_get_game_detail_includes_parent_name(auth_client, db_session, seed_game):
     addon = Game(igdb_id=2002, name="Test Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)
@@ -407,3 +590,49 @@ def test_delete_game_cascades_to_progress_sessions_notes_and_tags(auth_client, d
     assert db_session.query(GameTag).filter_by(game_id=game_id).count() == 0
     # The tag itself (a shared, global record) must survive — only the link is cascaded.
     assert db_session.query(Tag).filter_by(id=tag.id).count() == 1
+
+
+def test_list_games_required_collection_id_scopes_and_still_ands_with_other_filters(
+    auth_client, db_session, seed_game, seed_platform
+):
+    """required_collection_id is an always-applied AND-scope, independent of the ordinary
+    collectionId OR-filter — a Collection detail page's own hard scope stays in force even
+    while the user filters further (e.g. by platform) on top of it."""
+    other_game = Game(igdb_id=2220, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    collection = Collection(igdb_id=9001, name="Some Collection", slug="some-collection")
+    db_session.add(collection)
+    db_session.commit()
+    db_session.add(GameCollection(game_id=seed_game.id, collection_id=collection.id))
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    scoped_response = auth_client.get("/api/games", params={"requiredCollectionId": collection.id})
+    assert [g["name"] for g in scoped_response.json()] == ["Test Game"]
+
+    combined_response = auth_client.get(
+        "/api/games", params={"requiredCollectionId": collection.id, "platformId": seed_platform.id}
+    )
+    assert [g["name"] for g in combined_response.json()] == ["Test Game"]
+
+    unmatched_platform = Platform(name="Unrelated Platform", slug="unrelated-platform")
+    db_session.add(unmatched_platform)
+    db_session.commit()
+    empty_response = auth_client.get(
+        "/api/games", params={"requiredCollectionId": collection.id, "platformId": unmatched_platform.id}
+    )
+    assert empty_response.json() == []
+
+
+def test_list_games_required_franchise_id_scopes(auth_client, db_session, seed_game):
+    other_game = Game(igdb_id=2221, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    franchise = Franchise(igdb_id=9002, name="Some Series", slug="some-series")
+    db_session.add(franchise)
+    db_session.commit()
+    db_session.add(GameFranchise(game_id=seed_game.id, franchise_id=franchise.id))
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"requiredFranchiseId": franchise.id})
+
+    assert [g["name"] for g in response.json()] == ["Test Game"]

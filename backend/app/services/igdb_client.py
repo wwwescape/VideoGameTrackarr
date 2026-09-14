@@ -309,6 +309,41 @@ class IGDBClient:
         _normalize_event_image_urls(events)
         return events[0]
 
+    async def get_collection_member_game_ids(self, igdb_id: int) -> list[int] | None:
+        """Browsable-category game ids belonging to an IGDB collection, for the "resync
+        collection" flow that discovers games missing from the local library entirely.
+        Fields are limited to id/game_type — the caller re-fetches each game's full payload
+        via get_games_by_ids/import_game_from_igdb anyway, so there's no point expanding
+        anything else here. `where` filters the collection itself, not its games sub-array
+        (Apicalypse doesn't support filtering an expansion) — the game_type allowlist is
+        applied client-side below instead, same set search_games uses for category_scope="game"."""
+        headers = await self._auth_headers()
+        body = f"fields games.id,games.game_type;\nwhere id = {int(igdb_id)};\nlimit 1;"
+        response = await self._request("POST", f"{IGDB_API_BASE}/collections", headers=headers, content=body)
+        rows = response.json()
+        if not rows:
+            return None
+        return [
+            member["id"]
+            for member in rows[0].get("games", [])
+            if member.get("game_type") in _BROWSABLE_GAME_TYPES or member.get("game_type") is None
+        ]
+
+    async def get_franchise_member_game_ids(self, igdb_id: int) -> list[int] | None:
+        """Same shape as get_collection_member_game_ids, for IGDB franchises (this app's
+        "Series")."""
+        headers = await self._auth_headers()
+        body = f"fields games.id,games.game_type;\nwhere id = {int(igdb_id)};\nlimit 1;"
+        response = await self._request("POST", f"{IGDB_API_BASE}/franchises", headers=headers, content=body)
+        rows = response.json()
+        if not rows:
+            return None
+        return [
+            member["id"]
+            for member in rows[0].get("games", [])
+            if member.get("game_type") in _BROWSABLE_GAME_TYPES or member.get("game_type") is None
+        ]
+
     async def _attach_covers(self, games: list[dict], headers: dict[str, str]) -> None:
         cover_ids = [game["cover"] for game in games if game.get("cover")]
         if not cover_ids:

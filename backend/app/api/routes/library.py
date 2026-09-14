@@ -15,6 +15,11 @@ from app.services import library_service
 router = APIRouter(tags=["library"], dependencies=[Depends(get_current_user)])
 
 
+@router.get("/api/storefronts", response_model=list[str])
+def list_storefronts(db: Session = Depends(get_db)) -> list[str]:
+    return library_service.list_distinct_storefronts(db)
+
+
 @router.get("/api/games/{game_id}/library", response_model=list[LibraryItemResponse])
 def list_library_items(
     game_id: int,

@@ -140,7 +140,7 @@ response shapes are in the interactive docs (`/docs`) — this is an index, not 
 
 **Insights & dashboard**
 - `GET /api/insights/duplicate-library-items` — possible duplicate entries in your library.
-- `GET /api/insights/missing-dlc` — addons you own the parent game for but don't own.
+- `GET /api/insights/missing-addons` — addons you own the parent game for but don't own.
 - `GET /api/insights/accessories-without-owned-hardware` — owned accessories not linked to any
   hardware you own.
 - `GET /api/dashboard/stats` — counts, playtime, breakdowns by status/platform/genre,

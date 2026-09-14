@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -161,6 +161,19 @@ class Game(TimestampMixin, Base):
 
     similar_game_igdb_ids: Mapped[list[int] | None] = mapped_column(
         JSON, comment="IGDB's similar_games field, cached at import/resync time — powers recommendations (M8)"
+    )
+
+    auto_discovered: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment=(
+            "True only for games (and their cascade-imported addons) inserted by the Collection/"
+            "Series 'what's missing' resync (catalog_resync_job.py) rather than a real add/import — "
+            "never set on update, so claiming the game (POST /games/{id}/claim) is the only way "
+            "back to False once it's True"
+        ),
     )
 
     # Two self-referential FKs to the same table means SQLAlchemy can't infer which one each

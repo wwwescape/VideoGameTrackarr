@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session, aliased, joinedload
 
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory, AccessoryDeviceLink, UserAccessory, UserDevice
-from app.models.library import LibraryItem, LibraryStatus
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat
+from app.repositories.game_repository import GameSortOption, _apply_optional_game_filters
 
 # Mirrors the frontend's ADDON_DISPLAY_CATEGORIES (GameAddonsTab.tsx) — bundles, standalone
 # expansions, mods, updates, etc. all carry parent_game too, but aren't "DLC" a user would
@@ -33,16 +34,42 @@ def find_duplicate_library_items(db: Session) -> list[list[LibraryItem]]:
     return [group for group in groups.values() if len(group) > 1]
 
 
-def find_missing_dlc(db: Session) -> list[tuple[Game, list[Game]]]:
+def find_missing_addons(
+    db: Session,
+    search: str | None = None,
+    platform_ids: list[int] | None = None,
+    platform_exclude: bool = False,
+    tag_ids: list[int] | None = None,
+    tag_exclude: bool = False,
+    collection_ids: list[int] | None = None,
+    collection_exclude: bool = False,
+    franchise_ids: list[int] | None = None,
+    franchise_exclude: bool = False,
+    categories: list[GameCategory] | None = None,
+    category_exclude: bool = False,
+    formats: list[MediaFormat] | None = None,
+    format_exclude: bool = False,
+    storefronts: list[str] | None = None,
+    storefront_exclude: bool = False,
+    sort: GameSortOption = GameSortOption.NAME_ASC,
+) -> list[tuple[Game, list[tuple[Game, bool]]]]:
     """For every owned, top-level game: its DLC/expansions/packs (per parent_game_id,
-    restricted to _DLC_LIKE_CATEGORIES) that aren't themselves owned. One query, not N+1 —
-    joins each owned game to its unowned addons directly."""
+    restricted to _DLC_LIKE_CATEGORIES) that aren't themselves owned, plus whether each one
+    is at least wishlisted (an addon can never be "owned" here — that's what ~addon_owned
+    below already excludes). One query, not N+1 — joins each owned game to its unowned
+    addons directly.
+
+    The optional filters mirror game_repository.list_top_level_games' exact set (via the
+    same shared _apply_optional_game_filters helper), applied to the *owned* top-level game
+    — Game is the real (non-aliased) model class here, the same one that helper's exists()
+    clauses correlate to, so they bind to the parent row and never to Addon."""
     Addon = aliased(Game)
     addon_owned = exists().where(LibraryItem.game_id == Addon.id, LibraryItem.status == LibraryStatus.OWNED)
+    addon_wishlisted = exists().where(LibraryItem.game_id == Addon.id, LibraryItem.status == LibraryStatus.WISHLIST)
     game_owned = exists().where(LibraryItem.game_id == Game.id, LibraryItem.status == LibraryStatus.OWNED)
 
     stmt = (
-        select(Game, Addon)
+        select(Game, Addon, addon_wishlisted)
         .join(Addon, Addon.parent_game_id == Game.id)
         .where(
             Game.parent_game_id.is_(None),
@@ -50,15 +77,39 @@ def find_missing_dlc(db: Session) -> list[tuple[Game, list[Game]]]:
             ~addon_owned,
             Addon.category.in_(_DLC_LIKE_CATEGORIES),
         )
-        .order_by(Game.name, Addon.name)
     )
+    stmt = _apply_optional_game_filters(
+        stmt,
+        search=search,
+        platform_ids=platform_ids,
+        platform_exclude=platform_exclude,
+        tag_ids=tag_ids,
+        tag_exclude=tag_exclude,
+        collection_ids=collection_ids,
+        collection_exclude=collection_exclude,
+        franchise_ids=franchise_ids,
+        franchise_exclude=franchise_exclude,
+        categories=categories,
+        category_exclude=category_exclude,
+        formats=formats,
+        format_exclude=format_exclude,
+        storefronts=storefronts,
+        storefront_exclude=storefront_exclude,
+        sort=sort,
+    )
+    # _apply_optional_game_filters' own order_by only covers Game's sort field — Addon.name
+    # is an extra tiebreaker so each group's addons stay stably ordered, same as before this
+    # gained filters/sort (order_by is additive, not a replacement, across multiple calls).
+    stmt = stmt.order_by(Addon.name)
 
-    grouped: dict[int, tuple[Game, list[Game]]] = {}
-    for game, addon in db.execute(stmt):
+    grouped: dict[int, tuple[Game, list[tuple[Game, bool]]]] = {}
+    order: list[int] = []
+    for game, addon, wishlisted in db.execute(stmt):
         if game.id not in grouped:
             grouped[game.id] = (game, [])
-        grouped[game.id][1].append(addon)
-    return list(grouped.values())
+            order.append(game.id)
+        grouped[game.id][1].append((addon, bool(wishlisted)))
+    return [grouped[game_id] for game_id in order]
 
 
 def find_accessories_without_owned_hardware(db: Session) -> list[Accessory]:

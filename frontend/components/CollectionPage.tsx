@@ -24,8 +24,11 @@ const CollectionPage = () => {
     <CatalogBrowseGrid
       kindLabel={t("games.collectionPage.kindLabel")}
       name={data?.name}
-      games={data?.games}
+      entityId={data?.id}
       isLoading={isLoading}
+      resyncKind="collection"
+      slug={collectionSlug}
+      resyncLabel={t("games.collectionPage.resyncButton")}
     />
   );
 };

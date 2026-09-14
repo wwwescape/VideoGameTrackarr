@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_igdb_client
-from app.models.catalog import GameCategory
+from app.api.routes.game_filters import GameFilterParams
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.game import (
@@ -35,22 +35,21 @@ def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailRespon
 
 @router.get("", response_model=list[GameSummaryResponse])
 def list_games(
-    search: str | None = Query(default=None),
-    platform_ids: list[int] | None = Query(default=None, alias="platformId"),
-    tag_ids: list[int] | None = Query(default=None, alias="tagId"),
-    collection_ids: list[int] | None = Query(default=None, alias="collectionId"),
-    franchise_ids: list[int] | None = Query(default=None, alias="franchiseId"),
-    categories: list[GameCategory] | None = Query(default=None, alias="category"),
+    params: GameFilterParams = Depends(),
+    # Only meaningful here, not on the Collection/Series "addons" endpoints that share
+    # GameFilterParams — there, the path itself already implies the scope, so folding these
+    # into the shared dependency would offer a redundant/confusing extra way to say the same
+    # thing. See game_repository.list_top_level_games for the AND-scope semantics (independent
+    # of the collectionId/franchiseId OR-filter GameFilterParams already carries).
+    required_collection_id: int | None = Query(default=None, alias="requiredCollectionId"),
+    required_franchise_id: int | None = Query(default=None, alias="requiredFranchiseId"),
     db: Session = Depends(get_db),
 ) -> list[GameSummaryResponse]:
     games = game_service.search_local_games(
         db,
-        search=search,
-        platform_ids=platform_ids,
-        tag_ids=tag_ids,
-        collection_ids=collection_ids,
-        franchise_ids=franchise_ids,
-        categories=categories,
+        **vars(params),
+        required_collection_id=required_collection_id,
+        required_franchise_id=required_franchise_id,
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     return [game_summary_from_orm(game, on_sale_game_ids) for game in games]
@@ -65,6 +64,12 @@ def get_game(identifier: str, db: Session = Depends(get_db)) -> GameDetailRespon
 @router.delete("/{game_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_game(game_id: int, db: Session = Depends(get_db)) -> None:
     game_service.delete_game(db, game_id)
+
+
+@router.post("/{game_id}/claim", response_model=GameDetailResponse)
+def claim_discovered_game(game_id: int, db: Session = Depends(get_db)) -> GameDetailResponse:
+    game = game_service.claim_discovered_game(db, game_id)
+    return _game_detail_response(db, game)
 
 
 @router.get("/{game_id}/addons", response_model=list[GameSummaryResponse])

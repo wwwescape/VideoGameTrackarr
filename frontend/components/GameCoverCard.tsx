@@ -12,12 +12,18 @@ import type { GameDetail } from "../api/types";
 import OwnershipBadges from "./OwnershipBadges";
 
 interface GameCoverCardProps {
-  game: Pick<GameDetail, "name" | "coverUrl" | "owned" | "wishlisted" | "isOnSale">;
+  game: Pick<GameDetail, "name" | "coverUrl" | "owned" | "wishlisted" | "isOnSale" | "autoDiscovered">;
 }
 
 const GameCoverCard = ({ game }: GameCoverCardProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  // Only ever rendered for an already-imported game on its own Game Detail page, so
+  // owned/wishlisted is always meaningful here — no context gate needed like GameCard's.
+  const isGreyscale = !game.owned && !game.wishlisted;
+  // See GameCard.tsx's identical split — only a still-unclaimed "what's missing" discovery
+  // gets the chip, not every greyscaled (not-yet-owned) cover.
+  const showMissingChip = isGreyscale && game.autoDiscovered;
 
   return (
     <Card
@@ -47,7 +53,14 @@ const GameCoverCard = ({ game }: GameCoverCardProps) => {
               component="img"
               alt={game.name}
               image={resolveAssetUrl(game.coverUrl) ?? undefined}
-              sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              sx={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                filter: isGreyscale ? "grayscale(1)" : "none",
+              }}
             />
           ) : (
             <Box
@@ -78,6 +91,21 @@ const GameCoverCard = ({ game }: GameCoverCardProps) => {
                 position: "absolute",
                 bottom: 8,
                 left: 8,
+                zIndex: 1,
+                fontWeight: 600,
+                boxShadow: theme.shadows[3],
+              }}
+            />
+          ) : null}
+          {showMissingChip ? (
+            <Chip
+              label={t("games.card.missingLabel")}
+              color="info"
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 8,
+                right: 8,
                 zIndex: 1,
                 fontWeight: 600,
                 boxShadow: theme.shadows[3],

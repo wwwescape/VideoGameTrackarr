@@ -7,6 +7,20 @@ from app.models.catalog import Game
 from app.models.library import LibraryItem, LibraryStatus
 
 
+def list_distinct_storefronts(db: Session) -> list[str]:
+    """Every distinct digital_storefront value actually in use — powers the Games list's
+    Storefront filter. digital_storefront is free text (see LibraryItemDialog.tsx's freeSolo
+    Autocomplete), not a fixed enum, so this reflects real data rather than a hardcoded list
+    that could miss a custom value a user typed in."""
+    stmt = (
+        select(LibraryItem.digital_storefront)
+        .distinct()
+        .where(LibraryItem.digital_storefront.is_not(None))
+        .order_by(LibraryItem.digital_storefront)
+    )
+    return list(db.scalars(stmt))
+
+
 def list_all_library_items(db: Session) -> list[LibraryItem]:
     """Every library item across every game, for CSV export — not scoped to one game
     like list_library_items below."""

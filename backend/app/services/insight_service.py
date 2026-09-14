@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Game
@@ -11,8 +13,8 @@ def find_duplicate_library_items(db: Session) -> list[list[LibraryItem]]:
     return insight_repository.find_duplicate_library_items(db)
 
 
-def find_missing_dlc(db: Session) -> list[tuple[Game, list[Game]]]:
-    return insight_repository.find_missing_dlc(db)
+def find_missing_addons(db: Session, **filters: Any) -> list[tuple[Game, list[tuple[Game, bool]]]]:
+    return insight_repository.find_missing_addons(db, **filters)
 
 
 def find_accessories_without_owned_hardware(db: Session) -> list[Accessory]:

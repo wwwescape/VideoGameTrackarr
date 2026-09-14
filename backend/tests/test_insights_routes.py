@@ -55,26 +55,26 @@ def test_duplicate_detection_treats_null_platform_as_equal(auth_client, db_sessi
     assert len(group["items"]) == 2
 
 
-def test_missing_dlc_requires_auth(client):
-    response = client.get("/api/insights/missing-dlc")
+def test_missing_addons_requires_auth(client):
+    response = client.get("/api/insights/missing-addons")
 
     assert response.status_code == 401
 
 
-def test_missing_dlc_empty_when_nothing_owned(auth_client, seed_game):
-    response = auth_client.get("/api/insights/missing-dlc")
+def test_missing_addons_empty_when_nothing_owned(auth_client, seed_game):
+    response = auth_client.get("/api/insights/missing-addons")
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_missing_dlc_flags_unowned_addon_of_owned_game(auth_client, db_session, seed_game, seed_platform):
+def test_missing_addons_flags_unowned_addon_of_owned_game(auth_client, db_session, seed_game, seed_platform):
     addon = Game(igdb_id=9001, name="Test Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)
     db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
     db_session.commit()
 
-    response = auth_client.get("/api/insights/missing-dlc")
+    response = auth_client.get("/api/insights/missing-addons")
 
     assert response.status_code == 200
     [entry] = response.json()
@@ -82,7 +82,7 @@ def test_missing_dlc_flags_unowned_addon_of_owned_game(auth_client, db_session, 
     assert [a["id"] for a in entry["missingAddons"]] == [addon.id]
 
 
-def test_missing_dlc_excludes_addon_the_user_already_owns(auth_client, db_session, seed_game, seed_platform):
+def test_missing_addons_excludes_addon_the_user_already_owns(auth_client, db_session, seed_game, seed_platform):
     addon = Game(igdb_id=9002, name="Owned DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)
     db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
@@ -90,22 +90,94 @@ def test_missing_dlc_excludes_addon_the_user_already_owns(auth_client, db_sessio
     db_session.add(LibraryItem(game_id=addon.id, status=LibraryStatus.OWNED))
     db_session.commit()
 
-    response = auth_client.get("/api/insights/missing-dlc")
+    response = auth_client.get("/api/insights/missing-addons")
 
     assert response.json() == []
 
 
-def test_missing_dlc_ignores_unowned_base_game(auth_client, db_session, seed_game):
+def test_missing_addons_ignores_unowned_base_game(auth_client, db_session, seed_game):
     addon = Game(igdb_id=9003, name="DLC of unowned game", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)
     db_session.commit()
 
-    response = auth_client.get("/api/insights/missing-dlc")
+    response = auth_client.get("/api/insights/missing-addons")
 
     assert response.json() == []
 
 
-def test_missing_dlc_excludes_non_dlc_like_categories(auth_client, db_session, seed_game, seed_platform):
+def test_missing_addons_exposes_ownership_and_auto_discovered_on_every_ref(
+    auth_client, db_session, seed_game, seed_platform
+):
+    """Regression test for a real reported bug: GameCard greyscaled every addon on the
+    Missing Addons page regardless of actual ownership, because InsightGameRefResponse
+    carried no owned/wishlisted/autoDiscovered at all — GameCard read them as undefined and
+    treated every card as neither owned nor wishlisted."""
+    wishlisted_addon = Game(
+        igdb_id=9010, name="Wishlisted Addon", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    plain_addon = Game(
+        igdb_id=9011, name="Plain Missing Addon", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    db_session.add_all([wishlisted_addon, plain_addon])
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(LibraryItem(game_id=wishlisted_addon.id, status=LibraryStatus.WISHLIST))
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/missing-addons")
+
+    [entry] = response.json()
+    assert entry["game"]["owned"] is True
+    assert entry["game"]["autoDiscovered"] is False
+    addons_by_name = {a["name"]: a for a in entry["missingAddons"]}
+    assert addons_by_name["Wishlisted Addon"]["owned"] is False
+    assert addons_by_name["Wishlisted Addon"]["wishlisted"] is True
+    assert addons_by_name["Plain Missing Addon"]["owned"] is False
+    assert addons_by_name["Plain Missing Addon"]["wishlisted"] is False
+
+
+def test_missing_addons_supports_search_and_sort(auth_client, db_session, seed_game, seed_platform):
+    other_game = Game(igdb_id=9012, name="Another Owned Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.flush()  # other_game.id must exist before it's used as an addon's parent below
+    other_addon = Game(
+        igdb_id=9013, name="Other DLC", category=GameCategory.DLC_ADDON, parent_game_id=other_game.id
+    )
+    seed_addon = Game(
+        igdb_id=9014, name="Seed DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    db_session.add_all([other_addon, seed_addon])
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(LibraryItem(game_id=other_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    search_response = auth_client.get("/api/insights/missing-addons", params={"search": "Another"})
+    assert [e["game"]["name"] for e in search_response.json()] == ["Another Owned Game"]
+
+    sorted_response = auth_client.get("/api/insights/missing-addons", params={"sort": "name_desc"})
+    assert [e["game"]["name"] for e in sorted_response.json()] == ["Test Game", "Another Owned Game"]
+
+
+def test_missing_addons_filters_by_platform(auth_client, db_session, seed_game, seed_platform, seed_pc_platform):
+    other_game = Game(igdb_id=9015, name="PC Owned Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.flush()  # other_game.id must exist before it's used as an addon's parent below
+    other_addon = Game(
+        igdb_id=9016, name="PC DLC", category=GameCategory.DLC_ADDON, parent_game_id=other_game.id
+    )
+    seed_addon = Game(
+        igdb_id=9017, name="Console DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    db_session.add_all([other_addon, seed_addon])
+    db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(LibraryItem(game_id=other_game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/missing-addons", params={"platformId": seed_pc_platform.id})
+
+    assert [e["game"]["name"] for e in response.json()] == ["PC Owned Game"]
+
+
+def test_missing_addons_excludes_non_dlc_like_categories(auth_client, db_session, seed_game, seed_platform):
     bundle = Game(igdb_id=9004, name="GOTY Edition", category=GameCategory.BUNDLE, parent_game_id=seed_game.id)
     standalone = Game(
         igdb_id=9005, name="Standalone Spinoff", category=GameCategory.STANDALONE_EXPANSION, parent_game_id=seed_game.id
@@ -115,7 +187,7 @@ def test_missing_dlc_excludes_non_dlc_like_categories(auth_client, db_session, s
     db_session.add(LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
     db_session.commit()
 
-    response = auth_client.get("/api/insights/missing-dlc")
+    response = auth_client.get("/api/insights/missing-addons")
 
     assert response.json() == []
 

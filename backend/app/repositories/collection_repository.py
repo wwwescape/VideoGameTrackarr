@@ -1,9 +1,12 @@
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.models.catalog import Collection, Game, GameCollection
+from app.models.catalog import Collection, Game, GameCategory, GameCollection
+from app.models.library import MediaFormat
 from app.repositories.game_repository import (
+    GameSortOption,
     GameWithStatus,
+    _apply_optional_game_filters,
     _is_browsable_game,
     _owned_exists,
     _play_status_subquery,
@@ -79,5 +82,77 @@ def list_games_for_collection(db: Session, collection_id: int) -> list[GameWithS
             _is_browsable_game(Game.category),
         )
         .order_by(Game.name)
+    )
+    return [_row_to_game_with_status(row) for row in db.execute(stmt)]
+
+
+def list_addons_for_collection(
+    db: Session,
+    collection_id: int,
+    *,
+    search: str | None = None,
+    platform_ids: list[int] | None = None,
+    platform_exclude: bool = False,
+    tag_ids: list[int] | None = None,
+    tag_exclude: bool = False,
+    collection_ids: list[int] | None = None,
+    collection_exclude: bool = False,
+    franchise_ids: list[int] | None = None,
+    franchise_exclude: bool = False,
+    categories: list[GameCategory] | None = None,
+    category_exclude: bool = False,
+    formats: list[MediaFormat] | None = None,
+    format_exclude: bool = False,
+    storefronts: list[str] | None = None,
+    storefront_exclude: bool = False,
+    sort: GameSortOption = GameSortOption.NAME_ASC,
+) -> list[GameWithStatus]:
+    """Addons of this collection's top-level games — parent_game_id is only ever set for
+    hierarchical addon categories (DLC/expansion/pack; see game_service._upsert_from_igdb_payload),
+    so no extra category filter is needed here, unlike the top-level query above. An addon
+    itself is never a GameCollection row (it inherits its collection through its parent), so
+    this has to go via the parent ids rather than joining GameCollection directly.
+
+    The optional filters mirror game_repository.list_top_level_games' exact set (applied via
+    the same shared _apply_optional_game_filters helper) — this collection's own scope is
+    already fixed by the parent_ids subquery below, so unlike list_top_level_games there's no
+    required_collection_id/required_franchise_id equivalent needed here."""
+    parent_ids = (
+        select(Game.id)
+        .join(GameCollection, GameCollection.game_id == Game.id)
+        .where(
+            GameCollection.collection_id == collection_id,
+            Game.parent_game_id.is_(None),
+            _is_browsable_game(Game.category),
+        )
+    )
+    stmt = (
+        select(
+            Game,
+            _owned_exists(Game.id),
+            _wishlisted_exists(Game.id),
+            _play_status_subquery(Game.id),
+            _rating_subquery(Game.id),
+        )
+        .where(Game.parent_game_id.in_(parent_ids))
+    )
+    stmt = _apply_optional_game_filters(
+        stmt,
+        search=search,
+        platform_ids=platform_ids,
+        platform_exclude=platform_exclude,
+        tag_ids=tag_ids,
+        tag_exclude=tag_exclude,
+        collection_ids=collection_ids,
+        collection_exclude=collection_exclude,
+        franchise_ids=franchise_ids,
+        franchise_exclude=franchise_exclude,
+        categories=categories,
+        category_exclude=category_exclude,
+        formats=formats,
+        format_exclude=format_exclude,
+        storefronts=storefronts,
+        storefront_exclude=storefront_exclude,
+        sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

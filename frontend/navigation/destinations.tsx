@@ -72,7 +72,7 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
       icon: <InsightsIcon />,
       subItems: [
         { to: "/insights/duplicates", label: t("nav.duplicates"), icon: <ContentCopyIcon /> },
-        { to: "/insights/missing-dlc", label: t("nav.missingDlc"), icon: <ExtensionOffIcon /> },
+        { to: "/insights/missing-addons", label: t("nav.missingAddons"), icon: <ExtensionOffIcon /> },
         {
           to: "/insights/orphaned-accessories",
           label: t("nav.orphanedAccessories"),

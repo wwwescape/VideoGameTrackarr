@@ -13,6 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.routes import (
     accessories,
     auth,
+    catalog_resync,
     collections,
     companies,
     dashboard,
@@ -133,6 +134,7 @@ app.include_router(import_export.router)
 app.include_router(insights.router)
 app.include_router(franchises.router)
 app.include_router(collections.router)
+app.include_router(catalog_resync.router)
 app.include_router(events.router)
 app.include_router(dashboard.router)
 app.include_router(hardware_lookups.router)

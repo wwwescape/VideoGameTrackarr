@@ -152,6 +152,66 @@ describe("GameCard", () => {
     expect(contextFunction).not.toHaveBeenCalled();
   });
 
+  it("greyscales the cover when neither owned nor wishlisted, regardless of autoDiscovered", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, coverUrl: "https://images.igdb.com/cover.jpg", owned: false, wishlisted: false }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("img", { name: /Hollow Knight/ })).toHaveStyle({ filter: "grayscale(1)" });
+  });
+
+  it("does not greyscale the cover once owned or wishlisted", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, coverUrl: "https://images.igdb.com/cover.jpg", owned: true, wishlisted: false }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("img", { name: /Hollow Knight/ })).toHaveStyle({ filter: "none" });
+  });
+
+  it("shows a Missing chip only for a still-unclaimed 'what's missing' discovery", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, owned: false, wishlisted: false, autoDiscovered: true }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("Missing")).toBeInTheDocument();
+  });
+
+  it("does not show a Missing chip for a manually-added game that just isn't owned/wishlisted yet", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, owned: false, wishlisted: false, autoDiscovered: false }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText("Missing")).not.toBeInTheDocument();
+  });
+
+  it("does not show a Missing chip once a discovered game is owned or wishlisted", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, owned: true, wishlisted: false, autoDiscovered: true }}
+        context="list"
+        contextFunction={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText("Missing")).not.toBeInTheDocument();
+  });
+
   it("shows the addon type label for non-main_game categories", () => {
     renderWithTheme(
       <GameCard

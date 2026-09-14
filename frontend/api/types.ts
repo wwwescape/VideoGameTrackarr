@@ -44,6 +44,11 @@ export interface GameSummary {
   playStatus: PlayStatus | null;
   rating: number | null;
   isOnSale: boolean;
+  // True only for a game (or addon) that only exists locally because a Collection/Series
+  // "what's missing" resync discovered it, and hasn't been claimed since. Distinguishes a
+  // discovered-but-unclaimed game (greyscale + "Missing" chip) from a manually-added one
+  // that just isn't owned/wishlisted yet (greyscale, no chip) — see GameCard.tsx.
+  autoDiscovered: boolean;
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;
@@ -276,6 +281,7 @@ export interface CatalogBrowseResult {
   name: string;
   slug: string | null;
   games: GameSummary[];
+  addons: GameSummary[];
 }
 
 export interface ManualGameInput {
@@ -307,6 +313,39 @@ export interface RestoreStatus {
   startedAt: string | null;
   finishedAt: string | null;
   result: BackupRestoreResult | null;
+  error: string | null;
+}
+
+export type CatalogResyncJobStatus = "idle" | "running" | "completed" | "failed";
+export type CatalogResyncKind = "collection" | "franchise";
+
+export interface CatalogResyncProgress {
+  current: number;
+  total: number;
+}
+
+export interface CatalogResyncFailure {
+  igdbId: number;
+  error: string;
+}
+
+export interface CatalogResyncResult {
+  totalCandidates: number;
+  added: number;
+  skippedExisting: number;
+  failed: number;
+  failures: CatalogResyncFailure[];
+}
+
+export interface CatalogResyncStatus {
+  status: CatalogResyncJobStatus;
+  kind: CatalogResyncKind | null;
+  refSlug: string | null;
+  refName: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  progress: CatalogResyncProgress | null;
+  result: CatalogResyncResult | null;
   error: string | null;
 }
 
@@ -367,6 +406,8 @@ export interface VersionInfo {
 
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
+export type GameSortOption = "name_asc" | "name_desc" | "release_date_asc" | "release_date_desc";
+export type CatalogSortOption = "name_asc" | "name_desc";
 export type RatingBoard = "esrb" | "pegi" | "cero" | "usk" | "grac" | "classind" | "acb" | "iarc";
 
 export interface LibraryItem {
@@ -441,9 +482,13 @@ export interface InsightGameRef {
   coverUrl: string | null;
   category: GameCategory | null;
   firstReleaseDate: number | null;
+  // GameCard needs these to decide greyscale/the "Missing" chip — see GameCard.tsx.
+  owned: boolean;
+  wishlisted: boolean;
+  autoDiscovered: boolean;
 }
 
-export interface MissingDlcEntry {
+export interface MissingAddonsEntry {
   game: InsightGameRef;
   missingAddons: InsightGameRef[];
 }

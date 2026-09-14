@@ -16,6 +16,10 @@ def list_tracked_items(db: Session) -> list[LibraryItem]:
     return library_item_repository.list_tracked_items(db)
 
 
+def list_distinct_storefronts(db: Session) -> list[str]:
+    return library_item_repository.list_distinct_storefronts(db)
+
+
 def add_library_item(db: Session, game_id: int, **fields: Any) -> LibraryItem:
     _require_game(db, game_id)
     item = library_item_repository.create_library_item(db, game_id=game_id, **fields)

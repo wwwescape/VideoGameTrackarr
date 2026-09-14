@@ -158,9 +158,9 @@ export const duplicatesCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.duplicates") },
 ];
 
-export const missingDlcCrumbs: CrumbsFn = (_params, t) => [
+export const missingAddonsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.insights"), to: "/insights" },
-  { label: t("nav.missingDlc") },
+  { label: t("nav.missingAddons") },
 ];
 
 export const orphanedAccessoriesCrumbs: CrumbsFn = (_params, t) => [

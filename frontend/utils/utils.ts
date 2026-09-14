@@ -1,4 +1,4 @@
-import type { GameCategory } from "../api/types";
+import type { GameCategory, GameSortOption } from "../api/types";
 
 export function getReleaseYear(value: number | null | undefined): number | null {
   if (!value) {
@@ -35,6 +35,24 @@ export function getAddonType(gameOrAddon: { category?: GameCategory | null }): s
 
 export function isAddon(gameOrAddon: { category?: GameCategory | null }): boolean {
   return Boolean(gameOrAddon.category) && gameOrAddon.category !== "main_game";
+}
+
+// Client-side equivalent of game_repository.py's _order_by_for_sort, for lists (e.g. a
+// Collection/Series browse page's Games/Addons sections) that are already fully fetched
+// rather than server-side paginated/sorted. A missing release date always sorts last,
+// regardless of direction — there's no "correct" position for "unknown" on either end.
+export function sortGamesBy<T extends { name: string; firstReleaseDate: number | null }>(
+  games: T[],
+  sort: GameSortOption
+): T[] {
+  return [...games].sort((a, b) => {
+    if (sort === "release_date_asc" || sort === "release_date_desc") {
+      const aDate = a.firstReleaseDate ?? Number.POSITIVE_INFINITY;
+      const bDate = b.firstReleaseDate ?? Number.POSITIVE_INFINITY;
+      return sort === "release_date_asc" ? aDate - bDate : bDate - aDate;
+    }
+    return sort === "name_desc" ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+  });
 }
 
 const EVENT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {

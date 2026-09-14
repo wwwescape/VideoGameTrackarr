@@ -182,6 +182,11 @@ def test_import_game_creates_game_and_addons(auth_client, db_session, igdb_clien
     addon = db_session.query(Game).filter_by(igdb_id=1943).one()
     assert addon.category.value == "dlc_addon"
     assert addon.parent_game_id == body["id"]
+    # A real user-initiated import (not the Collection/Series "what's missing" resync) must
+    # never be flagged auto_discovered — regression guard for game_service.import_game_from_igdb's
+    # default.
+    assert body["autoDiscovered"] is False
+    assert addon.auto_discovered is False
 
 
 @respx.mock
@@ -360,6 +365,48 @@ def test_resync_game_updates_existing_record(auth_client, db_session, seed_game,
 
 def test_resync_game_404_for_missing_game(auth_client, igdb_client):
     response = auth_client.post("/api/games/999999/resync")
+
+    assert response.status_code == 404
+
+
+@respx.mock
+def test_resync_game_does_not_flip_auto_discovered_flag(auth_client, db_session, seed_game, igdb_client):
+    """A real Resync (only reachable once a game is claimed, since discovered games show
+    Add Game instead — see GameActionButtons.tsx) must never itself flip auto_discovered
+    back on, even though it goes through the same import_game_from_igdb/upsert_game_from_igdb
+    call chain the resync job uses — game_repository.upsert_game_from_igdb only applies the
+    flag on a genuine insert, never on this update path."""
+    seed_game.auto_discovered = True
+    db_session.commit()
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/games").mock(
+        side_effect=[
+            httpx.Response(200, json=[{"id": seed_game.igdb_id, "name": "Test Game (Updated)", "category": 0}]),
+            httpx.Response(200, json=[]),  # no addons
+        ]
+    )
+
+    response = auth_client.post(f"/api/games/{seed_game.id}/resync")
+
+    assert response.status_code == 200
+    assert response.json()["autoDiscovered"] is True
+
+
+def test_claim_discovered_game_clears_flag_and_is_idempotent(auth_client, db_session, seed_game):
+    seed_game.auto_discovered = True
+    db_session.commit()
+
+    first_response = auth_client.post(f"/api/games/{seed_game.id}/claim")
+    second_response = auth_client.post(f"/api/games/{seed_game.id}/claim")
+
+    assert first_response.status_code == 200
+    assert first_response.json()["autoDiscovered"] is False
+    assert second_response.status_code == 200
+    assert second_response.json()["autoDiscovered"] is False
+
+
+def test_claim_discovered_game_404_for_missing_game(auth_client):
+    response = auth_client.post("/api/games/999999/claim")
 
     assert response.status_code == 404
 

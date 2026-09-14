@@ -52,6 +52,10 @@ export interface GameCardGame {
   category?: GameCategory | null;
   owned?: boolean;
   wishlisted?: boolean;
+  // Distinguishes a Collection/Series "what's missing" discovery (not yet claimed) from a
+  // manually-added game that just isn't owned/wishlisted yet — both are greyscaled, but only
+  // the former gets the "Missing" chip. See the isGreyscale/showMissingChip split below.
+  autoDiscovered?: boolean;
   playStatus?: PlayStatus | null;
   // Named to match GameSummary's own field so a GameSummary object can be passed straight
   // through as `game` everywhere (list, collections, series, addons, release calendar)
@@ -95,6 +99,14 @@ const GameCard = ({
   const [coverLoaded, setCoverLoaded] = useState(false);
   const showsBadges =
     (context === "list" || context === "addon" || context === "public") && !selectable;
+  // Same gate as showsBadges — the add/added search-result contexts don't carry real
+  // ownership data, so there's nothing meaningful to grey out there.
+  const isGreyscale = showsBadges && !game.owned && !game.wishlisted;
+  // A subset of isGreyscale: only a still-unclaimed Collection/Series "what's missing"
+  // discovery gets the chip — a manually-added game that just isn't owned/wishlisted yet is
+  // greyscaled the same way, but showing "Missing" on it would be wrong (nothing's missing;
+  // the user added it on purpose and just hasn't marked ownership yet).
+  const showMissingChip = isGreyscale && Boolean(game.autoDiscovered);
   const isClickable = context === "list" || context === "addon" || context === "added";
   const releaseYear = getReleaseYear(game.firstReleaseDate);
 
@@ -188,6 +200,7 @@ const GameCard = ({
                   objectFit: "cover",
                   opacity: coverLoaded ? 1 : 0,
                   transition: "opacity 150ms ease",
+                  filter: isGreyscale ? "grayscale(1)" : "none",
                 }}
               />
             </>
@@ -217,6 +230,21 @@ const GameCard = ({
                 position: "absolute",
                 bottom: 8,
                 left: 8,
+                zIndex: 1,
+                fontWeight: 600,
+                boxShadow: theme.shadows[3],
+              }}
+            />
+          ) : null}
+          {showMissingChip ? (
+            <Chip
+              label={t("games.card.missingLabel")}
+              color="info"
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 8,
+                right: 8,
                 zIndex: 1,
                 fontWeight: 600,
                 boxShadow: theme.shadows[3],

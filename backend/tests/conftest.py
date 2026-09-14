@@ -19,7 +19,7 @@ from app.models import Base
 from app.models.catalog import Game, GameCategory, Platform, Region
 from app.models.hardware import Accessory, AccessoryType, Device, DeviceType, HardwarePlatform, Manufacturer
 from app.models.system import User
-from app.services import job_definitions, job_registry, job_scheduler, restore_job
+from app.services import catalog_resync_job, job_definitions, job_registry, job_scheduler, restore_job
 from app.services.cache import InMemoryTTLCache
 from app.services.igdb_client import IGDBClient
 
@@ -48,6 +48,15 @@ def _reset_restore_job():
     restore_job.reset_for_tests()
     yield
     restore_job.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _reset_catalog_resync_job():
+    # Same leak-across-tests problem as restore_job above (see
+    # app/services/catalog_resync_job.py's own process-global single slot).
+    catalog_resync_job.reset_for_tests()
+    yield
+    catalog_resync_job.reset_for_tests()
 
 
 @pytest.fixture(autouse=True)
