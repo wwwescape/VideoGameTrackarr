@@ -522,6 +522,18 @@ def test_get_game_by_bare_uuid_resolves_without_a_slug(auth_client, seed_game):
     assert response.json()["id"] == seed_game.id
 
 
+def test_get_game_with_uuid_shaped_igdb_slug_resolves_by_slug(auth_client, db_session, seed_game):
+    """Some IGDB slugs (e.g. Need for Speed: Most Wanted) end in a UUID-shaped string that is
+    not the game's own uuid — that must fall back to slug lookup instead of 404ing."""
+    seed_game.slug = "need-for-speed-most-wanted-53b9fef3-adb4-41a0-8ca0-ffcbb0060467"
+    db_session.commit()
+
+    response = auth_client.get(f"/api/games/{seed_game.slug}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == seed_game.id
+
+
 def test_list_addons_404_for_missing_parent(auth_client):
     response = auth_client.get("/api/games/999999/addons")
 

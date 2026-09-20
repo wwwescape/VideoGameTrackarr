@@ -103,15 +103,15 @@ def get_game_detail(db: Session, game_id: int) -> GameWithStatus:
 
 def get_game_detail_by_identifier(db: Session, identifier: str) -> GameWithStatus:
     """Resolves a public game/addon identifier. A trailing UUID (manually-added games' own
-    {name-slug}-{uuid}, or a bare UUID like Compare's ?ids= list) resolves by uuid only — no
-    fallback to slug, same as the other entities' identifier never falling back to numeric
-    id. Anything else is treated as an IGDB-sourced game's slug. See app/core/identifiers.py."""
+    {name-slug}-{uuid}, or a bare UUID like Compare's ?ids= list) resolves by uuid first.
+    Anything else — or a UUID-shaped suffix that matches no game's uuid — is treated as an
+    IGDB-sourced game's slug, since some IGDB slugs (e.g. Need for Speed: Most Wanted's)
+    legitimately end in a UUID-shaped string that isn't the game's own uuid.
+    See app/core/identifiers.py."""
     game_uuid = extract_uuid(identifier)
-    result = (
-        game_repository.get_game_by_uuid(db, game_uuid)
-        if game_uuid
-        else game_repository.get_game_by_slug(db, identifier)
-    )
+    result = game_repository.get_game_by_uuid(db, game_uuid) if game_uuid else None
+    if result is None:
+        result = game_repository.get_game_by_slug(db, identifier)
     if result is None:
         raise NotFoundError(f"Game {identifier} not found")
     return result
