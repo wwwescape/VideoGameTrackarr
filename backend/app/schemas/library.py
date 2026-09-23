@@ -27,6 +27,7 @@ class LibraryItemResponse(CamelModel):
     track_for_sales: bool
     acquired_at: date | None
     notes: str | None
+    steelbook: bool
     is_on_sale: bool
     sale_price_amount: float | None
     sale_price_currency: str | None
@@ -95,6 +96,7 @@ def library_item_from_orm(
         track_for_sales=item.track_for_sales,
         acquired_at=item.acquired_at,
         notes=item.notes,
+        steelbook=item.steelbook,
         is_on_sale=is_on_sale,
         sale_price_amount=sale_price_amount,
         sale_price_currency=sale_price_currency,
@@ -116,6 +118,7 @@ class LibraryItemCreateRequest(CamelModel):
     track_for_sales: bool = False
     acquired_at: date | None = None
     notes: str | None = None
+    steelbook: bool = False
 
 
 class LibraryItemUpdateRequest(CamelModel):
@@ -131,3 +134,4 @@ class LibraryItemUpdateRequest(CamelModel):
     track_for_sales: bool | None = None
     acquired_at: date | None = None
     notes: str | None = None
+    steelbook: bool | None = None

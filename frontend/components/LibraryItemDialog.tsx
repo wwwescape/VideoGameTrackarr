@@ -47,9 +47,12 @@ const formSchema = z.object({
   ratingBoard: z
     .enum(["esrb", "pegi", "cero", "usk", "grac", "classind", "acb", "iarc"])
     .optional(),
+  edition: z.string().optional(),
   price: z.number().optional(),
   targetPrice: z.number().optional(),
   trackForSales: z.boolean().optional(),
+  steelbook: z.boolean().optional(),
+  notes: z.string().optional(),
 });
 
 export type LibraryItemFormValues = z.infer<typeof formSchema>;
@@ -251,6 +254,15 @@ const LibraryItemDialog = ({
     }
   }, [showTrackForSales, setValue]);
 
+  // Steelbook only means anything for a physical copy — cleared the same way trackForSales
+  // is cleared above when its own gating condition stops holding, rather than leaving a
+  // stale true value sitting unseen behind a hidden checkbox.
+  useEffect(() => {
+    if (watchedFormat !== "physical") {
+      setValue("steelbook", false);
+    }
+  }, [watchedFormat, setValue]);
+
   // The "" digitalStorefront sentinel above (see that effect) is purely a workaround for
   // react-hook-form/MUI Autocomplete's display sync — callers should still only ever see
   // "not set" as undefined, never a literal empty string reaching the API.
@@ -314,6 +326,22 @@ const LibraryItemDialog = ({
             />
           )}
         </FormControl>
+        {watchedFormat === "physical" ? (
+          <FormControl fullWidth sx={{ margin: "-10px 0 20px 0" }}>
+            <Controller
+              name="steelbook"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox checked={field.value ?? false} onChange={(event) => field.onChange(event.target.checked)} />
+                  }
+                  label={t("dialogs.libraryItem.steelbookLabel")}
+                />
+              )}
+            />
+          </FormControl>
+        ) : null}
         {showEditableStorefront ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
             <Controller
@@ -358,6 +386,21 @@ const LibraryItemDialog = ({
             />
           </FormControl>
         ) : null}
+        <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
+          <Controller
+            name="edition"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                fullWidth
+                label={t("dialogs.libraryItem.editionLabel")}
+                helperText={t("dialogs.libraryItem.editionHelperText")}
+                value={field.value ?? ""}
+                onChange={(event) => field.onChange(event.target.value)}
+              />
+            )}
+          />
+        </FormControl>
         {status === "owned" ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
             <Controller
@@ -460,6 +503,22 @@ const LibraryItemDialog = ({
                 renderInput={(params: AutocompleteRenderInputParams) => (
                   <TextField {...params} label={t("dialogs.libraryItem.ratingBoardLabel")} />
                 )}
+              />
+            )}
+          />
+        </FormControl>
+        <FormControl fullWidth sx={{ margin: "10px 0 0 0" }}>
+          <Controller
+            name="notes"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                label={t("dialogs.libraryItem.notesLabel")}
+                value={field.value ?? ""}
+                onChange={(event) => field.onChange(event.target.value)}
               />
             )}
           />

@@ -84,6 +84,7 @@ const CatalogBrowseGrid = ({
   const [formatExclude, setFormatExclude] = useState(false);
   const [storefronts, setStorefronts] = useState<string[]>([]);
   const [storefrontExclude, setStorefrontExclude] = useState(false);
+  const [steelbookOnly, setSteelbookOnly] = useState(false);
   const [sort, setSort] = useState<GameSortOption>("name_asc");
   // Off by default (unlike the Games page's default-on) — preserves the pre-existing "only
   // games I've added" view; a Resync (see CatalogResyncButton) is what starts populating
@@ -122,6 +123,7 @@ const CatalogBrowseGrid = ({
       formatExclude,
       storefronts: storefronts.length > 0 ? storefronts : undefined,
       storefrontExclude,
+      steelbookOnly,
       sort,
     }),
     [
@@ -141,6 +143,7 @@ const CatalogBrowseGrid = ({
       formatExclude,
       storefronts,
       storefrontExclude,
+      steelbookOnly,
       sort,
     ]
   );
@@ -239,6 +242,8 @@ const CatalogBrowseGrid = ({
             onStorefrontsChange={setStorefronts}
             storefrontExclude={storefrontExclude}
             onStorefrontExcludeChange={setStorefrontExclude}
+            steelbookOnly={steelbookOnly}
+            onSteelbookOnlyChange={setSteelbookOnly}
             sort={sort}
             onSortChange={setSort}
             showMissing={showMissing}

@@ -77,4 +77,47 @@ describe("LibraryItemDialog", () => {
 
     expect(await screen.findByLabelText("Digital Storefront")).toBeInTheDocument();
   });
+
+  it("shows Steelbook only while Format is Physical", async () => {
+    const user = userEvent.setup();
+    render(
+      <LibraryItemDialog
+        open
+        title="Add game to your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Add"
+      />
+    );
+
+    // Physical is the default format, so Steelbook starts visible with no interaction needed.
+    expect(screen.getByLabelText("Steelbook")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Digital" }));
+    expect(screen.queryByLabelText("Steelbook")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Physical" }));
+    expect(screen.getByLabelText("Steelbook")).toBeInTheDocument();
+  });
+
+  it("always shows Edition and Notes fields", () => {
+    render(
+      <LibraryItemDialog
+        open
+        title="Add game to your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Add"
+      />
+    );
+
+    expect(screen.getByLabelText("Edition")).toBeInTheDocument();
+    expect(screen.getByLabelText("Notes")).toBeInTheDocument();
+  });
 });

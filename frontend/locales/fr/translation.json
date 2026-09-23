@@ -93,10 +93,14 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Autre",
       "digitalStorefrontLabel": "Boutique numérique",
+      "steelbookLabel": "Steelbook",
+      "editionLabel": "Édition",
+      "editionHelperText": "Facultatif, ex. « Édition Limitée »",
       "priceLabel": "Prix d'achat",
       "trackForSalesLabel": "Suivre les promotions",
       "targetPriceLabel": "Prix cible",
-      "targetPriceHelperText": "Sera signalé sur la page En promotion dès que le prix descend à ce niveau ou en dessous."
+      "targetPriceHelperText": "Sera signalé sur la page En promotion dès que le prix descend à ce niveau ou en dessous.",
+      "notesLabel": "Notes"
     }
   },
   "restore": {
@@ -399,6 +403,7 @@
       "sortReleaseDateAsc": "Date de sortie (ASC)",
       "sortReleaseDateDesc": "Date de sortie (DESC)",
       "showMissingLabel": "Afficher ce qu'il me manque ?",
+      "steelbookOnlyLabel": "Steelbooks uniquement",
       "clearFiltersButton": "Effacer les filtres",
       "noFiltersAvailable": "Aucun filtre disponible",
       "noSearchMatches": "Aucun résultat trouvé."
@@ -548,8 +553,9 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Autre",
       "platformColumn": "Plateforme",
-      "formatColumn": "Format",
-      "storefrontColumn": "Boutique",
+      "formatStorefrontColumn": "Format et boutique",
+      "editionColumn": "Édition",
+      "steelbookColumn": "Steelbook",
       "onSaleColumn": "En promotion",
       "moveColumn": "Déplacer",
       "collectionPhrase": "collection",

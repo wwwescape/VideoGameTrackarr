@@ -164,6 +164,7 @@ def _apply_optional_game_filters(
     format_exclude: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> Select[Any]:
     """The Games list's whole optional filter set (search + 7 dimensions + sort), factored
@@ -203,6 +204,10 @@ def _apply_optional_game_filters(
     if storefronts:
         clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.digital_storefront.in_(storefronts))
         stmt = stmt.where(_maybe_negate(clause, storefront_exclude))
+    if steelbook_only:
+        # A plain presence check, unlike the list-based filters above — no Exclude toggle,
+        # since "not a Steelbook" isn't a meaningful thing to filter for on its own.
+        stmt = stmt.where(exists().where(LibraryItem.game_id == Game.id, LibraryItem.steelbook.is_(True)))
     return stmt.order_by(_order_by_for_sort(sort))
 
 
@@ -223,6 +228,7 @@ def list_top_level_games(
     format_exclude: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
@@ -263,6 +269,7 @@ def list_top_level_games(
         format_exclude=format_exclude,
         storefronts=storefronts,
         storefront_exclude=storefront_exclude,
+        steelbook_only=steelbook_only,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

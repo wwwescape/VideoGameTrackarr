@@ -75,6 +75,13 @@ class LibraryItem(TimestampMixin, Base):
     )
     acquired_at: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)
+    steelbook: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="Only meaningful when format=physical — a Steelbook/metal-case copy vs. a standard case",
+    )
 
     game: Mapped["Game"] = relationship()  # noqa: F821
     platform: Mapped["Platform | None"] = relationship()  # noqa: F821

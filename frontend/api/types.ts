@@ -428,6 +428,7 @@ export interface LibraryItem {
   trackForSales: boolean;
   acquiredAt: string | null;
   notes: string | null;
+  steelbook: boolean;
   isOnSale: boolean;
   salePriceAmount: number | null;
   salePriceCurrency: string | null;
@@ -448,6 +449,7 @@ export interface LibraryItemInput {
   trackForSales?: boolean;
   acquiredAt?: string | null;
   notes?: string | null;
+  steelbook?: boolean;
 }
 
 export interface IgdbParentGame {

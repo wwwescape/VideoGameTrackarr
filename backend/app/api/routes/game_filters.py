@@ -31,4 +31,7 @@ class GameFilterParams:
     format_exclude: bool = Query(default=False, alias="formatExclude")
     storefronts: list[str] | None = Query(default=None, alias="storefront")
     storefront_exclude: bool = Query(default=False, alias="storefrontExclude")
+    # A plain boolean, unlike every filter above — a copy either is or isn't a Steelbook, so
+    # there's no multi-value list and no "Exclude" toggle worth offering for a single flag.
+    steelbook_only: bool = Query(default=False, alias="steelbookOnly")
     sort: GameSortOption = Query(default=GameSortOption.NAME_ASC)

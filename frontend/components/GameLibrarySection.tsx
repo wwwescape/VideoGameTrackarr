@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Backdrop from "@mui/material/Backdrop";
 import CardContent from "@mui/material/CardContent";
@@ -27,16 +28,17 @@ import EnhancedTable, { type HeadCell } from "./EnhancedTable";
 import LibraryItemDialog, { type LibraryItemFormValues } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
 
-// Shared across the Owned and Wishlist tables below so their Platform/Format/Storefront/
-// action columns line up pixel-for-pixel even though Wishlist has one extra column (the
-// on-sale chip) that Owned doesn't. Values are deliberately tight (fixed widths, cell
-// content ellipsis-truncates rather than wrapping or growing the column — see
+// Shared across the Owned and Wishlist tables below so their Platform/Format & Storefront/
+// Edition/Steelbook/action columns line up pixel-for-pixel even though Wishlist has one
+// extra column (the on-sale chip) that Owned doesn't. Values are deliberately tight (fixed
+// widths, cell content ellipsis-truncates rather than wrapping or growing the column — see
 // EnhancedTable.tsx) so the two tables together don't force horizontal scrolling on a
 // typical card width.
 const COLUMN_WIDTHS = {
   platformName: PLATFORM_COLUMN_WIDTH,
-  formatLabel: 140,
-  storefrontLabel: 110,
+  formatStorefront: 190,
+  edition: 150,
+  steelbook: 100,
   sale: 130,
 } as const;
 
@@ -83,20 +85,28 @@ const GameLibrarySection = ({
       width: COLUMN_WIDTHS.platformName,
     },
     {
-      id: "formatLabel",
+      id: "formatStorefront",
       numeric: false,
       disablePadding: false,
-      label: t("games.library.formatColumn"),
+      label: t("games.library.formatStorefrontColumn"),
       disableHeader: false,
-      width: COLUMN_WIDTHS.formatLabel,
+      width: COLUMN_WIDTHS.formatStorefront,
     },
     {
-      id: "storefrontLabel",
+      id: "edition",
       numeric: false,
       disablePadding: false,
-      label: t("games.library.storefrontColumn"),
+      label: t("games.library.editionColumn"),
       disableHeader: false,
-      width: COLUMN_WIDTHS.storefrontLabel,
+      width: COLUMN_WIDTHS.edition,
+    },
+    {
+      id: "steelbook",
+      numeric: false,
+      disablePadding: false,
+      label: t("games.library.steelbookColumn"),
+      disableHeader: false,
+      width: COLUMN_WIDTHS.steelbook,
     },
   ];
 
@@ -146,11 +156,29 @@ const GameLibrarySection = ({
     );
   };
 
+  // One combined "Physical" / "Digital: Steam" / "ISO" column rather than two — a storefront
+  // only ever exists alongside a Digital format (see LibraryItemDialog.tsx), so a separate
+  // Storefront column left every non-Digital row's cell blank; folding it into Format via
+  // "Format: Storefront" carries the same information without a mostly-empty column of its
+  // own.
+  const formatStorefrontLabel = (item: LibraryItem): string => {
+    if (!item.format) return "-";
+    const label = formatLabels[item.format];
+    return item.format === "digital" && item.digitalStorefront
+      ? `${label}: ${item.digitalStorefront}`
+      : label;
+  };
+
   const toTableRow = (item: LibraryItem) => ({
     id: item.id,
     platformName: item.platformName ?? "-",
-    formatLabel: item.format ? formatLabels[item.format] : "-",
-    storefrontLabel: item.digitalStorefront ?? "-",
+    formatStorefront: formatStorefrontLabel(item),
+    edition: item.edition ?? "-",
+    steelbook: item.steelbook ? (
+      <Tooltip title={t("games.library.steelbookColumn")}>
+        <CheckIcon fontSize="small" color="success" aria-label={t("games.library.steelbookColumn")} />
+      </Tooltip>
+    ) : null,
     sale: item.status === "wishlist" ? renderSaleChip(item) : null,
   });
 
@@ -299,9 +327,12 @@ const GameLibrarySection = ({
                   format: dialogItem.format ?? "physical",
                   digitalStorefront: dialogItem.digitalStorefront ?? "",
                   ratingBoard: dialogItem.ratingBoard ?? undefined,
+                  edition: dialogItem.edition ?? "",
                   price: dialogItem.price ?? undefined,
                   targetPrice: dialogItem.targetPrice ?? undefined,
                   trackForSales: dialogItem.trackForSales,
+                  steelbook: dialogItem.steelbook,
+                  notes: dialogItem.notes ?? "",
                 }
               : undefined
           }

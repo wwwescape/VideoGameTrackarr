@@ -93,10 +93,14 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
       "digitalStorefrontLabel": "Digital Storefront",
+      "steelbookLabel": "Steelbook",
+      "editionLabel": "Edition",
+      "editionHelperText": "Optional, e.g. \"Limited Edition\"",
       "priceLabel": "Purchase Price",
       "trackForSalesLabel": "Track for sales",
       "targetPriceLabel": "Target price",
-      "targetPriceHelperText": "Get flagged on the On Sale page once the price drops to or below this."
+      "targetPriceHelperText": "Get flagged on the On Sale page once the price drops to or below this.",
+      "notesLabel": "Notes"
     }
   },
   "restore": {
@@ -399,6 +403,7 @@
       "sortReleaseDateAsc": "Release Date (ASC)",
       "sortReleaseDateDesc": "Release Date (DESC)",
       "showMissingLabel": "Show what I am missing?",
+      "steelbookOnlyLabel": "Steelbooks only",
       "clearFiltersButton": "Clear filters",
       "noFiltersAvailable": "No filters available",
       "noSearchMatches": "No matches found."
@@ -548,8 +553,9 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
       "platformColumn": "Platform",
-      "formatColumn": "Format",
-      "storefrontColumn": "Storefront",
+      "formatStorefrontColumn": "Format & Storefront",
+      "editionColumn": "Edition",
+      "steelbookColumn": "Steelbook",
       "onSaleColumn": "On Sale",
       "moveColumn": "Move",
       "collectionPhrase": "collection",

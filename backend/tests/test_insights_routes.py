@@ -177,6 +177,47 @@ def test_missing_addons_filters_by_platform(auth_client, db_session, seed_game, 
     assert [e["game"]["name"] for e in response.json()] == ["PC Owned Game"]
 
 
+def test_missing_addons_filters_by_steelbook_only(auth_client, db_session, seed_game, seed_platform):
+    """Regression test: GameFilterParams (shared with GET /api/games and the Collection/
+    Series addons endpoints) always carries steelbookOnly, default False — this endpoint must
+    accept it too, or every call here 500s regardless of whether the caller ever sets it."""
+    other_game = Game(igdb_id=9018, name="Non-Steelbook Owned Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.flush()
+    other_addon = Game(
+        igdb_id=9019, name="Non-Steelbook DLC", category=GameCategory.DLC_ADDON, parent_game_id=other_game.id
+    )
+    seed_addon = Game(
+        igdb_id=9020, name="Steelbook DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    db_session.add_all([other_addon, seed_addon])
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.PHYSICAL,
+            steelbook=True,
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=other_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.PHYSICAL,
+            steelbook=False,
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/missing-addons", params={"steelbookOnly": True})
+    assert [e["game"]["name"] for e in response.json()] == ["Test Game"]
+
+    response = auth_client.get("/api/insights/missing-addons")
+    assert {e["game"]["name"] for e in response.json()} == {"Test Game", "Non-Steelbook Owned Game"}
+
+
 def test_missing_addons_excludes_non_dlc_like_categories(auth_client, db_session, seed_game, seed_platform):
     bundle = Game(igdb_id=9004, name="GOTY Edition", category=GameCategory.BUNDLE, parent_game_id=seed_game.id)
     standalone = Game(

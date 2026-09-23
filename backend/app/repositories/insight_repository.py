@@ -51,6 +51,7 @@ def find_missing_addons(
     format_exclude: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[tuple[Game, list[tuple[Game, bool]]]]:
     """For every owned, top-level game: its DLC/expansions/packs (per parent_game_id,
@@ -62,7 +63,10 @@ def find_missing_addons(
     The optional filters mirror game_repository.list_top_level_games' exact set (via the
     same shared _apply_optional_game_filters helper), applied to the *owned* top-level game
     — Game is the real (non-aliased) model class here, the same one that helper's exists()
-    clauses correlate to, so they bind to the parent row and never to Addon."""
+    clauses correlate to, so they bind to the parent row and never to Addon. steelbook_only
+    follows the same rule: it filters on the owned parent's own LibraryItem, same as formats/
+    storefronts already do here — an addon is never itself owned (that's the whole premise of
+    "missing"), so there's no Addon-level copy to check it against."""
     Addon = aliased(Game)
     addon_owned = exists().where(LibraryItem.game_id == Addon.id, LibraryItem.status == LibraryStatus.OWNED)
     addon_wishlisted = exists().where(LibraryItem.game_id == Addon.id, LibraryItem.status == LibraryStatus.WISHLIST)
@@ -95,6 +99,7 @@ def find_missing_addons(
         format_exclude=format_exclude,
         storefronts=storefronts,
         storefront_exclude=storefront_exclude,
+        steelbook_only=steelbook_only,
         sort=sort,
     )
     # _apply_optional_game_filters' own order_by only covers Game's sort field — Addon.name

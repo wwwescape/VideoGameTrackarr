@@ -24,6 +24,9 @@ export interface GameListFilters {
   formatExclude?: boolean;
   storefronts?: string[];
   storefrontExclude?: boolean;
+  // Plain boolean, unlike every filter above — a copy either is or isn't a Steelbook, so
+  // there's no list/Exclude pair for it. See game_repository._apply_optional_game_filters.
+  steelbookOnly?: boolean;
   sort?: GameSortOption;
   // Only meaningful on GET /api/games — an always-applied AND-scope, independent of the
   // collectionIds/franchiseIds OR-filter above. Used by a Collection/Series detail page's
@@ -54,6 +57,7 @@ export function buildGameFilterParams(filters: GameListFilters) {
     formatExclude,
     storefronts,
     storefrontExclude,
+    steelbookOnly,
     sort,
     requiredCollectionId,
     requiredFranchiseId,
@@ -74,6 +78,7 @@ export function buildGameFilterParams(filters: GameListFilters) {
     formatExclude: formats?.length ? formatExclude : undefined,
     storefront: storefronts?.length ? storefronts : undefined,
     storefrontExclude: storefronts?.length ? storefrontExclude : undefined,
+    steelbookOnly: steelbookOnly || undefined,
     sort: sort || undefined,
     requiredCollectionId,
     requiredFranchiseId,

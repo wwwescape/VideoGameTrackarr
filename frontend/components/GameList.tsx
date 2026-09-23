@@ -43,6 +43,7 @@ const GameList = () => {
   const [formatExclude, setFormatExclude] = useState(false);
   const [storefronts, setStorefronts] = useState<string[]>([]);
   const [storefrontExclude, setStorefrontExclude] = useState(false);
+  const [steelbookOnly, setSteelbookOnly] = useState(false);
   const [sort, setSort] = useState<GameSortOption>("name_asc");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
@@ -85,6 +86,7 @@ const GameList = () => {
       formatExclude,
       storefronts: storefronts.length > 0 ? storefronts : undefined,
       storefrontExclude,
+      steelbookOnly,
       sort,
     }),
     [
@@ -104,6 +106,7 @@ const GameList = () => {
       formatExclude,
       storefronts,
       storefrontExclude,
+      steelbookOnly,
       sort,
     ]
   );
@@ -275,6 +278,8 @@ const GameList = () => {
           onStorefrontsChange={setStorefronts}
           storefrontExclude={storefrontExclude}
           onStorefrontExcludeChange={setStorefrontExclude}
+          steelbookOnly={steelbookOnly}
+          onSteelbookOnlyChange={setSteelbookOnly}
           sort={sort}
           onSortChange={setSort}
         />
@@ -299,7 +304,8 @@ const GameList = () => {
                   franchiseIds.length > 0 ||
                   gameTypes.length > 0 ||
                   formats.length > 0 ||
-                  storefronts.length > 0
+                  storefronts.length > 0 ||
+                  steelbookOnly
                 ? t("games.list.noGamesMatchFilter")
                 : t("games.list.pleaseAddGames")}
           </Paper>

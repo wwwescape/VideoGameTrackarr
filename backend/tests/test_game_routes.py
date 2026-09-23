@@ -314,6 +314,38 @@ def test_list_games_filters_by_storefront(auth_client, db_session, seed_game, se
     assert [g["name"] for g in response.json()] == ["Test Game"]
 
 
+def test_list_games_filters_by_steelbook_only(auth_client, db_session, seed_game, seed_platform):
+    other_game = Game(igdb_id=2213, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    db_session.add(
+        LibraryItem(
+            game_id=seed_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.PHYSICAL,
+            steelbook=True,
+        )
+    )
+    db_session.add(
+        LibraryItem(
+            game_id=other_game.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.OWNED,
+            format=MediaFormat.PHYSICAL,
+            steelbook=False,
+        )
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"steelbookOnly": True})
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    response = auth_client.get("/api/games")
+    assert {g["name"] for g in response.json()} == {"Test Game", "Other Game"}
+
+
 def test_list_storefronts_returns_distinct_values_only(auth_client, db_session, seed_game, seed_platform):
     other_game = Game(igdb_id=2212, name="Other Game", category=GameCategory.MAIN_GAME)
     db_session.add(other_game)

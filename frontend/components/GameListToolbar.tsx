@@ -191,6 +191,15 @@ interface GameListToolbarProps {
   onStorefrontsChange: (value: string[]) => void;
   storefrontExclude: boolean;
   onStorefrontExcludeChange: (value: boolean) => void;
+  // Optional — only the Games page and a Collection/Series detail page (both backed by
+  // GameFilterParams' steelbookOnly) pass these; rendered in the Filter tab only when
+  // provided. The Missing Addons page doesn't: a not-yet-owned addon has no LibraryItem to
+  // check a Steelbook flag against. A plain toggle, not a multi-select with its own Exclude
+  // checkbox like every field above — a copy either is or isn't a Steelbook, and "off"
+  // already means "don't filter on this," so there's no meaningful third "exclude
+  // Steelbooks" state worth a second control for a single boolean.
+  steelbookOnly?: boolean;
+  onSteelbookOnlyChange?: (value: boolean) => void;
   sort: GameSortOption;
   onSortChange: (value: GameSortOption) => void;
   // Optional like includeAddons below — the Games page never shows a still-undiscovered
@@ -258,6 +267,8 @@ const GameListToolbar = ({
   onStorefrontsChange,
   storefrontExclude,
   onStorefrontExcludeChange,
+  steelbookOnly,
+  onSteelbookOnlyChange,
   sort,
   onSortChange,
   showMissing,
@@ -291,7 +302,8 @@ const GameListToolbar = ({
     franchiseIds.length +
     gameTypes.length +
     formats.length +
-    storefronts.length;
+    storefronts.length +
+    (steelbookOnly ? 1 : 0);
   const hasActiveFilters = activeFilterCount > 0;
 
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -330,6 +342,7 @@ const GameListToolbar = ({
     onFormatExcludeChange(false);
     onStorefrontsChange([]);
     onStorefrontExcludeChange(false);
+    onSteelbookOnlyChange?.(false);
   };
 
   if (selectionMode) {
@@ -430,6 +443,54 @@ const GameListToolbar = ({
           <DialogContent>
             {activeTab === "filter" ? (
               <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                {!hideGameTypesField ? (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Stack spacing={0.5}>
+                      <AutocompleteMultiSelect<GameTypeOption>
+                        label={t("games.listToolbar.gameTypeLabel")}
+                        options={GAME_TYPE_OPTIONS}
+                        value={selectedGameTypes}
+                        onChange={(newValue) =>
+                          onGameTypesChange(newValue.map((option) => option.value))
+                        }
+                        getOptionLabel={(option) => option.label}
+                        isOptionEqualToValue={(option, val) => option.value === val.value}
+                        placeholder={allPlaceholder}
+                        fullWidth
+                      />
+                      <ExcludeCheckbox
+                        checked={gameTypeExclude}
+                        onChange={onGameTypeExcludeChange}
+                        disabled={gameTypes.length === 0}
+                      />
+                    </Stack>
+                  </Grid>
+                ) : null}
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Stack spacing={0.5}>
+                    <AutocompleteMultiSelect<Tag>
+                      label={t("games.listToolbar.tagLabel")}
+                      options={tagOptions}
+                      value={selectedTags}
+                      onChange={(newValue) => onTagIdsChange(newValue.map((tag) => tag.id))}
+                      getOptionLabel={(option) => option.name}
+                      isOptionEqualToValue={(option, val) => option.id === val.id}
+                      placeholder={allPlaceholder}
+                      fullWidth
+                      renderValue={(tagsValue, getItemProps) =>
+                        tagsValue.map((tag, index) => {
+                          const { key, ...itemProps } = getItemProps({ index });
+                          return <TagChip key={key} tag={tag} {...itemProps} />;
+                        })
+                      }
+                    />
+                    <ExcludeCheckbox
+                      checked={tagExclude}
+                      onChange={onTagExcludeChange}
+                      disabled={tagIds.length === 0}
+                    />
+                  </Stack>
+                </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Stack spacing={0.5}>
                     <AutocompleteMultiSelect<OwnershipOption>
@@ -474,29 +535,59 @@ const GameListToolbar = ({
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Stack spacing={0.5}>
-                    <AutocompleteMultiSelect<Tag>
-                      label={t("games.listToolbar.tagLabel")}
-                      options={tagOptions}
-                      value={selectedTags}
-                      onChange={(newValue) => onTagIdsChange(newValue.map((tag) => tag.id))}
-                      getOptionLabel={(option) => option.name}
-                      isOptionEqualToValue={(option, val) => option.id === val.id}
+                    <AutocompleteMultiSelect<FormatOption>
+                      label={t("games.listToolbar.formatLabel")}
+                      options={FORMAT_OPTIONS}
+                      value={selectedFormats}
+                      onChange={(newValue) =>
+                        onFormatsChange(newValue.map((option) => option.value))
+                      }
+                      getOptionLabel={(option) => option.label}
+                      isOptionEqualToValue={(option, val) => option.value === val.value}
                       placeholder={allPlaceholder}
                       fullWidth
-                      renderValue={(tagsValue, getItemProps) =>
-                        tagsValue.map((tag, index) => {
-                          const { key, ...itemProps } = getItemProps({ index });
-                          return <TagChip key={key} tag={tag} {...itemProps} />;
-                        })
-                      }
                     />
                     <ExcludeCheckbox
-                      checked={tagExclude}
-                      onChange={onTagExcludeChange}
-                      disabled={tagIds.length === 0}
+                      checked={formatExclude}
+                      onChange={onFormatExcludeChange}
+                      disabled={formats.length === 0}
                     />
                   </Stack>
                 </Grid>
+                {showStorefrontFilter ? (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Stack spacing={0.5}>
+                      <AutocompleteMultiSelect<string>
+                        label={t("games.listToolbar.storefrontLabel")}
+                        options={storefrontOptions}
+                        value={storefronts}
+                        onChange={onStorefrontsChange}
+                        getOptionLabel={(option) => option}
+                        isOptionEqualToValue={(option, val) => option === val}
+                        placeholder={allPlaceholder}
+                        fullWidth
+                      />
+                      <ExcludeCheckbox
+                        checked={storefrontExclude}
+                        onChange={onStorefrontExcludeChange}
+                        disabled={storefronts.length === 0}
+                      />
+                    </Stack>
+                  </Grid>
+                ) : null}
+                {onSteelbookOnlyChange ? (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={Boolean(steelbookOnly)}
+                          onChange={(event) => onSteelbookOnlyChange(event.target.checked)}
+                        />
+                      }
+                      label={t("games.listToolbar.steelbookOnlyLabel")}
+                    />
+                  </Grid>
+                ) : null}
                 {!hideCollectionsField ? (
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack spacing={0.5}>
@@ -539,71 +630,6 @@ const GameListToolbar = ({
                         checked={franchiseExclude}
                         onChange={onFranchiseExcludeChange}
                         disabled={franchiseIds.length === 0}
-                      />
-                    </Stack>
-                  </Grid>
-                ) : null}
-                {!hideGameTypesField ? (
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Stack spacing={0.5}>
-                      <AutocompleteMultiSelect<GameTypeOption>
-                        label={t("games.listToolbar.gameTypeLabel")}
-                        options={GAME_TYPE_OPTIONS}
-                        value={selectedGameTypes}
-                        onChange={(newValue) =>
-                          onGameTypesChange(newValue.map((option) => option.value))
-                        }
-                        getOptionLabel={(option) => option.label}
-                        isOptionEqualToValue={(option, val) => option.value === val.value}
-                        placeholder={allPlaceholder}
-                        fullWidth
-                      />
-                      <ExcludeCheckbox
-                        checked={gameTypeExclude}
-                        onChange={onGameTypeExcludeChange}
-                        disabled={gameTypes.length === 0}
-                      />
-                    </Stack>
-                  </Grid>
-                ) : null}
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Stack spacing={0.5}>
-                    <AutocompleteMultiSelect<FormatOption>
-                      label={t("games.listToolbar.formatLabel")}
-                      options={FORMAT_OPTIONS}
-                      value={selectedFormats}
-                      onChange={(newValue) =>
-                        onFormatsChange(newValue.map((option) => option.value))
-                      }
-                      getOptionLabel={(option) => option.label}
-                      isOptionEqualToValue={(option, val) => option.value === val.value}
-                      placeholder={allPlaceholder}
-                      fullWidth
-                    />
-                    <ExcludeCheckbox
-                      checked={formatExclude}
-                      onChange={onFormatExcludeChange}
-                      disabled={formats.length === 0}
-                    />
-                  </Stack>
-                </Grid>
-                {showStorefrontFilter ? (
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Stack spacing={0.5}>
-                      <AutocompleteMultiSelect<string>
-                        label={t("games.listToolbar.storefrontLabel")}
-                        options={storefrontOptions}
-                        value={storefronts}
-                        onChange={onStorefrontsChange}
-                        getOptionLabel={(option) => option}
-                        isOptionEqualToValue={(option, val) => option === val}
-                        placeholder={allPlaceholder}
-                        fullWidth
-                      />
-                      <ExcludeCheckbox
-                        checked={storefrontExclude}
-                        onChange={onStorefrontExcludeChange}
-                        disabled={storefronts.length === 0}
                       />
                     </Stack>
                   </Grid>

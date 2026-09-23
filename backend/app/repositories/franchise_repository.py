@@ -109,6 +109,7 @@ def list_addons_for_franchise(
     format_exclude: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this franchise's top-level games — see
@@ -151,6 +152,7 @@ def list_addons_for_franchise(
         format_exclude=format_exclude,
         storefronts=storefronts,
         storefront_exclude=storefront_exclude,
+        steelbook_only=steelbook_only,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

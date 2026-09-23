@@ -105,6 +105,7 @@ def list_addons_for_collection(
     format_exclude: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this collection's top-level games — parent_game_id is only ever set for
@@ -153,6 +154,7 @@ def list_addons_for_collection(
         format_exclude=format_exclude,
         storefronts=storefronts,
         storefront_exclude=storefront_exclude,
+        steelbook_only=steelbook_only,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
