@@ -12,8 +12,8 @@ import ExtensionOffIcon from "@mui/icons-material/ExtensionOff";
 import GamesIcon from "@mui/icons-material/Games";
 import InfoIcon from "@mui/icons-material/Info";
 import InsightsIcon from "@mui/icons-material/Insights";
+import LabelIcon from "@mui/icons-material/Label";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import MemoryIcon from "@mui/icons-material/Memory";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SellIcon from "@mui/icons-material/Sell";
@@ -86,7 +86,7 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
       label: t("nav.settings"),
       icon: <SettingsIcon />,
       subItems: [
-        { to: "/settings/tags", label: t("nav.tagManager"), icon: <LocalOfferIcon /> },
+        { to: "/settings/tags", label: t("nav.tagManager"), icon: <LabelIcon /> },
         { to: "/settings/jobs", label: t("nav.jobs"), icon: <RefreshIcon /> },
         { to: "/settings/integrations", label: t("nav.integrations"), icon: <CableIcon /> },
         {

@@ -1,5 +1,7 @@
 import { apiClient } from "./client";
 import type {
+  BulkImportRequest,
+  BulkImportStatusResponse,
   GameCategory,
   GameDetail,
   GameSortOption,
@@ -117,6 +119,20 @@ export async function deleteGame(gameId: number): Promise<void> {
 export async function importGame(igdbId: number): Promise<GameDetail> {
   const response = await apiClient.post<GameDetail>("/api/games", { igdbId });
   return response.data;
+}
+
+export async function startBulkImport(request: BulkImportRequest): Promise<BulkImportStatusResponse> {
+  const response = await apiClient.post<BulkImportStatusResponse>("/api/games/bulk-import", request);
+  return response.data;
+}
+
+export async function getBulkImportStatus(): Promise<BulkImportStatusResponse> {
+  const response = await apiClient.get<BulkImportStatusResponse>("/api/games/bulk-import/status");
+  return response.data;
+}
+
+export async function acknowledgeBulkImportStatus(): Promise<void> {
+  await apiClient.post("/api/games/bulk-import/status/acknowledge");
 }
 
 export async function resyncGame(gameId: number): Promise<GameDetail> {

@@ -501,6 +501,7 @@ const GameListToolbar = ({
               <IconButton
                 onClick={onEnterSelectionMode}
                 aria-label={t("games.listToolbar.selectGames")}
+                disabled={visibleCount === 0}
                 sx={{ alignSelf: "center" }}
               >
                 <CheckBoxOutlineBlankIcon />

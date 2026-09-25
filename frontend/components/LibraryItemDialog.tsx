@@ -30,14 +30,8 @@ import type {
 } from "../api/types";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { getCurrencySymbol } from "../utils/currency";
+import { resolveStorefront } from "../utils/digitalStorefronts";
 import { RATING_BOARD_LABELS } from "../utils/hardwareLabels";
-import {
-  ANDROID_PLATFORM_SLUGS,
-  APPLE_PLATFORM_SLUGS,
-  PC_FAMILY_PLATFORM_SLUGS,
-  PLAYSTATION_FAMILY_PLATFORM_SLUGS,
-  XBOX_FAMILY_PLATFORM_SLUGS,
-} from "../utils/platformFamilies";
 
 const formSchema = z.object({
   platformId: z.number({ message: "Platform is required" }),
@@ -73,34 +67,6 @@ const FORMAT_OPTIONS: { value: MediaFormat; labelKey: string }[] = [
   { value: "rom", labelKey: "dialogs.libraryItem.formatRom" },
   { value: "abandonware", labelKey: "dialogs.libraryItem.formatAbandonware" },
   { value: "other", labelKey: "dialogs.libraryItem.formatOther" },
-];
-
-// PC-family platforms are the only ones with more than one realistic digital storefront —
-// consoles are tied to their manufacturer's own store, so this list only needs to cover
-// win/mac/linux. Free text (via Autocomplete's freeSolo) still works for anything not on
-// the list. Not every storefront is available on every PC platform — Steam and GOG ship on
-// Windows, Mac, and Linux; Epic Games Store only ships on Windows and Mac (no Linux client).
-// The rest haven't been asked about, so they stay Windows-only, same as before this list was
-// split per platform.
-const DIGITAL_STOREFRONT_PLATFORM_SLUGS: Record<string, ReadonlySet<string>> = {
-  Steam: new Set(["win", "mac", "linux"]),
-  GOG: new Set(["win", "mac", "linux"]),
-  "Epic Games Store": new Set(["win", "mac"]),
-  "Ubisoft Connect": new Set(["win"]),
-  "EA App": new Set(["win"]),
-  "Battle.net": new Set(["win"]),
-  "Microsoft Store": new Set(["win"]),
-  "itch.io": new Set(["win"]),
-};
-
-// Everything outside the PC family only ever has one real digital storefront — shown as a
-// disabled/readonly dropdown (rather than editable, like the PC list above) since there's
-// nothing for the user to actually choose.
-const FIXED_DIGITAL_STOREFRONTS: { slugs: ReadonlySet<string>; storefront: string }[] = [
-  { slugs: PLAYSTATION_FAMILY_PLATFORM_SLUGS, storefront: "PlayStation Store" },
-  { slugs: XBOX_FAMILY_PLATFORM_SLUGS, storefront: "Xbox Store" },
-  { slugs: ANDROID_PLATFORM_SLUGS, storefront: "Google Play" },
-  { slugs: APPLE_PLATFORM_SLUGS, storefront: "App Store" },
 ];
 
 // Must stay in sync with the backend's ITAD_ELIGIBLE_PLATFORM_SLUGS
@@ -209,17 +175,10 @@ const LibraryItemDialog = ({
   const watchedPlatformId = useWatch({ control, name: "platformId" });
   const selectedPlatform = platforms.find((platform) => platform.id === watchedPlatformId);
   const isDigital = watchedFormat === "digital";
-  const showEditableStorefront =
-    isDigital && selectedPlatform?.slug != null && PC_FAMILY_PLATFORM_SLUGS.has(selectedPlatform.slug);
-  const fixedStorefront = isDigital
-    ? FIXED_DIGITAL_STOREFRONTS.find(
-        ({ slugs }) => selectedPlatform?.slug != null && slugs.has(selectedPlatform.slug)
-      )?.storefront
-    : undefined;
-  const digitalStorefrontOptions = Object.entries(DIGITAL_STOREFRONT_PLATFORM_SLUGS)
-    .filter(([, slugs]) => selectedPlatform?.slug != null && slugs.has(selectedPlatform.slug))
-    .map(([storefront]) => storefront)
-    .sort((a, b) => a.localeCompare(b));
+  const { showEditableStorefront, fixedStorefront, digitalStorefrontOptions } = resolveStorefront(
+    selectedPlatform,
+    isDigital
+  );
   const showTrackForSales =
     watchedFormat === "digital" &&
     selectedPlatform?.slug != null &&

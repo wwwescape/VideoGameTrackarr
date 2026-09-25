@@ -145,11 +145,17 @@ const GameCard = ({
             event.stopPropagation();
             onToggleSelect?.();
           }}
-          aria-label={
-            selected
-              ? t("games.card.deselectAriaLabel", { name: game.name })
-              : t("games.card.selectAriaLabel", { name: game.name })
-          }
+          // A top-level aria-label prop on MUI's Checkbox never reaches the underlying
+          // <input> — slotProps.input is required for it to actually become the
+          // checkbox's accessible name (confirmed via a real screen-reader-invisible
+          // checkbox found while adding AddGame.tsx's own selection mode).
+          slotProps={{
+            input: {
+              "aria-label": selected
+                ? t("games.card.deselectAriaLabel", { name: game.name })
+                : t("games.card.selectAriaLabel", { name: game.name }),
+            },
+          }}
           sx={{
             position: "absolute",
             top: 4,
@@ -314,7 +320,13 @@ const GameCard = ({
             }}
           />
         ) : null}
-        {context === "add" || context === "added" ? (
+        {/* The "Add" button is hidden while a checkbox is showing (bulk-select mode on
+            AddGame.tsx) — clicking the card there should toggle selection, not immediately
+            import it, and a full-width Add button sitting right below the checkbox invited
+            exactly that mistake. "Added" stays visible regardless: an already-added result
+            never gets a checkbox (see AddGame.tsx's `selectable` prop), so there's no
+            competing action to hide it from. */}
+        {context === "added" || (context === "add" && !selectable) ? (
           <>
             {context === "added" ? (
               <AddedGameButton

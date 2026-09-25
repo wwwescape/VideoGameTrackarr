@@ -42,7 +42,7 @@ import { showUndoToast } from "./UndoToast";
 // the on-sale chip overlay, which no other table needs.
 const COLUMN_WIDTHS = {
   platformName: 200,
-  formatStorefront: 150,
+  formatStorefront: 170,
   edition: 110,
   steelbook: 80,
 } as const;

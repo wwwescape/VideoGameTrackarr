@@ -1,8 +1,10 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  acknowledgeBulkImportStatus,
   claimDiscoveredGame,
   createManualGame,
   deleteGame,
+  getBulkImportStatus,
   getGame,
   importGame,
   linkGameToIgdb,
@@ -11,10 +13,11 @@ import {
   listGames,
   mergeGameIntoIgdb,
   resyncGame,
+  startBulkImport,
   updateManualGame,
   type GameListFilters,
 } from "../api/games";
-import type { ManualGameInput } from "../api/types";
+import type { BulkImportRequest, ManualGameInput } from "../api/types";
 
 export function useGames(filters: GameListFilters = {}, options?: { enabled?: boolean }) {
   return useQuery({
@@ -76,6 +79,45 @@ export function useImportGame() {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export const bulkImportStatusQueryKey = ["bulkImport", "status"] as const;
+
+export function useStartBulkImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: BulkImportRequest) => startBulkImport(request),
+    onSuccess: () => {
+      // The import has only just started (202) — its eventual result isn't known yet, so
+      // just make sure the status poller below picks up "running" right away instead of
+      // waiting for its next interval tick.
+      queryClient.invalidateQueries({ queryKey: bulkImportStatusQueryKey });
+    },
+  });
+}
+
+// Polled only while AddGame.tsx is mounted (unlike restore's app-wide RestoreGuard) — bulk
+// import only ever needs to affect that one page, not the whole app, per the user's own
+// explicit scoping.
+export function useBulkImportStatus(enabled: boolean) {
+  return useQuery({
+    queryKey: bulkImportStatusQueryKey,
+    queryFn: getBulkImportStatus,
+    enabled,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+  });
+}
+
+export function useAcknowledgeBulkImportStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: acknowledgeBulkImportStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bulkImportStatusQueryKey });
     },
   });
 }

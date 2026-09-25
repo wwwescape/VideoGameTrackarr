@@ -128,6 +128,21 @@
       "addSuccessToast_other": "Tags adicionadas a {{count}} jogos.",
       "removeSuccessToast_one": "Tags removidas de {{count}} jogo.",
       "removeSuccessToast_other": "Tags removidas de {{count}} jogos."
+    },
+    "bulkAdd": {
+      "title": "Adicionar Jogos Selecionados",
+      "confirmStepLabel": "Confirmar",
+      "tagsStepLabel": "Tags",
+      "libraryStepLabel": "Adicionar à Biblioteca",
+      "confirmMessage_one": "{{count}} jogo será adicionado.",
+      "confirmMessage_other": "{{count}} jogos serão adicionados.",
+      "tagsDescription": "Opcionalmente, adicione tags a cada jogo recém-adicionado. Esta etapa pode ser ignorada.",
+      "libraryDescription": "Opcionalmente, adicione cada jogo recém-adicionado à sua Coleção ou Lista de Desejos. Esta etapa pode ser ignorada.",
+      "nextButton": "Próximo",
+      "skipButton": "Pular",
+      "submitButton_one": "Adicionar {{count}} jogo",
+      "submitButton_other": "Adicionar {{count}} jogos",
+      "startError": "Erro ao iniciar a adição em massa. Tente novamente."
     }
   },
   "restore": {
@@ -472,7 +487,11 @@
       "searching": "A pesquisar...",
       "pleaseSearchGames": "Por favor, pesquise alguns jogos",
       "noGamesFound": "Nenhum jogo encontrado",
-      "categoryCannotBeAdded": "Esta categoria não pode ser adicionada"
+      "categoryCannotBeAdded": "Esta categoria não pode ser adicionada",
+      "addSelectedButton": "Adicionar Selecionados",
+      "bulkImportInProgressMessage": "Os jogos estão sendo adicionados, volte novamente mais tarde.",
+      "bulkImportCompletedToast": "Adição em massa concluída — {{succeeded}} adicionados, {{failed}} falharam.",
+      "bulkImportFailedToast": "A adição em massa falhou. Tente novamente."
     },
     "suggestionsDialog": {
       "title": "Este jogo já existe no IGDB?",

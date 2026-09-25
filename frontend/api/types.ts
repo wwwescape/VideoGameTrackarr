@@ -463,6 +463,46 @@ export interface LibraryItemInput {
   steelbook?: boolean;
 }
 
+// Step 3 of BulkAddDialog — a deliberate subset of LibraryItemInput (just Ownership/
+// Platform/Format/Digital Storefront), applied identically to every successfully-imported
+// game. Matches the backend's BulkImportLibraryDefaults exactly.
+export interface BulkImportLibraryDefaults {
+  status: LibraryStatus;
+  platformId?: number | null;
+  format?: MediaFormat | null;
+  digitalStorefront?: string | null;
+}
+
+export interface BulkImportRequest {
+  igdbIds: number[];
+  tagIds?: number[];
+  libraryDefaults?: BulkImportLibraryDefaults | null;
+}
+
+export type BulkImportJobStatus = "idle" | "running" | "completed" | "failed";
+
+export interface BulkImportFailure {
+  igdbId: number;
+  gameName: string | null;
+  error: string;
+}
+
+export interface BulkImportResult {
+  total: number;
+  succeeded: number;
+  failed: number;
+  failures: BulkImportFailure[];
+}
+
+export interface BulkImportStatusResponse {
+  status: BulkImportJobStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  progress: { current: number; total: number } | null;
+  result: BulkImportResult | null;
+  error: string | null;
+}
+
 export interface IgdbParentGame {
   igdbId: number;
   name: string;

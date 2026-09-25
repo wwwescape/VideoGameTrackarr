@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { isAxiosError } from "axios";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import LabelIcon from "@mui/icons-material/Label";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
@@ -109,7 +109,7 @@ const TagManagerPage = () => {
         rows={rows}
         headCells={headCells}
         tableName={t("nav.tagManager")}
-        tableIcon={<LocalOfferIcon color="secondary" />}
+        tableIcon={<LabelIcon color="secondary" />}
         onAddClick={handleAddClick}
         onEditClick={handleEditClick}
         onDeleteClick={handleDeleteClick}

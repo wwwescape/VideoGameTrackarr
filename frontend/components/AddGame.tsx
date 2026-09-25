@@ -1,28 +1,41 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import ClearIcon from "@mui/icons-material/Clear";
+import CloseIcon from "@mui/icons-material/Close";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 import SearchIcon from "@mui/icons-material/Search";
 import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import type { GameCategory, GameSummary } from "../api/types";
+import type { BulkImportJobStatus, GameCategory, GameSummary } from "../api/types";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { useGames, useImportGame } from "../hooks/useGames";
+import {
+  useAcknowledgeBulkImportStatus,
+  useBulkImportStatus,
+  useGames,
+  useImportGame,
+} from "../hooks/useGames";
 import { useIgdbSearch } from "../hooks/useIgdbSearch";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import BulkAddDialog from "./BulkAddDialog";
 import GameCard from "./GameCard";
 import GamesSubNav from "./GamesSubNav";
 import ManualGameForm from "./ManualGameForm";
@@ -92,8 +105,90 @@ const AddGame = () => {
   const { data: localGames } = useGames();
   const importGameMutation = useImportGame();
 
+  // Polled only while this page is mounted (unlike restore's app-wide RestoreGuard) — a
+  // bulk import only ever needs to affect the Add Game page itself, per explicit scoping.
+  const { data: bulkImportStatus } = useBulkImportStatus(true);
+  const acknowledgeBulkImportStatus = useAcknowledgeBulkImportStatus();
+  const previousBulkImportStatus = useRef<BulkImportJobStatus | undefined>(undefined);
+  const isBulkImportRunning = bulkImportStatus?.status === "running";
+
+  useEffect(() => {
+    const status = bulkImportStatus?.status;
+    if (previousBulkImportStatus.current === "running" && status && status !== "running") {
+      if (status === "completed" && bulkImportStatus?.result) {
+        const { succeeded, failed } = bulkImportStatus.result;
+        toast.success(
+          t("games.add.bulkImportCompletedToast", { succeeded, failed }),
+          TOAST_OPTIONS
+        );
+      } else if (status === "failed") {
+        toast.error(t("games.add.bulkImportFailedToast"), TOAST_OPTIONS);
+      }
+      acknowledgeBulkImportStatus.mutate();
+    }
+    previousBulkImportStatus.current = status;
+    // acknowledgeBulkImportStatus is a fresh object identity every render (useMutation) —
+    // including it here would re-run this effect on every render for no reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkImportStatus?.status, bulkImportStatus?.result, t]);
+
+  const [bulkAddDialogOpen, setBulkAddDialogOpen] = useState(false);
+
+  // Keyed by igdbId, not a local numeric id — these are IGDB search results, not yet
+  // imported, so they have no local id to key by. The search bar is hidden entirely while
+  // selectionMode is on (see the render body below), so there's no scenario where the
+  // keyword changes mid-selection and this set would need reconciling against a new result
+  // list — entering/exiting selection mode is the only thing that ever resets it.
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIgdbIds, setSelectedIgdbIds] = useState<ReadonlySet<number>>(new Set());
+
+  // Only a not-yet-added result can be selected — nothing to bulk-add for one already in the
+  // library. No extra category gating needed here: a normal keyword search is already
+  // restricted server-side to the same addable categories ADDABLE_CATEGORIES checks
+  // (_BROWSABLE_GAME_TYPES in igdb_client.py) — that check only ever matters for the exact
+  // "igdb:ID" search path, which short-circuits to idSearchCategoryBlocked before the grid
+  // renders at all.
+  const selectableResults = (searchResults ?? []).filter(
+    (game) => !localGames?.some((local) => local.igdbId === game.igdbId)
+  );
+  const allVisibleSelected =
+    selectableResults.length > 0 &&
+    selectableResults.every((game) => selectedIgdbIds.has(game.igdbId));
+
   const handleGameClick = (game: GameSummary) => {
     navigate(`/game/${gameIdentifier(game)}`);
+  };
+
+  const handleEnterSelectionMode = () => {
+    setSelectionMode(true);
+    setSelectedIgdbIds(new Set());
+  };
+
+  const handleExitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIgdbIds(new Set());
+  };
+
+  const handleToggleSelectAll = () => {
+    setSelectedIgdbIds(
+      allVisibleSelected ? new Set() : new Set(selectableResults.map((game) => game.igdbId))
+    );
+  };
+
+  const toggleResultSelected = (igdbId: number) => {
+    setSelectedIgdbIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(igdbId)) {
+        next.delete(igdbId);
+      } else {
+        next.add(igdbId);
+      }
+      return next;
+    });
+  };
+
+  const handleAddSelected = () => {
+    setBulkAddDialogOpen(true);
   };
 
   const handleAddGame = async (igdbId: number) => {
@@ -146,31 +241,94 @@ const AddGame = () => {
         </RadioGroup>
         <SimpleTabPanel value="igdb" activeValue={mode} sx={{ px: 0, py: 2 }}>
           <Grid container spacing={2}>
+            {isBulkImportRunning ? (
+              <Grid size={12}>
+                <Paper sx={{ p: 3, textAlign: "center" }}>
+                  {t("games.add.bulkImportInProgressMessage")}
+                </Paper>
+              </Grid>
+            ) : (
+              <>
             <Grid size={12}>
               <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
-                <TextField
-                  label={t("games.add.searchLabel")}
-                  variant="outlined"
-                  value={searchKeyword}
-                  onChange={(event) => setSearchKeyword(event.target.value)}
-                  placeholder={t("games.add.searchPlaceholder")}
-                  helperText={t("games.add.searchHelperText")}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon style={{ cursor: "pointer" }} />
-                        </InputAdornment>
-                      ),
-                      endAdornment: searchKeyword && (
-                        <InputAdornment position="end" onClick={() => setSearchKeyword("")}>
-                          <ClearIcon style={{ cursor: "pointer" }} />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                  fullWidth
-                />
+                {selectionMode ? (
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                    <IconButton
+                      onClick={handleExitSelectionMode}
+                      aria-label={t("games.listToolbar.exitSelectionModeAriaLabel")}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                    <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+                      {t("games.listToolbar.selectedCount", { count: selectedIgdbIds.size })}
+                    </Typography>
+                    <Tooltip
+                      title={
+                        allVisibleSelected
+                          ? t("games.listToolbar.deselectAllTooltip")
+                          : t("games.listToolbar.selectAllTooltip")
+                      }
+                    >
+                      <IconButton
+                        onClick={handleToggleSelectAll}
+                        aria-label={
+                          allVisibleSelected
+                            ? t("games.listToolbar.deselectAllAriaLabel")
+                            : t("games.listToolbar.selectAllAriaLabel")
+                        }
+                        aria-pressed={allVisibleSelected}
+                        disabled={selectableResults.length === 0}
+                        color={allVisibleSelected ? "primary" : "default"}
+                        sx={{ bgcolor: allVisibleSelected ? "action.selected" : undefined }}
+                      >
+                        <DoneAllIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Button
+                      variant="contained"
+                      disabled={selectedIgdbIds.size === 0}
+                      onClick={handleAddSelected}
+                    >
+                      {t("games.add.addSelectedButton")}
+                    </Button>
+                  </Stack>
+                ) : (
+                  <Stack direction="row" spacing={1}>
+                    <TextField
+                      label={t("games.add.searchLabel")}
+                      variant="outlined"
+                      value={searchKeyword}
+                      onChange={(event) => setSearchKeyword(event.target.value)}
+                      placeholder={t("games.add.searchPlaceholder")}
+                      helperText={t("games.add.searchHelperText")}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon style={{ cursor: "pointer" }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: searchKeyword && (
+                            <InputAdornment position="end" onClick={() => setSearchKeyword("")}>
+                              <ClearIcon style={{ cursor: "pointer" }} />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      fullWidth
+                    />
+                    <Tooltip title={t("games.listToolbar.selectGames")}>
+                      <IconButton
+                        onClick={handleEnterSelectionMode}
+                        aria-label={t("games.listToolbar.selectGames")}
+                        disabled={selectableResults.length === 0}
+                        sx={{ alignSelf: "center" }}
+                      >
+                        <CheckBoxOutlineBlankIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                )}
               </Paper>
             </Grid>
             <Grid size={12}>
@@ -199,18 +357,28 @@ const AddGame = () => {
                         contextFunction={() =>
                           addedGame ? handleGameClick(addedGame) : handleAddGame(game.igdbId)
                         }
+                        selectable={selectionMode && !addedGame}
+                        selected={selectedIgdbIds.has(game.igdbId)}
+                        onToggleSelect={() => toggleResultSelected(game.igdbId)}
                       />
                     );
                   }}
                 />
               )}
             </Grid>
+              </>
+            )}
           </Grid>
         </SimpleTabPanel>
         <SimpleTabPanel value="manual" activeValue={mode} sx={{ py: 2 }}>
           <ManualGameForm initialValues={steamPrefill} steamAppId={steamPrefill?.steamAppId} />
         </SimpleTabPanel>
       </Box>
+      <BulkAddDialog
+        open={bulkAddDialogOpen}
+        igdbIds={Array.from(selectedIgdbIds)}
+        onClose={() => setBulkAddDialogOpen(false)}
+      />
     </>
   );
 };

@@ -1,10 +1,13 @@
+from collections.abc import Callable
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, get_igdb_client
+from app.api.deps import get_current_user, get_db, get_igdb_client, get_session_factory
 from app.api.routes.game_filters import GameFilterParams
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
+from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
 from app.schemas.game import (
     GameDetailResponse,
     GameImportRequest,
@@ -13,7 +16,14 @@ from app.schemas.game import (
     game_summary_from_orm,
 )
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
-from app.services import game_service, insight_service, manual_game_service, progress_service, tag_service
+from app.services import (
+    bulk_import_job,
+    game_service,
+    insight_service,
+    manual_game_service,
+    progress_service,
+    tag_service,
+)
 from app.services.igdb_client import IGDBClient
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(get_current_user)])
@@ -53,6 +63,45 @@ def list_games(
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     return [game_summary_from_orm(game, on_sale_game_ids) for game in games]
+
+
+def _to_bulk_import_response(state: bulk_import_job.BulkImportJobState) -> BulkImportStatusResponse:
+    return BulkImportStatusResponse(
+        status=state.status.value,
+        started_at=state.started_at.isoformat() if state.started_at else None,
+        finished_at=state.finished_at.isoformat() if state.finished_at else None,
+        progress={"current": state.progress.current, "total": state.progress.total} if state.progress else None,
+        result=state.result,
+        error=state.error,
+    )
+
+
+# Registered before the /{identifier} wildcard route below on purpose — "bulk-import" would
+# otherwise be swallowed by it as if it were an identifier, and this endpoint would never be
+# reached.
+@router.post("/bulk-import", response_model=BulkImportStatusResponse, status_code=status.HTTP_202_ACCEPTED)
+def start_bulk_import(
+    body: BulkImportRequest,
+    session_factory: Callable[[], Session] = Depends(get_session_factory),
+) -> BulkImportStatusResponse:
+    """Kicks off the import as a background job and returns immediately — importing many
+    games (plus tags/library entries) can take a while, so the response no longer blocks for
+    it. Callers poll GET /api/games/bulk-import/status for progress; a second bulk import
+    while one is already running raises ConflictError (see bulk_import_job.start_bulk_import),
+    surfaced as 409 by the app-wide handler in app/main.py."""
+    library_defaults = body.library_defaults.model_dump() if body.library_defaults else None
+    state = bulk_import_job.start_bulk_import(body.igdb_ids, body.tag_ids, library_defaults, session_factory)
+    return _to_bulk_import_response(state)
+
+
+@router.get("/bulk-import/status", response_model=BulkImportStatusResponse)
+def get_bulk_import_status() -> BulkImportStatusResponse:
+    return _to_bulk_import_response(bulk_import_job.get_state())
+
+
+@router.post("/bulk-import/status/acknowledge", status_code=status.HTTP_204_NO_CONTENT)
+def acknowledge_bulk_import_status() -> None:
+    bulk_import_job.acknowledge()
 
 
 @router.get("/{identifier}", response_model=GameDetailResponse)

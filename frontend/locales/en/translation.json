@@ -128,6 +128,21 @@
       "addSuccessToast_other": "Tags added to {{count}} games.",
       "removeSuccessToast_one": "Tags removed from {{count}} game.",
       "removeSuccessToast_other": "Tags removed from {{count}} games."
+    },
+    "bulkAdd": {
+      "title": "Add Selected Games",
+      "confirmStepLabel": "Confirm",
+      "tagsStepLabel": "Tags",
+      "libraryStepLabel": "Add to Library",
+      "confirmMessage_one": "{{count}} game will be added.",
+      "confirmMessage_other": "{{count}} games will be added.",
+      "tagsDescription": "Optionally add tags to every newly-added game. This step can be skipped.",
+      "libraryDescription": "Optionally add every newly-added game to your Collection or Wishlist. This step can be skipped.",
+      "nextButton": "Next",
+      "skipButton": "Skip",
+      "submitButton_one": "Add {{count}} game",
+      "submitButton_other": "Add {{count}} games",
+      "startError": "Error starting the bulk import. Please try again."
     }
   },
   "restore": {
@@ -472,7 +487,11 @@
       "searching": "Searching...",
       "pleaseSearchGames": "Please search for some games",
       "noGamesFound": "No games found",
-      "categoryCannotBeAdded": "This category cannot be added"
+      "categoryCannotBeAdded": "This category cannot be added",
+      "addSelectedButton": "Add Selected",
+      "bulkImportInProgressMessage": "Games are being added, please come back after some time.",
+      "bulkImportCompletedToast": "Bulk import finished — {{succeeded}} added, {{failed}} failed.",
+      "bulkImportFailedToast": "Bulk import failed. Please try again."
     },
     "suggestionsDialog": {
       "title": "Is this game already on IGDB?",

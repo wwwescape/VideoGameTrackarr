@@ -1,8 +1,29 @@
+import time
 from datetime import UTC, datetime
 
 from app.models.catalog import Collection, Franchise, Game, GameCategory, GameCollection, GameFranchise, Platform
 from app.models.itad import ItadPriceCache
 from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, MediaFormat, Note, PlaySession, Tag
+from app.services import game_service
+
+
+def _fake_game_with_status(game):
+    from app.repositories.game_repository import GameWithStatus
+
+    return GameWithStatus(game=game, owned=False, wishlisted=False, play_status=None, rating=None)
+
+
+def _wait_for_bulk_import_completion(client, timeout: float = 5.0) -> dict:
+    # Bulk import runs on a background thread (see app/services/bulk_import_job.py) so the
+    # POST returns as soon as the job starts, not once it finishes — same polling pattern
+    # test_backup_routes.py's _wait_for_restore_completion already uses for restore.
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        body = client.get("/api/games/bulk-import/status").json()
+        if body["status"] != "running":
+            return body
+        time.sleep(0.02)
+    raise AssertionError("Bulk import did not finish within the test timeout")
 
 
 def test_list_games_requires_auth(client):
@@ -680,3 +701,116 @@ def test_list_games_required_franchise_id_scopes(auth_client, db_session, seed_g
     response = auth_client.get("/api/games", params={"requiredFranchiseId": franchise.id})
 
     assert [g["name"] for g in response.json()] == ["Test Game"]
+
+
+def test_bulk_import_requires_auth(client):
+    response = client.post("/api/games/bulk-import", json={"igdbIds": [1]})
+
+    assert response.status_code == 401
+
+
+def test_bulk_import_starts_and_completes(auth_client, db_session, monkeypatch):
+    async def fake_import(db, igdb_client, igdb_id):
+        game = Game(igdb_id=igdb_id, name=f"Bulk Game {igdb_id}", category=GameCategory.MAIN_GAME)
+        db.add(game)
+        db.commit()
+        return _fake_game_with_status(game)
+
+    monkeypatch.setattr(game_service, "import_game_from_igdb", fake_import)
+
+    response = auth_client.post("/api/games/bulk-import", json={"igdbIds": [9001, 9002]})
+
+    assert response.status_code == 202
+    assert response.json()["status"] == "running"
+
+    status_body = _wait_for_bulk_import_completion(auth_client)
+    assert status_body["status"] == "completed"
+    assert status_body["result"]["total"] == 2
+    assert status_body["result"]["succeeded"] == 2
+    assert db_session.query(Game).filter(Game.igdb_id.in_([9001, 9002])).count() == 2
+
+
+def test_bulk_import_creates_library_items_from_defaults(auth_client, db_session, seed_platform, monkeypatch):
+    async def fake_import(db, igdb_client, igdb_id):
+        game = Game(igdb_id=igdb_id, name="Bulk Library Game", category=GameCategory.MAIN_GAME)
+        db.add(game)
+        db.commit()
+        return _fake_game_with_status(game)
+
+    monkeypatch.setattr(game_service, "import_game_from_igdb", fake_import)
+
+    response = auth_client.post(
+        "/api/games/bulk-import",
+        json={
+            "igdbIds": [9003],
+            "libraryDefaults": {"status": "owned", "platformId": seed_platform.id, "format": "physical"},
+        },
+    )
+
+    assert response.status_code == 202
+    status_body = _wait_for_bulk_import_completion(auth_client)
+    assert status_body["status"] == "completed"
+
+    imported_game = db_session.query(Game).filter_by(igdb_id=9003).one()
+    library_items = db_session.query(LibraryItem).filter_by(game_id=imported_game.id).all()
+    assert len(library_items) == 1
+    assert library_items[0].status == LibraryStatus.OWNED
+    assert library_items[0].platform_id == seed_platform.id
+
+
+def test_bulk_import_rejects_a_second_run_while_one_is_in_progress(auth_client, monkeypatch):
+    import threading
+
+    release = threading.Event()
+
+    async def blocking_import(db, igdb_client, igdb_id):
+        release.wait(timeout=2)
+        raise RuntimeError("never reached")
+
+    monkeypatch.setattr(game_service, "import_game_from_igdb", blocking_import)
+
+    try:
+        first = auth_client.post("/api/games/bulk-import", json={"igdbIds": [9004]})
+        assert first.status_code == 202
+
+        second = auth_client.post("/api/games/bulk-import", json={"igdbIds": [9005]})
+        assert second.status_code == 409
+    finally:
+        release.set()
+        time.sleep(0.05)
+
+
+def test_bulk_import_status_requires_auth(client):
+    response = client.get("/api/games/bulk-import/status")
+
+    assert response.status_code == 401
+
+
+def test_bulk_import_status_defaults_to_idle(auth_client):
+    response = auth_client.get("/api/games/bulk-import/status")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "idle"
+
+
+def test_acknowledge_bulk_import_status_requires_auth(client):
+    response = client.post("/api/games/bulk-import/status/acknowledge")
+
+    assert response.status_code == 401
+
+
+def test_acknowledge_bulk_import_status_resets_a_completed_run(auth_client, db_session, monkeypatch):
+    async def fake_import(db, igdb_client, igdb_id):
+        game = Game(igdb_id=igdb_id, name="Bulk Ack Game", category=GameCategory.MAIN_GAME)
+        db.add(game)
+        db.commit()
+        return _fake_game_with_status(game)
+
+    monkeypatch.setattr(game_service, "import_game_from_igdb", fake_import)
+
+    auth_client.post("/api/games/bulk-import", json={"igdbIds": [9006]})
+    _wait_for_bulk_import_completion(auth_client)
+
+    ack_response = auth_client.post("/api/games/bulk-import/status/acknowledge")
+    assert ack_response.status_code == 204
+    assert auth_client.get("/api/games/bulk-import/status").json()["status"] == "idle"
