@@ -1,8 +1,19 @@
 import { apiClient } from "./client";
-import type { Tag } from "./types";
+import type { Tag, TagCoverage } from "./types";
 
 export async function listTags(): Promise<Tag[]> {
   const response = await apiClient.get<Tag[]>("/api/tags");
+  return response.data;
+}
+
+export async function getTagCoverage(gameIds: number[]): Promise<TagCoverage[]> {
+  const response = await apiClient.get<TagCoverage[]>("/api/tags/coverage", {
+    params: { gameId: gameIds },
+    // Same reasoning as api/games.ts's listGames — axios's default array serialization
+    // emits `gameId[]=1`, which FastAPI's `list[int]` Query param under the `gameId` alias
+    // won't bind; this repeats the bare key instead (`gameId=1&gameId=2`).
+    paramsSerializer: { indexes: null },
+  });
   return response.data;
 }
 

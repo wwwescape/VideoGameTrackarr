@@ -230,3 +230,59 @@ def test_deleting_tag_removes_it_from_accessories(auth_client, seed_accessory):
 
     detail_response = auth_client.get(f"/api/accessories/{seed_accessory.uuid}")
     assert detail_response.json()["tags"] == []
+
+
+def test_tag_coverage_counts_games_with_each_tag(auth_client, db_session, seed_game):
+    from app.models.catalog import Game, GameCategory
+
+    other_game = Game(igdb_id=8801, name="Other Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    shared_tag_id = auth_client.post("/api/tags", json={"name": "Co-op"}).json()["id"]
+    solo_tag_id = auth_client.post("/api/tags", json={"name": "Roguelike"}).json()["id"]
+    unused_tag_id = auth_client.post("/api/tags", json={"name": "Unused"}).json()["id"]
+    auth_client.post(f"/api/games/{seed_game.id}/tags/{shared_tag_id}")
+    auth_client.post(f"/api/games/{other_game.id}/tags/{shared_tag_id}")
+    auth_client.post(f"/api/games/{seed_game.id}/tags/{solo_tag_id}")
+
+    response = auth_client.get(
+        "/api/tags/coverage", params=[("gameId", seed_game.id), ("gameId", other_game.id)]
+    )
+
+    assert response.status_code == 200
+    coverage = {tag["id"]: set(tag["gameIds"]) for tag in response.json()}
+    assert coverage[shared_tag_id] == {seed_game.id, other_game.id}
+    assert coverage[solo_tag_id] == {seed_game.id}
+    assert coverage[unused_tag_id] == set()
+
+
+def test_tag_coverage_ignores_games_outside_the_requested_set(auth_client, db_session, seed_game):
+    from app.models.catalog import Game, GameCategory
+
+    other_game = Game(igdb_id=8802, name="Uninvolved Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.commit()
+
+    tag_id = auth_client.post("/api/tags", json={"name": "Only On Other"}).json()["id"]
+    auth_client.post(f"/api/games/{other_game.id}/tags/{tag_id}")
+
+    response = auth_client.get("/api/tags/coverage", params=[("gameId", seed_game.id)])
+
+    coverage = {tag["id"]: tag["gameIds"] for tag in response.json()}
+    assert coverage[tag_id] == []
+
+
+def test_tag_coverage_requires_auth(client):
+    response = client.get("/api/tags/coverage")
+
+    assert response.status_code == 401
+
+
+def test_tag_coverage_with_no_game_ids_returns_zero_for_every_tag(auth_client):
+    auth_client.post("/api/tags", json={"name": "Lonely Tag"})
+
+    response = auth_client.get("/api/tags/coverage")
+
+    assert response.status_code == 200
+    assert all(tag["gameIds"] == [] for tag in response.json())

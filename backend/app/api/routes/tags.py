@@ -1,8 +1,15 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.schemas.tag import TagCreateRequest, TagResponse, TagUpdateRequest, tag_from_orm
+from app.schemas.tag import (
+    TagCoverageResponse,
+    TagCreateRequest,
+    TagResponse,
+    TagUpdateRequest,
+    tag_coverage_from_orm,
+    tag_from_orm,
+)
 from app.services import tag_service
 
 router = APIRouter(tags=["tags"], dependencies=[Depends(get_current_user)])
@@ -11,6 +18,18 @@ router = APIRouter(tags=["tags"], dependencies=[Depends(get_current_user)])
 @router.get("/api/tags", response_model=list[TagResponse])
 def list_tags(db: Session = Depends(get_db)) -> list[TagResponse]:
     return [tag_from_orm(tag) for tag in tag_service.list_tags(db)]
+
+
+# Powers the Games page's bulk "Manage Tags" dialog — every tag in the library paired with
+# how many of the given games currently have it, so the dialog can show "X of N games"
+# without GameSummary (what the Games list already has in the browser) needing to carry
+# full tag data for every visible card just for this one bulk-action dialog.
+@router.get("/api/tags/coverage", response_model=list[TagCoverageResponse])
+def get_tag_coverage(
+    game_id: list[int] = Query(default=[], alias="gameId"), db: Session = Depends(get_db)
+) -> list[TagCoverageResponse]:
+    coverage = tag_service.get_tag_coverage_for_games(db, game_id)
+    return [tag_coverage_from_orm(tag, matched_game_ids) for tag, matched_game_ids in coverage]
 
 
 @router.post("/api/tags", response_model=TagResponse, status_code=status.HTTP_201_CREATED)

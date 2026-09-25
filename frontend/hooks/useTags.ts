@@ -8,12 +8,53 @@ import {
   detachTag,
   detachTagFromAccessory,
   detachTagFromDevice,
+  getTagCoverage,
   listTags,
   updateTag,
 } from "../api/tags";
 
 export function useTags() {
   return useQuery({ queryKey: ["tags"], queryFn: listTags });
+}
+
+// Only fetched while the bulk "Manage Tags" dialog is actually open (via `enabled`) — this
+// data is meaningless outside that one dialog, so there's no reason to keep it warm/cached
+// the rest of the time the Games page is open.
+export function useTagCoverage(gameIds: number[], enabled: boolean) {
+  return useQuery({
+    queryKey: ["tagCoverage", gameIds],
+    queryFn: () => getTagCoverage(gameIds),
+    enabled: enabled && gameIds.length > 0,
+  });
+}
+
+// Backs both the Add and Remove tabs of the bulk "Manage Tags" dialog — one fans out
+// attach calls, the other detach calls, but it's the same "N games × M tags" shape either
+// way, so one mutation covers both rather than two near-identical ones. Fans out one
+// request per (game, tag) pair client-side (same chatty-but-simple pattern GameList.tsx's
+// existing bulk-delete already uses) rather than a dedicated batch endpoint.
+export function useBulkUpdateGameTags() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      gameIds,
+      addTagIds = [],
+      removeTagIds = [],
+    }: {
+      gameIds: number[];
+      addTagIds?: number[];
+      removeTagIds?: number[];
+    }) => {
+      await Promise.all([
+        ...gameIds.flatMap((gameId) => addTagIds.map((tagId) => attachTag(gameId, tagId))),
+        ...gameIds.flatMap((gameId) => removeTagIds.map((tagId) => detachTag(gameId, tagId))),
+      ]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["tagCoverage"] });
+    },
+  });
 }
 
 export function useCreateTag() {

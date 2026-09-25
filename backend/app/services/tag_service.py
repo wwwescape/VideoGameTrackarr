@@ -9,6 +9,13 @@ def list_tags(db: Session) -> list[Tag]:
     return tag_repository.list_tags(db)
 
 
+def get_tag_coverage_for_games(db: Session, game_ids: list[int]) -> list[tuple[Tag, list[int]]]:
+    # No existence check on game_ids, deliberately — this is a read-only informational query
+    # (powers the bulk "Manage Tags" dialog), and a stale or bogus id just never matches
+    # rather than needing a 404.
+    return tag_repository.get_tag_coverage_for_games(db, game_ids)
+
+
 def create_tag(db: Session, name: str, color: str | None, text_color: str | None) -> Tag:
     # Get-or-create: tags are lightweight labels, not user-owned records worth a 409 over —
     # if the name already exists, reuse it rather than making the caller handle a conflict.

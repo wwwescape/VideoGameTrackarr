@@ -144,6 +144,17 @@ export interface Tag {
   textColor: string | null;
 }
 
+// Powers the Games page's bulk "Manage Tags" dialog — every tag in the library, paired with
+// which of a given set of games currently have it (not just a count, so multiple tags'
+// coverage can be unioned client-side for an exact "remove from N games" preview).
+export interface TagCoverage {
+  id: number;
+  name: string;
+  color: string | null;
+  textColor: string | null;
+  gameIds: number[];
+}
+
 export interface PublicGameSummary {
   id: number;
   name: string;

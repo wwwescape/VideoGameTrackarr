@@ -9,6 +9,32 @@ def list_tags(db: Session) -> list[Tag]:
     return list(db.scalars(select(Tag).order_by(Tag.name)))
 
 
+def get_tag_coverage_for_games(db: Session, game_ids: list[int]) -> list[tuple[Tag, list[int]]]:
+    """Every tag in the library (not just ones already on one of these games — the bulk
+    "Manage Tags" dialog's Add tab needs to offer the full vocabulary), paired with *which*
+    of the given games currently have it — not just a count. The dialog's Remove tab needs
+    the true set-overlap across every checked tag (e.g. "remove from 5 games" for two tags
+    covering 4 and 5 of 6 games, not 4+5), which isn't derivable from per-tag counts alone;
+    returning each tag's actual game ids lets the frontend union them client-side with no
+    further round trips as the user (un)checks tags. An outer join, not an inner one filtered
+    on game_ids: filtering the join condition itself (rather than a WHERE on the joined row)
+    is what lets a tag with zero matches among these games still come back (with an empty
+    list) instead of being dropped from the result entirely."""
+    if not game_ids:
+        return [(tag, []) for tag in list_tags(db)]
+    stmt = (
+        select(Tag, GameTag.game_id)
+        .outerjoin(GameTag, (GameTag.tag_id == Tag.id) & (GameTag.game_id.in_(game_ids)))
+        .order_by(Tag.name)
+    )
+    coverage: dict[int, tuple[Tag, list[int]]] = {}
+    for tag, game_id in db.execute(stmt):
+        _, matched_game_ids = coverage.setdefault(tag.id, (tag, []))
+        if game_id is not None:
+            matched_game_ids.append(game_id)
+    return list(coverage.values())
+
+
 def get_tag(db: Session, tag_id: int) -> Tag | None:
     return db.scalars(select(Tag).where(Tag.id == tag_id)).first()
 

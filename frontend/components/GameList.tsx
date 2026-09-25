@@ -20,6 +20,7 @@ import { showUndoToast } from "./UndoToast";
 import GameCard from "./GameCard";
 import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
 import GamesSubNav from "./GamesSubNav";
+import ManageTagsDialog from "./ManageTagsDialog";
 import VirtualGameGrid from "./VirtualGameGrid";
 
 const MIN_SEARCH_LENGTH = 3;
@@ -47,6 +48,7 @@ const GameList = () => {
   const [sort, setSort] = useState<GameSortOption>("name_asc");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
+  const [manageTagsOpen, setManageTagsOpen] = useState(false);
   const navigate = useNavigate();
 
   const trimmedKeyword = searchKeyword.trim();
@@ -171,8 +173,14 @@ const GameList = () => {
     setSelectedIds(new Set());
   };
 
-  const handleSelectAllVisible = () => {
-    setSelectedIds(new Set(visibleGames.map((game) => game.id)));
+  // True once every currently-visible game is selected — drives both the toggle's next
+  // action and its "active" visual state (see GameListToolbar.tsx). false (not true) when
+  // there's nothing visible to select, so an empty list never shows the button as active.
+  const allVisibleSelected =
+    visibleGames.length > 0 && visibleGames.every((game) => selectedIds.has(game.id));
+
+  const handleToggleSelectAll = () => {
+    setSelectedIds(allVisibleSelected ? new Set() : new Set(visibleGames.map((game) => game.id)));
   };
 
   const handleBulkDelete = () => {
@@ -243,7 +251,9 @@ const GameList = () => {
           visibleCount={visibleGames.length}
           onEnterSelectionMode={handleEnterSelectionMode}
           onExitSelectionMode={handleExitSelectionMode}
-          onSelectAllVisible={handleSelectAllVisible}
+          allVisibleSelected={allVisibleSelected}
+          onToggleSelectAll={handleToggleSelectAll}
+          onManageTagsClick={() => setManageTagsOpen(true)}
           onBulkDelete={handleBulkDelete}
           platformOptions={platforms}
           platformIds={platformIds}
@@ -326,6 +336,11 @@ const GameList = () => {
           />
         )}
       </Box>
+      <ManageTagsDialog
+        open={manageTagsOpen}
+        gameIds={Array.from(selectedIds)}
+        onClose={() => setManageTagsOpen(false)}
+      />
     </>
   );
 };

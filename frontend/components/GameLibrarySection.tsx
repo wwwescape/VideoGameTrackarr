@@ -3,6 +3,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Backdrop from "@mui/material/Backdrop";
+import Box from "@mui/material/Box";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import Chip from "@mui/material/Chip";
@@ -21,7 +22,6 @@ import type {
 } from "../api/types";
 import { useAddLibraryItem, useDeleteLibraryItem, useUpdateLibraryItem } from "../hooks/useLibrary";
 import { useUndoableAction } from "../hooks/useUndoableAction";
-import { PLATFORM_COLUMN_WIDTH } from "../utils/tableColumnWidths";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
@@ -29,17 +29,22 @@ import LibraryItemDialog, { type LibraryItemFormValues } from "./LibraryItemDial
 import { showUndoToast } from "./UndoToast";
 
 // Shared across the Owned and Wishlist tables below so their Platform/Format & Storefront/
-// Edition/Steelbook/action columns line up pixel-for-pixel even though Wishlist has one
-// extra column (the on-sale chip) that Owned doesn't. Values are deliberately tight (fixed
-// widths, cell content ellipsis-truncates rather than wrapping or growing the column — see
-// EnhancedTable.tsx) so the two tables together don't force horizontal scrolling on a
-// typical card width.
+// Edition/Steelbook/action columns line up pixel-for-pixel — the two tables are now fully
+// identical in column set/widths, not just "mostly." There's deliberately no separate On
+// Sale column any more: it used to be a whole extra fixed-width column just for Wishlist,
+// which made Wishlist wider than Owned and was the direct cause of a real overflow bug (a
+// minWidth wide enough for Wishlist's extra column exceeded the real card width). Folding
+// the on-sale chip into the Platform cell itself (see renderPlatformCell below) removes that
+// asymmetry entirely instead of just budgeting tighter around it.
+//
+// platformName deliberately does NOT use the shared PLATFORM_COLUMN_WIDTH constant (unlike
+// every other EnhancedTable-based game table) — this column now also has to make room for
+// the on-sale chip overlay, which no other table needs.
 const COLUMN_WIDTHS = {
-  platformName: PLATFORM_COLUMN_WIDTH,
-  formatStorefront: 190,
-  edition: 150,
-  steelbook: 100,
-  sale: 130,
+  platformName: 200,
+  formatStorefront: 150,
+  edition: 110,
+  steelbook: 80,
 } as const;
 
 interface GameLibrarySectionProps {
@@ -110,15 +115,6 @@ const GameLibrarySection = ({
     },
   ];
 
-  const saleHeadCell: HeadCell = {
-    id: "sale",
-    numeric: false,
-    disablePadding: true,
-    label: t("games.library.onSaleColumn"),
-    disableHeader: true,
-    width: COLUMN_WIDTHS.sale,
-  };
-
   // One combined column for Move/Edit/Delete rather than three separate ones — always the
   // last column, so it's the one EnhancedTable.tsx leaves unwidthed to soak up the table's
   // remaining space and land flush against the toolbar's Add button; keeping the icons
@@ -132,8 +128,9 @@ const GameLibrarySection = ({
     disableHeader: true,
   };
 
-  const ownedHeadCells: HeadCell[] = [...commonHeadCells, actionsHeadCell];
-  const wishlistHeadCells: HeadCell[] = [...commonHeadCells, saleHeadCell, actionsHeadCell];
+  // Owned and Wishlist now share the exact same column set — see the COLUMN_WIDTHS comment
+  // above for why the on-sale chip no longer gets its own dedicated column.
+  const headCells: HeadCell[] = [...commonHeadCells, actionsHeadCell];
 
   // "collection"/"wishlist" phrases used inside toast/dialog sentences below.
   const statusPhrase: Record<LibraryStatus, string> = {
@@ -156,6 +153,30 @@ const GameLibrarySection = ({
     );
   };
 
+  // Wishlist-only (an owned copy has no use for an "on sale" indicator — see renderSaleChip)
+  // — right-aligned over the Platform cell rather than its own column, so a discounted row
+  // doesn't need any more width than every other row. The platform name stays in place at
+  // reduced opacity behind the chip instead of disappearing, so the platform is still
+  // readable at a glance even when the chip visually overlaps it.
+  const renderPlatformCell = (item: LibraryItem) => {
+    const platformLabel = item.platformName ?? "-";
+    const chip = item.status === "wishlist" ? renderSaleChip(item) : null;
+    if (!chip) return platformLabel;
+    return (
+      <Box sx={{ position: "relative", display: "flex", alignItems: "center", minHeight: 24 }}>
+        <Box
+          component="span"
+          sx={{ opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+        >
+          {platformLabel}
+        </Box>
+        <Box sx={{ position: "absolute", right: 0, display: "flex", alignItems: "center" }}>
+          {chip}
+        </Box>
+      </Box>
+    );
+  };
+
   // One combined "Physical" / "Digital: Steam" / "ISO" column rather than two — a storefront
   // only ever exists alongside a Digital format (see LibraryItemDialog.tsx), so a separate
   // Storefront column left every non-Digital row's cell blank; folding it into Format via
@@ -171,7 +192,7 @@ const GameLibrarySection = ({
 
   const toTableRow = (item: LibraryItem) => ({
     id: item.id,
-    platformName: item.platformName ?? "-",
+    platformName: renderPlatformCell(item),
     formatStorefront: formatStorefrontLabel(item),
     edition: item.edition ?? "-",
     steelbook: item.steelbook ? (
@@ -179,7 +200,6 @@ const GameLibrarySection = ({
         <CheckIcon fontSize="small" color="success" aria-label={t("games.library.steelbookColumn")} />
       </Tooltip>
     ) : null,
-    sale: item.status === "wishlist" ? renderSaleChip(item) : null,
   });
 
   const { schedule: scheduleItemRemoval, isPending: isItemPending } =
@@ -287,7 +307,7 @@ const GameLibrarySection = ({
       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
         <EnhancedTable
           rows={owned}
-          headCells={ownedHeadCells}
+          headCells={headCells}
           tableName={t("games.library.collectionTableName")}
           tableIcon={<CheckCircleIcon color="secondary" />}
           onAddClick={() => handleAddClick("owned")}
@@ -298,7 +318,7 @@ const GameLibrarySection = ({
         />
         <EnhancedTable
           rows={wishlisted}
-          headCells={wishlistHeadCells}
+          headCells={headCells}
           tableName={t("games.library.wishlistTableName")}
           tableIcon={<FavoriteIcon color="secondary" />}
           onAddClick={() => handleAddClick("wishlist")}
