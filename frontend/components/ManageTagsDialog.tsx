@@ -33,8 +33,8 @@ interface ManageTagsDialogProps {
 
 // Two independent checklists (Add/Remove), each showing the full tag vocabulary with an
 // informational "X of N games" coverage count — deliberately simpler than an earlier
-// tri-state-checkbox design that folded both directions into one table; see TODOS.md for why
-// that was dropped in favor of this mockup-driven shape.
+// tri-state-checkbox design that folded both directions into one table, which was dropped
+// in favor of this mockup-driven shape.
 const ManageTagsDialog = ({ open, gameIds, onClose }: ManageTagsDialogProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

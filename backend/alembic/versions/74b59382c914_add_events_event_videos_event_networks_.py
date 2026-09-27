@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 # NOTE: alembic autogenerate also picked up unrelated pre-existing drift on
 # device_types/devices/user_devices/library_items.format (a known, already-tracked leftover
-# from an earlier devices/user_devices rename migration — see TODOS.md) — deliberately
+# from an earlier devices/user_devices rename migration) — deliberately
 # stripped out of this migration so it only does what its name says.
 
 

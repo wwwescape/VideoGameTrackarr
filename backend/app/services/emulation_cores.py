@@ -11,7 +11,7 @@ to frontend/scripts/vendor-emulatorjs.mjs, then add an EmulatorCore entry below 
 tests/test_rom_routes.py fails if the two lists ever disagree. Files already uploaded for that
 platform become playable immediately — nothing is stored per-ROM.
 
-Not bundled (see TODOS.md): arcade. FBNeo's license forbids asking for donations on a project
+Not bundled: arcade. FBNeo's license forbids asking for donations on a project
 using it, and the alternatives were declined for now.
 """
 

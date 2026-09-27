@@ -150,8 +150,8 @@ async def _import_all(
                         {
                             # camelCase keys, not resync_jobs.py's snake_case ("game_id"/
                             # "game_name") — that mismatch against the frontend's camelCase
-                            # types is a known, still-unfixed bug in that older job (see
-                            # TODOS.md); steam_jobs.py already established camelCase as the
+                            # types is a known, still-unfixed bug in that older job;
+                            # steam_jobs.py already established camelCase as the
                             # right shape for new jobs, and this follows that precedent.
                             "igdbId": igdb_id,
                             "gameName": game.game.name,
