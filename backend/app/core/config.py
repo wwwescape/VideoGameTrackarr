@@ -67,6 +67,15 @@ class Settings(BaseSettings):
     # FastAPI serves both from one origin (see the root README's "Deploying with Docker").
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # In-browser emulation (see app/services/rom_service.py). ROMs default to a roms/
+    # subfolder of UPLOADS_DIR so they land on the same persistent Docker volume as every
+    # other upload, with no compose change needed — main.py's /uploads static mount
+    # explicitly refuses to serve that subfolder, since ROMs are only ever served through the
+    # authenticated, signed-URL route. rom_storage_dir overrides the location (mainly so a
+    # manual verification run can point at a scratch directory instead of real uploads).
+    rom_storage_dir: str | None = None
+    rom_max_upload_mb: int = 2048
+
 
 @lru_cache
 def get_settings() -> Settings:

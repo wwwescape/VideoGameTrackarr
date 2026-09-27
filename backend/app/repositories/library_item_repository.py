@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.catalog import Game
-from app.models.library import LibraryItem, LibraryStatus
+from app.models.library import LibraryItem, LibraryStatus, RomFile
 
 
 def list_distinct_storefronts(db: Session) -> list[str]:
@@ -50,7 +50,11 @@ def list_tracked_items(db: Session) -> list[LibraryItem]:
 def list_library_items(db: Session, game_id: int, status: LibraryStatus | None = None) -> list[LibraryItem]:
     stmt = (
         select(LibraryItem)
-        .options(joinedload(LibraryItem.platform), joinedload(LibraryItem.region))
+        .options(
+            joinedload(LibraryItem.platform),
+            joinedload(LibraryItem.region),
+            joinedload(LibraryItem.rom).selectinload(RomFile.save_states),
+        )
         .where(LibraryItem.game_id == game_id)
     )
     if status is not None:
@@ -62,7 +66,11 @@ def list_library_items(db: Session, game_id: int, status: LibraryStatus | None =
 def get_library_item(db: Session, item_id: int) -> LibraryItem | None:
     stmt = (
         select(LibraryItem)
-        .options(joinedload(LibraryItem.platform), joinedload(LibraryItem.region))
+        .options(
+            joinedload(LibraryItem.platform),
+            joinedload(LibraryItem.region),
+            joinedload(LibraryItem.rom).selectinload(RomFile.save_states),
+        )
         .where(LibraryItem.id == item_id)
     )
     return db.scalars(stmt).first()

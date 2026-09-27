@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import Scope
 
 from app.api.routes import (
     accessories,
@@ -35,6 +37,7 @@ from app.api.routes import (
     progress,
     public,
     regions,
+    roms,
     sales_tracking,
     share,
     tags,
@@ -45,11 +48,25 @@ from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DI
 from app.core.limiter import limiter
 from app.core.logging import configure_logging
 from app.db.session import SessionLocal
-from app.services import job_definitions, job_scheduler
+from app.services import job_definitions, job_scheduler, rom_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, IGDBCredentialsError
 
 FRONTEND_BUILD_DIR = REPO_ROOT / "build"
+
+
+class UploadsStaticFiles(StaticFiles):
+    """The public /uploads mount, minus the roms/ subfolder. Covers and accessory images are
+    fine to serve unauthenticated (they're shown on public share pages too), but uploaded
+    ROMs live under the same directory (see rom_service.get_rom_dir) and must only ever be
+    reachable through the signed-URL route in app/api/routes/roms.py."""
+
+    def get_path(self, scope: Scope) -> str:
+        path = super().get_path(scope)
+        first_segment = path.replace("\\", "/").lstrip("/").split("/", 1)[0]
+        if first_segment.lower() == rom_service.ROMS_SUBDIR:
+            raise StarletteHTTPException(status_code=404)
+        return path
 
 
 def resolve_static_file(base_dir: Path, requested_path: str) -> Path | None:
@@ -148,12 +165,14 @@ app.include_router(version.router)
 app.include_router(share.router)
 app.include_router(integrations.router)
 app.include_router(sales_tracking.router)
+app.include_router(roms.router)
+app.include_router(roms.content_router)
 app.include_router(public.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather
 # than committed to the repo, so it needs to exist before StaticFiles will mount it.
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+app.mount("/uploads", UploadsStaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 # Curated HardwareReferenceEntry product shots — checked into the repo (see
 # HARDWARE_REFERENCE_IMAGES_DIR), but still created defensively so StaticFiles can mount it

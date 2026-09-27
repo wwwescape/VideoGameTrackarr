@@ -4,9 +4,43 @@ from app.models.itad import ItadPriceCache
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat, RatingBoard
 from app.models.platprices import PlatPricesCache
 from app.schemas.base import CamelModel
-from app.services import storefront_matching
+from app.services import emulation_cores, storefront_matching
 from app.services.itad_service import is_library_item_itad_eligible
 from app.services.platprices_service import is_library_item_platprices_eligible
+
+
+class RomFileSummary(CamelModel):
+    id: int
+    original_filename: str
+    size_bytes: int
+    extension: str
+    is_archive: bool
+    # Resolved at read time from emulation_cores.py — see RomFile's docstring for why this
+    # isn't stored.
+    playable: bool
+    core: str | None
+    unplayable_reason: emulation_cores.UnplayableReason | None
+    save_state_count: int = 0
+    has_in_game_save: bool = False
+
+
+def rom_summary_from_orm(item: LibraryItem) -> RomFileSummary | None:
+    rom = item.rom
+    if rom is None:
+        return None
+    core, reason = emulation_cores.resolve_playability(item.platform.slug if item.platform else None, rom.extension)
+    return RomFileSummary(
+        id=rom.id,
+        original_filename=rom.original_filename,
+        size_bytes=rom.size_bytes,
+        extension=rom.extension,
+        is_archive=rom.is_archive,
+        playable=core is not None,
+        core=core.core if core else None,
+        unplayable_reason=reason,
+        save_state_count=len(rom.save_states),
+        has_in_game_save=rom.sram_stored_filename is not None,
+    )
 
 
 class LibraryItemResponse(CamelModel):
@@ -33,6 +67,7 @@ class LibraryItemResponse(CamelModel):
     sale_price_currency: str | None
     sale_shop_name: str | None
     sale_cut: int | None
+    rom: RomFileSummary | None = None
 
 
 def library_item_from_orm(
@@ -102,6 +137,7 @@ def library_item_from_orm(
         sale_price_currency=sale_price_currency,
         sale_shop_name=sale_shop_name,
         sale_cut=sale_cut,
+        rom=rom_summary_from_orm(item),
     )
 
 

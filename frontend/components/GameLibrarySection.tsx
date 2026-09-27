@@ -2,6 +2,7 @@ import { useState } from "react";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
 import CardContent from "@mui/material/CardContent";
@@ -9,6 +10,7 @@ import CardHeader from "@mui/material/CardHeader";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
+import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -20,12 +22,19 @@ import type {
   PlatformResponse,
   RegionResponse,
 } from "../api/types";
-import { useAddLibraryItem, useDeleteLibraryItem, useUpdateLibraryItem } from "../hooks/useLibrary";
+import {
+  useAddLibraryItem,
+  useDeleteLibraryItem,
+  useDeleteRom,
+  useUpdateLibraryItem,
+  useUploadRom,
+} from "../hooks/useLibrary";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import ConfirmDialog from "./ConfirmDialog";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
-import LibraryItemDialog, { type LibraryItemFormValues } from "./LibraryItemDialog";
+import LibraryItemDialog, { type LibraryItemFormValues, type RomChange } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
 
 // Shared across the Owned and Wishlist tables below so their Platform/Format & Storefront/
@@ -66,6 +75,12 @@ const GameLibrarySection = ({
   const addLibraryItem = useAddLibraryItem(gameId);
   const updateLibraryItem = useUpdateLibraryItem(gameId);
   const deleteLibraryItem = useDeleteLibraryItem(gameId);
+  const uploadRom = useUploadRom(gameId);
+  const deleteRom = useDeleteRom(gameId);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  // Moving an owned copy that holds a ROM to the Wishlist deletes the ROM (see
+  // library_service.update_library_item) — confirmed first, unlike an ordinary move.
+  const [moveConfirmItem, setMoveConfirmItem] = useState<LibraryItem | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogItem, setDialogItem] = useState<LibraryItem | null>(null);
@@ -190,10 +205,27 @@ const GameLibrarySection = ({
       : label;
   };
 
+  const renderFormatStorefrontCell = (item: LibraryItem) => {
+    const label = formatStorefrontLabel(item);
+    if (!item.rom) return label;
+    return (
+      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+        {label}
+        <Tooltip title={t("games.library.romAttachedTooltip", { name: item.rom.originalFilename })}>
+          <SportsEsportsIcon
+            fontSize="small"
+            color={item.rom.playable ? "success" : "disabled"}
+            aria-label={t("games.library.romAttachedTooltip", { name: item.rom.originalFilename })}
+          />
+        </Tooltip>
+      </Box>
+    );
+  };
+
   const toTableRow = (item: LibraryItem) => ({
     id: item.id,
     platformName: renderPlatformCell(item),
-    formatStorefront: formatStorefrontLabel(item),
+    formatStorefront: renderFormatStorefrontCell(item),
     edition: item.edition ?? "-",
     steelbook: item.steelbook ? (
       <Tooltip title={t("games.library.steelbookColumn")}>
@@ -243,10 +275,14 @@ const GameLibrarySection = ({
     );
   };
 
-  const handleMoveClick = async (rowId: number, currentStatus: LibraryStatus) => {
+  const handleMoveClick = async (rowId: number, currentStatus: LibraryStatus, confirmed = false) => {
     const item = libraryItems?.find((candidate) => candidate.id === rowId);
     if (!item) return;
     const targetStatus: LibraryStatus = currentStatus === "owned" ? "wishlist" : "owned";
+    if (targetStatus === "wishlist" && item.rom && !confirmed) {
+      setMoveConfirmItem(item);
+      return;
+    }
     try {
       await updateLibraryItem.mutateAsync({ itemId: item.id, input: { status: targetStatus } });
       toast.success(
@@ -262,32 +298,65 @@ const GameLibrarySection = ({
     }
   };
 
-  const handleDialogSubmit = async (values: LibraryItemFormValues) => {
+  // The ROM is its own multipart request, applied once the copy is saved (a new copy only
+  // has an id after the create call returns). A failed upload leaves the copy itself saved
+  // and the dialog open, so the user can retry just the file.
+  const applyRomChange = async (itemId: number, romChange: RomChange): Promise<boolean> => {
+    try {
+      if (romChange.file) {
+        setUploadProgress(0);
+        await uploadRom.mutateAsync({ itemId, file: romChange.file, onProgress: setUploadProgress });
+      } else if (romChange.remove) {
+        await deleteRom.mutateAsync(itemId);
+      }
+      return true;
+    } catch (error) {
+      console.error("Error saving ROM:", error);
+      const detail = isAxiosError<{ detail?: string }>(error) ? error.response?.data?.detail : undefined;
+      toast.error(
+        typeof detail === "string" ? detail : t("games.library.romSaveErrorToast"),
+        TOAST_OPTIONS
+      );
+      return false;
+    } finally {
+      setUploadProgress(null);
+    }
+  };
+
+  const handleDialogSubmit = async (values: LibraryItemFormValues, romChange: RomChange) => {
+    let savedItem: LibraryItem;
     try {
       if (dialogItem) {
-        await updateLibraryItem.mutateAsync({
+        savedItem = await updateLibraryItem.mutateAsync({
           itemId: dialogItem.id,
           input: { ...values, status: dialogStatus },
         });
-        toast.success(
-          t("games.library.updateSuccessToast", { phrase: statusPhrase[dialogStatus] }),
-          TOAST_OPTIONS
-        );
       } else {
-        await addLibraryItem.mutateAsync({ ...values, status: dialogStatus });
-        toast.success(
-          t("games.library.addSuccessToast", { phrase: statusPhrase[dialogStatus] }),
-          TOAST_OPTIONS
-        );
+        savedItem = await addLibraryItem.mutateAsync({ ...values, status: dialogStatus });
       }
-      setDialogOpen(false);
     } catch (error) {
       console.error("Error saving library item:", error);
       toast.error(
         t("games.library.saveErrorToast", { phrase: statusPhrase[dialogStatus] }),
         TOAST_OPTIONS
       );
+      return;
     }
+    if (!dialogItem) {
+      // From here on the copy exists — a retry after a failed upload must update it, not
+      // create a second one.
+      setDialogItem(savedItem);
+    }
+    if (!(await applyRomChange(savedItem.id, romChange))) {
+      return;
+    }
+    toast.success(
+      dialogItem
+        ? t("games.library.updateSuccessToast", { phrase: statusPhrase[dialogStatus] })
+        : t("games.library.addSuccessToast", { phrase: statusPhrase[dialogStatus] }),
+      TOAST_OPTIONS
+    );
+    setDialogOpen(false);
   };
 
   const isMutating =
@@ -356,9 +425,28 @@ const GameLibrarySection = ({
                 }
               : undefined
           }
+          existingRom={dialogItem?.rom ?? null}
+          uploadProgress={uploadProgress}
           onClose={() => setDialogOpen(false)}
-          onSubmit={handleDialogSubmit}
+          onSubmit={(values, romChange) => void handleDialogSubmit(values, romChange)}
           submitLabel={dialogItem ? t("games.library.updateLabel") : t("common.add")}
+        />
+        <ConfirmDialog
+          open={moveConfirmItem != null}
+          title={t("games.library.moveWithRomTitle")}
+          description={
+            moveConfirmItem?.rom && (moveConfirmItem.rom.saveStateCount > 0 || moveConfirmItem.rom.hasInGameSave)
+              ? t("games.library.moveWithRomAndSavesDescription", { name: moveConfirmItem.rom.originalFilename })
+              : t("games.library.moveWithRomDescription", { name: moveConfirmItem?.rom?.originalFilename ?? "" })
+          }
+          confirmLabel={t("games.library.moveWithRomConfirm")}
+          confirmColor="error"
+          onClose={() => setMoveConfirmItem(null)}
+          onConfirm={() => {
+            const item = moveConfirmItem;
+            setMoveConfirmItem(null);
+            if (item) void handleMoveClick(item.id, item.status, true);
+          }}
         />
       </CardContent>
     </>

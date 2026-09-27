@@ -6,17 +6,20 @@ import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import RemoveIcon from "@mui/icons-material/Remove";
+import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import type { GameCategory } from "../api/types";
+import type { GameCategory, LibraryItem } from "../api/types";
 import { useClaimDiscoveredGame, useDeleteGame, useResyncGame } from "../hooks/useGames";
+import { hasPlayableRom } from "../utils/roms";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import LinkToIgdbDialog from "./LinkToIgdbDialog";
+import PlayGameDialog from "./PlayGameDialog";
 
 interface GameActionButtonsProps {
   gameId: number;
@@ -37,6 +40,9 @@ interface GameActionButtonsProps {
   // was never asked for, so this replaces the whole Resync/Remove/Edit/Link block below with
   // a single claim action.
   isAutoDiscovered: boolean;
+  // Drives the Play Game button — shown only when at least one owned copy has a ROM the
+  // backend reports as playable in-browser.
+  libraryItems?: LibraryItem[];
   onGameRemoved: () => void;
 }
 
@@ -49,6 +55,7 @@ const GameActionButtons = ({
   hasIgdbId,
   resyncGameId,
   isAutoDiscovered,
+  libraryItems,
   onGameRemoved,
 }: GameActionButtonsProps) => {
   const { t } = useTranslation();
@@ -60,6 +67,7 @@ const GameActionButtons = ({
   const [resyncGameDialogOpen, setResyncGameDialogOpen] = useState(false);
   const [linkIgdbDialogOpen, setLinkIgdbDialogOpen] = useState(false);
   const [removeGameDialogOpen, setRemoveGameDialogOpen] = useState(false);
+  const [playDialogOpen, setPlayDialogOpen] = useState(false);
 
   const handleRemoveGame = async () => {
     try {
@@ -198,6 +206,25 @@ const GameActionButtons = ({
               confirmColor="error"
               onClose={() => setRemoveGameDialogOpen(false)}
               onConfirm={() => void handleRemoveGame()}
+            />
+          </>
+        ) : null}
+        {hasPlayableRom(libraryItems) ? (
+          <>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<SportsEsportsIcon />}
+              onClick={() => setPlayDialogOpen(true)}
+              fullWidth
+            >
+              {t("games.actions.playGameButton")}
+            </Button>
+            <PlayGameDialog
+              open={playDialogOpen}
+              gameName={gameName}
+              libraryItems={libraryItems ?? []}
+              onClose={() => setPlayDialogOpen(false)}
             />
           </>
         ) : null}

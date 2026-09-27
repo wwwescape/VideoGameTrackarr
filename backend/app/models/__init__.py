@@ -50,6 +50,8 @@ from app.models.library import (  # noqa: F401
     Note,
     PlaySession,
     PlayStatus,
+    RomFile,
+    RomSaveState,
     Tag,
 )
 from app.models.platprices import PlatPricesCache  # noqa: F401

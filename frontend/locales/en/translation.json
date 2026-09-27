@@ -100,7 +100,28 @@
       "trackForSalesLabel": "Track for sales",
       "targetPriceLabel": "Target price",
       "targetPriceHelperText": "Get flagged on the On Sale page once the price drops to or below this.",
-      "notesLabel": "Notes"
+      "notesLabel": "Notes",
+      "romLabel": "ROM file",
+      "romPlayable": "Playable in browser",
+      "romNotPlayable": "Not playable in browser",
+      "romUnsupportedPlatform": "this platform isn't supported yet",
+      "romUnsupportedFileType": "this file type isn't supported for this platform",
+      "romSelected": "Selected: {{name}} ({{size}}) — uploaded when you save",
+      "romWillBeRemoved": "The ROM will be removed when you save.",
+      "romChooseButton": "Choose file",
+      "romReplaceButton": "Replace file",
+      "romRemoveButton": "Remove ROM",
+      "romUndoRemoveButton": "Keep ROM",
+      "romHelperText": "Only upload games you legally own. One file per copy; a .zip is fine.",
+      "romInvalidType": "This file type isn't allowed for this format. Allowed: {{extensions}}",
+      "romTooLarge": "This file is larger than the {{limit}} MB upload limit.",
+      "romUploading": "Uploading… {{percent}}%",
+      "romFormatChangeWarning": "This copy's ROM ({{name}}) will be deleted when you save, because only ROM, Abandonware and ISO copies can hold one.",
+      "romSavesWillBeDeleted": "This ROM's {{details}} will be deleted when you save — saves only work with the exact file they were made on.",
+      "romSaveStateCount_one": "{{count}} save state",
+      "romSaveStateCount_other": "{{count}} save states",
+      "romInGameSave": "in-game save",
+      "romSavesJoiner": " and "
     },
     "manageTags": {
       "title": "Tags",
@@ -585,7 +606,8 @@
       "claimGameSuccessToast": "Game added!",
       "claimAddonSuccessToast": "Addon added!",
       "claimGameErrorToast": "Error adding game. Please try again.",
-      "claimAddonErrorToast": "Error adding addon. Please try again."
+      "claimAddonErrorToast": "Error adding addon. Please try again.",
+      "playGameButton": "Play Game"
     },
     "addons": {
       "title": "Addons",
@@ -622,7 +644,13 @@
       "wishlistTableName": "Wishlist",
       "updateDialogTitle": "Update game in your {{phrase}}",
       "addDialogTitle": "Add game to your {{phrase}}",
-      "updateLabel": "Update"
+      "updateLabel": "Update",
+      "romAttachedTooltip": "ROM: {{name}}",
+      "romSaveErrorToast": "The copy was saved, but the ROM couldn't be. Please try again.",
+      "moveWithRomTitle": "Move to Wishlist?",
+      "moveWithRomDescription": "This copy has a ROM attached ({{name}}). Wishlist copies can't hold a ROM, so it will be deleted.",
+      "moveWithRomConfirm": "Move and delete ROM",
+      "moveWithRomAndSavesDescription": "This copy has a ROM attached ({{name}}), along with its save states and/or in-game save. Wishlist copies can't hold a ROM, so the ROM and all of its saves will be deleted."
     },
     "stats": {
       "playStatusNotStarted": "Not started",
@@ -643,6 +671,36 @@
       "byPlatformTitle": "By Platform",
       "byGenreTitle": "By Genre",
       "breakdownCountLabel": "{{name}}: {{count}}"
+    },
+    "play": {
+      "dialogTitle": "Play {{name}}",
+      "unknownPlatform": "Unknown platform",
+      "unsupportedPlatform": "This platform can't be played in the browser yet",
+      "unsupportedFileType": "This file type can't be played on this platform",
+      "startErrorToast": "Couldn't start the game. Please try again.",
+      "noRoms": "No ROMs uploaded for this game.",
+      "playButton": "Play",
+      "playRomAria": "Play {{name}}",
+      "closePlayerAria": "Close player",
+      "saveStateCount_one": "{{count}} save state",
+      "saveStateCount_other": "{{count}} save states",
+      "hasInGameSave": "In-game save",
+      "resumeButton": "Resume",
+      "resumeRomAria": "Resume {{name}} from a save state",
+      "resumeTitle": "Resume {{name}}",
+      "loadStateTitle": "Load a save state",
+      "loadStateButton": "Load",
+      "noSaveStates": "No save states yet. Use the player's Save State button to create one.",
+      "saveStateScreenshotAlt": "Save state screenshot",
+      "deleteStateAria": "Delete save state from {{date}}",
+      "deleteStateTitle": "Delete save state?",
+      "deleteStateDescription": "The save state from {{date}} will be permanently deleted.",
+      "deleteStateErrorToast": "Couldn't delete the save state. Please try again.",
+      "restoreSavesFailed": "Couldn't load your saves from VideoGameTrackarr",
+      "stateSavedMessage": "State saved to VideoGameTrackarr",
+      "stateSaveFailedMessage": "Couldn't save the state — please try again",
+      "stateLoadFailedMessage": "Couldn't load that save state",
+      "savingOnClose": "Saving your in-game progress…"
     }
   },
   "events": {
@@ -1076,7 +1134,10 @@
     "creditsHeading": "Credits",
     "igdbLogoAlt": "IGDB",
     "igdbCredits": "Game data and cover art are provided by <1>IGDB.com</1>.",
-    "buyMeACoffeeAlt": "Buy Me A Coffee"
+    "buyMeACoffeeAlt": "Buy Me A Coffee",
+    "emulatorjsCredits": "In-browser play is powered by <1>EmulatorJS</1> {{version}} (GPL-3.0), running <2>libretro</2> emulator cores.",
+    "emulatorCoresLabel": "Bundled emulator cores, each under its own license:",
+    "nonCommercialLicense": "non-commercial use only"
   },
   "table": {
     "selectAllAriaLabel": "select all rows",

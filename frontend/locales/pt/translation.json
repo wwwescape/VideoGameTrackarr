@@ -100,7 +100,28 @@
       "trackForSalesLabel": "Acompanhar promoções",
       "targetPriceLabel": "Preço-alvo",
       "targetPriceHelperText": "Fica assinalado na página Em Promoção quando o preço descer até este valor ou menos.",
-      "notesLabel": "Notas"
+      "notesLabel": "Notas",
+      "romLabel": "Arquivo ROM",
+      "romPlayable": "Jogável no navegador",
+      "romNotPlayable": "Não jogável no navegador",
+      "romUnsupportedPlatform": "esta plataforma ainda não é compatível",
+      "romUnsupportedFileType": "este tipo de arquivo não é compatível com esta plataforma",
+      "romSelected": "Selecionado: {{name}} ({{size}}) — enviado ao salvar",
+      "romWillBeRemoved": "A ROM será removida ao salvar.",
+      "romChooseButton": "Escolher arquivo",
+      "romReplaceButton": "Substituir arquivo",
+      "romRemoveButton": "Remover ROM",
+      "romUndoRemoveButton": "Manter ROM",
+      "romHelperText": "Envie apenas jogos que você possui legalmente. Um arquivo por cópia; .zip é aceito.",
+      "romInvalidType": "Este tipo de arquivo não é permitido para este formato. Permitidos: {{extensions}}",
+      "romTooLarge": "Este arquivo excede o limite de envio de {{limit}} MB.",
+      "romUploading": "Enviando… {{percent}}%",
+      "romFormatChangeWarning": "A ROM desta cópia ({{name}}) será excluída ao salvar, pois apenas cópias ROM, Abandonware e ISO podem ter uma.",
+      "romSavesWillBeDeleted": "{{details}} desta ROM serão excluídos ao salvar — os saves só funcionam com o arquivo exato em que foram criados.",
+      "romSaveStateCount_one": "{{count}} estado salvo",
+      "romSaveStateCount_other": "{{count}} estados salvos",
+      "romInGameSave": "save do jogo",
+      "romSavesJoiner": " e "
     },
     "manageTags": {
       "title": "Tags",
@@ -585,7 +606,8 @@
       "claimGameSuccessToast": "Jogo adicionado!",
       "claimAddonSuccessToast": "Complemento adicionado!",
       "claimGameErrorToast": "Erro ao adicionar o jogo. Por favor, tente novamente.",
-      "claimAddonErrorToast": "Erro ao adicionar o complemento. Por favor, tente novamente."
+      "claimAddonErrorToast": "Erro ao adicionar o complemento. Por favor, tente novamente.",
+      "playGameButton": "Jogar"
     },
     "addons": {
       "title": "Complementos",
@@ -622,7 +644,13 @@
       "wishlistTableName": "Lista de desejos",
       "updateDialogTitle": "Atualizar jogo na sua {{phrase}}",
       "addDialogTitle": "Adicionar jogo à sua {{phrase}}",
-      "updateLabel": "Atualizar"
+      "updateLabel": "Atualizar",
+      "romAttachedTooltip": "ROM: {{name}}",
+      "romSaveErrorToast": "A cópia foi salva, mas a ROM não. Tente novamente.",
+      "moveWithRomTitle": "Mover para a lista de desejos?",
+      "moveWithRomDescription": "Esta cópia tem uma ROM anexada ({{name}}). Cópias da lista de desejos não podem ter ROM, então ela será excluída.",
+      "moveWithRomConfirm": "Mover e excluir ROM",
+      "moveWithRomAndSavesDescription": "Esta cópia tem uma ROM anexada ({{name}}), com seus estados salvos e/ou save do jogo. Cópias da lista de desejos não podem ter ROM, então a ROM e todos os seus saves serão excluídos."
     },
     "stats": {
       "playStatusNotStarted": "Não iniciado",
@@ -643,6 +671,36 @@
       "byPlatformTitle": "Por plataforma",
       "byGenreTitle": "Por género",
       "breakdownCountLabel": "{{name}}: {{count}}"
+    },
+    "play": {
+      "dialogTitle": "Jogar {{name}}",
+      "unknownPlatform": "Plataforma desconhecida",
+      "unsupportedPlatform": "Esta plataforma ainda não pode ser jogada no navegador",
+      "unsupportedFileType": "Este tipo de arquivo não pode ser jogado nesta plataforma",
+      "startErrorToast": "Não foi possível iniciar o jogo. Tente novamente.",
+      "noRoms": "Nenhuma ROM enviada para este jogo.",
+      "playButton": "Jogar",
+      "playRomAria": "Jogar {{name}}",
+      "closePlayerAria": "Fechar player",
+      "saveStateCount_one": "{{count}} estado salvo",
+      "saveStateCount_other": "{{count}} estados salvos",
+      "hasInGameSave": "Save do jogo",
+      "resumeButton": "Retomar",
+      "resumeRomAria": "Retomar {{name}} de um estado salvo",
+      "resumeTitle": "Retomar {{name}}",
+      "loadStateTitle": "Carregar um estado salvo",
+      "loadStateButton": "Carregar",
+      "noSaveStates": "Ainda não há estados salvos. Use o botão Salvar estado do player para criar um.",
+      "saveStateScreenshotAlt": "Captura do estado salvo",
+      "deleteStateAria": "Excluir o estado salvo de {{date}}",
+      "deleteStateTitle": "Excluir o estado salvo?",
+      "deleteStateDescription": "O estado salvo de {{date}} será excluído permanentemente.",
+      "deleteStateErrorToast": "Não foi possível excluir o estado salvo. Tente novamente.",
+      "restoreSavesFailed": "Não foi possível carregar seus saves do VideoGameTrackarr",
+      "stateSavedMessage": "Estado salvo no VideoGameTrackarr",
+      "stateSaveFailedMessage": "Não foi possível salvar o estado — tente novamente",
+      "stateLoadFailedMessage": "Não foi possível carregar esse estado salvo",
+      "savingOnClose": "Salvando seu progresso no jogo…"
     }
   },
   "events": {
@@ -1076,7 +1134,10 @@
     "creditsHeading": "Créditos",
     "igdbLogoAlt": "IGDB",
     "igdbCredits": "Os dados dos jogos e as imagens de capa são fornecidos por <1>IGDB.com</1>.",
-    "buyMeACoffeeAlt": "Buy Me A Coffee"
+    "buyMeACoffeeAlt": "Buy Me A Coffee",
+    "emulatorjsCredits": "O jogo no navegador usa o <1>EmulatorJS</1> {{version}} (GPL-3.0), que executa núcleos de emulação <2>libretro</2>.",
+    "emulatorCoresLabel": "Núcleos de emulação incluídos, cada um com sua própria licença:",
+    "nonCommercialLicense": "somente para uso não comercial"
   },
   "table": {
     "selectAllAriaLabel": "selecionar todas as linhas",

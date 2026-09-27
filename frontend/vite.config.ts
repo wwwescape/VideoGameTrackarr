@@ -24,6 +24,12 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // The self-hosted EmulatorJS player (public/emulatorjs/, see
+        // scripts/vendor-emulatorjs.mjs) is only loaded on demand inside the Play Game
+        // iframe — never precache its ~6 MB of scripts/cores, and never answer the iframe's
+        // navigation to player.html with the SPA's index.html.
+        globIgnores: ["**/emulatorjs/**"],
+        navigateFallbackDenylist: [/^\/emulatorjs\//],
         // The API itself is NOT runtime-cached here — TanStack Query's own persisted
         // query cache (see offline/) already covers offline data availability at the
         // app-data layer, which is the more useful place for it (parsed objects ready to

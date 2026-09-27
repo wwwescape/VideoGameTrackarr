@@ -11,14 +11,18 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Trans, useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
+import { useEmulationConfig } from "../hooks/useLibrary";
 import { useVersion } from "../hooks/useVersion";
 
 const REPO_URL = "https://github.com/wwwescape/VideoGameTrackarr";
 const BMC_URL = "https://buymeacoffee.com/wwwescape";
+const EMULATORJS_URL = "https://github.com/EmulatorJS/EmulatorJS";
+const LIBRETRO_URL = "https://www.libretro.com";
 
 const About = () => {
   const { t } = useTranslation();
   const { data: version, checkForUpdates, isFetching } = useVersion();
+  const { data: emulation } = useEmulationConfig();
   // Only surface the "up to date" confirmation after the user has explicitly asked us to
   // check — on initial load, staying silent when there's no update is the existing behavior.
   const [hasCheckedManually, setHasCheckedManually] = useState(false);
@@ -108,6 +112,37 @@ const About = () => {
               />
             </Typography>
           </Box>
+          {/* Bundling EmulatorJS (GPL-3.0) and its libretro cores (each under its own
+              license) — the core list comes from the backend's emulation_cores.py, the same
+              map that decides what's playable, so this can't drift from what's shipped. */}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Trans
+              i18nKey="about.emulatorjsCredits"
+              values={{ version: emulation?.emulatorjsVersion ?? "" }}
+              components={{
+                1: <Link href={EMULATORJS_URL} target="_blank" rel="noopener noreferrer" />,
+                2: <Link href={LIBRETRO_URL} target="_blank" rel="noopener noreferrer" />,
+              }}
+            />
+          </Typography>
+          {emulation && emulation.cores.length > 0 ? (
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                {t("about.emulatorCoresLabel")}
+              </Typography>
+              <Box component="ul" sx={{ mt: 0.5, mb: 0, pl: 3 }}>
+                {emulation.cores.map((core) => (
+                  <Typography component="li" variant="body2" color="text.secondary" key={core.core}>
+                    <Link href={core.upstreamUrl} target="_blank" rel="noopener noreferrer">
+                      {core.core}
+                    </Link>{" "}
+                    ({core.system}) — {core.license}
+                    {core.nonCommercial ? ` (${t("about.nonCommercialLicense")})` : null}
+                  </Typography>
+                ))}
+              </Box>
+            </>
+          ) : null}
 
           <Divider sx={{ my: 3 }} />
 

@@ -84,6 +84,16 @@ def _reset_job_scheduler():
     job_scheduler.reset_for_tests()
 
 
+@pytest.fixture(autouse=True)
+def _isolate_rom_storage(tmp_path, monkeypatch):
+    # ROM uploads must never land in the real backend/uploads directory during tests.
+    from app.services import rom_service
+
+    rom_dir = tmp_path / "roms"
+    monkeypatch.setattr(rom_service, "get_rom_dir", lambda: rom_dir)
+    yield rom_dir
+
+
 @pytest.fixture()
 def db_session(tmp_path):
     engine = create_engine(f"sqlite:///{(tmp_path / 'test.db').as_posix()}")

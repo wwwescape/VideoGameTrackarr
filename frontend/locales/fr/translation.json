@@ -100,7 +100,28 @@
       "trackForSalesLabel": "Suivre les promotions",
       "targetPriceLabel": "Prix cible",
       "targetPriceHelperText": "Sera signalé sur la page En promotion dès que le prix descend à ce niveau ou en dessous.",
-      "notesLabel": "Notes"
+      "notesLabel": "Notes",
+      "romLabel": "Fichier ROM",
+      "romPlayable": "Jouable dans le navigateur",
+      "romNotPlayable": "Non jouable dans le navigateur",
+      "romUnsupportedPlatform": "cette plateforme n'est pas encore prise en charge",
+      "romUnsupportedFileType": "ce type de fichier n'est pas pris en charge pour cette plateforme",
+      "romSelected": "Sélectionné : {{name}} ({{size}}) — envoyé à l'enregistrement",
+      "romWillBeRemoved": "La ROM sera supprimée à l'enregistrement.",
+      "romChooseButton": "Choisir un fichier",
+      "romReplaceButton": "Remplacer le fichier",
+      "romRemoveButton": "Retirer la ROM",
+      "romUndoRemoveButton": "Conserver la ROM",
+      "romHelperText": "N'envoyez que des jeux que vous possédez légalement. Un fichier par copie ; un .zip convient.",
+      "romInvalidType": "Ce type de fichier n'est pas autorisé pour ce format. Autorisés : {{extensions}}",
+      "romTooLarge": "Ce fichier dépasse la limite d'envoi de {{limit}} Mo.",
+      "romUploading": "Envoi… {{percent}} %",
+      "romFormatChangeWarning": "La ROM de cette copie ({{name}}) sera supprimée à l'enregistrement, car seules les copies ROM, Abandonware et ISO peuvent en avoir une.",
+      "romSavesWillBeDeleted": "{{details}} de cette ROM seront supprimés à l'enregistrement — les sauvegardes ne fonctionnent qu'avec le fichier exact sur lequel elles ont été créées.",
+      "romSaveStateCount_one": "{{count}} état sauvegardé",
+      "romSaveStateCount_other": "{{count}} états sauvegardés",
+      "romInGameSave": "sauvegarde du jeu",
+      "romSavesJoiner": " et "
     },
     "manageTags": {
       "title": "Tags",
@@ -585,7 +606,8 @@
       "claimGameSuccessToast": "Jeu ajouté !",
       "claimAddonSuccessToast": "Complément ajouté !",
       "claimGameErrorToast": "Erreur lors de l'ajout du jeu. Veuillez réessayer.",
-      "claimAddonErrorToast": "Erreur lors de l'ajout du complément. Veuillez réessayer."
+      "claimAddonErrorToast": "Erreur lors de l'ajout du complément. Veuillez réessayer.",
+      "playGameButton": "Jouer"
     },
     "addons": {
       "title": "Compléments",
@@ -622,7 +644,13 @@
       "wishlistTableName": "Liste de souhaits",
       "updateDialogTitle": "Mettre à jour le jeu dans votre {{phrase}}",
       "addDialogTitle": "Ajouter le jeu à votre {{phrase}}",
-      "updateLabel": "Mettre à jour"
+      "updateLabel": "Mettre à jour",
+      "romAttachedTooltip": "ROM : {{name}}",
+      "romSaveErrorToast": "La copie a été enregistrée, mais pas la ROM. Veuillez réessayer.",
+      "moveWithRomTitle": "Déplacer vers la liste de souhaits ?",
+      "moveWithRomDescription": "Cette copie a une ROM jointe ({{name}}). Les copies de la liste de souhaits ne peuvent pas en avoir, elle sera donc supprimée.",
+      "moveWithRomConfirm": "Déplacer et supprimer la ROM",
+      "moveWithRomAndSavesDescription": "Cette copie a une ROM jointe ({{name}}), avec ses états sauvegardés et/ou sa sauvegarde de jeu. Les copies de la liste de souhaits ne peuvent pas avoir de ROM, la ROM et toutes ses sauvegardes seront donc supprimées."
     },
     "stats": {
       "playStatusNotStarted": "Pas commencé",
@@ -643,6 +671,36 @@
       "byPlatformTitle": "Par plateforme",
       "byGenreTitle": "Par genre",
       "breakdownCountLabel": "{{name}} : {{count}}"
+    },
+    "play": {
+      "dialogTitle": "Jouer à {{name}}",
+      "unknownPlatform": "Plateforme inconnue",
+      "unsupportedPlatform": "Cette plateforme n'est pas encore jouable dans le navigateur",
+      "unsupportedFileType": "Ce type de fichier n'est pas jouable sur cette plateforme",
+      "startErrorToast": "Impossible de lancer le jeu. Veuillez réessayer.",
+      "noRoms": "Aucune ROM envoyée pour ce jeu.",
+      "playButton": "Jouer",
+      "playRomAria": "Jouer {{name}}",
+      "closePlayerAria": "Fermer le lecteur",
+      "saveStateCount_one": "{{count}} état sauvegardé",
+      "saveStateCount_other": "{{count}} états sauvegardés",
+      "hasInGameSave": "Sauvegarde du jeu",
+      "resumeButton": "Reprendre",
+      "resumeRomAria": "Reprendre {{name}} depuis un état sauvegardé",
+      "resumeTitle": "Reprendre {{name}}",
+      "loadStateTitle": "Charger un état sauvegardé",
+      "loadStateButton": "Charger",
+      "noSaveStates": "Aucun état sauvegardé pour l'instant. Utilisez le bouton Enregistrer l'état du lecteur pour en créer un.",
+      "saveStateScreenshotAlt": "Capture de l'état sauvegardé",
+      "deleteStateAria": "Supprimer l'état sauvegardé du {{date}}",
+      "deleteStateTitle": "Supprimer l'état sauvegardé ?",
+      "deleteStateDescription": "L'état sauvegardé du {{date}} sera définitivement supprimé.",
+      "deleteStateErrorToast": "Impossible de supprimer l'état sauvegardé. Veuillez réessayer.",
+      "restoreSavesFailed": "Impossible de charger vos sauvegardes depuis VideoGameTrackarr",
+      "stateSavedMessage": "État enregistré dans VideoGameTrackarr",
+      "stateSaveFailedMessage": "Impossible d'enregistrer l'état — veuillez réessayer",
+      "stateLoadFailedMessage": "Impossible de charger cet état sauvegardé",
+      "savingOnClose": "Enregistrement de votre progression…"
     }
   },
   "events": {
@@ -1076,7 +1134,10 @@
     "creditsHeading": "Crédits",
     "igdbLogoAlt": "IGDB",
     "igdbCredits": "Les données des jeux et les jaquettes sont fournies par <1>IGDB.com</1>.",
-    "buyMeACoffeeAlt": "Buy Me A Coffee"
+    "buyMeACoffeeAlt": "Buy Me A Coffee",
+    "emulatorjsCredits": "Le jeu dans le navigateur repose sur <1>EmulatorJS</1> {{version}} (GPL-3.0), qui exécute des cœurs d'émulation <2>libretro</2>.",
+    "emulatorCoresLabel": "Cœurs d'émulation inclus, chacun sous sa propre licence :",
+    "nonCommercialLicense": "usage non commercial uniquement"
   },
   "table": {
     "selectAllAriaLabel": "sélectionner toutes les lignes",

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VideoGameTrackarr Player</title>
+    <!--
+      Standalone EmulatorJS host page, loaded in an iframe by EmulatorPlayerDialog.tsx.
+      Kept outside the React app on purpose: EmulatorJS configures itself through window.EJS_*
+      globals and loads a WASM core, and an iframe keeps all of that isolated from the main
+      app and torn down cleanly when the dialog closes.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        color: #fff;
+        font-family: Roboto, sans-serif;
+      }
+      #game {
+        width: 100%;
+        height: 100%;
+      }
+      #error {
+        display: none;
+        padding: 24px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="error"></div>
+    <div id="game"></div>
+    <script src="player.js"></script>
+  </body>
+</html>

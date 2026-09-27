@@ -3,6 +3,8 @@
 .claude
 node_modules
 build
+# Regenerated inside the image by frontend/scripts/vendor-emulatorjs.mjs (npm prebuild)
+frontend/public/emulatorjs/data
 backend/.venv
 backend/__pycache__
 backend/**/__pycache__

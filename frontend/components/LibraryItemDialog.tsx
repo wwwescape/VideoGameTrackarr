@@ -1,14 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import Alert from "@mui/material/Alert";
 import Autocomplete, {
   type AutocompleteRenderInputParams,
   createFilterOptions,
 } from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -16,10 +19,15 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import InputAdornment from "@mui/material/InputAdornment";
+import LinearProgress from "@mui/material/LinearProgress";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import type {
   GameCategory,
   LibraryStatus,
@@ -27,11 +35,14 @@ import type {
   PlatformResponse,
   RatingBoard,
   RegionResponse,
+  RomFileSummary,
 } from "../api/types";
+import { useEmulationConfig } from "../hooks/useLibrary";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { getCurrencySymbol } from "../utils/currency";
 import { resolveStorefront } from "../utils/digitalStorefronts";
 import { RATING_BOARD_LABELS } from "../utils/hardwareLabels";
+import { canHoldRom, fileExtension, formatFileSize } from "../utils/roms";
 
 const formSchema = z.object({
   platformId: z.number({ message: "Platform is required" }),
@@ -50,6 +61,13 @@ const formSchema = z.object({
 });
 
 export type LibraryItemFormValues = z.infer<typeof formSchema>;
+
+// What to do with this copy's ROM once the copy itself is saved — the ROM is a separate
+// multipart upload, so the caller applies it after the create/update call returns an id.
+export interface RomChange {
+  file: File | null;
+  remove: boolean;
+}
 
 // DLC/Addon, Expansion, and Pack are always sold digitally — never boxed/cartridge — so the
 // Format field is locked to "digital" rather than left editable for these. Mirrors the
@@ -105,8 +123,11 @@ interface LibraryItemDialogProps {
   regions: RegionResponse[];
   gameCategory?: GameCategory | null;
   defaultValues?: Partial<LibraryItemFormValues>;
+  existingRom?: RomFileSummary | null;
+  // 0..1 while a ROM upload is in flight (shows a progress bar and locks the dialog), else null.
+  uploadProgress?: number | null;
   onClose: () => void;
-  onSubmit: (values: LibraryItemFormValues) => void;
+  onSubmit: (values: LibraryItemFormValues, romChange: RomChange) => void;
   submitLabel: string;
 }
 
@@ -118,11 +139,18 @@ const LibraryItemDialog = ({
   regions,
   gameCategory,
   defaultValues,
+  existingRom = null,
+  uploadProgress = null,
   onClose,
   onSubmit,
   submitLabel,
 }: LibraryItemDialogProps) => {
   const { t } = useTranslation();
+  const { data: emulationConfig } = useEmulationConfig();
+  const [romFile, setRomFile] = useState<File | null>(null);
+  const [removeRom, setRemoveRom] = useState(false);
+  const romInputRef = useRef<HTMLInputElement>(null);
+  const isUploading = uploadProgress != null;
   const { currency } = useCurrency();
   const lockFormatToDigital = gameCategory != null && ALWAYS_DIGITAL_CATEGORIES.includes(gameCategory);
   const {
@@ -138,6 +166,8 @@ const LibraryItemDialog = ({
 
   useEffect(() => {
     if (open) {
+      setRomFile(null);
+      setRemoveRom(false);
       reset({
         format: "physical",
         ...defaultValues,
@@ -225,12 +255,44 @@ const LibraryItemDialog = ({
   // The "" digitalStorefront sentinel above (see that effect) is purely a workaround for
   // react-hook-form/MUI Autocomplete's display sync — callers should still only ever see
   // "not set" as undefined, never a literal empty string reaching the API.
+  const romAllowed = canHoldRom(status, watchedFormat);
+  const allowedRomExtensions = (watchedFormat && emulationConfig?.allowedUploadExtensions[watchedFormat]) ?? [];
+  const romFileError = (() => {
+    if (!romFile || !romAllowed) return null;
+    if (emulationConfig && !allowedRomExtensions.includes(fileExtension(romFile.name))) {
+      return t("dialogs.libraryItem.romInvalidType", {
+        extensions: allowedRomExtensions.map((ext) => `.${ext}`).join(", "),
+      });
+    }
+    if (emulationConfig && romFile.size > emulationConfig.maxUploadMb * 1024 * 1024) {
+      return t("dialogs.libraryItem.romTooLarge", { limit: emulationConfig.maxUploadMb });
+    }
+    return null;
+  })();
+  // The backend deletes the ROM when a copy stops being an owned ROM/Abandonware/ISO copy
+  // (library_service.update_library_item) — warn before that happens, not after.
+  const romWillBeRemoved = existingRom != null && !removeRom && !romAllowed;
+  // Save states / an in-game save only fit the exact file they were made on, so the backend
+  // deletes them whenever the ROM is replaced or removed (rom_service.save_rom/detach_rom).
+  const existingRomHasSaves = existingRom != null && (existingRom.saveStateCount > 0 || existingRom.hasInGameSave);
+  const savesWillBeDeleted =
+    existingRomHasSaves && (romFile != null || (removeRom && romAllowed) || romWillBeRemoved);
+
   const handleFormSubmit = (values: LibraryItemFormValues) => {
-    onSubmit({ ...values, digitalStorefront: values.digitalStorefront || undefined });
+    if (romFileError) return;
+    onSubmit(
+      { ...values, digitalStorefront: values.digitalStorefront || undefined },
+      { file: romAllowed ? romFile : null, remove: romAllowed && removeRom && !romFile }
+    );
   };
 
+  const romUnplayableReasonLabel = (rom: RomFileSummary) =>
+    rom.unplayableReason === "unsupported_platform"
+      ? t("dialogs.libraryItem.romUnsupportedPlatform")
+      : t("dialogs.libraryItem.romUnsupportedFileType");
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={isUploading ? undefined : onClose} fullWidth maxWidth="md">
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
@@ -300,6 +362,106 @@ const LibraryItemDialog = ({
               )}
             />
           </FormControl>
+        ) : null}
+        {romAllowed ? (
+          <FormControl fullWidth sx={{ margin: "0 0 20px 0" }}>
+            <FormLabel>{t("dialogs.libraryItem.romLabel")}</FormLabel>
+            {existingRom && !removeRom && !romFile ? (
+              <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 1, alignItems: "center", flexWrap: "wrap" }}>
+                <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+                  {existingRom.originalFilename} ({formatFileSize(existingRom.sizeBytes)})
+                </Typography>
+                {existingRom.playable ? (
+                  <Chip size="small" color="success" label={t("dialogs.libraryItem.romPlayable")} />
+                ) : (
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`${t("dialogs.libraryItem.romNotPlayable")}: ${romUnplayableReasonLabel(existingRom)}`}
+                  />
+                )}
+              </Stack>
+            ) : null}
+            {romFile ? (
+              <Typography variant="body2" sx={{ mt: 1, wordBreak: "break-all" }}>
+                {t("dialogs.libraryItem.romSelected", { name: romFile.name, size: formatFileSize(romFile.size) })}
+              </Typography>
+            ) : null}
+            {existingRom && removeRom && !romFile ? (
+              <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                {t("dialogs.libraryItem.romWillBeRemoved")}
+              </Typography>
+            ) : null}
+            <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<UploadFileIcon />}
+                disabled={isUploading}
+                onClick={() => romInputRef.current?.click()}
+              >
+                {existingRom || romFile ? t("dialogs.libraryItem.romReplaceButton") : t("dialogs.libraryItem.romChooseButton")}
+              </Button>
+              {romFile ? (
+                <Button size="small" disabled={isUploading} onClick={() => setRomFile(null)}>
+                  {t("common.cancel")}
+                </Button>
+              ) : existingRom && !removeRom ? (
+                <Button size="small" color="error" disabled={isUploading} onClick={() => setRemoveRom(true)}>
+                  {t("dialogs.libraryItem.romRemoveButton")}
+                </Button>
+              ) : existingRom && removeRom ? (
+                <Button size="small" disabled={isUploading} onClick={() => setRemoveRom(false)}>
+                  {t("dialogs.libraryItem.romUndoRemoveButton")}
+                </Button>
+              ) : null}
+            </Box>
+            <input
+              ref={romInputRef}
+              type="file"
+              hidden
+              data-testid="rom-file-input"
+              accept={allowedRomExtensions.map((ext) => `.${ext}`).join(",")}
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                setRomFile(file);
+                // Reset so picking the same file again still fires onChange.
+                event.target.value = "";
+              }}
+            />
+            {romFileError ? (
+              <FormHelperText error>{romFileError}</FormHelperText>
+            ) : (
+              <FormHelperText>{t("dialogs.libraryItem.romHelperText")}</FormHelperText>
+            )}
+            {isUploading ? (
+              <Box sx={{ mt: 1 }}>
+                <LinearProgress variant="determinate" value={Math.round(uploadProgress * 100)} />
+                <Typography variant="caption">
+                  {t("dialogs.libraryItem.romUploading", { percent: Math.round(uploadProgress * 100) })}
+                </Typography>
+              </Box>
+            ) : null}
+          </FormControl>
+        ) : null}
+        {romWillBeRemoved ? (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t("dialogs.libraryItem.romFormatChangeWarning", { name: existingRom.originalFilename })}
+          </Alert>
+        ) : null}
+        {savesWillBeDeleted ? (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t("dialogs.libraryItem.romSavesWillBeDeleted", {
+              details: [
+                existingRom.saveStateCount > 0
+                  ? t("dialogs.libraryItem.romSaveStateCount", { count: existingRom.saveStateCount })
+                  : null,
+                existingRom.hasInGameSave ? t("dialogs.libraryItem.romInGameSave") : null,
+              ]
+                .filter(Boolean)
+                .join(t("dialogs.libraryItem.romSavesJoiner")),
+            })}
+          </Alert>
         ) : null}
         {showEditableStorefront ? (
           <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>
@@ -484,10 +646,14 @@ const LibraryItemDialog = ({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color="primary" disabled={isUploading}>
           {t("common.cancel")}
         </Button>
-        <Button onClick={handleSubmit(handleFormSubmit)} color="primary">
+        <Button
+          onClick={handleSubmit(handleFormSubmit)}
+          color="primary"
+          disabled={isUploading || romFileError != null}
+        >
           {submitLabel}
         </Button>
       </DialogActions>

@@ -45,6 +45,8 @@ from app.models.library import (
     PlaySession,
     PlayStatus,
     RatingBoard,
+    RomFile,
+    RomSaveState,
     Tag,
 )
 from app.schemas.backup import (
@@ -72,6 +74,7 @@ from app.schemas.backup import (
     BackupUserAccessory,
     BackupUserHardware,
 )
+from app.services import rom_service
 
 BACKUPS_DIR = BACKEND_DIR / "db" / "backups"
 
@@ -251,6 +254,52 @@ def restore_backup(db: Session, payload: BackupPayload) -> BackupRestoreResult:
     silent one if you run this against Postgres.
     """
     safety_snapshot_path = _write_safety_snapshot(db)
+
+    # ROM files and their saves aren't part of the backup payload (size), but a same-instance
+    # restore shouldn't throw away ROMs that still belong to the same copy afterwards.
+    # Snapshot them (and their save states) before the wipe, then re-attach each ROM — with
+    # its original id, so its save states still point at it — whose library item id comes
+    # back with the same game + platform (ids are preserved, see above) and can still hold a
+    # ROM; the rest are deleted, rows and files.
+    existing_roms = db.execute(
+        select(RomFile, LibraryItem.game_id, LibraryItem.platform_id).join(
+            LibraryItem, LibraryItem.id == RomFile.library_item_id
+        )
+    ).all()
+    rom_snapshots = [
+        {
+            "rom": {
+                "id": rom.id,
+                "library_item_id": rom.library_item_id,
+                "original_filename": rom.original_filename,
+                "stored_filename": rom.stored_filename,
+                "size_bytes": rom.size_bytes,
+                "extension": rom.extension,
+                "is_archive": rom.is_archive,
+                "sram_stored_filename": rom.sram_stored_filename,
+                "sram_size_bytes": rom.sram_size_bytes,
+                "sram_updated_at": rom.sram_updated_at,
+            },
+            "states": [
+                {
+                    "id": state.id,
+                    "rom_file_id": state.rom_file_id,
+                    "stored_filename": state.stored_filename,
+                    "screenshot_filename": state.screenshot_filename,
+                    "screenshot_media_type": state.screenshot_media_type,
+                    "size_bytes": state.size_bytes,
+                    "created_at": state.created_at,
+                }
+                for state in rom.save_states
+            ],
+            "files": [rom.stored_filename, *rom_service.save_files_of(rom)],
+            "game_id": game_id,
+            "platform_id": platform_id,
+        }
+        for rom, game_id, platform_id in existing_roms
+    ]
+    db.execute(delete(RomSaveState))
+    db.execute(delete(RomFile))
 
     # Hardware side, deepest-children-first — independent of the games tables above, but
     # wiped/restored in the same pass so one backup file covers the whole app.
@@ -454,7 +503,25 @@ def restore_backup(db: Session, payload: BackupPayload) -> BackupRestoreResult:
             )
         )
 
+    restored_items = {li.id: li for li in payload.library_items}
+    orphaned_rom_files: list[str] = []
+    for snap in rom_snapshots:
+        li = restored_items.get(snap["rom"]["library_item_id"])
+        if (
+            li is not None
+            and li.game_id == snap["game_id"]
+            and li.platform_id == snap["platform_id"]
+            and rom_service.can_hold_rom(LibraryStatus(li.status), MediaFormat(li.format) if li.format else None)
+        ):
+            db.add(RomFile(**snap["rom"]))
+            db.flush()
+            for state in snap["states"]:
+                db.add(RomSaveState(**state))
+        else:
+            orphaned_rom_files.extend(snap["files"])
+
     db.commit()
+    rom_service.delete_files(orphaned_rom_files)
 
     return BackupRestoreResult(
         restored_games=len(payload.games),

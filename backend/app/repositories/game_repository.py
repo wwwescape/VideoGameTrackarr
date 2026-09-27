@@ -27,6 +27,8 @@ from app.models.library import (
     Note,
     PlaySession,
     PlayStatus,
+    RomFile,
+    RomSaveState,
 )
 
 # Repositories only add/flush/delete — they never commit. The service (or script) that
@@ -442,14 +444,32 @@ def merge_game(db: Session, source: Game, target: Game) -> None:
     db.flush()
 
 
-def delete_game_with_addons(db: Session, game: Game) -> None:
-    """Deletes the game, its addons, and every row that hangs off either: library_items,
-    game_progress, play_sessions, notes, game_tags, plus the catalog-richness tables
-    populated at import/resync time (genres/companies/franchises/collections/platforms/
-    screenshots/artworks/videos/release_dates)."""
+def delete_game_with_addons(db: Session, game: Game) -> list[str]:
+    """Deletes the game, its addons, and every row that hangs off either: library_items
+    (and their rom_files), game_progress, play_sessions, notes, game_tags, plus the
+    catalog-richness tables populated at import/resync time (genres/companies/franchises/
+    collections/platforms/screenshots/artworks/videos/release_dates).
+
+    Returns the stored filenames of every deleted ROM and its save states/in-game save, for
+    the caller to remove from disk (rom_service.delete_files) once its transaction commits."""
     addon_ids = list(db.scalars(select(Game.id).where(Game.parent_game_id == game.id)))
     game_ids = [game.id, *addon_ids]
 
+    item_ids = select(LibraryItem.id).where(LibraryItem.game_id.in_(game_ids))
+    rom_ids = select(RomFile.id).where(RomFile.library_item_id.in_(item_ids))
+    rom_filenames: list[str] = []
+    for stored, sram in db.execute(
+        select(RomFile.stored_filename, RomFile.sram_stored_filename).where(RomFile.id.in_(rom_ids))
+    ):
+        rom_filenames.extend(f for f in (stored, sram) if f)
+    for stored, screenshot in db.execute(
+        select(RomSaveState.stored_filename, RomSaveState.screenshot_filename).where(
+            RomSaveState.rom_file_id.in_(rom_ids)
+        )
+    ):
+        rom_filenames.extend(f for f in (stored, screenshot) if f)
+    db.execute(delete(RomSaveState).where(RomSaveState.rom_file_id.in_(rom_ids)))
+    db.execute(delete(RomFile).where(RomFile.library_item_id.in_(item_ids)))
     db.execute(delete(LibraryItem).where(LibraryItem.game_id.in_(game_ids)))
     db.execute(delete(GameProgress).where(GameProgress.game_id.in_(game_ids)))
     db.execute(delete(PlaySession).where(PlaySession.game_id.in_(game_ids)))
@@ -465,3 +485,4 @@ def delete_game_with_addons(db: Session, game: Game) -> None:
     db.execute(delete(GameVideo).where(GameVideo.game_id.in_(game_ids)))
     db.execute(delete(ReleaseDate).where(ReleaseDate.game_id.in_(game_ids)))
     db.execute(delete(Game).where(Game.id.in_(game_ids)))
+    return rom_filenames

@@ -16,7 +16,7 @@ from app.repositories import (
     platform_repository,
 )
 from app.repositories.game_repository import GameWithStatus
-from app.services import upload_service
+from app.services import rom_service, upload_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, extract_store_urls
 
@@ -140,8 +140,9 @@ def claim_discovered_game(db: Session, game_id: int) -> GameWithStatus:
 
 def delete_game(db: Session, game_id: int) -> None:
     game_with_status = get_game_detail(db, game_id)
-    game_repository.delete_game_with_addons(db, game_with_status.game)
+    rom_filenames = game_repository.delete_game_with_addons(db, game_with_status.game)
     db.commit()
+    rom_service.delete_files(rom_filenames)
 
 
 async def import_game_from_igdb(

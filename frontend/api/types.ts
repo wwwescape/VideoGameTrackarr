@@ -445,6 +445,57 @@ export interface LibraryItem {
   salePriceCurrency: string | null;
   saleShopName: string | null;
   saleCut: number | null;
+  rom: RomFileSummary | null;
+}
+
+export type RomUnplayableReason = "unsupported_platform" | "unsupported_file_type";
+
+// A ROM attached to one owned ROM/Abandonware/ISO copy. playable/core are resolved by the
+// backend (backend/app/services/emulation_cores.py) — never re-derived here.
+export interface RomFileSummary {
+  id: number;
+  originalFilename: string;
+  sizeBytes: number;
+  extension: string;
+  isArchive: boolean;
+  playable: boolean;
+  core: string | null;
+  unplayableReason: RomUnplayableReason | null;
+  saveStateCount: number;
+  hasInGameSave: boolean;
+}
+
+// One EmulatorJS save state stored on the server (backend RomSaveState).
+export interface SaveState {
+  id: number;
+  createdAt: string;
+  sizeBytes: number;
+  hasScreenshot: boolean;
+}
+
+// A started in-browser play session (POST /api/roms/{id}/play-session) — not to be confused
+// with PlaySession above, which is a logged play-time record.
+export interface EmulatorSession {
+  romUrl: string;
+  core: string;
+  gameName: string;
+}
+
+export interface EmulatorCoreInfo {
+  core: string;
+  system: string;
+  license: string;
+  upstreamUrl: string;
+  nonCommercial: boolean;
+}
+
+// GET /api/emulation — the backend's own upload allowlists/size cap, so the upload picker
+// never keeps a second copy of them.
+export interface EmulationConfig {
+  emulatorjsVersion: string;
+  cores: EmulatorCoreInfo[];
+  allowedUploadExtensions: Partial<Record<MediaFormat, string[]>>;
+  maxUploadMb: number;
 }
 
 export interface LibraryItemInput {

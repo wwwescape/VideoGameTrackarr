@@ -33,6 +33,13 @@ you know what's worth grabbing next.
   - **IsThereAnyDeal** and **PlatPrices** track sale prices for your wishlist (PC/Mac/Linux/
     Android via ITAD, PlayStation via PlatPrices) and surface them on the dashboard's On Sale
     section, with an optional per-item target price.
+- **In-browser play** — attach a ROM to an owned ROM/Abandonware/ISO copy and play it right
+  from the game's page via a self-hosted [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS)
+  (no CDN, nothing leaves your server), with save states and in-game saves kept on the server.
+  15 cartridge-era systems are playable today (NES, SNES, Game Boy family, N64, DS, Genesis/
+  Master System/Game Gear/32X, Atari, PC Engine and more); files for other systems can already
+  be uploaded and light up as more cores are added. Bring your own files — see In-browser play
+  below.
 - **Media viewer** — an in-app lightbox for screenshots and artwork (zoom, fullscreen,
   thumbnail filmstrip) and a video gallery with thumbnail previews, instead of opening raw
   URLs in a new tab.
@@ -105,6 +112,50 @@ Each configured integration shows a live Configured/Not configured status in
 Settings → Integrations. Steam Sync itself lives under Settings → Steam Sync; ITAD/PlatPrices
 results surface under Insights → On Sale and the dashboard's On Sale teaser. All three refresh
 on a schedule you can review and adjust under Settings → Jobs.
+
+### In-browser play (ROMs)
+
+Owned copies with a **ROM**, **Abandonware**, or **ISO** format get a ROM file field in the
+Your Library dialog — one file per copy, either the ROM itself or a `.zip` of it. When a copy's
+platform and file type match a bundled emulator core, a **Play Game** button appears on the
+game's page (under Resync/Remove), listing each uploaded ROM by platform.
+
+**Saves live on the server**, so they survive clearing your browser and follow you to another
+device:
+
+- **Save states** — the player's Save State button stores a snapshot (with a screenshot) in
+  VGT, as many as you like; its Load State button opens a picker of them, and **Resume…** in
+  the Play Game dialog starts the game from one. Delete old ones from either picker.
+- **In-game saves** — a game's own save (the battery save a cartridge would keep) syncs to VGT
+  automatically every minute and when you close the player, and is loaded back in the next
+  time you play, on any browser.
+- Replacing or removing a ROM deletes its saves too — they only work with the exact file they
+  were made on.
+
+- **Playable today** (zipped or not): NES/Famicom, SNES/Super Famicom, Game Boy/Color, Game
+  Boy Advance, Nintendo 64, Nintendo DS, Virtual Boy, Sega Genesis/Mega Drive, Master System,
+  Game Gear, 32X, Atari 2600/7800/Jaguar, PC Engine/TurboGrafx-16/SuperGrafx, Neo Geo Pocket/
+  Color, and WonderSwan/Color. Other systems' files are accepted and stored, marked "Not
+  playable in browser" until a core for them is added — systems that need a BIOS file, plus
+  PlayStation, arcade, DOS and PSP, are planned.
+- **Licenses**: the SNES (Snes9x), Genesis family (Genesis Plus GX) and 32X (PicoDrive) cores
+  are free to redistribute but for **non-commercial use only**; every bundled core and its
+  license is listed on the About page.
+- **Bring your own files** — VGT never hosts, distributes, or helps find ROMs. Only upload
+  games you legally own.
+- **Size limit**: `ROM_MAX_UPLOAD_MB` in `.env` (default 2048). If you run VGT behind a
+  reverse proxy, raise its request body limit to match — Nginx's default is only 1 MB (see
+  `docs/deployment/nginx.example.conf`).
+- ROMs and their saves are stored under `backend/uploads/roms/` (the same Docker volume as
+  other uploads) but are never publicly served — ROMs only through short-lived signed links,
+  saves only to your logged-in session. They're **not** included in JSON backups; a restore on
+  the same instance keeps ROMs (and their saves) whose copy still exists, otherwise re-upload
+  them.
+
+EmulatorJS (GPL-3.0) and each bundled core (under its own license) are credited on the About
+page. They're downloaded from the npm registry at build time — pinned and integrity-checked —
+by `frontend/scripts/vendor-emulatorjs.mjs`, which runs automatically before `npm run start`
+and `npm run build`.
 
 ## Set up the database
 

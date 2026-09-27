@@ -111,6 +111,7 @@ const GameDetails = () => {
             hasIgdbId={game.igdbId !== null}
             resyncGameId={resyncGameId}
             isAutoDiscovered={isAutoDiscovered}
+            libraryItems={libraryItems}
             onGameRemoved={() => navigate("/")}
           />
         </Stack>

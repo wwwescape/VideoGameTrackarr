@@ -86,6 +86,66 @@ class LibraryItem(TimestampMixin, Base):
     game: Mapped["Game"] = relationship()  # noqa: F821
     platform: Mapped["Platform | None"] = relationship()  # noqa: F821
     region: Mapped["Region | None"] = relationship()  # noqa: F821
+    # At most one ROM per copy (RomFile.library_item_id is unique). The ORM cascade only
+    # covers the row — the file on disk is removed by rom_service, which every delete path
+    # (single copy, whole game, format/status change, restore) goes through.
+    rom: Mapped["RomFile | None"] = relationship(
+        back_populates="library_item", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class RomFile(TimestampMixin, Base):
+    """A user-uploaded ROM/disc image/abandonware archive attached to one owned platform
+    copy, playable in-browser via EmulatorJS when its platform + file type map to a bundled
+    core. Deliberately stores no core: playability is resolved at read time from
+    emulation_cores.py, so adding a core later lights up files uploaded before it existed."""
+
+    __tablename__ = "rom_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    library_item_id: Mapped[int] = mapped_column(ForeignKey("library_items.id"), unique=True, nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    stored_filename: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="uuid-based name on disk — never derived from user input"
+    )
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    extension: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        comment="The playable file's extension — the upload's own, or the detected inner file's for a zip",
+    )
+    is_archive: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # The game's own battery/SRAM save ("in-game save"), synced from the player — at most one
+    # per ROM, replaced on every sync. Paths are relative to rom_service.get_rom_dir().
+    sram_stored_filename: Mapped[str | None] = mapped_column(String(64))
+    sram_size_bytes: Mapped[int | None] = mapped_column(Integer)
+    sram_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    library_item: Mapped["LibraryItem"] = relationship(back_populates="rom")
+    save_states: Mapped[list["RomSaveState"]] = relationship(
+        back_populates="rom_file",
+        cascade="all, delete-orphan",
+        order_by="RomSaveState.id.desc()",
+    )
+
+
+class RomSaveState(TimestampMixin, Base):
+    """One EmulatorJS save state (a full emulator snapshot) for a ROM, taken with the player's
+    Save State button. Unlimited per ROM — the user deletes them by hand. Only meaningful
+    for the exact ROM file it was taken on, so replacing the ROM deletes them (rom_service)."""
+
+    __tablename__ = "rom_save_states"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    rom_file_id: Mapped[int] = mapped_column(ForeignKey("rom_files.id"), index=True, nullable=False)
+    stored_filename: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="Relative to the ROM dir, uuid-based — never derived from user input"
+    )
+    screenshot_filename: Mapped[str | None] = mapped_column(String(64))
+    screenshot_media_type: Mapped[str | None] = mapped_column(String(32))
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    rom_file: Mapped["RomFile"] = relationship(back_populates="save_states")
 
 
 class GameProgress(TimestampMixin, Base):

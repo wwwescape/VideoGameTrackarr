@@ -11,6 +11,7 @@ from app.core.config import get_settings
 class TokenType(StrEnum):
     ACCESS = "access"
     REFRESH = "refresh"
+    ROM = "rom"
 
 
 class TokenError(Exception):
@@ -65,6 +66,24 @@ def create_refresh_token(user_id: int) -> tuple[str, str, datetime]:
     }
     token = jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
     return token, jti, expires_at
+
+
+def create_rom_token(user_id: int, rom_id: int, expires_minutes: int = 10) -> str:
+    """A short-lived token scoped to downloading one ROM file. EmulatorJS fetches the ROM
+    itself (from inside the player iframe) and can't attach an Authorization header, so the
+    token travels in the URL path instead — kept narrow (one rom id, its own token type,
+    minutes-long expiry) so a leaked URL is worth very little. Only checked when the
+    request starts, so a slow download of a large file isn't cut off mid-transfer."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.ROM.value,
+        "rom": rom_id,
+        "iat": now,
+        "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
 
 
 def decode_token(token: str, expected_type: TokenType) -> dict:
