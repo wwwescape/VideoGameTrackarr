@@ -4,7 +4,9 @@ from pydantic import BaseModel, ConfigDict
 
 from app.schemas.base import CamelModel
 
-BACKUP_FORMAT_VERSION = 1
+# 2 added the optional rom_files/rom_save_states/bios_files sections (full backups only);
+# a version-1 file still restores — those sections just default to empty.
+BACKUP_FORMAT_VERSION = 2
 
 
 class _BackupRow(BaseModel):
@@ -192,6 +194,39 @@ class BackupUserAccessory(_BackupRow):
     notes: str | None = None
 
 
+class BackupRomFile(_BackupRow):
+    id: int
+    library_item_id: int
+    label: str | None = None
+    original_filename: str
+    stored_filename: str
+    size_bytes: int
+    extension: str
+    is_archive: bool = False
+    sram_stored_filename: str | None = None
+    sram_size_bytes: int | None = None
+    sram_updated_at: str | None = None
+
+
+class BackupRomSaveState(_BackupRow):
+    id: int
+    rom_file_id: int
+    stored_filename: str
+    screenshot_filename: str | None = None
+    screenshot_media_type: str | None = None
+    size_bytes: int
+    created_at: str | None = None
+
+
+class BackupBiosFile(_BackupRow):
+    id: int
+    system: str
+    filename: str
+    stored_filename: str
+    size_bytes: int
+    md5: str
+
+
 class BackupPayload(_BackupRow):
     version: int
     exported_at: str
@@ -215,12 +250,22 @@ class BackupPayload(_BackupRow):
     accessory_compatibility: list[BackupAccessoryCompatibility] = []
     user_hardware: list[BackupUserHardware] = []
     user_accessories: list[BackupUserAccessory] = []
+    # Full backups only (a .zip carrying the files themselves under files/<stored path>).
+    rom_files: list[BackupRomFile] = []
+    rom_save_states: list[BackupRomSaveState] = []
+    bios_files: list[BackupBiosFile] = []
 
 
 class BackupRestoreResult(CamelModel):
     restored_games: int
     restored_library_items: int
     safety_snapshot_path: str
+    # Only a full-backup (.zip) restore brings ROMs back; 0 for a JSON restore.
+    restored_roms: int = 0
+
+
+class FullBackupLinkResponse(CamelModel):
+    url: str  # signed, short-lived; the browser downloads the .zip straight from it
 
 
 class RestoreStatusResponse(CamelModel):

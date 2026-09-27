@@ -86,11 +86,11 @@ class LibraryItem(TimestampMixin, Base):
     game: Mapped["Game"] = relationship()  # noqa: F821
     platform: Mapped["Platform | None"] = relationship()  # noqa: F821
     region: Mapped["Region | None"] = relationship()  # noqa: F821
-    # At most one ROM per copy (RomFile.library_item_id is unique). The ORM cascade only
-    # covers the row — the file on disk is removed by rom_service, which every delete path
+    # A copy can hold several ROMs (e.g. regional revisions), oldest first. The ORM cascade
+    # only covers the rows — files on disk are removed by rom_service, which every delete path
     # (single copy, whole game, format/status change, restore) goes through.
-    rom: Mapped["RomFile | None"] = relationship(
-        back_populates="library_item", uselist=False, cascade="all, delete-orphan"
+    roms: Mapped[list["RomFile"]] = relationship(
+        back_populates="library_item", cascade="all, delete-orphan", order_by="RomFile.id"
     )
 
 
@@ -103,7 +103,9 @@ class RomFile(TimestampMixin, Base):
     __tablename__ = "rom_files"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    library_item_id: Mapped[int] = mapped_column(ForeignKey("library_items.id"), unique=True, nullable=False)
+    library_item_id: Mapped[int] = mapped_column(ForeignKey("library_items.id"), index=True, nullable=False)
+    # Optional, user-given — tells several ROMs on one copy apart (e.g. "USA Rev 1").
+    label: Mapped[str | None] = mapped_column(String(100))
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     stored_filename: Mapped[str] = mapped_column(
         String(64), nullable=False, comment="uuid-based name on disk — never derived from user input"
@@ -121,12 +123,29 @@ class RomFile(TimestampMixin, Base):
     sram_size_bytes: Mapped[int | None] = mapped_column(Integer)
     sram_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    library_item: Mapped["LibraryItem"] = relationship(back_populates="rom")
+    library_item: Mapped["LibraryItem"] = relationship(back_populates="roms")
     save_states: Mapped[list["RomSaveState"]] = relationship(
         back_populates="rom_file",
         cascade="all, delete-orphan",
         order_by="RomSaveState.id.desc()",
     )
+
+
+class BiosFile(TimestampMixin, Base):
+    """A console BIOS the user dumped themselves and uploaded (Settings → Emulation), needed by
+    some emulator cores (see emulation_cores.BIOS_SYSTEMS). One file per accepted filename per
+    system; stored privately next to the ROMs and only ever served to the player through a
+    short-lived signed URL."""
+
+    __tablename__ = "bios_files"
+    __table_args__ = (UniqueConstraint("system", "filename"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    system: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    filename: Mapped[str] = mapped_column(String(100), nullable=False, comment="The exact name the core expects")
+    stored_filename: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    md5: Mapped[str] = mapped_column(String(32), nullable=False)
 
 
 class RomSaveState(TimestampMixin, Base):

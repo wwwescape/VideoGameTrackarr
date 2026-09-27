@@ -1,16 +1,19 @@
 from datetime import date
 
+from sqlalchemy.orm import object_session
+
 from app.models.itad import ItadPriceCache
-from app.models.library import LibraryItem, LibraryStatus, MediaFormat, RatingBoard
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat, RatingBoard, RomFile
 from app.models.platprices import PlatPricesCache
 from app.schemas.base import CamelModel
-from app.services import emulation_cores, storefront_matching
+from app.services import bios_service, emulation_cores, storefront_matching
 from app.services.itad_service import is_library_item_itad_eligible
 from app.services.platprices_service import is_library_item_platprices_eligible
 
 
 class RomFileSummary(CamelModel):
     id: int
+    label: str | None
     original_filename: str
     size_bytes: int
     extension: str
@@ -20,24 +23,35 @@ class RomFileSummary(CamelModel):
     playable: bool
     core: str | None
     unplayable_reason: emulation_cores.UnplayableReason | None
+    # For MISSING_BIOS: which BIOS system (Settings → Emulation) needs a file uploaded.
+    missing_bios_system: str | None = None
+    # Plays in its own cross-origin-isolated tab instead of the in-app player (DOS, PSP).
+    isolated: bool = False
     save_state_count: int = 0
     has_in_game_save: bool = False
 
 
-def rom_summary_from_orm(item: LibraryItem) -> RomFileSummary | None:
-    rom = item.rom
-    if rom is None:
-        return None
-    core, reason = emulation_cores.resolve_playability(item.platform.slug if item.platform else None, rom.extension)
+def rom_summary_from_orm(rom: RomFile, ready_bios: frozenset[str] | None = None) -> RomFileSummary:
+    item = rom.library_item
+    if ready_bios is None:
+        session = object_session(rom)
+        ready_bios = bios_service.ready_systems(session) if session is not None else frozenset()
+    core, reason = emulation_cores.resolve_playability(
+        item.platform.slug if item.platform else None, rom.extension, rom.is_archive, ready_bios
+    )
+    playable = reason is None
     return RomFileSummary(
         id=rom.id,
+        label=rom.label,
         original_filename=rom.original_filename,
         size_bytes=rom.size_bytes,
         extension=rom.extension,
         is_archive=rom.is_archive,
-        playable=core is not None,
-        core=core.core if core else None,
+        playable=playable,
+        core=core.core if core and playable else None,
         unplayable_reason=reason,
+        missing_bios_system=core.bios_system if reason == emulation_cores.UnplayableReason.MISSING_BIOS else None,
+        isolated=bool(core and core.requires_threads),
         save_state_count=len(rom.save_states),
         has_in_game_save=rom.sram_stored_filename is not None,
     )
@@ -67,7 +81,7 @@ class LibraryItemResponse(CamelModel):
     sale_price_currency: str | None
     sale_shop_name: str | None
     sale_cut: int | None
-    rom: RomFileSummary | None = None
+    roms: list[RomFileSummary] = []
 
 
 def library_item_from_orm(
@@ -75,6 +89,8 @@ def library_item_from_orm(
     itad_cache: ItadPriceCache | None = None,
     platprices_cache: PlatPricesCache | None = None,
 ) -> LibraryItemResponse:
+    session = object_session(item)
+    ready_bios = bios_service.ready_systems(session) if item.roms and session is not None else frozenset()
     # Each row's platform determines at most one eligible provider — never both, since
     # itad_service/platprices_service's eligible-platform sets are disjoint by construction.
     # Gated on track_for_sales too (not just eligibility + a match) so this stays consistent
@@ -137,7 +153,7 @@ def library_item_from_orm(
         sale_price_currency=sale_price_currency,
         sale_shop_name=sale_shop_name,
         sale_cut=sale_cut,
-        rom=rom_summary_from_orm(item),
+        roms=[rom_summary_from_orm(rom, ready_bios) for rom in item.roms],
     )
 
 

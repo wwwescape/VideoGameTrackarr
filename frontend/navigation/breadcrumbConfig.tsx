@@ -214,6 +214,11 @@ export const integrationsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.integrations") },
 ];
 
+export const emulationCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.emulation") },
+];
+
 export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.steamSync") },

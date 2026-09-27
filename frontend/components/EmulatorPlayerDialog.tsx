@@ -204,6 +204,16 @@ const EmulatorPlayerDialog = ({
         core: session.core,
         name: session.gameName,
         lang: i18n.language,
+        ...(session.biosFiles.length > 0
+          ? {
+              bios: JSON.stringify(
+                session.biosFiles.map((file) => ({ filename: file.filename, url: resolveAssetUrl(file.url) ?? file.url }))
+              ),
+            }
+          : {}),
+        ...(Object.keys(session.coreOptions).length > 0 ? { options: JSON.stringify(session.coreOptions) } : {}),
+        // Only inside player-isolated.html (cross-origin isolated), where threaded cores work.
+        ...(session.isolated && window.crossOriginIsolated ? { threads: "1" } : {}),
       }).toString()}`
     : null;
 

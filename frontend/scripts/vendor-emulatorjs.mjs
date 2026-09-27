@@ -22,6 +22,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -125,6 +126,56 @@ const PACKAGES = [
     core: "mednafen_wswan",
     integrity:
       "sha512-ePj0OoSTErXS171PCUsiZl3OrfPJVwupvRYFiMSzu6K2UaQjK3ESThWf8Rh1niJt1F1OQyjQENAeElSm0IcojQ==",
+  },
+  {
+    name: "@emulatorjs/core-pcsx_rearmed",
+    core: "pcsx_rearmed",
+    integrity:
+      "sha512-mMbl/NszCryFI15X5QniOqLNL7YGZ6tLP24gr5y1q2ekFOIbtc39BcVTMDEwRndNGovh2nPoCcMjB+W3fgQCog==",
+  },
+  {
+    name: "@emulatorjs/core-opera",
+    core: "opera",
+    integrity:
+      "sha512-cJSZXUAtHF2DLznDEFfo5Owuc9YQh5pg1qCb1TDhtkDZ4Q4za1dTIM0WZYbARd7IN83OX1UB2wd03BSDmCQAFQ==",
+  },
+  {
+    name: "@emulatorjs/core-handy",
+    core: "handy",
+    integrity:
+      "sha512-miv2nSSVIIHFcGeEdeO7BpYKsljL1j+0an4BO7xw44s9iUp2PZnHiY1mHWUIOzf4o22VuiXd/TvHOKUGaEYMNw==",
+  },
+  {
+    name: "@emulatorjs/core-a5200",
+    core: "a5200",
+    integrity:
+      "sha512-/9yS0/MKHp/wO9iuxWfWTGUwiVNKykEOb7fEN5UM9BfIVQ1SAqep4Ji+TigmYW4weH/mASvYzON9ett3dmD6oQ==",
+  },
+  {
+    name: "@emulatorjs/core-gearcoleco",
+    core: "gearcoleco",
+    integrity:
+      "sha512-todwg9FhUzIBe1xkut+HOKmXvwIHgLSNKwERJm2yfJMY7gx/S1MHITHWWUHL3qxSmApacEucr9nZfpuTqVcjpA==",
+  },
+  {
+    name: "@emulatorjs/core-yabause",
+    core: "yabause",
+    integrity:
+      "sha512-12JwbgwoS1l4+KbsQ0jcIU71jVhn5XgXN80/1Fc8aZE4i4sEQatYKU3dZSMBlIJZaWgRN76PEjQymASMJA9/4w==",
+  },
+  {
+    name: "@emulatorjs/core-dosbox_pure",
+    core: "dosbox_pure",
+    threads: true,
+    integrity:
+      "sha512-48CT0ztvnh/M+NRLtHS+pSysdnvH+p+6tgMLJU3+jvfPXdX1dlksiq8PvHPwtpuEF3d9mt2yECCBY9Vq6nkgdw==",
+  },
+  {
+    name: "@emulatorjs/core-ppsspp",
+    core: "ppsspp",
+    threads: true,
+    integrity:
+      "sha512-jSCvK+74PYFwpqbEWzAkuDalK1TQXYogVXUxs24wn0SJcMhykQuziNggn4QQgM7+4wy60Jkh0Xb00PM9fLlWvA==",
   },
 ];
 
@@ -250,10 +301,22 @@ async function main() {
   mkdirSync(join(outDir, "cores", "reports"), { recursive: true });
   for (const pkg of PACKAGES.filter((p) => p.core)) {
     const coreDir = extracted[pkg.name];
-    // Threaded builds need SharedArrayBuffer (cross-origin isolation), which this app doesn't
-    // enable — only the standard and legacy (no-WebGL2) builds are ever loaded.
-    for (const variant of [`${pkg.core}-wasm.data`, `${pkg.core}-legacy-wasm.data`]) {
+    // Copy whichever builds the package ships. Threaded builds need SharedArrayBuffer, which
+    // only the cross-origin-isolated player tab (player-isolated.html) has — so they're kept
+    // only for cores that can't run without threads (DOSBox Pure, PPSSPP), whose packages
+    // ship nothing else. PPSSPP also downloads its assets zip from cores/ at startup.
+    const variants = readdirSync(coreDir).filter(
+      (file) =>
+        file.startsWith(`${pkg.core}-`) &&
+        file.endsWith("-wasm.data") &&
+        (pkg.threads || !file.includes("-thread"))
+    );
+    if (variants.length === 0) throw new Error(`vendor-emulatorjs: no usable build in ${pkg.name}`);
+    for (const variant of variants) {
       copyFileSync(join(coreDir, variant), join(outDir, "cores", variant));
+    }
+    if (existsSync(join(coreDir, `${pkg.core}-assets.zip`))) {
+      copyFileSync(join(coreDir, `${pkg.core}-assets.zip`), join(outDir, "cores", `${pkg.core}-assets.zip`));
     }
     copyFileSync(
       join(coreDir, "reports", `${pkg.core}.json`),

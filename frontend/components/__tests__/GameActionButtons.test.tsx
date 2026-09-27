@@ -38,16 +38,18 @@ const ownedWithRom = (playable: boolean) =>
     id: 1,
     status: "owned",
     platformName: "NES",
-    rom: {
-      id: 1,
-      originalFilename: "game.nes",
-      sizeBytes: 1024,
-      extension: "nes",
-      isArchive: false,
-      playable,
-      core: playable ? "fceumm" : null,
-      unplayableReason: playable ? null : "unsupported_platform",
-    },
+    roms: [
+      {
+        id: 1,
+        originalFilename: "game.nes",
+        sizeBytes: 1024,
+        extension: "nes",
+        isArchive: false,
+        playable,
+        core: playable ? "fceumm" : null,
+        unplayableReason: playable ? null : "unsupported_platform",
+      },
+    ],
   }) as unknown as LibraryItem;
 
 describe("GameActionButtons Play Game", () => {

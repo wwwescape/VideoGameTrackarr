@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryItem, RomFileSummary } from "../../api/types";
@@ -26,12 +27,17 @@ vi.mock("../../api/library", () => ({
 
 function render(ui: ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return rtlRender(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 function rom(overrides: Partial<RomFileSummary>): RomFileSummary {
   return {
     id: 1,
+    label: null,
     originalFilename: "game.nes",
     sizeBytes: 2048,
     extension: "nes",
@@ -39,6 +45,8 @@ function rom(overrides: Partial<RomFileSummary>): RomFileSummary {
     playable: true,
     core: "fceumm",
     unplayableReason: null,
+    missingBiosSystem: null,
+    isolated: false,
     saveStateCount: 0,
     hasInGameSave: false,
     ...overrides,
@@ -48,7 +56,7 @@ function rom(overrides: Partial<RomFileSummary>): RomFileSummary {
 function item(
   id: number,
   platformName: string,
-  romSummary: RomFileSummary | null,
+  romSummary: RomFileSummary | RomFileSummary[] | null,
   status: LibraryItem["status"] = "owned"
 ) {
   return {
@@ -75,7 +83,7 @@ function item(
     salePriceCurrency: null,
     saleShopName: null,
     saleCut: null,
-    rom: romSummary,
+    roms: romSummary == null ? [] : Array.isArray(romSummary) ? romSummary : [romSummary],
   } satisfies LibraryItem;
 }
 
@@ -159,6 +167,9 @@ describe("PlayGameDialog", () => {
       romUrl: "/api/roms/11/content/tok/Mario.nes",
       core: "fceumm",
       gameName: "vgt-rom-11",
+      isolated: false,
+      biosFiles: [],
+      coreOptions: {},
     });
     render(<PlayGameDialog open gameName="Mario" libraryItems={items} onClose={vi.fn()} />);
 
@@ -195,6 +206,9 @@ describe("PlayGameDialog", () => {
       romUrl: "/api/roms/11/content/tok/Mario.nes",
       core: "fceumm",
       gameName: "vgt-rom-11",
+      isolated: false,
+      biosFiles: [],
+      coreOptions: {},
     });
     const withStates = [
       item(
@@ -223,5 +237,65 @@ describe("PlayGameDialog", () => {
 
     expect(createPlaySession).toHaveBeenCalledWith(11);
     expect(await screen.findByTitle("Mario (Nintendo Entertainment System)")).toBeInTheDocument();
+  });
+
+  it("lists every ROM on a copy by its label, and plays the chosen one", async () => {
+    const user = userEvent.setup();
+    createPlaySession.mockResolvedValue({
+      romUrl: "/api/roms/22/content/tok/j.nes",
+      core: "fceumm",
+      gameName: "vgt-rom-22",
+      isolated: false,
+      biosFiles: [],
+      coreOptions: {},
+    });
+    const copy = item(1, "Nintendo Entertainment System", [
+      rom({ id: 21, label: "USA", originalFilename: "u.nes" }),
+      rom({ id: 22, label: "Japan", originalFilename: "j.nes" }),
+    ]);
+    render(<PlayGameDialog open gameName="Mario" libraryItems={[copy]} onClose={vi.fn()} />);
+
+    expect(screen.getByText("USA")).toBeInTheDocument();
+    expect(screen.getByText(/^u\.nes · 2\.0 KB/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Play Japan" }));
+
+    expect(createPlaySession).toHaveBeenCalledWith(22);
+    expect(await screen.findByTitle("Mario (Nintendo Entertainment System) — Japan")).toBeInTheDocument();
+  });
+
+  it("explains a missing BIOS and links to the BIOS settings", () => {
+    const copy = item(
+      1,
+      "Atari Lynx",
+      rom({ playable: false, core: "handy", unplayableReason: "missing_bios", missingBiosSystem: "lynx" })
+    );
+    render(<PlayGameDialog open gameName="Mario" libraryItems={[copy]} onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Needs a BIOS file for this system/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add it in Settings → Emulation" })).toHaveAttribute(
+      "href",
+      "/settings/emulation"
+    );
+  });
+
+  it("opens DOS/PSP ROMs in their own tab instead of the in-page player", async () => {
+    const user = userEvent.setup();
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    const copy = item(1, "DOS", rom({ id: 31, originalFilename: "doom.zip", core: "dosbox_pure", isolated: true }));
+    render(<PlayGameDialog open gameName="Doom" libraryItems={[copy]} onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Opens in a new tab/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Play doom.zip" }));
+
+    expect(createPlaySession).not.toHaveBeenCalled();
+    const [url, target] = open.mock.calls[0] as [string, string];
+    const parsed = new URL(url, "http://localhost");
+    expect(parsed.pathname).toBe("/player-isolated.html");
+    expect(parsed.searchParams.get("rom")).toBe("31");
+    expect(parsed.searchParams.get("title")).toBe("Doom (DOS)");
+    expect(target).toBe("_blank");
+    expect(screen.getByText("The game opened in a new tab.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Didn't open? Open it here." })).toHaveAttribute("href", url);
+    open.mockRestore();
   });
 });

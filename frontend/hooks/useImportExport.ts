@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   acknowledgeRestoreStatus,
+  createFullBackupLink,
   exportBackupBlob,
   exportCsvBlob,
   exportHardwareCsvBlob,
   fetchRestoreStatus,
   restoreBackup,
 } from "../api/importExport";
-import { downloadBlob } from "../utils/download";
+import { resolveAssetUrl } from "../api/client";
+import { downloadBlob, downloadFromUrl } from "../utils/download";
 
 export const restoreStatusQueryKey = ["restore", "status"] as const;
 
@@ -22,7 +24,12 @@ export function useExportCsv() {
 
 export function useExportBackup() {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ includeFiles }: { includeFiles: boolean } = { includeFiles: false }) => {
+      if (includeFiles) {
+        const url = await createFullBackupLink();
+        downloadFromUrl(resolveAssetUrl(url) ?? url);
+        return;
+      }
       const blob = await exportBackupBlob();
       downloadBlob(blob, "videogametrackarr-backup.json");
     },

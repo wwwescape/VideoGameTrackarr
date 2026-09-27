@@ -11,8 +11,16 @@ export async function exportBackupBlob(): Promise<Blob> {
   return response.data;
 }
 
+// A full backup (with ROMs, saves and BIOS files) can be many GB, so it isn't fetched into a
+// Blob: the server hands out a short-lived signed link and the browser downloads it itself.
+export async function createFullBackupLink(): Promise<string> {
+  const response = await apiClient.post<{ url: string }>("/api/export/backup/full-link");
+  return response.data.url;
+}
+
 // Kicks off the restore as a server-side background job and resolves as soon as it starts
 // (202) — not once it finishes. Progress is tracked via fetchRestoreStatus/RestoreGuard.
+// Accepts the JSON backup or a full-backup .zip.
 export async function restoreBackup(file: File): Promise<RestoreStatus> {
   const formData = new FormData();
   formData.append("file", file);

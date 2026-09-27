@@ -1,7 +1,7 @@
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import Game
 from app.models.library import LibraryItem, LibraryStatus, RomFile
@@ -53,7 +53,7 @@ def list_library_items(db: Session, game_id: int, status: LibraryStatus | None =
         .options(
             joinedload(LibraryItem.platform),
             joinedload(LibraryItem.region),
-            joinedload(LibraryItem.rom).selectinload(RomFile.save_states),
+            selectinload(LibraryItem.roms).selectinload(RomFile.save_states),
         )
         .where(LibraryItem.game_id == game_id)
     )
@@ -69,7 +69,7 @@ def get_library_item(db: Session, item_id: int) -> LibraryItem | None:
         .options(
             joinedload(LibraryItem.platform),
             joinedload(LibraryItem.region),
-            joinedload(LibraryItem.rom).selectinload(RomFile.save_states),
+            selectinload(LibraryItem.roms).selectinload(RomFile.save_states),
         )
         .where(LibraryItem.id == item_id)
     )

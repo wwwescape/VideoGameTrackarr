@@ -24,17 +24,19 @@ import type {
 } from "../api/types";
 import {
   useAddLibraryItem,
+  useAddRom,
   useDeleteLibraryItem,
   useDeleteRom,
+  useReplaceRom,
   useUpdateLibraryItem,
-  useUploadRom,
+  useUpdateRomLabel,
 } from "../hooks/useLibrary";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
-import LibraryItemDialog, { type LibraryItemFormValues, type RomChange } from "./LibraryItemDialog";
+import LibraryItemDialog, { type LibraryItemFormValues, type RomChanges } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
 
 // Shared across the Owned and Wishlist tables below so their Platform/Format & Storefront/
@@ -75,9 +77,12 @@ const GameLibrarySection = ({
   const addLibraryItem = useAddLibraryItem(gameId);
   const updateLibraryItem = useUpdateLibraryItem(gameId);
   const deleteLibraryItem = useDeleteLibraryItem(gameId);
-  const uploadRom = useUploadRom(gameId);
+  const addRom = useAddRom(gameId);
+  const replaceRom = useReplaceRom(gameId);
+  const updateRomLabel = useUpdateRomLabel(gameId);
   const deleteRom = useDeleteRom(gameId);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStep, setUploadStep] = useState<{ current: number; total: number } | null>(null);
   // Moving an owned copy that holds a ROM to the Wishlist deletes the ROM (see
   // library_service.update_library_item) — confirmed first, unlike an ordinary move.
   const [moveConfirmItem, setMoveConfirmItem] = useState<LibraryItem | null>(null);
@@ -205,18 +210,26 @@ const GameLibrarySection = ({
       : label;
   };
 
+  const romNames = (item: LibraryItem) =>
+    item.roms.map((rom) => (rom.label ? `${rom.label} (${rom.originalFilename})` : rom.originalFilename)).join(", ");
+
   const renderFormatStorefrontCell = (item: LibraryItem) => {
     const label = formatStorefrontLabel(item);
-    if (!item.rom) return label;
+    if (item.roms.length === 0) return label;
+    const tooltip = t("games.library.romAttachedTooltip", { count: item.roms.length, name: romNames(item) });
     return (
       <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
         {label}
-        <Tooltip title={t("games.library.romAttachedTooltip", { name: item.rom.originalFilename })}>
-          <SportsEsportsIcon
-            fontSize="small"
-            color={item.rom.playable ? "success" : "disabled"}
-            aria-label={t("games.library.romAttachedTooltip", { name: item.rom.originalFilename })}
-          />
+        <Tooltip title={tooltip}>
+          <Box component="span" aria-label={tooltip} sx={{ display: "inline-flex", alignItems: "center" }}>
+            <SportsEsportsIcon fontSize="small" color={item.roms.some((rom) => rom.playable) ? "success" : "disabled"} />
+            {/* Inline rather than a Badge, which the table row would clip. */}
+            {item.roms.length > 1 ? (
+              <Box component="span" sx={{ fontSize: 12, fontWeight: 500, ml: 0.25 }}>
+                ×{item.roms.length}
+              </Box>
+            ) : null}
+          </Box>
         </Tooltip>
       </Box>
     );
@@ -279,7 +292,7 @@ const GameLibrarySection = ({
     const item = libraryItems?.find((candidate) => candidate.id === rowId);
     if (!item) return;
     const targetStatus: LibraryStatus = currentStatus === "owned" ? "wishlist" : "owned";
-    if (targetStatus === "wishlist" && item.rom && !confirmed) {
+    if (targetStatus === "wishlist" && item.roms.length > 0 && !confirmed) {
       setMoveConfirmItem(item);
       return;
     }
@@ -298,32 +311,48 @@ const GameLibrarySection = ({
     }
   };
 
-  // The ROM is its own multipart request, applied once the copy is saved (a new copy only
-  // has an id after the create call returns). A failed upload leaves the copy itself saved
-  // and the dialog open, so the user can retry just the file.
-  const applyRomChange = async (itemId: number, romChange: RomChange): Promise<boolean> => {
+  // Each ROM change is its own request, applied one at a time once the copy is saved (a new
+  // copy only has an id after the create call returns). Removals go first so a replace-by-
+  // remove-and-add never briefly holds both files.
+  const applyRomChanges = async (itemId: number, changes: RomChanges): Promise<boolean> => {
+    const uploads = [
+      ...changes.replaced.map((change) => () =>
+        replaceRom.mutateAsync({ romId: change.romId, file: change.file, onProgress: setUploadProgress })
+      ),
+      ...changes.added.map((change) => () =>
+        addRom.mutateAsync({ itemId, file: change.file, label: change.label, onProgress: setUploadProgress })
+      ),
+    ];
     try {
-      if (romChange.file) {
+      for (const romId of changes.removed) {
+        await deleteRom.mutateAsync(romId);
+      }
+      for (const change of changes.relabelled) {
+        await updateRomLabel.mutateAsync(change);
+      }
+      for (const [index, upload] of uploads.entries()) {
+        setUploadStep({ current: index + 1, total: uploads.length });
         setUploadProgress(0);
-        await uploadRom.mutateAsync({ itemId, file: romChange.file, onProgress: setUploadProgress });
-      } else if (romChange.remove) {
-        await deleteRom.mutateAsync(itemId);
+        await upload();
       }
       return true;
     } catch (error) {
       console.error("Error saving ROM:", error);
       const detail = isAxiosError<{ detail?: string }>(error) ? error.response?.data?.detail : undefined;
       toast.error(
-        typeof detail === "string" ? detail : t("games.library.romSaveErrorToast"),
+        typeof detail === "string"
+          ? t("games.library.romSaveErrorDetailToast", { detail })
+          : t("games.library.romSaveErrorToast"),
         TOAST_OPTIONS
       );
       return false;
     } finally {
       setUploadProgress(null);
+      setUploadStep(null);
     }
   };
 
-  const handleDialogSubmit = async (values: LibraryItemFormValues, romChange: RomChange) => {
+  const handleDialogSubmit = async (values: LibraryItemFormValues, romChanges: RomChanges) => {
     let savedItem: LibraryItem;
     try {
       if (dialogItem) {
@@ -342,12 +371,10 @@ const GameLibrarySection = ({
       );
       return;
     }
-    if (!dialogItem) {
-      // From here on the copy exists — a retry after a failed upload must update it, not
-      // create a second one.
-      setDialogItem(savedItem);
-    }
-    if (!(await applyRomChange(savedItem.id, romChange))) {
+    if (!(await applyRomChanges(savedItem.id, romChanges))) {
+      // The copy (and whichever ROM changes did go through) is saved; the toast says to open
+      // it again to retry the rest, which starts from what the server now actually holds.
+      setDialogOpen(false);
       return;
     }
     toast.success(
@@ -425,8 +452,9 @@ const GameLibrarySection = ({
                 }
               : undefined
           }
-          existingRom={dialogItem?.rom ?? null}
+          existingRoms={dialogItem?.roms ?? []}
           uploadProgress={uploadProgress}
+          uploadStep={uploadStep}
           onClose={() => setDialogOpen(false)}
           onSubmit={(values, romChange) => void handleDialogSubmit(values, romChange)}
           submitLabel={dialogItem ? t("games.library.updateLabel") : t("common.add")}
@@ -435,9 +463,15 @@ const GameLibrarySection = ({
           open={moveConfirmItem != null}
           title={t("games.library.moveWithRomTitle")}
           description={
-            moveConfirmItem?.rom && (moveConfirmItem.rom.saveStateCount > 0 || moveConfirmItem.rom.hasInGameSave)
-              ? t("games.library.moveWithRomAndSavesDescription", { name: moveConfirmItem.rom.originalFilename })
-              : t("games.library.moveWithRomDescription", { name: moveConfirmItem?.rom?.originalFilename ?? "" })
+            moveConfirmItem?.roms.some((rom) => rom.saveStateCount > 0 || rom.hasInGameSave)
+              ? t("games.library.moveWithRomAndSavesDescription", {
+                  count: moveConfirmItem.roms.length,
+                  name: romNames(moveConfirmItem),
+                })
+              : t("games.library.moveWithRomDescription", {
+                  count: moveConfirmItem?.roms.length ?? 0,
+                  name: moveConfirmItem ? romNames(moveConfirmItem) : "",
+                })
           }
           confirmLabel={t("games.library.moveWithRomConfirm")}
           confirmColor="error"

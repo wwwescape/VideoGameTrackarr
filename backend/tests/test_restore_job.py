@@ -16,7 +16,7 @@ def _empty_payload() -> BackupPayload:
 def test_start_restore_rejects_a_concurrent_restore(monkeypatch):
     release = threading.Event()
 
-    def blocking_restore_backup(session, payload):
+    def blocking_restore_backup(session, payload, files_zip=None):
         release.wait(timeout=2)
         return restore_job.BackupRestoreResult(restored_games=0, restored_library_items=0, safety_snapshot_path="x")
 
@@ -50,7 +50,7 @@ def test_run_restore_records_failure_and_acknowledge_resets_to_idle():
 def test_acknowledge_is_a_no_op_while_running(monkeypatch):
     release = threading.Event()
 
-    def blocking_restore_backup(session, payload):
+    def blocking_restore_backup(session, payload, files_zip=None):
         release.wait(timeout=2)
         return restore_job.BackupRestoreResult(restored_games=0, restored_library_items=0, safety_snapshot_path="x")
 
@@ -63,3 +63,22 @@ def test_acknowledge_is_a_no_op_while_running(monkeypatch):
     finally:
         release.set()
         time.sleep(0.05)  # let the background thread finish before the next test's reset
+
+
+def test_run_restore_deletes_the_uploaded_full_backup_zip(monkeypatch, tmp_path):
+    uploaded = tmp_path / "upload.zip"
+    uploaded.write_bytes(b"PK")
+    seen = []
+
+    def fake_restore_backup(session, payload, files_zip=None):
+        seen.append(files_zip)
+        return restore_job.BackupRestoreResult(restored_games=0, restored_library_items=0, safety_snapshot_path="x")
+
+    monkeypatch.setattr(restore_job.backup_service, "restore_backup", fake_restore_backup)
+
+    restore_job._run_restore(_empty_payload(), MagicMock, uploaded)
+
+    assert seen == [uploaded]
+    assert not uploaded.exists()
+    assert restore_job.get_state().status == restore_job.RestoreJobStatus.COMPLETED
+    restore_job.acknowledge()

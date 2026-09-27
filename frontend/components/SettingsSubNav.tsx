@@ -9,6 +9,7 @@ const SUB_NAV_ITEMS = [
   { to: "/settings/tags", labelKey: "nav.tagManager" },
   { to: "/settings/jobs", labelKey: "nav.jobs" },
   { to: "/settings/integrations", labelKey: "nav.integrations" },
+  { to: "/settings/emulation", labelKey: "nav.emulation" },
   // Separate from the rest — this is the one item here that isn't app configuration, it's
   // the Steam library sync workflow, which just happens to live under Settings now.
   { to: "/settings/steam-sync", labelKey: "nav.steamSync", separatorBefore: true },

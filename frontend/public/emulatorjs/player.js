@@ -9,6 +9,18 @@
   var core = params.get("core");
   var gameName = params.get("name");
   var lang = params.get("lang") || "en";
+  // DOS/PSP cores: only set when this page runs cross-origin isolated (inside
+  // player-isolated.html), where SharedArrayBuffer — and so threaded cores — are available.
+  var threads = params.get("threads") === "1";
+
+  function parseJson(raw, fallback) {
+    if (!raw) return fallback;
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
 
   function fail(message) {
     var el = document.getElementById("error");
@@ -30,6 +42,39 @@
     !core ||
     !/^[a-z0-9_]+$/.test(core)
   ) {
+    fail("This play link is invalid. Close the player and try again.");
+    return;
+  }
+
+  // BIOS files the core needs ([{filename, url}], signed links from the play session) and
+  // extra core options ({name: value}). Same rule as the ROM: only this app's own BIOS route,
+  // plain file names, plain option names.
+  var biosFiles = parseJson(params.get("bios"), []);
+  var coreOptions = parseJson(params.get("options"), {});
+  var validBios =
+    Array.isArray(biosFiles) &&
+    biosFiles.every(function (file) {
+      if (!file || typeof file.filename !== "string" || typeof file.url !== "string") return false;
+      var parsed;
+      try {
+        parsed = new URL(file.url, window.location.href);
+      } catch (e) {
+        return false;
+      }
+      file.href = parsed.href;
+      return (
+        /^[A-Za-z0-9][A-Za-z0-9._ ()-]*$/.test(file.filename) &&
+        /^\/api\/emulation\/bios\/content\/\d+\//.test(parsed.pathname)
+      );
+    });
+  var validOptions =
+    coreOptions !== null &&
+    typeof coreOptions === "object" &&
+    !Array.isArray(coreOptions) &&
+    Object.keys(coreOptions).every(function (key) {
+      return /^[a-z0-9_-]+$/.test(key) && typeof coreOptions[key] === "string";
+    });
+  if (!validBios || !validOptions) {
     fail("This play link is invalid. Close the player and try again.");
     return;
   }
@@ -97,8 +142,41 @@
   // EmulatorJS's inverted flag: `false` turns OFF guessing the language from the browser
   // locale, so only the app's own language setting above applies.
   window.EJS_disableAutoLang = false;
-  // How often the game's own in-game save is written out (and so synced to the server).
-  window.EJS_defaultOptions = { "save-save-interval": "60" };
+  // How often the game's own in-game save is written out (and so synced to the server),
+  // plus whatever this session's core needs (e.g. which uploaded 3DO BIOS to use).
+  window.EJS_defaultOptions = Object.assign({ "save-save-interval": "60" }, coreOptions);
+  if (threads) window.EJS_threads = true;
+
+  // --- BIOS files ------------------------------------------------------------------------------
+  // Written straight into the emulator's filesystem root under the exact name the core looks
+  // for (RetroArch's system folder falls back to the content folder, "/"), rather than handed
+  // to EJS_biosUrl — that names the file after the URL and unpacks archives. Fetched up front,
+  // then written in EmulatorJS's saveDatabaseLoaded event: after its filesystem is mounted and
+  // before the game is loaded and started.
+  var biosData = null;
+  function writeBiosFiles(fs) {
+    (biosData || []).forEach(function (file) {
+      var path = "/" + file.filename;
+      if (fs.analyzePath(path).exists) fs.unlink(path);
+      fs.writeFile(path, file.bytes);
+    });
+  }
+  // EmulatorJS's loader creates the emulator with `window.EJS_emulator = new EmulatorJS(...)`;
+  // catching that assignment registers the listener before any of its async setup can reach
+  // the event, however fast that turns out to be.
+  var emulatorInstance;
+  Object.defineProperty(window, "EJS_emulator", {
+    configurable: true,
+    get: function () {
+      return emulatorInstance;
+    },
+    set: function (value) {
+      emulatorInstance = value;
+      if (value && typeof value.on === "function" && biosData && biosData.length) {
+        value.on("saveDatabaseLoaded", writeBiosFiles);
+      }
+    },
+  });
 
   // --- Save bridge ---------------------------------------------------------------------------
   // This page never calls the API. Save events go up to the app page hosting the iframe
@@ -200,10 +278,32 @@
     }
   });
 
-  var script = document.createElement("script");
-  script.src = "/emulatorjs/data/loader.js";
-  script.onerror = function () {
-    fail("The emulator files are missing from this installation.");
-  };
-  document.body.appendChild(script);
+  function loadEmulator() {
+    var script = document.createElement("script");
+    script.src = "/emulatorjs/data/loader.js";
+    script.onerror = function () {
+      fail("The emulator files are missing from this installation.");
+    };
+    document.body.appendChild(script);
+  }
+
+  Promise.all(
+    biosFiles.map(function (file) {
+      return originalFetch(file.href).then(function (response) {
+        if (!response.ok) throw new Error("BIOS download failed: " + response.status);
+        return response.arrayBuffer().then(function (buffer) {
+          return { filename: file.filename, bytes: new Uint8Array(buffer) };
+        });
+      });
+    })
+  ).then(
+    function (files) {
+      biosData = files;
+      loadEmulator();
+    },
+    function (error) {
+      console.error("VideoGameTrackarr player:", error);
+      fail("Couldn't load this system's BIOS files. Close the player and try again.");
+    }
+  );
 })();

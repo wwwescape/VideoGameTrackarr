@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <title>VideoGameTrackarr</title>
+    <!--
+      The DOS/PSP player tab. Served with Cross-Origin-Opener-Policy: same-origin and
+      Cross-Origin-Embedder-Policy: require-corp (backend/app/main.py in production, the
+      crossOriginIsolation plugin in vite.config.ts in dev) so it's cross-origin isolated —
+      the threaded DOSBox Pure and PPSSPP cores need SharedArrayBuffer.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/player-isolated.tsx"></script>
+  </body>
+</html>

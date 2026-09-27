@@ -494,15 +494,17 @@ export interface LibraryItem {
   salePriceCurrency: string | null;
   saleShopName: string | null;
   saleCut: number | null;
-  rom: RomFileSummary | null;
+  // Every ROM attached to this copy (e.g. several regions or revisions), oldest first.
+  roms: RomFileSummary[];
 }
 
-export type RomUnplayableReason = "unsupported_platform" | "unsupported_file_type";
+export type RomUnplayableReason = "unsupported_platform" | "unsupported_file_type" | "missing_bios";
 
 // A ROM attached to one owned ROM/Abandonware/ISO copy. playable/core are resolved by the
 // backend (backend/app/services/emulation_cores.py) — never re-derived here.
 export interface RomFileSummary {
   id: number;
+  label: string | null;
   originalFilename: string;
   sizeBytes: number;
   extension: string;
@@ -510,6 +512,10 @@ export interface RomFileSummary {
   playable: boolean;
   core: string | null;
   unplayableReason: RomUnplayableReason | null;
+  // With unplayableReason "missing_bios": the BIOS system (Settings → Emulation) it needs.
+  missingBiosSystem: string | null;
+  // Plays in its own cross-origin-isolated tab (DOS, PSP) rather than the in-page dialog.
+  isolated: boolean;
   saveStateCount: number;
   hasInGameSave: boolean;
 }
@@ -528,6 +534,38 @@ export interface EmulatorSession {
   romUrl: string;
   core: string;
   gameName: string;
+  isolated: boolean;
+  // Uploaded BIOS files the player writes into the emulator's filesystem before starting.
+  biosFiles: { filename: string; url: string }[];
+  // Extra EmulatorJS core options (EJS_defaultOptions) this session needs.
+  coreOptions: Record<string, string>;
+}
+
+// Settings → Emulation: one BIOS system (GET /api/emulation/bios).
+export interface BiosAcceptedFile {
+  filename: string;
+  note: string | null;
+  satisfies: boolean;
+  hasReferenceHash: boolean;
+}
+
+export interface BiosUploadedFile {
+  id: number;
+  filename: string;
+  sizeBytes: number;
+  md5: string;
+  recognized: boolean;
+  updatedAt: string;
+}
+
+export interface BiosSystem {
+  key: string;
+  label: string;
+  required: boolean;
+  ready: boolean;
+  systems: string[];
+  acceptedFiles: BiosAcceptedFile[];
+  uploadedFiles: BiosUploadedFile[];
 }
 
 export interface EmulatorCoreInfo {
@@ -545,6 +583,8 @@ export interface EmulationConfig {
   cores: EmulatorCoreInfo[];
   allowedUploadExtensions: Partial<Record<MediaFormat, string[]>>;
   maxUploadMb: number;
+  // Platforms some bundled core plays — ROMs can only be uploaded for these.
+  supportedPlatformSlugs: string[];
 }
 
 export interface LibraryItemInput {

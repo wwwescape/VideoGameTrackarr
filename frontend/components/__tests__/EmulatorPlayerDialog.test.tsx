@@ -29,6 +29,9 @@ const session = {
   romUrl: "/api/roms/7/content/tok/game.nes",
   core: "fceumm",
   gameName: "vgt-rom-7",
+  isolated: false,
+  biosFiles: [],
+  coreOptions: {},
 };
 
 function renderPlayer(props: Partial<Parameters<typeof EmulatorPlayerDialog>[0]> = {}) {
@@ -146,5 +149,25 @@ describe("EmulatorPlayerDialog save bridge", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(api.putInGameSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("hands BIOS files and core options to the player, and threads only when isolated", () => {
+    renderPlayer({
+      session: {
+        ...session,
+        biosFiles: [{ filename: "goldstar.bin", url: "/api/emulation/bios/content/1/tok/goldstar.bin" }],
+        coreOptions: { opera_bios: "goldstar.bin" },
+        isolated: true,
+      },
+    });
+
+    const src = new URL(screen.getByTitle("Game").getAttribute("src") as string, "http://localhost");
+    const bios = JSON.parse(src.searchParams.get("bios") as string) as { filename: string; url: string }[];
+    expect(bios).toHaveLength(1);
+    expect(bios[0].filename).toBe("goldstar.bin");
+    expect(bios[0].url).toMatch(/\/api\/emulation\/bios\/content\/1\/tok\/goldstar\.bin$/);
+    expect(JSON.parse(src.searchParams.get("options") as string)).toEqual({ opera_bios: "goldstar.bin" });
+    // jsdom isn't cross-origin isolated, so no threaded cores even for an isolated session.
+    expect(src.searchParams.has("threads")).toBe(false);
   });
 });

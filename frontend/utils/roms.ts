@@ -25,5 +25,13 @@ export function formatFileSize(bytes: number): string {
 }
 
 export function hasPlayableRom(items: LibraryItem[] | undefined): boolean {
-  return (items ?? []).some((item) => item.status === "owned" && item.rom?.playable === true);
+  return (items ?? []).some((item) => item.status === "owned" && item.roms.some((rom) => rom.playable));
+}
+
+// The cross-origin-isolated player page (frontend/player-isolated.html) DOS and PSP play in —
+// it starts its own play session for the ROM, so only ids and a title travel in the URL.
+export function isolatedPlayerUrl(romId: number, resumeStateId: number | null, title: string): string {
+  const params = new URLSearchParams({ rom: String(romId), title });
+  if (resumeStateId != null) params.set("resume", String(resumeStateId));
+  return `${import.meta.env.BASE_URL}player-isolated.html?${params.toString()}`;
 }

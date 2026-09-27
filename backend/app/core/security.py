@@ -12,6 +12,8 @@ class TokenType(StrEnum):
     ACCESS = "access"
     REFRESH = "refresh"
     ROM = "rom"
+    BIOS = "bios"
+    BACKUP_DOWNLOAD = "backup_download"
 
 
 class TokenError(Exception):
@@ -80,6 +82,36 @@ def create_rom_token(user_id: int, rom_id: int, expires_minutes: int = 10) -> st
         "sub": str(user_id),
         "type": TokenType.ROM.value,
         "rom": rom_id,
+        "iat": now,
+        "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
+
+
+def create_bios_token(user_id: int, bios_id: int, expires_minutes: int = 10) -> str:
+    """Same idea as create_rom_token, scoped to one uploaded BIOS file: the player fetches
+    BIOS files itself and can't send an Authorization header either."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.BIOS.value,
+        "bios": bios_id,
+        "iat": now,
+        "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
+
+
+def create_backup_download_token(user_id: int, expires_minutes: int = 5) -> str:
+    """A one-purpose link for downloading a full backup: the .zip can be many GB, so the
+    browser downloads it directly (streamed to disk) instead of through a script holding it
+    in memory — and a plain navigation can't carry an Authorization header."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.BACKUP_DOWNLOAD.value,
         "iat": now,
         "exp": now + timedelta(minutes=expires_minutes),
     }

@@ -28,6 +28,7 @@ import RouteErrorBoundary from "./components/RouteErrorBoundary";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import SeriesPage from "./components/SeriesPage";
 import About from "./components/About";
+import EmulationPage from "./components/EmulationPage";
 import JobsPage from "./components/JobsPage";
 import PublicGamesPage from "./components/PublicGamesPage";
 import PublicHardwarePage from "./components/PublicHardwarePage";
@@ -63,6 +64,7 @@ import {
   insightsCrumbs,
   integrationsCrumbs,
   jobsCrumbs,
+  emulationCrumbs,
   missingAddonsCrumbs,
   notFoundCrumbs,
   onSaleCrumbs,
@@ -223,6 +225,11 @@ const router = createBrowserRouter([
             path: "/settings/integrations",
             element: <IntegrationsPage />,
             handle: { crumbs: integrationsCrumbs },
+          },
+          {
+            path: "/settings/emulation",
+            element: <EmulationPage />,
+            handle: { crumbs: emulationCrumbs },
           },
           {
             path: "/settings/steam-sync",

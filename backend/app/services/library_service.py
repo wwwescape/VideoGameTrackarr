@@ -36,7 +36,7 @@ def update_library_item(db: Session, item_id: int, **fields: Any) -> LibraryItem
     # frontend warns before saving a change like this (LibraryItemDialog/GameLibrarySection).
     orphaned_files: list[str] = []
     if not rom_service.can_hold_rom(item.status, item.format):
-        orphaned_files = rom_service.detach_rom(db, item)
+        orphaned_files = rom_service.detach_roms(db, item)
     db.commit()
     rom_service.delete_files(orphaned_files)
     db.refresh(item)
@@ -45,7 +45,7 @@ def update_library_item(db: Session, item_id: int, **fields: Any) -> LibraryItem
 
 def delete_library_item(db: Session, item_id: int) -> None:
     item = _require_library_item(db, item_id)
-    orphaned_files = rom_service.detach_rom(db, item)
+    orphaned_files = rom_service.detach_roms(db, item)
     library_item_repository.delete_library_item(db, item)
     db.commit()
     rom_service.delete_files(orphaned_files)

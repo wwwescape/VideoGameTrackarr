@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "../../api/types";
-import { canHoldRom, fileExtension, formatFileSize, hasPlayableRom } from "../roms";
+import { canHoldRom, fileExtension, formatFileSize, hasPlayableRom, isolatedPlayerUrl } from "../roms";
 
 describe("roms utils", () => {
   it("only lets owned ROM/Abandonware/ISO copies hold a ROM", () => {
@@ -26,10 +26,17 @@ describe("roms utils", () => {
 
   it("detects a playable ROM on an owned copy only", () => {
     const withRom = (status: LibraryItem["status"], playable: boolean) =>
-      ({ status, rom: { playable } }) as unknown as LibraryItem;
+      ({ status, roms: [{ playable: false }, { playable }] }) as unknown as LibraryItem;
     expect(hasPlayableRom(undefined)).toBe(false);
     expect(hasPlayableRom([withRom("owned", false)])).toBe(false);
     expect(hasPlayableRom([withRom("wishlist", true)])).toBe(false);
     expect(hasPlayableRom([withRom("owned", false), withRom("owned", true)])).toBe(true);
+  });
+
+  it("builds the isolated player tab's URL", () => {
+    const url = new URL(isolatedPlayerUrl(7, 3, "Doom (DOS)"), "http://localhost");
+    expect(url.pathname).toBe("/player-isolated.html");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ rom: "7", title: "Doom (DOS)", resume: "3" });
+    expect(new URL(isolatedPlayerUrl(7, null, "x"), "http://localhost").searchParams.has("resume")).toBe(false);
   });
 });

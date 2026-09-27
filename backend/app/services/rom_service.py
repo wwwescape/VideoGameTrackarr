@@ -2,7 +2,8 @@
 
 Every path that removes a RomFile row (deleting the copy, deleting the whole game, changing
 a copy's format/status so it can no longer hold a ROM, restoring a backup) goes through a
-function here, so a file on disk never outlives its row. The same goes for a ROM's save
+function here, so a file on disk never outlives its row. A copy can hold several ROMs (e.g.
+different regions or revisions), each with its own saves. The same goes for a ROM's save
 states and in-game save, which live alongside it (states/ and saves/ under the ROM dir) and
 are always removed together with it.
 """
@@ -97,6 +98,16 @@ def _stream_to_file(source: BinaryIO, relative_path: str, max_bytes: int, too_la
     return size
 
 
+def stream_to_rom_dir(source: BinaryIO, relative_path: str, max_bytes: int, too_large_message: str) -> int:
+    """Public wrapper over _stream_to_file for other private-storage users (bios_service)."""
+    return _stream_to_file(source, relative_path, max_bytes, too_large_message)
+
+
+def rom_dir_path(relative_path: str) -> Path:
+    """Resolved path of a file under the private ROM dir, refusing anything outside it."""
+    return _safe_path(relative_path)
+
+
 def save_files_of(rom: RomFile) -> list[str]:
     """Every save file hanging off a ROM — its states, their screenshots, its in-game save."""
     files: list[str] = []
@@ -113,25 +124,38 @@ def _all_files_of(rom: RomFile) -> list[str]:
     return [rom.stored_filename, *save_files_of(rom)]
 
 
-def _detect_zip_content_extension(path: Path) -> str:
-    """The extension of the first ROM-looking entry inside the zip, without extracting
-    anything. Falls back to "zip" when nothing inside looks like a known ROM/disc file —
-    e.g. an abandonware DOS game folder, which is valid to store but has no bundled core
-    to play it yet."""
-    try:
-        with zipfile.ZipFile(path) as archive:
-            names = archive.namelist()
-    except zipfile.BadZipFile as exc:
-        raise RomValidationError("Not a valid zip file") from exc
-
+def _first_rom_like(names: list[str]) -> str:
+    """The extension of the first ROM-looking entry in an archive listing. Falls back to the
+    generic archive marker when nothing inside looks like a known ROM/disc file — e.g. an
+    abandonware DOS game folder, which cores such as DOSBox Pure take as the archive itself."""
     for name in names:
-        parts = PurePosixPath(name).parts
+        parts = PurePosixPath(name.replace("\\", "/")).parts
         if name.endswith("/") or not parts or parts[0] == "__MACOSX" or parts[-1].startswith("."):
             continue
         extension = _extension_of(name)
         if extension in emulation_cores.ROM_CONTENT_EXTENSIONS:
             return extension
     return emulation_cores.ARCHIVE_EXTENSION
+
+
+def _detect_archive_content_extension(path: Path, archive_extension: str) -> str:
+    """Lists an uploaded archive's contents without extracting anything and returns the
+    playable file's extension (see _first_rom_like)."""
+    if archive_extension == "7z":
+        try:
+            import py7zr
+
+            with py7zr.SevenZipFile(path, mode="r") as archive:
+                names = archive.getnames()
+        except Exception as exc:  # py7zr raises several unrelated types for a bad archive
+            raise RomValidationError("Not a valid 7z file") from exc
+    else:
+        try:
+            with zipfile.ZipFile(path) as archive:
+                names = archive.namelist()
+        except zipfile.BadZipFile as exc:
+            raise RomValidationError("Not a valid zip file") from exc
+    return _first_rom_like(names)
 
 
 def _require_item(db: Session, item_id: int) -> LibraryItem:
@@ -141,13 +165,23 @@ def _require_item(db: Session, item_id: int) -> LibraryItem:
     return item
 
 
-def save_rom(db: Session, item_id: int, source: BinaryIO, original_filename: str) -> LibraryItem:
-    """Stores `source` as the ROM for this copy, replacing any existing one. Streams to disk
-    in chunks rather than reading the whole upload into memory — disc images run to
-    hundreds of MB."""
-    item = _require_item(db, item_id)
+def _clean_label(label: str | None) -> str | None:
+    label = (label or "").strip()
+    return label[:100] or None
+
+
+def _ingest_rom_upload(item: LibraryItem, source: BinaryIO, original_filename: str) -> dict:
+    """Validates and streams an uploaded ROM to disk (never read whole into memory — disc
+    images run to hundreds of MB) and returns the RomFile column values for it. Leaves
+    nothing on disk if it fails."""
     if not can_hold_rom(item.status, item.format):
         raise RomValidationError("ROMs can only be attached to owned copies with a ROM, Abandonware, or ISO format")
+    # Only platforms a bundled core plays take uploads — a ROM for anything else could never
+    # be played here, so there's no point storing it.
+    platform = item.platform
+    if emulation_cores.core_for_platform(platform.slug if platform else None) is None:
+        name = platform.name if platform else "This platform"
+        raise RomValidationError(f"{name} can't be played in the browser, so ROMs can't be uploaded for it")
 
     original_filename = PurePosixPath(original_filename.replace("\\", "/")).name.strip()
     extension = _extension_of(original_filename)
@@ -157,79 +191,91 @@ def save_rom(db: Session, item_id: int, source: BinaryIO, original_filename: str
             f"Unsupported file type for this format — allowed: {', '.join(sorted('.' + e for e in allowed))}"
         )
 
-    max_bytes = get_settings().rom_max_upload_mb * 1024 * 1024
-    rom_dir = get_rom_dir()
-    rom_dir.mkdir(parents=True, exist_ok=True)
     stored_filename = uuid.uuid4().hex
-    final_path = rom_dir / stored_filename
-    part_path = rom_dir / f"{stored_filename}.part"
-
-    size = 0
+    limit_mb = get_settings().rom_max_upload_mb
+    size = _stream_to_file(
+        source, stored_filename, limit_mb * 1024 * 1024, f"File is larger than the {limit_mb} MB limit"
+    )
+    is_archive = extension in emulation_cores.ARCHIVE_EXTENSIONS
     try:
-        with part_path.open("wb") as out:
-            while chunk := source.read(_CHUNK_SIZE):
-                size += len(chunk)
-                if size > max_bytes:
-                    raise RomTooLargeError(f"File is larger than the {get_settings().rom_max_upload_mb} MB limit")
-                out.write(chunk)
-        if size == 0:
-            raise RomValidationError("File is empty")
-        content_extension = extension
-        is_archive = extension == emulation_cores.ARCHIVE_EXTENSION
-        if is_archive:
-            content_extension = _detect_zip_content_extension(part_path)
-        part_path.replace(final_path)
+        content_extension = (
+            _detect_archive_content_extension(_safe_path(stored_filename), extension) if is_archive else extension
+        )
     except BaseException:
-        part_path.unlink(missing_ok=True)
+        _delete_file(stored_filename)
         raise
+    return {
+        "original_filename": original_filename[:255],
+        "stored_filename": stored_filename,
+        "size_bytes": size,
+        "extension": content_extension,
+        "is_archive": is_archive,
+    }
 
-    # A replaced ROM's save states / in-game save were taken on a different file and are
-    # meaningless for the new one — removed along with the old file (the dialog warns first).
-    old_files: list[str] = []
-    if item.rom is not None:
-        rom = item.rom
-        old_files = _all_files_of(rom)
-        rom.save_states.clear()
-        rom.sram_stored_filename = None
-        rom.sram_size_bytes = None
-        rom.sram_updated_at = None
-    else:
-        rom = RomFile(library_item_id=item.id)
-        db.add(rom)
-    rom.original_filename = original_filename[:255]
-    rom.stored_filename = stored_filename
-    rom.size_bytes = size
-    rom.extension = content_extension
-    rom.is_archive = is_archive
+
+def _commit_or_discard(db: Session, new_stored_filename: str) -> None:
     try:
         db.commit()
     except BaseException:
         db.rollback()
-        final_path.unlink(missing_ok=True)
+        _delete_file(new_stored_filename)
         raise
 
+
+def add_rom(
+    db: Session, item_id: int, source: BinaryIO, original_filename: str, label: str | None = None
+) -> LibraryItem:
+    """Adds another ROM to this copy (e.g. a second region or revision). Each ROM keeps its
+    own save states and in-game save."""
+    item = _require_item(db, item_id)
+    values = _ingest_rom_upload(item, source, original_filename)
+    db.add(RomFile(library_item_id=item.id, label=_clean_label(label), **values))
+    _commit_or_discard(db, values["stored_filename"])
+    db.refresh(item)
+    return item
+
+
+def replace_rom_file(db: Session, rom_id: int, source: BinaryIO, original_filename: str) -> LibraryItem:
+    """Swaps one ROM's file. Its save states / in-game save were taken on the old file and are
+    meaningless for the new one, so they go too (the dialog warns first)."""
+    rom = get_rom(db, rom_id)
+    item = rom.library_item
+    values = _ingest_rom_upload(item, source, original_filename)
+    old_files = _all_files_of(rom)
+    rom.save_states.clear()
+    rom.sram_stored_filename = None
+    rom.sram_size_bytes = None
+    rom.sram_updated_at = None
+    for key, value in values.items():
+        setattr(rom, key, value)
+    _commit_or_discard(db, values["stored_filename"])
     delete_files(old_files)
     db.refresh(item)
     return item
 
 
-def delete_rom(db: Session, item_id: int) -> None:
-    item = _require_item(db, item_id)
-    if item.rom is None:
-        raise NotFoundError(f"Library item {item_id} has no ROM")
-    files = detach_rom(db, item)
+def update_rom_label(db: Session, rom_id: int, label: str | None) -> LibraryItem:
+    rom = get_rom(db, rom_id)
+    rom.label = _clean_label(label)
+    db.commit()
+    db.refresh(rom.library_item)
+    return rom.library_item
+
+
+def delete_rom(db: Session, rom_id: int) -> None:
+    rom = get_rom(db, rom_id)
+    files = _all_files_of(rom)
+    db.delete(rom)
     db.commit()
     delete_files(files)
 
 
-def detach_rom(db: Session, item: LibraryItem) -> list[str]:
-    """Removes the item's ROM row and its save states (no commit) and returns every file
-    name involved, for the caller to delete via delete_files() once its own transaction
-    commits."""
-    if item.rom is None:
-        return []
-    files = _all_files_of(item.rom)
-    item.rom = None
+def detach_roms(db: Session, item: LibraryItem) -> list[str]:
+    """Removes all of the item's ROM rows and their save states (no commit) and returns every
+    file name involved, for the caller to delete via delete_files() once its own
+    transaction commits."""
+    files = [f for rom in item.roms for f in _all_files_of(rom)]
+    item.roms.clear()
     db.flush()
     return files
 

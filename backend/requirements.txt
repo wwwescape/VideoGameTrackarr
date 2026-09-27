@@ -13,3 +13,4 @@ slowapi>=0.1.9,<1.0
 APScheduler>=3.10,<4.0
 python-multipart>=0.0.9,<1.0
 Pillow>=11.0,<13.0
+py7zr>=1.0,<2.0

@@ -3,6 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from enum import StrEnum
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -41,7 +42,9 @@ def get_state() -> RestoreJobState:
         return _state
 
 
-def start_restore(payload: BackupPayload, session_factory: Callable[[], Session]) -> RestoreJobState:
+def start_restore(
+    payload: BackupPayload, session_factory: Callable[[], Session], files_zip: Path | None = None
+) -> RestoreJobState:
     global _state
     with _lock:
         if _state.status == RestoreJobStatus.RUNNING:
@@ -52,17 +55,19 @@ def start_restore(payload: BackupPayload, session_factory: Callable[[], Session]
     # A real OS thread (not FastAPI's BackgroundTasks) is what actually lets the HTTP
     # response return to the client before the restore finishes — BackgroundTasks run as
     # part of the same ASGI call the response belongs to.
-    thread = threading.Thread(target=_run_restore, args=(payload, session_factory), daemon=True)
+    thread = threading.Thread(target=_run_restore, args=(payload, session_factory, files_zip), daemon=True)
     thread.start()
     return snapshot
 
 
-def _run_restore(payload: BackupPayload, session_factory: Callable[[], Session]) -> None:
+def _run_restore(
+    payload: BackupPayload, session_factory: Callable[[], Session], files_zip: Path | None = None
+) -> None:
     global _state
     session: Session | None = None
     try:
         session = session_factory()
-        result = backup_service.restore_backup(session, payload)
+        result = backup_service.restore_backup(session, payload, files_zip)
         with _lock:
             _state = replace(_state, status=RestoreJobStatus.COMPLETED, result=result, finished_at=datetime.now(UTC))
     except Exception as exc:  # noqa: BLE001 - any failure here (including session_factory
@@ -75,6 +80,9 @@ def _run_restore(payload: BackupPayload, session_factory: Callable[[], Session])
     finally:
         if session is not None:
             session.close()
+        if files_zip is not None:
+            # The uploaded full-backup zip was a temp copy (see routes/import_export.py).
+            files_zip.unlink(missing_ok=True)
 
 
 def acknowledge() -> None:

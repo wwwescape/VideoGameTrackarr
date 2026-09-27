@@ -4,7 +4,10 @@ import RestoreIcon from "@mui/icons-material/Restore";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
@@ -29,6 +32,7 @@ const DataManagementSection = () => {
   const restoreInProgress = restoreBackup.isPending || restoreStatus.data?.status === "running";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [includeFiles, setIncludeFiles] = useState(false);
 
   const handleExportCsv = async () => {
     try {
@@ -50,7 +54,7 @@ const DataManagementSection = () => {
 
   const handleExportBackup = async () => {
     try {
-      await exportBackup.mutateAsync();
+      await exportBackup.mutateAsync({ includeFiles });
     } catch (error) {
       console.error("Error exporting backup:", error);
       toast.error(t("settings.dataManagement.exportBackupError"), TOAST_OPTIONS);
@@ -99,9 +103,17 @@ const DataManagementSection = () => {
             onClick={handleExportBackup}
             disabled={exportBackup.isPending}
           >
-            {t("settings.dataManagement.exportFullBackup")}
+            {includeFiles
+              ? t("settings.dataManagement.exportFullBackupWithFiles")
+              : t("settings.dataManagement.exportFullBackup")}
           </Button>
         </Stack>
+        <FormControlLabel
+          sx={{ mt: 1 }}
+          control={<Checkbox checked={includeFiles} onChange={(event) => setIncludeFiles(event.target.checked)} />}
+          label={t("settings.dataManagement.includeFilesLabel")}
+        />
+        <FormHelperText sx={{ mt: 0 }}>{t("settings.dataManagement.includeFilesHelp")}</FormHelperText>
       </Box>
 
       <Divider />
@@ -121,7 +133,7 @@ const DataManagementSection = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json,application/json"
+            accept=".json,application/json,.zip,application/zip"
             hidden
             disabled={restoreInProgress}
             onChange={(event) => setPendingFile(event.target.files?.[0] ?? null)}

@@ -18,6 +18,7 @@ import MemoryIcon from "@mui/icons-material/Memory";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SellIcon from "@mui/icons-material/Sell";
 import SettingsIcon from "@mui/icons-material/Settings";
+import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import SteamIcon from "../icons/SteamIcon";
 
@@ -89,6 +90,7 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
         { to: "/settings/tags", label: t("nav.tagManager"), icon: <LabelIcon /> },
         { to: "/settings/jobs", label: t("nav.jobs"), icon: <RefreshIcon /> },
         { to: "/settings/integrations", label: t("nav.integrations"), icon: <CableIcon /> },
+        { to: "/settings/emulation", label: t("nav.emulation"), icon: <SportsEsportsIcon /> },
         {
           to: "/settings/steam-sync",
           label: t("nav.steamSync"),

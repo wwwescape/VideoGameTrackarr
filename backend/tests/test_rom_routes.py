@@ -26,7 +26,8 @@ def nes_platform(db_session):
 @pytest.fixture()
 def unsupported_platform(db_session):
     # A platform with no bundled core (Saturn needs a BIOS file — later phase).
-    platform = Platform(name="Sega Saturn", slug="saturn")
+    # A platform with no bundled core at all.
+    platform = Platform(name="Sony PlayStation 2", slug="ps2")
     db_session.add(platform)
     db_session.commit()
     return platform
@@ -41,7 +42,7 @@ def _add_item(db_session, game, platform, fmt=MediaFormat.ROM, status=LibrarySta
 
 def _upload(client, item_id, filename="game.nes", content=NES_ROM):
     files = {"file": (filename, io.BytesIO(content), "application/octet-stream")}
-    return client.post(f"/api/library/{item_id}/rom", files=files)
+    return client.post(f"/api/library/{item_id}/roms", files=files)
 
 
 def _zip_bytes(entries: dict[str, bytes]) -> bytes:
@@ -71,7 +72,7 @@ def test_resolve_playability_famicom_and_gba():
 
 
 def test_resolve_playability_unsupported_platform():
-    assert emulation_cores.resolve_playability("saturn", "bin") == (None, UnplayableReason.UNSUPPORTED_PLATFORM)
+    assert emulation_cores.resolve_playability("ps2", "iso") == (None, UnplayableReason.UNSUPPORTED_PLATFORM)
     assert emulation_cores.resolve_playability(None, "nes") == (None, UnplayableReason.UNSUPPORTED_PLATFORM)
 
 
@@ -98,7 +99,7 @@ def test_upload_nes_rom_is_playable(auth_client, db_session, seed_game, nes_plat
     response = _upload(auth_client, item.id, "Super Game (USA).nes")
 
     assert response.status_code == 201
-    rom = response.json()["rom"]
+    rom = response.json()["roms"][-1]
     assert rom["originalFilename"] == "Super Game (USA).nes"
     assert rom["sizeBytes"] == len(NES_ROM)
     assert rom["extension"] == "nes"
@@ -116,20 +117,59 @@ def test_library_list_includes_rom_summary(auth_client, db_session, seed_game, n
 
     items = {i["id"]: i for i in auth_client.get(f"/api/games/{seed_game.id}/library").json()}
 
-    assert items[item.id]["rom"]["playable"] is True
-    assert items[other.id]["rom"] is None
+    assert items[item.id]["roms"][0]["playable"] is True
+    assert items[other.id]["roms"] == []
 
 
-def test_upload_unplayable_system_is_stored_but_not_playable(auth_client, db_session, seed_game, unsupported_platform):
+def test_upload_refused_for_a_platform_no_core_plays(
+    auth_client, db_session, seed_game, nes_platform, unsupported_platform, _isolate_rom_storage
+):
     item = _add_item(db_session, seed_game, unsupported_platform)
 
-    response = _upload(auth_client, item.id, "game.bin")
+    response = _upload(auth_client, item.id, "game.iso")
 
-    assert response.status_code == 201
-    rom = response.json()["rom"]
+    assert response.status_code == 400
+    assert "can't be played in the browser" in response.json()["detail"]
+    assert _stored_files(_isolate_rom_storage) == []
+    # Nor can a supported copy's ROM be replaced once the copy moves to such a platform.
+    nes_item = _add_item(db_session, seed_game, nes_platform)
+    rom = _upload(auth_client, nes_item.id).json()["roms"][-1]
+    nes_item.platform_id = unsupported_platform.id
+    db_session.commit()
+    replaced = auth_client.put(
+        f"/api/roms/{rom['id']}", files={"file": ("b.nes", io.BytesIO(NES_ROM), "application/octet-stream")}
+    )
+    assert replaced.status_code == 400
+
+
+def test_a_rom_already_stored_for_an_unsupported_platform_is_listed_as_unplayable(
+    auth_client, db_session, seed_game, nes_platform, unsupported_platform
+):
+    item = _add_item(db_session, seed_game, nes_platform)
+    _upload(auth_client, item.id)
+    item.platform_id = unsupported_platform.id
+    db_session.commit()
+
+    [rom] = auth_client.get(f"/api/games/{seed_game.id}/library").json()[0]["roms"]
+
     assert rom["playable"] is False
-    assert rom["core"] is None
     assert rom["unplayableReason"] == "unsupported_platform"
+    assert auth_client.post(f"/api/roms/{rom['id']}/play-session").status_code == 409
+
+
+def test_download_link_serves_the_original_file(client, auth_client, db_session, seed_game, nes_platform):
+    item = _add_item(db_session, seed_game, nes_platform)
+    rom = _upload(auth_client, item.id, "Game (USA).nes").json()["roms"][-1]
+
+    url = auth_client.post(f"/api/roms/{rom['id']}/download-link").json()["url"]
+    client.headers.pop("Authorization", None)
+    got = client.get(url)
+
+    assert got.status_code == 200
+    assert got.content == NES_ROM
+    assert got.headers["content-disposition"].startswith("attachment")
+    assert "Game%20%28USA%29.nes" in got.headers["content-disposition"]
+    assert client.post(f"/api/roms/{rom['id']}/download-link").status_code == 401
 
 
 @pytest.mark.parametrize(
@@ -180,7 +220,7 @@ def test_upload_rejects_oversized_file(
     assert response.status_code == 413
     assert _stored_files(_isolate_rom_storage) == []
     db_session.expire_all()
-    assert db_session.get(LibraryItem, item.id).rom is None
+    assert db_session.get(LibraryItem, item.id).roms == []
 
 
 def test_upload_strips_directory_components_from_filename(auth_client, db_session, seed_game, nes_platform):
@@ -189,14 +229,14 @@ def test_upload_strips_directory_components_from_filename(auth_client, db_sessio
     response = _upload(auth_client, item.id, "../../evil/game.nes")
 
     assert response.status_code == 201
-    assert response.json()["rom"]["originalFilename"] == "game.nes"
+    assert response.json()["roms"][-1]["originalFilename"] == "game.nes"
 
 
 def test_zip_detects_inner_rom_extension(auth_client, db_session, seed_game, nes_platform):
     item = _add_item(db_session, seed_game, nes_platform)
     content = _zip_bytes({"__MACOSX/._game.nes": b"x", "readme.txt": b"hi", "folder/Game (USA).nes": NES_ROM})
 
-    rom = _upload(auth_client, item.id, "game.zip", content).json()["rom"]
+    rom = _upload(auth_client, item.id, "game.zip", content).json()["roms"][-1]
 
     assert rom["isArchive"] is True
     assert rom["extension"] == "nes"
@@ -210,7 +250,7 @@ def test_abandonware_zip_without_rom_is_stored_but_unplayable(auth_client, db_se
     response = _upload(auth_client, item.id, "game.zip", content)
 
     assert response.status_code == 201
-    rom = response.json()["rom"]
+    rom = response.json()["roms"][-1]
     assert rom["extension"] == "zip"
     assert rom["playable"] is False
     assert rom["unplayableReason"] == "unsupported_file_type"
@@ -222,21 +262,56 @@ def test_corrupt_zip_rejected(auth_client, db_session, seed_game, nes_platform, 
     assert _stored_files(_isolate_rom_storage) == []
 
 
-def test_reupload_replaces_rom_and_deletes_old_file(
+def _replace(client, rom_id, filename="second.nes", content=NES_ROM):
+    files = {"file": (filename, io.BytesIO(content), "application/octet-stream")}
+    return client.put(f"/api/roms/{rom_id}", files=files)
+
+
+def test_replacing_a_rom_file_deletes_the_old_file(
     auth_client, db_session, seed_game, nes_platform, _isolate_rom_storage
 ):
     item = _add_item(db_session, seed_game, nes_platform)
-    first = _upload(auth_client, item.id, "first.nes").json()["rom"]
+    first = _upload(auth_client, item.id, "first.nes").json()["roms"][-1]
     first_files = _stored_files(_isolate_rom_storage)
 
-    second = _upload(auth_client, item.id, "second.nes").json()["rom"]
+    replaced = _replace(auth_client, first["id"], "second.nes")
 
-    assert second["id"] == first["id"]
-    assert second["originalFilename"] == "second.nes"
+    assert replaced.status_code == 200
+    [rom] = replaced.json()["roms"]
+    assert rom["id"] == first["id"]
+    assert rom["originalFilename"] == "second.nes"
     files = _stored_files(_isolate_rom_storage)
     assert len(files) == 1
     assert files != first_files
     assert db_session.query(RomFile).count() == 1
+
+
+def test_a_copy_can_hold_several_labelled_roms(auth_client, db_session, seed_game, nes_platform, _isolate_rom_storage):
+    item = _add_item(db_session, seed_game, nes_platform)
+    files = {"file": ("usa.nes", io.BytesIO(NES_ROM), "application/octet-stream")}
+    auth_client.post(f"/api/library/{item.id}/roms", files=files, data={"label": "USA"})
+    body = _upload(auth_client, item.id, "japan.nes").json()
+
+    assert [(r["originalFilename"], r["label"]) for r in body["roms"]] == [("usa.nes", "USA"), ("japan.nes", None)]
+    assert len(_stored_files(_isolate_rom_storage)) == 2
+
+    relabelled = auth_client.patch(f"/api/roms/{body['roms'][1]['id']}", json={"label": "  Japan  "}).json()
+    assert [r["label"] for r in relabelled["roms"]] == ["USA", "Japan"]
+    cleared = auth_client.patch(f"/api/roms/{body['roms'][1]['id']}", json={"label": ""}).json()
+    assert cleared["roms"][1]["label"] is None
+
+
+def test_replacing_one_rom_keeps_the_other_roms_saves(auth_client, db_session, seed_game, nes_platform):
+    item = _add_item(db_session, seed_game, nes_platform)
+    first = _upload(auth_client, item.id, "a.nes").json()["roms"][-1]
+    second = _upload(auth_client, item.id, "b.nes").json()["roms"][-1]
+    _save_state(auth_client, first["id"])
+    _save_state(auth_client, second["id"])
+
+    body = _replace(auth_client, first["id"], "a2.nes").json()
+
+    counts = {r["id"]: r["saveStateCount"] for r in body["roms"]}
+    assert counts == {first["id"]: 0, second["id"]: 1}
 
 
 # --- delete + cleanup hooks --------------------------------------------------------------
@@ -244,11 +319,14 @@ def test_reupload_replaces_rom_and_deletes_old_file(
 
 def test_delete_rom(auth_client, db_session, seed_game, nes_platform, _isolate_rom_storage):
     item = _add_item(db_session, seed_game, nes_platform)
-    _upload(auth_client, item.id)
+    rom = _upload(auth_client, item.id).json()["roms"][-1]
+    keep = _upload(auth_client, item.id, "keep.nes").json()["roms"][-1]
 
-    assert auth_client.delete(f"/api/library/{item.id}/rom").status_code == 204
-    assert _stored_files(_isolate_rom_storage) == []
-    assert auth_client.delete(f"/api/library/{item.id}/rom").status_code == 404
+    assert auth_client.delete(f"/api/roms/{rom['id']}").status_code == 204
+    assert len(_stored_files(_isolate_rom_storage)) == 1
+    assert auth_client.delete(f"/api/roms/{rom['id']}").status_code == 404
+    listed = auth_client.get(f"/api/games/{seed_game.id}/library").json()
+    assert [r["id"] for r in listed[0]["roms"]] == [keep["id"]]
 
 
 def test_deleting_library_item_deletes_its_rom(auth_client, db_session, seed_game, nes_platform, _isolate_rom_storage):
@@ -280,7 +358,7 @@ def test_changing_copy_so_it_cannot_hold_rom_deletes_rom(
     response = auth_client.put(f"/api/library/{item.id}", json=change)
 
     assert response.status_code == 200
-    assert response.json()["rom"] is None
+    assert response.json()["roms"] == []
     assert _stored_files(_isolate_rom_storage) == []
 
 
@@ -290,7 +368,7 @@ def test_unrelated_copy_edit_keeps_rom(auth_client, db_session, seed_game, nes_p
 
     response = auth_client.put(f"/api/library/{item.id}", json={"notes": "cart only", "format": "abandonware"})
 
-    assert response.json()["rom"] is not None
+    assert response.json()["roms"] != []
     assert len(_stored_files(_isolate_rom_storage)) == 1
 
 
@@ -324,7 +402,7 @@ def test_uploads_static_mount_refuses_roms_subfolder(
 
 def _play(auth_client, db_session, seed_game, platform, filename="Game (USA).nes"):
     item = _add_item(db_session, seed_game, platform)
-    rom = _upload(auth_client, item.id, filename).json()["rom"]
+    rom = _upload(auth_client, item.id, filename).json()["roms"][-1]
     return rom, auth_client.post(f"/api/roms/{rom['id']}/play-session")
 
 
@@ -343,9 +421,12 @@ def test_play_session_requires_auth(client, db_session, seed_game, nes_platform)
     assert client.post("/api/roms/1/play-session").status_code == 401
 
 
-def test_play_session_409_for_unplayable_rom(auth_client, db_session, seed_game, unsupported_platform):
-    _, response = _play(auth_client, db_session, seed_game, unsupported_platform, "game.bin")
-    assert response.status_code == 409
+def test_play_session_409_for_unplayable_rom(auth_client, db_session, seed_game, nes_platform):
+    item = _add_item(db_session, seed_game, nes_platform)
+    readme_only = _zip_bytes({"README.txt": b"no rom in here"})
+    rom = _upload(auth_client, item.id, "game.zip", readme_only).json()["roms"][-1]
+    assert rom["unplayableReason"] == "unsupported_file_type"
+    assert auth_client.post(f"/api/roms/{rom['id']}/play-session").status_code == 409
 
 
 def test_content_served_with_valid_token_without_bearer(client, auth_client, db_session, seed_game, nes_platform):
@@ -391,7 +472,7 @@ def test_emulation_config(auth_client):
     assert cores["fceumm"]["license"] == "GPL-2.0"
     assert cores["mgba"]["license"] == "MPL-2.0"
     assert cores["mgba"]["upstreamUrl"].startswith("https://")
-    assert body["allowedUploadExtensions"]["abandonware"] == ["zip"]
+    assert body["allowedUploadExtensions"]["abandonware"] == ["7z", "zip"]
     assert "nes" in body["allowedUploadExtensions"]["rom"]
     assert "iso" in body["allowedUploadExtensions"]["iso"]
     assert "physical" not in body["allowedUploadExtensions"]
@@ -441,7 +522,7 @@ def _all_files(rom_dir):
 
 def _rom_with_upload(auth_client, db_session, seed_game, platform, fmt=MediaFormat.ROM):
     item = _add_item(db_session, seed_game, platform, fmt=fmt)
-    rom = _upload(auth_client, item.id).json()["rom"]
+    rom = _upload(auth_client, item.id).json()["roms"][-1]
     return item, rom
 
 
@@ -547,8 +628,8 @@ def test_rom_summary_reports_save_counts(auth_client, db_session, seed_game, nes
 
     listed = next(i for i in auth_client.get(f"/api/games/{seed_game.id}/library").json() if i["id"] == item.id)
 
-    assert listed["rom"]["saveStateCount"] == 2
-    assert listed["rom"]["hasInGameSave"] is True
+    assert listed["roms"][0]["saveStateCount"] == 2
+    assert listed["roms"][0]["hasInGameSave"] is True
 
 
 def _add_saves(client, rom_id):
@@ -560,7 +641,7 @@ def test_replacing_rom_deletes_its_saves(auth_client, db_session, seed_game, nes
     item, rom = _rom_with_upload(auth_client, db_session, seed_game, nes_platform)
     _add_saves(auth_client, rom["id"])
 
-    replaced = _upload(auth_client, item.id, "other.nes").json()["rom"]
+    replaced = _replace(auth_client, rom["id"], "other.nes").json()["roms"][-1]
 
     assert replaced["saveStateCount"] == 0
     assert replaced["hasInGameSave"] is False
@@ -571,10 +652,10 @@ def test_replacing_rom_deletes_its_saves(auth_client, db_session, seed_game, nes
 @pytest.mark.parametrize(
     "remove",
     [
-        lambda c, item, game: c.delete(f"/api/library/{item.id}/rom"),
-        lambda c, item, game: c.delete(f"/api/library/{item.id}"),
-        lambda c, item, game: c.delete(f"/api/games/{game.id}"),
-        lambda c, item, game: c.put(f"/api/library/{item.id}", json={"format": "physical"}),
+        lambda c, item, game, rom: c.delete(f"/api/roms/{rom['id']}"),
+        lambda c, item, game, rom: c.delete(f"/api/library/{item.id}"),
+        lambda c, item, game, rom: c.delete(f"/api/games/{game.id}"),
+        lambda c, item, game, rom: c.put(f"/api/library/{item.id}", json={"format": "physical"}),
     ],
     ids=["delete-rom", "delete-copy", "delete-game", "format-change"],
 )
@@ -587,7 +668,7 @@ def test_every_rom_removal_path_deletes_saves(
     _add_saves(auth_client, rom["id"])
     assert len(_all_files(_isolate_rom_storage)) == 4  # rom + state + screenshot + in-game save
 
-    assert remove(auth_client, item, seed_game).status_code in (200, 204)
+    assert remove(auth_client, item, seed_game, rom).status_code in (200, 204)
 
     assert _all_files(_isolate_rom_storage) == []
     db_session.expire_all()
@@ -669,9 +750,9 @@ def test_phase3_wrong_file_type_is_unplayable(slug, extension):
     assert emulation_cores.resolve_playability(slug, extension) == (None, UnplayableReason.UNSUPPORTED_FILE_TYPE)
 
 
-@pytest.mark.parametrize("slug", ["ps", "playstation", "saturn", "segacd", "3do", "lynx", "arcade", "dos", "psp"])
-def test_bios_thread_and_arcade_systems_stay_unplayable(slug):
-    assert emulation_cores.resolve_playability(slug, "bin")[1] == UnplayableReason.UNSUPPORTED_PLATFORM
+@pytest.mark.parametrize("slug", ["arcade", "neogeoaes", "ps2", "xbox360"])
+def test_arcade_and_unbundled_systems_stay_unplayable(slug):
+    assert emulation_cores.resolve_playability(slug, "zip", is_archive=True)[1] == UnplayableReason.UNSUPPORTED_PLATFORM
 
 
 def test_no_platform_slug_maps_to_two_cores():
@@ -682,17 +763,25 @@ def test_no_platform_slug_maps_to_two_cores():
             seen[slug] = core.core
 
 
-def test_every_core_extension_is_uploadable_as_rom():
-    allowed = emulation_cores.ALLOWED_UPLOAD_EXTENSIONS[MediaFormat.ROM]
+def test_every_core_extension_can_reach_the_core():
+    """Each extension a core plays is either uploadable on its own in some format, or
+    detectable inside an uploaded archive (disc cue/bin sets); DOS takes whole archives."""
+    uploadable = set().union(*emulation_cores.ALLOWED_UPLOAD_EXTENSIONS.values())
     for core in emulation_cores.CORES:
-        assert core.extensions <= allowed, (core.core, core.extensions - allowed)
+        if core.accepts_any_archive:
+            continue
+        missing = core.extensions - uploadable - emulation_cores.ROM_CONTENT_EXTENSIONS
+        assert not missing, (core.core, missing)
 
 
 def test_emulation_config_flags_only_non_commercial_cores(auth_client):
     cores = {c["core"]: c for c in auth_client.get("/api/emulation").json()["cores"]}
 
-    assert len(cores) == 15
-    assert {name for name, c in cores.items() if c["nonCommercial"]} == {"snes9x", "genesis_plus_gx", "picodrive"}
+    assert len(cores) == len({c.core for c in emulation_cores.CORES}) == 23
+    non_commercial = {name for name, c in cores.items() if c["nonCommercial"]}
+    assert non_commercial == {"snes9x", "genesis_plus_gx", "picodrive", "opera"}
+    # A core playing several systems is credited once, naming all of them.
+    assert "Sega CD" in cores["genesis_plus_gx"]["system"]
 
 
 def test_vendored_cores_match_core_map():

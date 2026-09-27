@@ -1,6 +1,8 @@
 import { useState } from "react";
 import HistoryIcon from "@mui/icons-material/History";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -11,13 +13,15 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
+import MuiLink from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import { useTranslation } from "react-i18next";
+import { Link as RouterLink } from "react-router-dom";
 import { toast } from "react-toastify";
 import { createPlaySession } from "../api/library";
 import type { EmulatorSession, LibraryItem, RomFileSummary, SaveState } from "../api/types";
-import { formatFileSize } from "../utils/roms";
+import { formatFileSize, isolatedPlayerUrl } from "../utils/roms";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import EmulatorPlayerDialog from "./EmulatorPlayerDialog";
 import SaveStatePickerDialog from "./SaveStatePickerDialog";
@@ -49,12 +53,15 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
   const [startingRomId, setStartingRomId] = useState<number | null>(null);
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumeRow, setResumeRow] = useState<RomRow | null>(null);
+  // Set after a DOS/PSP ROM was opened in its own tab — with that tab's URL, in case a popup
+  // blocker swallowed it.
+  const [openedTabUrl, setOpenedTabUrl] = useState<string | null>(null);
 
   const groups = new Map<string, RomRow[]>();
   for (const item of libraryItems) {
-    if (item.status !== "owned" || !item.rom) continue;
+    if (item.status !== "owned" || item.roms.length === 0) continue;
     const platform = item.platformName ?? t("games.play.unknownPlatform");
-    groups.set(platform, [...(groups.get(platform) ?? []), { item, rom: item.rom }]);
+    groups.set(platform, [...(groups.get(platform) ?? []), ...item.roms.map((rom) => ({ item, rom }))]);
   }
   const sortedGroups = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 
@@ -66,7 +73,11 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
   const unplayableLabel = (rom: RomFileSummary) =>
     rom.unplayableReason === "unsupported_platform"
       ? t("games.play.unsupportedPlatform")
-      : t("games.play.unsupportedFileType");
+      : rom.unplayableReason === "missing_bios"
+        ? t("games.play.missingBios")
+        : t("games.play.unsupportedFileType");
+
+  const romName = (rom: RomFileSummary) => rom.label ?? rom.originalFilename;
 
   const savesLabel = (rom: RomFileSummary) =>
     [
@@ -76,13 +87,28 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
       .filter(Boolean)
       .join(" · ");
 
-  const handlePlay = async ({ item, rom }: RomRow, resumeFrom: SaveState | null = null) => {
+  const sessionTitle = ({ item, rom }: RomRow) => {
+    const base = item.platformName ? `${gameName} (${item.platformName})` : gameName;
+    return rom.label ? `${base} — ${rom.label}` : base;
+  };
+
+  const handlePlay = async (row: RomRow, resumeFrom: SaveState | null = null) => {
+    const { rom } = row;
+    if (rom.isolated) {
+      // DOS/PSP cores need SharedArrayBuffer, which only a cross-origin-isolated page gets —
+      // so they play in their own tab (player-isolated.html), which starts its own session.
+      // Opened synchronously from the click so popup blockers let it through.
+      const url = isolatedPlayerUrl(rom.id, resumeFrom?.id ?? null, sessionTitle(row));
+      window.open(url, "_blank");
+      setOpenedTabUrl(url);
+      return;
+    }
     setStartingRomId(rom.id);
     try {
       const playSession = await createPlaySession(rom.id);
       setSession({
         session: playSession,
-        title: item.platformName ? `${gameName} (${item.platformName})` : gameName,
+        title: sessionTitle(row),
         romId: rom.id,
         resumeStateId: resumeFrom?.id ?? null,
       });
@@ -99,6 +125,14 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
         <DialogTitle>{t("games.play.dialogTitle", { name: gameName })}</DialogTitle>
         <DialogContent dividers>
+          {openedTabUrl ? (
+            <Alert severity="info" sx={{ mb: 2 }} onClose={() => setOpenedTabUrl(null)}>
+              {t("games.play.openedInNewTab")}{" "}
+              <MuiLink href={openedTabUrl} target="_blank" rel="noopener">
+                {t("games.play.openTabAgain")}
+              </MuiLink>
+            </Alert>
+          ) : null}
           {sortedGroups.length === 0 ? (
             <Box sx={{ py: 2 }}>{t("games.play.noRoms")}</Box>
           ) : (
@@ -124,7 +158,7 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
                                   disabled={startingRomId != null}
                                   onClick={() => setResumeRow(row)}
                                   aria-label={t("games.play.resumeRomAria", {
-                                    name: row.rom.originalFilename,
+                                    name: romName(row.rom),
                                   })}
                                 >
                                   {t("games.play.resumeButton")}
@@ -133,11 +167,11 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
                               <Button
                                 variant="contained"
                                 size="small"
-                                startIcon={<PlayArrowIcon />}
+                                startIcon={row.rom.isolated ? <OpenInNewIcon /> : <PlayArrowIcon />}
                                 disabled={startingRomId != null}
                                 onClick={() => void handlePlay(row)}
                                 aria-label={t("games.play.playRomAria", {
-                                  name: row.rom.originalFilename,
+                                  name: romName(row.rom),
                                 })}
                               >
                                 {t("games.play.playButton")}
@@ -162,15 +196,29 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
                         sx={{ pr: row.rom.playable && row.rom.saveStateCount > 0 ? 28 : 14 }}
                       >
                         <ListItemText
-                          primary={row.rom.originalFilename}
-                          secondary={[
-                            formatFileSize(row.rom.sizeBytes),
-                            typeLabel(row.rom),
-                            row.rom.playable ? null : unplayableLabel(row.rom),
-                            savesLabel(row.rom) || null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
+                          primary={romName(row.rom)}
+                          secondary={
+                            <>
+                              {[
+                                row.rom.label ? row.rom.originalFilename : null,
+                                formatFileSize(row.rom.sizeBytes),
+                                typeLabel(row.rom),
+                                row.rom.playable ? null : unplayableLabel(row.rom),
+                                row.rom.playable && row.rom.isolated ? t("games.play.opensInNewTab") : null,
+                                savesLabel(row.rom) || null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                              {row.rom.unplayableReason === "missing_bios" ? (
+                                <>
+                                  {" · "}
+                                  <MuiLink component={RouterLink} to="/settings/emulation" onClick={onClose}>
+                                    {t("games.play.addBiosLink")}
+                                  </MuiLink>
+                                </>
+                              ) : null}
+                            </>
+                          }
                           slotProps={{ primary: { sx: { wordBreak: "break-all" } } }}
                         />
                       </ListItem>
@@ -188,7 +236,7 @@ const PlayGameDialog = ({ open, gameName, libraryItems, onClose }: PlayGameDialo
       <SaveStatePickerDialog
         open={resumeRow != null}
         romId={resumeRow?.rom.id ?? null}
-        title={t("games.play.resumeTitle", { name: resumeRow?.rom.originalFilename ?? "" })}
+        title={t("games.play.resumeTitle", { name: resumeRow ? romName(resumeRow.rom) : "" })}
         loadLabel={t("games.play.resumeButton")}
         onLoad={(state) => {
           const row = resumeRow;

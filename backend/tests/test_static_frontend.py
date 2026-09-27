@@ -1,4 +1,4 @@
-from app.main import resolve_static_file
+from app.main import isolation_headers_for, resolve_static_file
 
 
 def test_resolve_static_file_returns_existing_file(tmp_path):
@@ -39,3 +39,12 @@ def test_resolve_static_file_blocks_absolute_path_escape(tmp_path):
     result = resolve_static_file(base_dir, str(secret))
 
     assert result is None
+
+
+def test_only_the_player_pages_are_cross_origin_isolated():
+    isolated = {"Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "require-corp"}
+    assert isolation_headers_for("player-isolated.html", None) == isolated
+    assert isolation_headers_for("emulatorjs/player.html", "1") == isolated
+    assert isolation_headers_for("emulatorjs/player.html", None) == {}
+    assert isolation_headers_for("index.html", "1") == {}
+    assert isolation_headers_for("dashboard", None) == {}

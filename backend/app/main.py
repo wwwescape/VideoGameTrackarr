@@ -87,6 +87,22 @@ def resolve_static_file(base_dir: Path, requested_path: str) -> Path | None:
     return None
 
 
+# The DOS/PSP player tab needs SharedArrayBuffer (threaded emulator cores), which browsers
+# only allow on a cross-origin-isolated page. Only that page and the player iframe it loads
+# get these headers — the main app loads cross-origin images (IGDB cover art) that
+# require-corp would block.
+CROSS_ORIGIN_ISOLATION_HEADERS = {
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Embedder-Policy": "require-corp",
+}
+
+
+def isolation_headers_for(requested_path: str, threads: str | None) -> dict[str, str]:
+    if requested_path == "player-isolated.html" or (requested_path == "emulatorjs/player.html" and threads == "1"):
+        return dict(CROSS_ORIGIN_ISOLATION_HEADERS)
+    return {}
+
+
 configure_logging()
 settings = get_settings()
 
@@ -148,6 +164,7 @@ app.include_router(progress.router)
 app.include_router(notes.router)
 app.include_router(tags.router)
 app.include_router(import_export.router)
+app.include_router(import_export.download_router)
 app.include_router(insights.router)
 app.include_router(franchises.router)
 app.include_router(collections.router)
@@ -193,6 +210,9 @@ if FRONTEND_BUILD_DIR.is_dir():
     app.mount("/assets", StaticFiles(directory=FRONTEND_BUILD_DIR / "assets"), name="frontend-assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
-    async def serve_frontend(full_path: str) -> FileResponse:
+    async def serve_frontend(full_path: str, request: Request) -> FileResponse:
         static_file = resolve_static_file(FRONTEND_BUILD_DIR, full_path)
-        return FileResponse(static_file if static_file is not None else FRONTEND_BUILD_DIR / "index.html")
+        return FileResponse(
+            static_file if static_file is not None else FRONTEND_BUILD_DIR / "index.html",
+            headers=isolation_headers_for(full_path, request.query_params.get("threads")),
+        )
