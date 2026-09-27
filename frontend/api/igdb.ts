@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { IgdbSearchResult } from "./types";
+import type { IgdbGamePreview, IgdbSearchResult } from "./types";
 
 export async function searchIgdb(
   query: string,
@@ -10,5 +10,11 @@ export async function searchIgdb(
     params: { query, categoryScope },
     signal,
   });
+  return response.data;
+}
+
+// A read-only preview of one IGDB game (Add Game → click a result). Nothing is stored.
+export async function getIgdbGamePreview(igdbId: number): Promise<IgdbGamePreview> {
+  const response = await apiClient.get<IgdbGamePreview>(`/api/igdb/games/${igdbId}`);
   return response.data;
 }

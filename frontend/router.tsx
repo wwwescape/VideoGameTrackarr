@@ -4,6 +4,7 @@ import AccessoryDetails from "./components/AccessoryDetails";
 import AddAccessoryPage from "./components/AddAccessoryPage";
 import AddDevicePage from "./components/AddDevicePage";
 import AddGame from "./components/AddGame";
+import IgdbGamePreviewPage from "./components/IgdbGamePreviewPage";
 import CollectionPage from "./components/CollectionPage";
 import CollectionsPage from "./components/CollectionsPage";
 import ComparePage from "./components/ComparePage";
@@ -42,6 +43,7 @@ import {
   addAccessoryCrumbs,
   addDeviceCrumbs,
   addGameCrumbs,
+  igdbPreviewCrumbs,
   collectionCrumbs,
   collectionsCrumbs,
   compareCrumbs,
@@ -121,6 +123,11 @@ const router = createBrowserRouter([
           },
           { path: "/games", element: <GameList />, handle: { crumbs: gamesCrumbs } },
           { path: "/games/add", element: <AddGame />, handle: { crumbs: addGameCrumbs } },
+          {
+            path: "/games/add/igdb/:igdbId",
+            element: <IgdbGamePreviewPage />,
+            handle: { crumbs: igdbPreviewCrumbs },
+          },
           {
             path: "/game/:identifier",
             element: <GameDetails />,

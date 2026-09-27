@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -17,6 +17,7 @@ import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import GameCard from "./GameCard";
 import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
 import VirtualList from "./VirtualList";
+import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
 
 const MIN_SEARCH_LENGTH = 3;
 
@@ -24,31 +25,35 @@ const MissingAddonsSection = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [ownershipStatuses, setOwnershipStatuses] = useState<OwnershipStatus[]>([]);
-  const [ownershipExclude, setOwnershipExclude] = useState(false);
-  const [platformIds, setPlatformIds] = useState<number[]>([]);
-  const [platformExclude, setPlatformExclude] = useState(false);
-  const [tagIds, setTagIds] = useState<number[]>([]);
-  const [tagExclude, setTagExclude] = useState(false);
-  const [collectionIds, setCollectionIds] = useState<number[]>([]);
-  const [collectionExclude, setCollectionExclude] = useState(false);
-  const [franchiseIds, setFranchiseIds] = useState<number[]>([]);
-  const [franchiseExclude, setFranchiseExclude] = useState(false);
-  const [formats, setFormats] = useState<MediaFormat[]>([]);
-  const [formatExclude, setFormatExclude] = useState(false);
-  const [storefronts, setStorefronts] = useState<string[]>([]);
-  const [storefrontExclude, setStorefrontExclude] = useState(false);
-  const [sort, setSort] = useState<GameSortOption>("name_asc");
+  const [searchKeyword, setSearchKeyword] = useSessionState("missingAddons.searchKeyword", "");
+  const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>("missingAddons.ownershipStatuses", []);
+  const [ownershipExclude, setOwnershipExclude] = useSessionState("missingAddons.ownershipExclude", false);
+  const [platformIds, setPlatformIds] = useSessionState<number[]>("missingAddons.platformIds", []);
+  const [platformExclude, setPlatformExclude] = useSessionState("missingAddons.platformExclude", false);
+  const [tagIds, setTagIds] = useSessionState<number[]>("missingAddons.tagIds", []);
+  const [tagExclude, setTagExclude] = useSessionState("missingAddons.tagExclude", false);
+  const [collectionIds, setCollectionIds] = useSessionState<number[]>("missingAddons.collectionIds", []);
+  const [collectionExclude, setCollectionExclude] = useSessionState("missingAddons.collectionExclude", false);
+  const [franchiseIds, setFranchiseIds] = useSessionState<number[]>("missingAddons.franchiseIds", []);
+  const [franchiseExclude, setFranchiseExclude] = useSessionState("missingAddons.franchiseExclude", false);
+  const [formats, setFormats] = useSessionState<MediaFormat[]>("missingAddons.formats", []);
+  const [formatExclude, setFormatExclude] = useSessionState("missingAddons.formatExclude", false);
+  const [storefronts, setStorefronts] = useSessionState<string[]>("missingAddons.storefronts", []);
+  const [storefrontExclude, setStorefrontExclude] = useSessionState("missingAddons.storefrontExclude", false);
+  const [sort, setSort] = useSessionState<GameSortOption>("missingAddons.sort", "name_asc");
 
   const trimmedKeyword = searchKeyword.trim();
   const debouncedKeyword = useDebouncedValue(trimmedKeyword, 500);
   const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
 
-  const { data: platforms = [] } = usePlatforms();
-  const { data: tags = [] } = useTags();
-  const { data: collections = [] } = useCollections();
-  const { data: franchises = [] } = useFranchises();
+  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
+  const { data: tags = [], isSuccess: tagsLoaded } = useTags();
+  const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
+  const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
+  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
+  usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
+  usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
+  usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
   const { data: realStorefronts = [] } = useStorefronts();
   const storefrontOptions = useMemo(
     () => Array.from(new Set([...ALL_KNOWN_STOREFRONTS, ...realStorefronts])).sort(),

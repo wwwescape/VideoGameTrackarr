@@ -29,24 +29,34 @@ def get_by_igdb_id(db: Session, igdb_id: int) -> Platform | None:
     return db.scalars(select(Platform).where(Platform.igdb_id == igdb_id)).first()
 
 
+def _fill_missing_abbreviation(platform: Platform, abbreviation: str | None) -> None:
+    """Fill-only: an existing row gets IGDB's short name when it has none (e.g. rows created
+    before platforms were linked to IGDB), but a value that's already there — curated by a
+    migration or by hand — is never overwritten."""
+    if abbreviation and not platform.abbreviation:
+        platform.abbreviation = abbreviation
+
+
 def get_or_create_by_igdb(db: Session, igdb_id: int, name: str, slug: str | None, abbreviation: str | None) -> Platform:
     platform = db.scalars(select(Platform).where(Platform.igdb_id == igdb_id)).first()
     if platform is not None:
+        _fill_missing_abbreviation(platform, abbreviation)
         return platform
 
     # IGDB occasionally disambiguates a platform's slug with a trailing "--N" suffix (e.g.
     # "ps4--1") when its own catalog has more than one row for what's conceptually the same
     # hardware. A row from before this app tracked igdb_id (igdb_id is NULL) may already
     # represent that same platform under the bare slug — match on it and backfill the link
-    # instead of inserting a parallel duplicate. Name/slug/abbreviation are deliberately
-    # left untouched here and above: once a platform row exists, its display name may have
-    # been deliberately curated (e.g. "Sony PlayStation 4") and shouldn't be silently
-    # overwritten by IGDB's raw name on a later sync.
+    # instead of inserting a parallel duplicate. Name/slug are deliberately left untouched
+    # here and above: once a platform row exists, its display name may have been
+    # deliberately curated (e.g. "Sony PlayStation 4") and shouldn't be silently overwritten
+    # by IGDB's raw name on a later sync. The abbreviation is only ever filled when missing.
     bare_slug = slug.split("--")[0] if slug else None
     if bare_slug:
         platform = db.scalars(select(Platform).where(Platform.slug == bare_slug)).first()
         if platform is not None:
             platform.igdb_id = igdb_id
+            _fill_missing_abbreviation(platform, abbreviation)
             db.flush()
             return platform
 

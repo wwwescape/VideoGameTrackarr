@@ -223,4 +223,39 @@ describe("GameCard", () => {
 
     expect(screen.getByText("DLC")).toBeInTheDocument();
   });
+
+  it("in add context, clicking the cover opens the result while the Add button still adds", async () => {
+    const onOpen = vi.fn();
+    const onAdd = vi.fn();
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, coverUrl: "https://images.igdb.com/cover.jpg" }}
+        context="add"
+        contextFunction={onAdd}
+        onOpen={onOpen}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("img", { name: /Hollow Knight/ }));
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(onAdd).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(onAdd).toHaveBeenCalledOnce();
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it("in add context without onOpen, clicking the cover does nothing (existing pickers)", async () => {
+    const onAdd = vi.fn();
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, coverUrl: "https://images.igdb.com/cover.jpg" }}
+        context="add"
+        contextFunction={onAdd}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("img", { name: /Hollow Knight/ }));
+    expect(onAdd).not.toHaveBeenCalled();
+  });
 });

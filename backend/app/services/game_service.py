@@ -145,6 +145,25 @@ def delete_game(db: Session, game_id: int) -> None:
     rom_service.delete_files(rom_filenames)
 
 
+async def get_igdb_preview_payload(
+    db: Session, igdb_client: IGDBClient, igdb_id: int
+) -> tuple[dict[str, Any], GameCategory | None, dict[str, str | None], Game | None]:
+    """Everything the Add Game preview page shows, fetched from IGDB and **not persisted** —
+    nothing is written until the user actually adds the game (import_game_from_igdb). Also
+    returns the local game, if this IGDB id is already in the catalog, so the page can send
+    the user straight to it."""
+    igdb_games = await igdb_client.get_games_by_ids([igdb_id])
+    if not igdb_games:
+        raise NotFoundError(f"IGDB game {igdb_id} not found")
+    igdb_game = igdb_games[0]
+    return (
+        igdb_game,
+        resolve_igdb_category(igdb_game)[1],
+        extract_store_urls(igdb_game),
+        game_repository.get_game_by_igdb_id(db, igdb_id),
+    )
+
+
 async def import_game_from_igdb(
     db: Session,
     igdb_client: IGDBClient,

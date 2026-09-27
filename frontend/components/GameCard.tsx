@@ -78,6 +78,9 @@ interface GameCardProps {
   // *existing* local game to repoint a Steam match at. Has no effect on any other context.
   actionLabel?: string;
   actionIcon?: ReactNode;
+  // "add" context only: opens the result when its cover is clicked (Add Game's IGDB
+  // preview page), separately from contextFunction, which stays the Add button's action.
+  onOpen?: () => void;
 }
 
 const GameCard = ({
@@ -89,6 +92,7 @@ const GameCard = ({
   onToggleSelect,
   actionLabel,
   actionIcon,
+  onOpen,
 }: GameCardProps) => {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -107,7 +111,8 @@ const GameCard = ({
   // greyscaled the same way, but showing "Missing" on it would be wrong (nothing's missing;
   // the user added it on purpose and just hasn't marked ownership yet).
   const showMissingChip = isGreyscale && Boolean(game.autoDiscovered);
-  const isClickable = context === "list" || context === "addon" || context === "added";
+  const opensSeparately = context === "add" && onOpen !== undefined;
+  const isClickable = context === "list" || context === "addon" || context === "added" || opensSeparately;
   const releaseYear = getReleaseYear(game.firstReleaseDate);
 
   const handleCardActivate = () => {
@@ -115,7 +120,9 @@ const GameCard = ({
       onToggleSelect?.();
       return;
     }
-    if (isClickable) {
+    if (opensSeparately) {
+      onOpen?.();
+    } else if (isClickable) {
       contextFunction?.();
     }
   };

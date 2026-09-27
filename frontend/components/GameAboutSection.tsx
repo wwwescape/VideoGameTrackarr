@@ -15,7 +15,7 @@ import nintendoLogo from "../assets/nintendo-logo.png";
 import playstationLogo from "../assets/playstation-logo.png";
 import steamLogo from "../assets/steam-logo.png";
 import xboxLogo from "../assets/xbox-logo.png";
-import type { GameCompany, GameDetail, IgdbReleaseRegion } from "../api/types";
+import type { GameAboutData, GameCompany, IgdbReleaseRegion } from "../api/types";
 import { gameIdentifier } from "../utils/identifiers";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import ExpandableText from "./ExpandableText";
@@ -23,10 +23,13 @@ import ScreenshotGallery from "./ScreenshotGallery";
 import VideoGallery from "./VideoGallery";
 
 interface GameAboutSectionProps {
-  game: GameDetail;
+  game: GameAboutData;
+  // An IGDB preview of a game that isn't in the library: its Series/Collection pages may
+  // not exist locally, so those chips render as plain labels instead of links.
+  preview?: boolean;
 }
 
-const GameAboutSection = ({ game }: GameAboutSectionProps) => {
+const GameAboutSection = ({ game, preview = false }: GameAboutSectionProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isAddonGame = isAddon(game);
@@ -192,9 +195,9 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
                 key={`franchise-${franchise.id}`}
                 label={t("games.about.seriesLabel", { name: franchise.name })}
                 size="small"
-                component={Link}
-                to={`/games/series/${franchise.slug ?? ""}`}
-                clickable
+                {...(preview
+                  ? {}
+                  : { component: Link, to: `/games/series/${franchise.slug ?? ""}`, clickable: true })}
               />
             ))}
             {game.collections.map((collection) => (
@@ -202,9 +205,9 @@ const GameAboutSection = ({ game }: GameAboutSectionProps) => {
                 key={`collection-${collection.id}`}
                 label={t("games.about.collectionLabel", { name: collection.name })}
                 size="small"
-                component={Link}
-                to={`/games/collections/${collection.slug ?? ""}`}
-                clickable
+                {...(preview
+                  ? {}
+                  : { component: Link, to: `/games/collections/${collection.slug ?? ""}`, clickable: true })}
               />
             ))}
           </Stack>

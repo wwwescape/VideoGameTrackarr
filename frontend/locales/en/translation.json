@@ -701,6 +701,13 @@
       "stateSaveFailedMessage": "Couldn't save the state — please try again",
       "stateLoadFailedMessage": "Couldn't load that save state",
       "savingOnClose": "Saving your in-game progress…"
+    },
+    "preview": {
+      "notFoundTitle": "Game not found on IGDB",
+      "loadError": "Couldn't load this game from IGDB. Please try again.",
+      "notInLibrary": "Not in your library yet",
+      "backToSearch": "Back to search",
+      "addedToast": "{{name}} added to your library"
     }
   },
   "events": {

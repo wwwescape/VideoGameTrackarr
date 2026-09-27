@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -8,6 +8,7 @@ import type { CatalogRefSummary, CatalogSortOption } from "../api/types";
 import CatalogIndexToolbar from "./CatalogIndexToolbar";
 import CatalogRefCard from "./CatalogRefCard";
 import VirtualGameGrid from "./VirtualGameGrid";
+import { useSessionState } from "../hooks/useSessionState";
 
 // Tiles are just a name + a game count — much shorter than a cover-art GameCard, so the
 // default cover-art height guess (VirtualGameGrid's ESTIMATED_ROW_HEIGHT_BY_COLUMNS) would
@@ -28,6 +29,8 @@ interface CatalogIndexGridProps {
   entries: CatalogRefSummary[] | undefined;
   isLoading: boolean;
   getHref: (entry: CatalogRefSummary) => string;
+  // sessionStorage key for this page's remembered search/sort (see hooks/useSessionState.ts).
+  stateKey: string;
 }
 
 // Shared by CollectionsPage and SeriesPage — same "index of catalog refs, each linking to
@@ -43,11 +46,12 @@ const CatalogIndexGrid = ({
   entries,
   isLoading,
   getHref,
+  stateKey,
 }: CatalogIndexGridProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [sort, setSort] = useState<CatalogSortOption>("name_asc");
+  const [searchKeyword, setSearchKeyword] = useSessionState(`${stateKey}.searchKeyword`, "");
+  const [sort, setSort] = useSessionState<CatalogSortOption>(`${stateKey}.sort`, "name_asc");
 
   const visibleEntries = useMemo(() => {
     if (!entries) return [];

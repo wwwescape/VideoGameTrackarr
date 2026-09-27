@@ -21,4 +21,7 @@ i18next.use(initReactI18next).init({
 // explicit imports everywhere else, so it needs registering here instead.
 afterEach(() => {
   cleanup();
+  // Remembered page state (hooks/useSessionState.ts) lives in sessionStorage, which jsdom
+  // keeps for the whole test file — clear it so one test's filters never leak into the next.
+  window.sessionStorage.clear();
 });

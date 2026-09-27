@@ -701,6 +701,13 @@
       "stateSaveFailedMessage": "Impossible d'enregistrer l'état — veuillez réessayer",
       "stateLoadFailedMessage": "Impossible de charger cet état sauvegardé",
       "savingOnClose": "Enregistrement de votre progression…"
+    },
+    "preview": {
+      "notFoundTitle": "Jeu introuvable sur IGDB",
+      "loadError": "Impossible de charger ce jeu depuis IGDB. Veuillez réessayer.",
+      "notInLibrary": "Pas encore dans votre bibliothèque",
+      "backToSearch": "Retour à la recherche",
+      "addedToast": "{{name}} ajouté à votre bibliothèque"
     }
   },
   "events": {

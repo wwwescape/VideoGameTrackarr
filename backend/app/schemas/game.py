@@ -1,4 +1,6 @@
-from app.models.catalog import Game, GameCategory
+from typing import Any
+
+from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion
 from app.models.library import GameProgress, PlayStatus, Tag
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.base import CamelModel
@@ -171,3 +173,156 @@ class IGDBSearchResultResponse(CamelModel):
     category: GameCategory | None
     first_release_date: int | None
     parent_game: IGDBParentGameResponse | None = None
+
+
+class LocalGameRefResponse(CamelModel):
+    slug: str | None
+    uuid: str
+    name: str
+
+
+class IgdbGamePreviewResponse(CamelModel):
+    """A game straight from IGDB, never persisted — backs the Add Game preview page. Uses the
+    same field names/shapes as GameDetailResponse for everything GameAboutSection reads, so
+    that section renders it unchanged; nested ids are IGDB's (display keys only — nothing
+    here exists locally). Fields with no meaning for a not-yet-added game (parent links to
+    local games, rating, edition) are always empty."""
+
+    igdb_id: int
+    name: str
+    slug: str | None
+    cover_url: str | None
+    category: GameCategory | None
+    first_release_date: int | None
+    summary: str | None
+    storyline: str | None
+    igdb_url: str | None
+    edition: None = None
+    rating: None = None
+    owned: bool = False
+    wishlisted: bool = False
+    is_on_sale: bool = False
+    auto_discovered: bool = False
+    parent_game_id: None = None
+    parent_game_name: None = None
+    parent_game_slug: None = None
+    parent_game_uuid: None = None
+    display_parent_game_id: None = None
+    display_parent_game_name: None = None
+    display_parent_game_slug: None = None
+    display_parent_game_uuid: None = None
+    external_parent_name: str | None
+    external_parent_igdb_url: str | None
+    genres: list[CatalogRefResponse]
+    companies: list[GameCompanyResponse]
+    franchises: list[CatalogRefResponse]
+    collections: list[CatalogRefResponse]
+    platforms: list[PlatformResponse]
+    screenshot_urls: list[str]
+    artwork_urls: list[str]
+    videos: list[GameVideoResponse]
+    release_dates: list[ReleaseDateResponse]
+    steam_store_url: str | None = None
+    xbox_store_url: str | None = None
+    playstation_store_url: str | None = None
+    nintendo_store_url: str | None = None
+    epic_games_store_url: str | None = None
+    gog_store_url: str | None = None
+    # Set when this IGDB game is already in the local catalog — the page redirects there.
+    local_game: LocalGameRefResponse | None = None
+
+
+_PREVIEW_COMPANY_ROLE_FLAGS = (
+    ("developer", CompanyRole.DEVELOPER),
+    ("publisher", CompanyRole.PUBLISHER),
+    ("porting", CompanyRole.PORTING),
+    ("supporting", CompanyRole.SUPPORTING),
+)
+
+
+def _refs(items: list[dict[str, Any]] | None) -> list[CatalogRefResponse]:
+    return [
+        CatalogRefResponse(id=item["id"], name=item["name"], slug=item.get("slug"))
+        for item in items or []
+        if item.get("id") is not None and item.get("name")
+    ]
+
+
+def igdb_game_preview_from_payload(
+    igdb_game: dict[str, Any],
+    category: GameCategory | None,
+    store_urls: dict[str, str | None],
+    local_game: Game | None,
+) -> IgdbGamePreviewResponse:
+    companies: dict[tuple[int, CompanyRole], GameCompanyResponse] = {}
+    for involved in igdb_game.get("involved_companies") or []:
+        company = involved.get("company")
+        if not company or company.get("id") is None:
+            continue
+        for flag, role in _PREVIEW_COMPANY_ROLE_FLAGS:
+            if involved.get(flag):
+                # Keyed like the import path's set: IGDB can list the same company twice.
+                companies[(company["id"], role)] = GameCompanyResponse(
+                    id=company["id"],
+                    name=company.get("name", ""),
+                    slug=company.get("slug"),
+                    logo_url=(company.get("logo") or {}).get("url"),
+                    role=role,
+                )
+
+    parent_ref = igdb_game.get("parent_game")
+    external_parent_name = parent_ref.get("name") if isinstance(parent_ref, dict) else None
+    external_parent_igdb_url = parent_ref.get("url") if isinstance(parent_ref, dict) else None
+
+    return IgdbGamePreviewResponse(
+        igdb_id=igdb_game["id"],
+        name=igdb_game.get("name") or f"IGDB #{igdb_game['id']}",
+        slug=igdb_game.get("slug"),
+        cover_url=igdb_game.get("cover_url"),
+        category=category,
+        first_release_date=igdb_game.get("first_release_date"),
+        summary=igdb_game.get("summary"),
+        storyline=igdb_game.get("storyline"),
+        igdb_url=igdb_game.get("url"),
+        external_parent_name=external_parent_name,
+        external_parent_igdb_url=external_parent_igdb_url,
+        genres=_refs(igdb_game.get("genres")),
+        companies=sorted(companies.values(), key=lambda c: (c.name.lower(), c.role.value)),
+        franchises=_refs(igdb_game.get("franchises")),
+        collections=_refs(igdb_game.get("collections")),
+        platforms=[
+            PlatformResponse(
+                id=platform["id"],
+                igdb_id=platform["id"],
+                name=platform["name"],
+                slug=platform.get("slug"),
+                abbreviation=platform.get("abbreviation"),
+            )
+            for platform in igdb_game.get("platforms") or []
+            if platform.get("id") is not None and platform.get("name")
+        ],
+        screenshot_urls=[s["url"] for s in igdb_game.get("screenshots") or [] if s.get("url")],
+        artwork_urls=[a["url"] for a in igdb_game.get("artworks") or [] if a.get("url")],
+        videos=[
+            GameVideoResponse(id=v["id"], name=v.get("name"), video_id=v["video_id"])
+            for v in igdb_game.get("videos") or []
+            if v.get("video_id")
+        ],
+        release_dates=[
+            ReleaseDateResponse(
+                id=rd["id"],
+                date=rd.get("date"),
+                human=rd.get("human"),
+                platform_name=(rd.get("platform") or {}).get("name"),
+                release_region=IgdbReleaseRegion.from_igdb_value(rd.get("release_region")),
+            )
+            for rd in igdb_game.get("release_dates") or []
+            if rd.get("id") is not None
+        ],
+        local_game=(
+            LocalGameRefResponse(slug=local_game.slug, uuid=local_game.uuid, name=local_game.name)
+            if local_game is not None
+            else None
+        ),
+        **store_urls,
+    )

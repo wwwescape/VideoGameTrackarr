@@ -41,6 +41,7 @@ import GamesSubNav from "./GamesSubNav";
 import ManualGameForm from "./ManualGameForm";
 import SimpleTabPanel from "./SimpleTabPanel";
 import VirtualGameGrid from "./VirtualGameGrid";
+import { useSessionState } from "../hooks/useSessionState";
 
 const MIN_SEARCH_LENGTH = 3;
 
@@ -83,10 +84,14 @@ const AddGame = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const steamPrefill = (location.state as SteamPrefillState | null)?.steamPrefill;
-  const [searchKeyword, setSearchKeyword] = useState("");
+  // Keyword and tab are remembered for the session (see hooks/useSessionState.ts).
+  const [searchKeyword, setSearchKeyword] = useSessionState("addGame.searchKeyword", "");
+  const [rememberedMode, setMode] = useSessionState<AddMode>("addGame.mode", "igdb");
   // Landing here from Settings → Steam Sync's "Add as custom game" (see SteamSyncPage.tsx)
-  // skips straight to the manual form, pre-filled — there's no IGDB entry to search for.
-  const [mode, setMode] = useState<AddMode>(steamPrefill ? "manual" : "igdb");
+  // skips straight to the manual form, pre-filled — there's no IGDB entry to search for —
+  // whatever tab was remembered, until the user switches tabs themselves.
+  const [prefillForcesManual, setPrefillForcesManual] = useState(Boolean(steamPrefill));
+  const mode: AddMode = prefillForcesManual ? "manual" : rememberedMode;
   const navigate = useNavigate();
 
   const trimmedKeyword = searchKeyword.trim();
@@ -229,7 +234,10 @@ const AddGame = () => {
         <RadioGroup
           row
           value={mode}
-          onChange={(event) => setMode(event.target.value as AddMode)}
+          onChange={(event) => {
+            setPrefillForcesManual(false);
+            setMode(event.target.value as AddMode);
+          }}
           sx={{ mb: 2 }}
         >
           <FormControlLabel value="igdb" control={<Radio />} label={t("games.add.fromIgdbLabel")} />
@@ -356,6 +364,9 @@ const AddGame = () => {
                         context={addedGame ? "added" : "add"}
                         contextFunction={() =>
                           addedGame ? handleGameClick(addedGame) : handleAddGame(game.igdbId)
+                        }
+                        onOpen={
+                          addedGame ? undefined : () => navigate(`/games/add/igdb/${game.igdbId}`)
                         }
                         selectable={selectionMode && !addedGame}
                         selected={selectedIgdbIds.has(game.igdbId)}

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import Box from "@mui/material/Box";
@@ -12,12 +11,13 @@ import DeviceList from "./DeviceList";
 import HardwareSearchBar from "./HardwareSearchBar";
 import HardwareSubNav from "./HardwareSubNav";
 import type { HardwareStatusFilter } from "./HardwareListToolbar";
+import { useSessionState } from "../hooks/useSessionState";
 
 const HardwarePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [status, setStatus] = useState<HardwareStatusFilter>("all");
+  const [searchKeyword, setSearchKeyword] = useSessionState("hardware.searchKeyword", "");
+  const [status, setStatus] = useSessionState<HardwareStatusFilter>("hardware.status", "all");
 
   const debouncedKeyword = useDebouncedValue(searchKeyword.trim(), 500);
 

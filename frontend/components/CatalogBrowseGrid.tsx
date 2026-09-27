@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -18,6 +18,7 @@ import CatalogResyncButton from "./CatalogResyncButton";
 import GameCard from "./GameCard";
 import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
 import VirtualGameGrid from "./VirtualGameGrid";
+import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
 
 const MIN_SEARCH_LENGTH = 3;
 
@@ -66,40 +67,47 @@ const CatalogBrowseGrid = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isCollection = resyncKind === "collection";
+  // Remembered per collection/series for the session, so filters set on one don't carry
+  // over to another (see hooks/useSessionState.ts).
+  const stateKey = `${isCollection ? "collection" : "series"}.${slug ?? ""}`;
 
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [ownershipStatuses, setOwnershipStatuses] = useState<OwnershipStatus[]>([]);
-  const [ownershipExclude, setOwnershipExclude] = useState(false);
-  const [platformIds, setPlatformIds] = useState<number[]>([]);
-  const [platformExclude, setPlatformExclude] = useState(false);
-  const [tagIds, setTagIds] = useState<number[]>([]);
-  const [tagExclude, setTagExclude] = useState(false);
-  const [collectionIds, setCollectionIds] = useState<number[]>([]);
-  const [collectionExclude, setCollectionExclude] = useState(false);
-  const [franchiseIds, setFranchiseIds] = useState<number[]>([]);
-  const [franchiseExclude, setFranchiseExclude] = useState(false);
-  const [gameTypes, setGameTypes] = useState<GameCategory[]>([]);
-  const [gameTypeExclude, setGameTypeExclude] = useState(false);
-  const [formats, setFormats] = useState<MediaFormat[]>([]);
-  const [formatExclude, setFormatExclude] = useState(false);
-  const [storefronts, setStorefronts] = useState<string[]>([]);
-  const [storefrontExclude, setStorefrontExclude] = useState(false);
-  const [steelbookOnly, setSteelbookOnly] = useState(false);
-  const [sort, setSort] = useState<GameSortOption>("name_asc");
+  const [searchKeyword, setSearchKeyword] = useSessionState(`${stateKey}.searchKeyword`, "");
+  const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>(`${stateKey}.ownershipStatuses`, []);
+  const [ownershipExclude, setOwnershipExclude] = useSessionState(`${stateKey}.ownershipExclude`, false);
+  const [platformIds, setPlatformIds] = useSessionState<number[]>(`${stateKey}.platformIds`, []);
+  const [platformExclude, setPlatformExclude] = useSessionState(`${stateKey}.platformExclude`, false);
+  const [tagIds, setTagIds] = useSessionState<number[]>(`${stateKey}.tagIds`, []);
+  const [tagExclude, setTagExclude] = useSessionState(`${stateKey}.tagExclude`, false);
+  const [collectionIds, setCollectionIds] = useSessionState<number[]>(`${stateKey}.collectionIds`, []);
+  const [collectionExclude, setCollectionExclude] = useSessionState(`${stateKey}.collectionExclude`, false);
+  const [franchiseIds, setFranchiseIds] = useSessionState<number[]>(`${stateKey}.franchiseIds`, []);
+  const [franchiseExclude, setFranchiseExclude] = useSessionState(`${stateKey}.franchiseExclude`, false);
+  const [gameTypes, setGameTypes] = useSessionState<GameCategory[]>(`${stateKey}.gameTypes`, []);
+  const [gameTypeExclude, setGameTypeExclude] = useSessionState(`${stateKey}.gameTypeExclude`, false);
+  const [formats, setFormats] = useSessionState<MediaFormat[]>(`${stateKey}.formats`, []);
+  const [formatExclude, setFormatExclude] = useSessionState(`${stateKey}.formatExclude`, false);
+  const [storefronts, setStorefronts] = useSessionState<string[]>(`${stateKey}.storefronts`, []);
+  const [storefrontExclude, setStorefrontExclude] = useSessionState(`${stateKey}.storefrontExclude`, false);
+  const [steelbookOnly, setSteelbookOnly] = useSessionState(`${stateKey}.steelbookOnly`, false);
+  const [sort, setSort] = useSessionState<GameSortOption>(`${stateKey}.sort`, "name_asc");
   // Off by default (unlike the Games page's default-on) — preserves the pre-existing "only
   // games I've added" view; a Resync (see CatalogResyncButton) is what starts populating
   // games that are neither owned nor wishlisted here at all.
-  const [showMissing, setShowMissing] = useState(false);
-  const [includeAddons, setIncludeAddons] = useState(false);
+  const [showMissing, setShowMissing] = useSessionState(`${stateKey}.showMissing`, false);
+  const [includeAddons, setIncludeAddons] = useSessionState(`${stateKey}.includeAddons`, false);
 
   const trimmedKeyword = searchKeyword.trim();
   const debouncedKeyword = useDebouncedValue(trimmedKeyword, 500);
   const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
 
-  const { data: platforms = [] } = usePlatforms();
-  const { data: tags = [] } = useTags();
-  const { data: collections = [] } = useCollections();
-  const { data: franchises = [] } = useFranchises();
+  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
+  const { data: tags = [], isSuccess: tagsLoaded } = useTags();
+  const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
+  const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
+  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
+  usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
+  usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
+  usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
   const { data: realStorefronts = [] } = useStorefronts();
   const storefrontOptions = useMemo(
     () => Array.from(new Set([...ALL_KNOWN_STOREFRONTS, ...realStorefronts])).sort(),

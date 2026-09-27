@@ -7,6 +7,7 @@ import { useCollection, useFranchise } from "../hooks/useCatalogBrowse";
 import { useEvent } from "../hooks/useEvents";
 import { useGame } from "../hooks/useGames";
 import { useDeviceItem } from "../hooks/useDevice";
+import { useIgdbGamePreview } from "../hooks/useIgdbSearch";
 
 export interface Crumb {
   label: ReactNode;
@@ -78,6 +79,18 @@ export const gamesCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.games") }]
 export const addGameCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.games"), to: "/games" },
   { label: t("nav.addGame") },
+];
+
+const IgdbPreviewCrumbLabel = ({ igdbId }: { igdbId: string | undefined }) => {
+  const { t } = useTranslation();
+  const { data: preview, isError } = useIgdbGamePreview(Number(igdbId));
+  return <>{isError ? t("games.preview.notFoundTitle") : (preview?.name ?? t("common.loading"))}</>;
+};
+
+export const igdbPreviewCrumbs: CrumbsFn = (params, t) => [
+  { label: t("nav.games"), to: "/games" },
+  { label: t("nav.addGame"), to: "/games/add" },
+  { label: <IgdbPreviewCrumbLabel igdbId={params.igdbId} /> },
 ];
 
 export const gameDetailCrumbs: CrumbsFn = (params, t) => [

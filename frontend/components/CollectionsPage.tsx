@@ -11,6 +11,7 @@ const CollectionsPage = () => {
     <>
       <GamesSubNav />
       <CatalogIndexGrid
+        stateKey="collections"
         title={t("games.collectionsPage.title")}
         description={t("games.collectionsPage.description")}
         emptyMessage={t("games.collectionsPage.emptyMessage")}

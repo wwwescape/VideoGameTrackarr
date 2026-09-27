@@ -701,6 +701,13 @@
       "stateSaveFailedMessage": "No se pudo guardar el estado; inténtalo de nuevo",
       "stateLoadFailedMessage": "No se pudo cargar ese estado guardado",
       "savingOnClose": "Guardando tu progreso del juego…"
+    },
+    "preview": {
+      "notFoundTitle": "Juego no encontrado en IGDB",
+      "loadError": "No se pudo cargar este juego desde IGDB. Inténtalo de nuevo.",
+      "notInLibrary": "Aún no está en tu biblioteca",
+      "backToSearch": "Volver a la búsqueda",
+      "addedToast": "{{name}} se añadió a tu biblioteca"
     }
   },
   "events": {

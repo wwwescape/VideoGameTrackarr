@@ -22,30 +22,31 @@ import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
 import GamesSubNav from "./GamesSubNav";
 import ManageTagsDialog from "./ManageTagsDialog";
 import VirtualGameGrid from "./VirtualGameGrid";
+import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
 
 const MIN_SEARCH_LENGTH = 3;
 
 const GameList = () => {
   const { t } = useTranslation();
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [ownershipStatuses, setOwnershipStatuses] = useState<OwnershipStatus[]>([]);
-  const [ownershipExclude, setOwnershipExclude] = useState(false);
-  const [platformIds, setPlatformIds] = useState<number[]>([]);
-  const [platformExclude, setPlatformExclude] = useState(false);
-  const [tagIds, setTagIds] = useState<number[]>([]);
-  const [tagExclude, setTagExclude] = useState(false);
-  const [collectionIds, setCollectionIds] = useState<number[]>([]);
-  const [collectionExclude, setCollectionExclude] = useState(false);
-  const [franchiseIds, setFranchiseIds] = useState<number[]>([]);
-  const [franchiseExclude, setFranchiseExclude] = useState(false);
-  const [gameTypes, setGameTypes] = useState<GameCategory[]>([]);
-  const [gameTypeExclude, setGameTypeExclude] = useState(false);
-  const [formats, setFormats] = useState<MediaFormat[]>([]);
-  const [formatExclude, setFormatExclude] = useState(false);
-  const [storefronts, setStorefronts] = useState<string[]>([]);
-  const [storefrontExclude, setStorefrontExclude] = useState(false);
-  const [steelbookOnly, setSteelbookOnly] = useState(false);
-  const [sort, setSort] = useState<GameSortOption>("name_asc");
+  const [searchKeyword, setSearchKeyword] = useSessionState("games.searchKeyword", "");
+  const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>("games.ownershipStatuses", []);
+  const [ownershipExclude, setOwnershipExclude] = useSessionState("games.ownershipExclude", false);
+  const [platformIds, setPlatformIds] = useSessionState<number[]>("games.platformIds", []);
+  const [platformExclude, setPlatformExclude] = useSessionState("games.platformExclude", false);
+  const [tagIds, setTagIds] = useSessionState<number[]>("games.tagIds", []);
+  const [tagExclude, setTagExclude] = useSessionState("games.tagExclude", false);
+  const [collectionIds, setCollectionIds] = useSessionState<number[]>("games.collectionIds", []);
+  const [collectionExclude, setCollectionExclude] = useSessionState("games.collectionExclude", false);
+  const [franchiseIds, setFranchiseIds] = useSessionState<number[]>("games.franchiseIds", []);
+  const [franchiseExclude, setFranchiseExclude] = useSessionState("games.franchiseExclude", false);
+  const [gameTypes, setGameTypes] = useSessionState<GameCategory[]>("games.gameTypes", []);
+  const [gameTypeExclude, setGameTypeExclude] = useSessionState("games.gameTypeExclude", false);
+  const [formats, setFormats] = useSessionState<MediaFormat[]>("games.formats", []);
+  const [formatExclude, setFormatExclude] = useSessionState("games.formatExclude", false);
+  const [storefronts, setStorefronts] = useSessionState<string[]>("games.storefronts", []);
+  const [storefrontExclude, setStorefrontExclude] = useSessionState("games.storefrontExclude", false);
+  const [steelbookOnly, setSteelbookOnly] = useSessionState("games.steelbookOnly", false);
+  const [sort, setSort] = useSessionState<GameSortOption>("games.sort", "name_asc");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
   const [manageTagsOpen, setManageTagsOpen] = useState(false);
@@ -57,10 +58,14 @@ const GameList = () => {
   const isPendingDebounce =
     trimmedKeyword.length >= MIN_SEARCH_LENGTH && trimmedKeyword !== debouncedKeyword;
 
-  const { data: platforms = [] } = usePlatforms();
-  const { data: tags = [] } = useTags();
-  const { data: collections = [] } = useCollections();
-  const { data: franchises = [] } = useFranchises();
+  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
+  const { data: tags = [], isSuccess: tagsLoaded } = useTags();
+  const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
+  const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
+  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
+  usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
+  usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
+  usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
   const { data: realStorefronts = [] } = useStorefronts();
   // Always offer every storefront the app knows about (Steam/GOG/PlayStation Store/etc.),
   // not just whatever already happens to exist in the data — otherwise a brand-new instance

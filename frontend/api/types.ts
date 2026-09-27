@@ -259,6 +259,55 @@ export interface GameDetail extends GameSummary {
   releaseDates: GameReleaseDate[];
 }
 
+// Exactly what GameAboutSection reads — satisfied by a real GameDetail and by the Add Game
+// page's IGDB preview (IgdbGamePreview), which is never stored locally.
+export type GameAboutData = Pick<
+  GameDetail,
+  | "name"
+  | "category"
+  | "igdbId"
+  | "igdbUrl"
+  | "firstReleaseDate"
+  | "summary"
+  | "storyline"
+  | "edition"
+  | "rating"
+  | "parentGameId"
+  | "parentGameName"
+  | "parentGameSlug"
+  | "parentGameUuid"
+  | "displayParentGameId"
+  | "displayParentGameName"
+  | "displayParentGameSlug"
+  | "displayParentGameUuid"
+  | "externalParentName"
+  | "externalParentIgdbUrl"
+  | "genres"
+  | "companies"
+  | "franchises"
+  | "collections"
+  | "platforms"
+  | "screenshotUrls"
+  | "artworkUrls"
+  | "videos"
+  | "releaseDates"
+  | "steamStoreUrl"
+  | "xboxStoreUrl"
+  | "playstationStoreUrl"
+  | "nintendoStoreUrl"
+  | "epicGamesStoreUrl"
+  | "gogStoreUrl"
+>;
+
+// GET /api/igdb/games/{igdbId}: a game straight from IGDB for the Add Game preview page —
+// never stored locally. Same field shapes as GameDetail for everything GameAboutSection reads.
+export type IgdbGamePreview = GameAboutData &
+  Pick<GameDetail, "slug" | "coverUrl" | "owned" | "wishlisted" | "isOnSale" | "autoDiscovered"> & {
+    igdbId: number;
+    // Set when this IGDB game is already in the library — the page redirects to it.
+    localGame: { slug: string | null; uuid: string; name: string } | null;
+  };
+
 export interface NamedCount {
   name: string;
   count: number;

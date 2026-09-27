@@ -2,9 +2,16 @@ import re
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_igdb_client
-from app.schemas.game import IGDBParentGameResponse, IGDBSearchResultResponse
+from app.api.deps import get_current_user, get_db, get_igdb_client
+from app.schemas.game import (
+    IgdbGamePreviewResponse,
+    IGDBParentGameResponse,
+    IGDBSearchResultResponse,
+    igdb_game_preview_from_payload,
+)
+from app.services import game_service
 from app.services.game_service import resolve_igdb_category
 from app.services.igdb_client import IGDBClient
 
@@ -46,3 +53,16 @@ async def search_igdb(
     else:
         results = await igdb_client.search_games(query, category_scope=category_scope)
     return [_to_search_result(result) for result in results]
+
+
+@router.get("/games/{igdb_id}", response_model=IgdbGamePreviewResponse)
+async def preview_igdb_game(
+    igdb_id: int,
+    db: Session = Depends(get_db),
+    igdb_client: IGDBClient = Depends(get_igdb_client),
+) -> IgdbGamePreviewResponse:
+    """Read-only preview of an IGDB game for the Add Game page — never stores anything."""
+    payload, category, store_urls, local_game = await game_service.get_igdb_preview_payload(
+        db, igdb_client, igdb_id
+    )
+    return igdb_game_preview_from_payload(payload, category, store_urls, local_game)

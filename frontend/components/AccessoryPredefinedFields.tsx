@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import { useTranslation } from "react-i18next";
 import { useHardwareReferenceEntries } from "../hooks/useHardwareReference";
 import AutocompleteSelect from "./AutocompleteSelect";
+import { formatGenerationOption } from "../utils/hardwareLabels";
 
 export interface AccessoryPredefinedValues {
   manufacturer: string;
@@ -76,7 +77,7 @@ const AccessoryPredefinedFields = ({ onChange }: AccessoryPredefinedFieldsProps)
           required
           options={unique(brandEntries.map((entry) => entry.generation))}
           value={platform || null}
-          getOptionLabel={(option) => option}
+          getOptionLabel={(option) => formatGenerationOption(option, brandEntries)}
           disabled={!manufacturer}
           onChange={(newValue) => {
             setPlatform(newValue ?? "");

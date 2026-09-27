@@ -25,3 +25,14 @@ export const RATING_BOARD_LABELS: Record<RatingBoard, string> = {
 // EditAccessoryPage.tsx) — these two have no reference-data category of their own, so they're
 // added in alongside whatever categories are found.
 export const EXTRA_CUSTOM_ACCESSORY_TYPES = ["Protection", "Cables"];
+
+// Console dropdown label for the Add Device/Add Accessory cascade: "Xbox 360 (X360)" when the
+// generation has a short name that differs from it, else just the generation ("NES", not
+// "NES (NES)"). The short names come from docs/data/hardware/*.csv's "Generation (Short)".
+export function formatGenerationOption(
+  generation: string,
+  entries: { generation: string; generationShort: string | null }[]
+): string {
+  const short = entries.find((entry) => entry.generation === generation)?.generationShort;
+  return short && short !== generation ? `${generation} (${short})` : generation;
+}
