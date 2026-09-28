@@ -1,11 +1,11 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.mixins import TimestampMixin, enum_column
+from app.models.mixins import TimestampMixin, UTCDateTime, enum_column
 
 
 class LibraryStatus(enum.Enum):
@@ -121,7 +121,7 @@ class RomFile(TimestampMixin, Base):
     # per ROM, replaced on every sync. Paths are relative to rom_service.get_rom_dir().
     sram_stored_filename: Mapped[str | None] = mapped_column(String(64))
     sram_size_bytes: Mapped[int | None] = mapped_column(Integer)
-    sram_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sram_updated_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
     library_item: Mapped["LibraryItem"] = relationship(back_populates="roms")
     save_states: Mapped[list["RomSaveState"]] = relationship(
@@ -197,8 +197,8 @@ class PlaySession(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True, nullable=False)
     platform_id: Mapped[int] = mapped_column(ForeignKey("platforms.id"), nullable=False)
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     duration_minutes: Mapped[int | None] = mapped_column(Integer)
     notes: Mapped[str | None] = mapped_column(Text)
 

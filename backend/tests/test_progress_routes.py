@@ -278,3 +278,36 @@ def test_delete_play_session_404_for_missing_session(auth_client):
     response = auth_client.delete("/api/play-sessions/999999")
 
     assert response.status_code == 404
+
+
+def test_play_session_times_round_trip_as_utc_instants(auth_client, db_session, seed_game, seed_platform):
+    # Regression for issue #23: SQLite drops the offset, so times used to come back naive
+    # and browsers showed them shifted by the viewer's UTC offset.
+    _own_platform(db_session, seed_game.id, seed_platform.id)
+
+    create_response = auth_client.post(
+        f"/api/games/{seed_game.id}/play-sessions",
+        json={"platformId": seed_platform.id, "startedAt": "2026-09-28T12:00:00+02:00"},
+    )
+
+    assert create_response.status_code == 201
+    assert create_response.json()["startedAt"] == "2026-09-28T10:00:00Z"
+    [listed] = auth_client.get(f"/api/games/{seed_game.id}/play-sessions").json()
+    assert listed["startedAt"] == "2026-09-28T10:00:00Z"
+
+
+def test_update_play_session_with_only_an_end_time_computes_duration(auth_client, db_session, seed_game, seed_platform):
+    _own_platform(db_session, seed_game.id, seed_platform.id)
+    create_response = auth_client.post(
+        f"/api/games/{seed_game.id}/play-sessions",
+        json={"platformId": seed_platform.id, "startedAt": "2026-01-01T10:00:00Z"},
+    )
+    session_id = create_response.json()["id"]
+
+    aware = auth_client.put(f"/api/play-sessions/{session_id}", json={"endedAt": "2026-01-01T12:45:00+01:00"})
+    naive = auth_client.put(f"/api/play-sessions/{session_id}", json={"endedAt": "2026-01-01T12:00:00"})
+
+    assert aware.status_code == 200
+    assert aware.json()["durationMinutes"] == 105
+    assert naive.status_code == 200
+    assert naive.json()["durationMinutes"] == 120

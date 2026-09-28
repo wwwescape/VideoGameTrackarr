@@ -11,6 +11,7 @@ def test_create_and_list_notes(auth_client, seed_game):
     create_response = auth_client.post(f"/api/games/{seed_game.id}/notes", json={"body": "Got the secret ending"})
     assert create_response.status_code == 201
     assert create_response.json()["body"] == "Got the secret ending"
+    assert create_response.json()["createdAt"].endswith(("Z", "+00:00"))
 
     list_response = auth_client.get(f"/api/games/{seed_game.id}/notes")
     assert [note["body"] for note in list_response.json()] == ["Got the secret ending"]

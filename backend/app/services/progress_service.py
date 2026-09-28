@@ -3,6 +3,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.models.library import GameProgress, LibraryStatus, PlaySession
+from app.models.mixins import as_utc
 from app.repositories import game_progress_repository, game_repository, library_item_repository, play_session_repository
 from app.services.exceptions import ConflictError, NotFoundError
 
@@ -98,7 +99,9 @@ def _with_computed_duration(fields: dict[str, Any], existing: PlaySession | None
     started_at = fields.get("started_at", existing.started_at if existing else None)
     ended_at = fields.get("ended_at", existing.ended_at if existing else None)
     if started_at and ended_at:
-        fields = {**fields, "duration_minutes": max(0, round((ended_at - started_at).total_seconds() / 60))}
+        # as_utc: a request value may be naive (no offset sent) while the stored one is aware.
+        elapsed = as_utc(ended_at) - as_utc(started_at)
+        fields = {**fields, "duration_minutes": max(0, round(elapsed.total_seconds() / 60))}
     return fields
 
 

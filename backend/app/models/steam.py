@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TimestampMixin, UTCDateTime
 
 
 class SteamLibraryEntry(TimestampMixin, Base):
@@ -19,7 +19,7 @@ class SteamLibraryEntry(TimestampMixin, Base):
     steam_app_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, index=True)
     steam_name: Mapped[str] = mapped_column(String(255), nullable=False)
     steam_playtime_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    steam_last_played_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    steam_last_played_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     game_id: Mapped[int | None] = mapped_column(ForeignKey("games.id"), index=True)
     dismissed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
@@ -43,7 +43,7 @@ class SteamWishlistEntry(TimestampMixin, Base):
     # until either an IGDB match resolves a real game name or the user clicks "Add as custom
     # game" (which fetches the real name on demand via SteamStoreClient).
     steam_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    wishlist_added_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    wishlist_added_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     game_id: Mapped[int | None] = mapped_column(ForeignKey("games.id"), index=True)
     dismissed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 

@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TimestampMixin, UTCDateTime
 
 
 class PlatPricesCache(TimestampMixin, Base):
@@ -33,7 +33,7 @@ class PlatPricesCache(TimestampMixin, Base):
     historical_low_amount: Mapped[float | None] = mapped_column()
     historical_low_currency: Mapped[str | None] = mapped_column(String(8))
     historical_low_shop_name: Mapped[str | None] = mapped_column(String(100))
-    historical_low_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    historical_low_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    checked_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
     game: Mapped["Game"] = relationship()  # noqa: F821
