@@ -30,6 +30,7 @@ import SeriesPage from "./components/SeriesPage";
 import About from "./components/About";
 import EmulationPage from "./components/EmulationPage";
 import JobsPage from "./components/JobsPage";
+import PublicGameDetailsPage from "./components/PublicGameDetailsPage";
 import PublicGamesPage from "./components/PublicGamesPage";
 import PublicHardwarePage from "./components/PublicHardwarePage";
 import Settings from "./components/Settings";
@@ -106,6 +107,7 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     children: [
       { path: "/public/:token/games", element: <PublicGamesPage /> },
+      { path: "/public/:token/games/:gameId", element: <PublicGameDetailsPage /> },
       { path: "/public/:token/hardware", element: <PublicHardwarePage /> },
     ],
   },

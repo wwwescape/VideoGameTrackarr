@@ -1,44 +1,31 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import SearchIcon from "@mui/icons-material/Search";
-import InputAdornment from "@mui/material/InputAdornment";
+import { useNavigate, useParams } from "react-router-dom";
 import Paper from "@mui/material/Paper";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import type { GameSortOption } from "../api/types";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { usePublicGames } from "../hooks/usePublic";
+import { useSessionState } from "../hooks/useSessionState";
 import GameCard from "./GameCard";
+import PublicGamesToolbar from "./PublicGamesToolbar";
 import VirtualGameGrid from "./VirtualGameGrid";
 
 const PublicGamesPage = () => {
   const { token } = useParams<{ token: string }>();
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  // Session-remembered (like sort) so coming back from a game's page restores the list.
+  const [search, setSearch] = useSessionState("public.games.search", "");
+  const [sort, setSort] = useSessionState<GameSortOption>("public.games.sort", "name_asc");
   const debouncedSearch = useDebouncedValue(search.trim(), 500);
-  const { data: games, isLoading } = usePublicGames(token, debouncedSearch || undefined);
+  const { data: games, isLoading } = usePublicGames(token, debouncedSearch || undefined, sort);
 
   return (
     <>
       <Typography variant="h4" component="h1" gutterBottom>
         {t("public.games.title")}
       </Typography>
-      <TextField
-        label={t("public.games.searchLabel")}
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        fullWidth
-        sx={{ mb: 3, maxWidth: 480 }}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          },
-        }}
-      />
+      <PublicGamesToolbar search={search} onSearchChange={setSearch} sort={sort} onSortChange={setSort} />
       {isLoading ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
       ) : !games || games.length === 0 ? (
@@ -47,7 +34,13 @@ const PublicGamesPage = () => {
         <VirtualGameGrid
           items={games}
           getKey={(game) => game.id}
-          renderItem={(game) => <GameCard game={game} context="public" />}
+          renderItem={(game) => (
+            <GameCard
+              game={game}
+              context="public"
+              contextFunction={() => navigate(`/public/${token}/games/${game.id}`)}
+            />
+          )}
         />
       )}
     </>

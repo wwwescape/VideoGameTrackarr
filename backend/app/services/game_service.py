@@ -103,6 +103,15 @@ def get_game_detail(db: Session, game_id: int) -> GameWithStatus:
     return result
 
 
+def get_public_game_detail(db: Session, game_id: int) -> GameWithStatus:
+    """The public share page's game details: only games its list shows (top-level,
+    browsable), so an addon or a non-browsable entry can't be reached by guessing ids."""
+    result = game_repository.get_game(db, game_id)
+    if result is None or not game_repository.is_top_level_browsable(result.game):
+        raise NotFoundError(f"Game {game_id} not found")
+    return result
+
+
 def get_game_detail_by_identifier(db: Session, identifier: str) -> GameWithStatus:
     """Resolves a public game/addon identifier. A trailing UUID (manually-added games' own
     {name-slug}-{uuid}, or a bare UUID like Compare's ?ids= list) resolves by uuid first.

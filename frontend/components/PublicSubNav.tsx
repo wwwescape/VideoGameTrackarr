@@ -18,7 +18,9 @@ const PublicSubNav = () => {
   return (
     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
       {items.map((item) => {
-        const isSelected = location.pathname === item.to;
+        // Prefix match too, so Games stays selected on a game's own page.
+        const isSelected =
+          location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
         return (
           <Chip
             key={item.to}

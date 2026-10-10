@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { listPublicAccessories, listPublicDevices, listPublicGames } from "../api/public";
+import { getPublicGame, listPublicAccessories, listPublicDevices, listPublicGames } from "../api/public";
+import type { GameSortOption } from "../api/types";
 
-export function usePublicGames(token: string | undefined, search?: string) {
+export function usePublicGames(token: string | undefined, search?: string, sort?: GameSortOption) {
   return useQuery({
-    queryKey: ["public", token, "games", search],
-    queryFn: () => listPublicGames(token!, search),
+    queryKey: ["public", token, "games", search, sort],
+    queryFn: () => listPublicGames(token!, search, sort),
     enabled: !!token,
+  });
+}
+
+export function usePublicGame(token: string | undefined, gameId: number) {
+  return useQuery({
+    queryKey: ["public", token, "game", gameId],
+    queryFn: () => getPublicGame(token!, gameId),
+    enabled: !!token && Number.isFinite(gameId),
   });
 }
 

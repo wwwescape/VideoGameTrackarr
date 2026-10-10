@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useRegenerateShareLink, useShareLink } from "../hooks/useShareLink";
+import { copyText } from "../utils/clipboard";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -25,7 +26,7 @@ const ShareSection = () => {
 
   const handleCopy = async (url: string) => {
     try {
-      await navigator.clipboard.writeText(url);
+      await copyText(url);
       toast.success(t("settings.share.copySuccess"), TOAST_OPTIONS);
     } catch (error) {
       console.error("Error copying share link:", error);

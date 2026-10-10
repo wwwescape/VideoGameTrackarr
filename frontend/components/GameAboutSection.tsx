@@ -27,12 +27,20 @@ interface GameAboutSectionProps {
   // An IGDB preview of a game that isn't in the library: its Series/Collection pages may
   // not exist locally, so those chips render as plain labels instead of links.
   preview?: boolean;
+  // The public share page: Series/Collection pages are private, so those chips are plain
+  // labels too, and a parent game links to its public page instead.
+  publicToken?: string;
 }
 
-const GameAboutSection = ({ game, preview = false }: GameAboutSectionProps) => {
+const GameAboutSection = ({ game, preview = false, publicToken }: GameAboutSectionProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isAddonGame = isAddon(game);
+  const linksCatalogPages = !preview && publicToken === undefined;
+  const parentGameLink = (id: number, slug: string | null, uuid: string, name: string) =>
+    publicToken !== undefined
+      ? `/public/${publicToken}/games/${id}`
+      : `/game/${gameIdentifier({ slug, uuid, name })}`;
 
   const companyRoleLabel: Record<string, string> = {
     developer: t("games.about.companyRoleDeveloper"),
@@ -104,7 +112,12 @@ const GameAboutSection = ({ game, preview = false }: GameAboutSectionProps) => {
               <>
                 {t("games.about.forConnector")}
                 <Link
-                  to={`/game/${gameIdentifier({ slug: game.parentGameSlug, uuid: game.parentGameUuid!, name: game.parentGameName! })}`}
+                  to={parentGameLink(
+                    game.parentGameId,
+                    game.parentGameSlug,
+                    game.parentGameUuid!,
+                    game.parentGameName!,
+                  )}
                   style={{ color: theme.palette.text.primary }}
                 >
                   {game.parentGameName}
@@ -114,7 +127,12 @@ const GameAboutSection = ({ game, preview = false }: GameAboutSectionProps) => {
               <>
                 {t("games.about.forConnector")}
                 <Link
-                  to={`/game/${gameIdentifier({ slug: game.displayParentGameSlug, uuid: game.displayParentGameUuid!, name: game.displayParentGameName! })}`}
+                  to={parentGameLink(
+                    game.displayParentGameId,
+                    game.displayParentGameSlug,
+                    game.displayParentGameUuid!,
+                    game.displayParentGameName!,
+                  )}
                   style={{ color: theme.palette.text.primary }}
                 >
                   {game.displayParentGameName}
@@ -195,9 +213,9 @@ const GameAboutSection = ({ game, preview = false }: GameAboutSectionProps) => {
                 key={`franchise-${franchise.id}`}
                 label={t("games.about.seriesLabel", { name: franchise.name })}
                 size="small"
-                {...(preview
-                  ? {}
-                  : { component: Link, to: `/games/series/${franchise.slug ?? ""}`, clickable: true })}
+                {...(linksCatalogPages
+                  ? { component: Link, to: `/games/series/${franchise.slug ?? ""}`, clickable: true }
+                  : {})}
               />
             ))}
             {game.collections.map((collection) => (
@@ -205,9 +223,9 @@ const GameAboutSection = ({ game, preview = false }: GameAboutSectionProps) => {
                 key={`collection-${collection.id}`}
                 label={t("games.about.collectionLabel", { name: collection.name })}
                 size="small"
-                {...(preview
-                  ? {}
-                  : { component: Link, to: `/games/collections/${collection.slug ?? ""}`, clickable: true })}
+                {...(linksCatalogPages
+                  ? { component: Link, to: `/games/collections/${collection.slug ?? ""}`, clickable: true }
+                  : {})}
               />
             ))}
           </Stack>

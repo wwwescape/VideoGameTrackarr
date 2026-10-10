@@ -41,6 +41,7 @@ import type {
   PlatformResponse,
   Tag,
 } from "../api/types";
+import { GAME_SORT_OPTIONS, type GameSortOptionItem } from "../utils/gameSortOptions";
 import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
 import AutocompleteSelect from "./AutocompleteSelect";
 import TagChip from "./TagChip";
@@ -96,18 +97,6 @@ const FORMAT_OPTIONS: FormatOption[] = [
   { value: "rom", label: "ROM" },
   { value: "abandonware", label: "Abandonware" },
   { value: "other", label: "Other" },
-];
-
-interface SortOption {
-  value: GameSortOption;
-  labelKey: string;
-}
-
-const SORT_OPTIONS: SortOption[] = [
-  { value: "name_asc", labelKey: "games.listToolbar.sortNameAsc" },
-  { value: "name_desc", labelKey: "games.listToolbar.sortNameDesc" },
-  { value: "release_date_asc", labelKey: "games.listToolbar.sortReleaseDateAsc" },
-  { value: "release_date_desc", labelKey: "games.listToolbar.sortReleaseDateDesc" },
 ];
 
 interface ExcludeCheckboxProps {
@@ -312,7 +301,7 @@ const GameListToolbar = ({
     ownershipStatuses.includes(option.value)
   );
   const selectedSortOption =
-    SORT_OPTIONS.find((option) => option.value === sort) ?? SORT_OPTIONS[0];
+    GAME_SORT_OPTIONS.find((option) => option.value === sort) ?? GAME_SORT_OPTIONS[0];
   const showStorefrontFilter = formats.includes("digital");
   const activeFilterCount =
     ownershipStatuses.length +
@@ -717,9 +706,9 @@ const GameListToolbar = ({
             ) : (
               <Grid container spacing={2} sx={{ mt: 0.5 }}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <AutocompleteSelect<SortOption>
+                  <AutocompleteSelect<GameSortOptionItem>
                     label={t("games.listToolbar.sortByLabel")}
-                    options={SORT_OPTIONS}
+                    options={GAME_SORT_OPTIONS}
                     value={selectedSortOption}
                     onChange={(newValue) => onSortChange(newValue?.value ?? "name_asc")}
                     getOptionLabel={(option) => t(option.labelKey)}

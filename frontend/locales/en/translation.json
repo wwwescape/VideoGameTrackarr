@@ -1314,7 +1314,11 @@
     "games": {
       "title": "Games",
       "searchLabel": "Search games",
-      "emptyState": "No games found."
+      "emptyState": "No games found.",
+      "filtersButtonLabel": "Filter & Sort",
+      "sortTabLabel": "Sort",
+      "noFiltersAvailable": "No filters are available yet.",
+      "loadError": "Couldn't load this game. Please try again."
     },
     "hardware": {
       "title": "Hardware",

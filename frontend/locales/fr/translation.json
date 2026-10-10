@@ -1314,7 +1314,11 @@
     "games": {
       "title": "Jeux",
       "searchLabel": "Rechercher des jeux",
-      "emptyState": "Aucun jeu trouvé."
+      "emptyState": "Aucun jeu trouvé.",
+      "filtersButtonLabel": "Filtrer et trier",
+      "sortTabLabel": "Trier",
+      "noFiltersAvailable": "Aucun filtre n'est encore disponible.",
+      "loadError": "Impossible de charger ce jeu. Veuillez réessayer."
     },
     "hardware": {
       "title": "Matériel",

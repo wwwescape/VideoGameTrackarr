@@ -121,6 +121,12 @@ def _is_browsable_game(category_column: ColumnElement[GameCategory | None]) -> C
     return category_column.in_(_BROWSABLE_CATEGORIES) | category_column.is_(None)
 
 
+def is_top_level_browsable(game: Game) -> bool:
+    """Python-side twin of list_top_level_games' base .where(): whether a loaded game would
+    appear on the main Games list (and so on the public share page)."""
+    return game.parent_game_id is None and (game.category is None or game.category in _BROWSABLE_CATEGORIES)
+
+
 class GameSortOption(enum.Enum):
     """The Games list previously had no sort options at all (always a hardcoded
     Game.name ascending) — a genuinely new capability, not an extension of an existing one."""

@@ -165,6 +165,10 @@ export interface PublicGameSummary {
   wishlisted: boolean;
 }
 
+// GET /api/public/{token}/games/{id}: just the About section's data (no tags, library
+// copies, progress or notes). rating and the hierarchical parent fields are always null.
+export type PublicGameDetail = PublicGameSummary & GameAboutData;
+
 export interface PublicDeviceSummary {
   id: number;
   officialName: string;

@@ -132,6 +132,19 @@ describe("GameCard", () => {
     expect(contextFunction).toHaveBeenCalledOnce();
   });
 
+  it("in public context, clicking the cover opens the game only when contextFunction is passed", async () => {
+    const contextFunction = vi.fn();
+    const game = { ...baseGame, coverUrl: "https://images.igdb.com/cover.jpg" };
+    const { unmount } = renderWithTheme(<GameCard game={game} context="public" />);
+    await userEvent.click(screen.getByRole("img", { name: /Hollow Knight/ }));
+    unmount();
+
+    renderWithTheme(<GameCard game={game} context="public" contextFunction={contextFunction} />);
+    await userEvent.click(screen.getByRole("img", { name: /Hollow Knight/ }));
+
+    expect(contextFunction).toHaveBeenCalledOnce();
+  });
+
   it("in selectable mode, clicking the card toggles selection instead of calling contextFunction", async () => {
     const contextFunction = vi.fn();
     const onToggleSelect = vi.fn();

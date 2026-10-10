@@ -68,7 +68,7 @@ export interface GameCardGame {
 interface GameCardProps {
   game: GameCardGame;
   context: GameCardContext;
-  // Optional since "public" context cards render inert — no click target to activate.
+  // Optional: a "public" context card is only clickable when this is passed.
   contextFunction?: () => void;
   selectable?: boolean;
   selected?: boolean;
@@ -112,7 +112,12 @@ const GameCard = ({
   // the user added it on purpose and just hasn't marked ownership yet).
   const showMissingChip = isGreyscale && Boolean(game.autoDiscovered);
   const opensSeparately = context === "add" && onOpen !== undefined;
-  const isClickable = context === "list" || context === "addon" || context === "added" || opensSeparately;
+  const isClickable =
+    context === "list" ||
+    context === "addon" ||
+    context === "added" ||
+    (context === "public" && contextFunction !== undefined) ||
+    opensSeparately;
   const releaseYear = getReleaseYear(game.firstReleaseDate);
 
   const handleCardActivate = () => {
