@@ -153,6 +153,7 @@ const SteamSyncPage = () => {
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<string[]>([]);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
   const [lastClickedKey, setLastClickedKey] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<SyncTarget[] | null>(null);
   const [relinkTarget, setRelinkTarget] = useState<RelinkTarget | null>(null);
@@ -171,10 +172,13 @@ const SteamSyncPage = () => {
   const visibleTrees = trees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   // Flattened top-level rows + their DLC children, across every page — used for resolving
-  // "Sync selected" (a selection can span pages even though "select all" itself doesn't, see
-  // below) into the actual rows to sync.
+  // "Sync selected" (a selection can span pages) into the actual rows to sync, and for the
+  // Gmail-style "Select all N games" across every page.
   const allRows = useMemo(() => trees.flatMap((tree) => [tree.row, ...tree.children]), [trees]);
-  const selectedRows = allRows.filter((row) => selected.includes(rowKey(row)) && isRowActionable(row));
+  const allActionableKeys = useMemo(() => allRows.filter(isRowActionable).map(rowKey), [allRows]);
+  const selectedRows = allRows.filter((row) => selectedSet.has(rowKey(row)) && isRowActionable(row));
+  const allActionableSelected =
+    allActionableKeys.length > 0 && selectedRows.length === allActionableKeys.length;
 
   // Current page's rows only — this is what the header checkbox and "select all" operate over
   // (a paginated table selecting rows the user can't currently see would be surprising), but
@@ -186,7 +190,14 @@ const SteamSyncPage = () => {
     [visibleTrees]
   );
   const actionableCurrentPageRows = currentPageRows.filter(isRowActionable);
-  const selectedOnCurrentPage = actionableCurrentPageRows.filter((row) => selected.includes(rowKey(row)));
+  const selectedOnCurrentPage = actionableCurrentPageRows.filter((row) => selectedSet.has(rowKey(row)));
+  const currentPageFullySelected =
+    actionableCurrentPageRows.length > 0 &&
+    selectedOnCurrentPage.length === actionableCurrentPageRows.length;
+  // Gmail-style: once a page is fully selected, offer to extend the selection to every
+  // syncable row on every page (only worth offering when other pages have more).
+  const showSelectAllNotice =
+    currentPageFullySelected && allActionableKeys.length > actionableCurrentPageRows.length;
 
   // The currently *visible* (rendered) row order on this page — top-level rows plus any
   // expanded children, in on-screen order — used for shift-click range selection, since a
@@ -242,7 +253,7 @@ const SteamSyncPage = () => {
       if (anchorIndex !== -1 && targetIndex !== -1) {
         const [start, end] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
         const rangeKeys = orderedKeys.slice(start, end + 1);
-        const shouldSelect = !selected.includes(key);
+        const shouldSelect = !selectedSet.has(key);
         setSelected((prev) => {
           const withoutRange = prev.filter((k) => !rangeKeys.includes(k));
           return shouldSelect ? [...withoutRange, ...rangeKeys] : withoutRange;
@@ -256,14 +267,20 @@ const SteamSyncPage = () => {
   };
 
   // Scoped to the current page only — reaching across pages to select rows the user can't see
-  // would be surprising. Adds/removes just this page's actionable rows, leaving any selection
-  // on other pages untouched (so paging through and selecting a few rows per page accumulates,
-  // the same way Gmail's per-page "select all" doesn't clear other pages' selections either).
+  // would be surprising, so that takes the explicit "Select all N games" link in the toolbar.
+  // Adds/removes just this page's actionable rows, leaving any selection on other pages
+  // untouched (so paging through and selecting a few rows per page accumulates). Once
+  // everything is selected, unticking clears the whole selection, as Gmail does.
   const toggleSelectAll = () => {
+    if (allActionableSelected) {
+      setSelected([]);
+      return;
+    }
     const pageKeys = actionableCurrentPageRows.map(rowKey);
-    const allSelected = pageKeys.length > 0 && pageKeys.every((k) => selected.includes(k));
     setSelected((prev) =>
-      allSelected ? prev.filter((k) => !pageKeys.includes(k)) : [...new Set([...prev, ...pageKeys])]
+      currentPageFullySelected
+        ? prev.filter((k) => !pageKeys.includes(k))
+        : [...new Set([...prev, ...pageKeys])]
     );
   };
 
@@ -495,15 +512,58 @@ const SteamSyncPage = () => {
           sx={{
             pl: 2,
             pr: 1,
+            flexWrap: "wrap",
             ...(selected.length > 0 && {
               bgcolor: alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
             }),
           }}
         >
           {selected.length > 0 ? (
-            <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1">
-              {t("insights.steamSync.selectedCount", { count: selected.length })}
-            </Typography>
+            <>
+              <Typography sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }} color="inherit" variant="subtitle1">
+                {t("insights.steamSync.selectedCount", { count: selected.length })}
+              </Typography>
+              <Box
+                sx={{
+                  // Its own full-width row under the count and Sync button on phones.
+                  flex: "1 1 auto",
+                  order: { xs: 1, sm: 0 },
+                  flexBasis: { xs: "100%", sm: "auto" },
+                  pb: { xs: 1, sm: 0 },
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  columnGap: 0.5,
+                  px: 1,
+                  textAlign: "center",
+                }}
+              >
+                {allActionableSelected && allActionableKeys.length > actionableCurrentPageRows.length ? (
+                  <>
+                    <Typography variant="body2">
+                      {t("insights.steamSync.allSelectedNotice", { count: allActionableKeys.length })}
+                    </Typography>
+                    <Button size="small" onClick={() => setSelected([])}>
+                      {t("insights.steamSync.clearSelectionButton")}
+                    </Button>
+                  </>
+                ) : showSelectAllNotice ? (
+                  <>
+                    <Typography variant="body2">
+                      {t("insights.steamSync.pageSelectedNotice", {
+                        count: actionableCurrentPageRows.length,
+                      })}
+                    </Typography>
+                    <Button size="small" onClick={() => setSelected(allActionableKeys)}>
+                      {t("insights.steamSync.selectAllAcrossPagesButton", {
+                        count: allActionableKeys.length,
+                      })}
+                    </Button>
+                  </>
+                ) : null}
+              </Box>
+            </>
           ) : (
             <Typography sx={{ flex: "1 1 100%" }} variant="h6">
               {t("insights.steamSync.tableHeading")}
@@ -521,7 +581,10 @@ const SteamSyncPage = () => {
                   }))
                 )
               }
-              disabled={selectedRows.length === 0}
+              disabled={
+                selectedRows.length === 0 || syncEntries.isPending || syncWishlistEntries.isPending
+              }
+              sx={{ flexShrink: 0 }}
             >
               {t("insights.steamSync.syncSelectedButton")}
             </Button>
@@ -550,13 +613,9 @@ const SteamSyncPage = () => {
                       <span>
                         <Checkbox
                           indeterminate={
-                            selectedOnCurrentPage.length > 0 &&
-                            selectedOnCurrentPage.length < actionableCurrentPageRows.length
+                            selectedOnCurrentPage.length > 0 && !currentPageFullySelected
                           }
-                          checked={
-                            actionableCurrentPageRows.length > 0 &&
-                            selectedOnCurrentPage.length === actionableCurrentPageRows.length
-                          }
+                          checked={currentPageFullySelected}
                           onChange={toggleSelectAll}
                           disabled={actionableCurrentPageRows.length === 0}
                           sx={{ padding: 0 }}
@@ -582,10 +641,10 @@ const SteamSyncPage = () => {
                   const actionable = isRowActionable(tree.row);
                   return (
                     <Fragment key={key}>
-                      <TableRow hover selected={selected.includes(key)}>
+                      <TableRow hover selected={selectedSet.has(key)}>
                         <TableCell padding="checkbox">
                           <Checkbox
-                            checked={selected.includes(key)}
+                            checked={selectedSet.has(key)}
                             onClick={(event) => handleRowCheckboxClick(tree.row, event)}
                             onChange={() => {}}
                             disabled={!actionable}
@@ -658,10 +717,10 @@ const SteamSyncPage = () => {
                           const isLast = index === tree.children.length - 1;
                           const childKey = rowKey(child);
                           return (
-                            <TableRow key={childKey} hover selected={selected.includes(childKey)}>
+                            <TableRow key={childKey} hover selected={selectedSet.has(childKey)}>
                               <TableCell padding="checkbox">
                                 <Checkbox
-                                  checked={selected.includes(childKey)}
+                                  checked={selectedSet.has(childKey)}
                                   onClick={(event) => handleRowCheckboxClick(child, event)}
                                   onChange={() => {}}
                                   disabled={!isRowActionable(child)}
