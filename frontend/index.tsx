@@ -13,6 +13,7 @@ import router from "./router";
 import { ColorModeProvider } from "./theme/ColorModeProvider";
 import { CurrencyProvider } from "./theme/CurrencyProvider";
 import { LanguageProvider } from "./theme/LanguageProvider";
+import { StoreRegionProvider } from "./theme/StoreRegionProvider";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -44,7 +45,9 @@ createRoot(rootElement).render(
       <ColorModeProvider>
         <CurrencyProvider>
           <LanguageProvider>
-            <RouterProvider router={router} />
+            <StoreRegionProvider>
+              <RouterProvider router={router} />
+            </StoreRegionProvider>
           </LanguageProvider>
         </CurrencyProvider>
       </ColorModeProvider>

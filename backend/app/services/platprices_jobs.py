@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.repositories import platprices_repository
 from app.services.job_registry import JobDefinition
-from app.services.platprices_client import PlatPricesClient, PlatPricesRegionNotInPlanError
+from app.services.platprices_client import PlatPricesClient, PlatPricesRegionError
 
 JOB_PLATPRICES_REFRESH = "platprices_refresh"
 
@@ -84,9 +84,10 @@ async def _refresh(db: Session, report_progress: Callable[[int, int], None]) -> 
         if matched:
             try:
                 price_data = await client.get_price_data(list(matched.keys()), settings.platprices_region)
-            except PlatPricesRegionNotInPlanError:
+            except PlatPricesRegionError:
                 # PLATPRICES_REGION isn't one of the (up to 2, free tier) regions this
-                # account currently tracks on PlatPrices' own dashboard. Whatever's cached is
+                # account currently tracks on PlatPrices' own dashboard, isn't a region
+                # PlatPrices recognises, or PlatPrices answered for a different region. Whatever's cached is
                 # stale pricing from a region that *was* tracked as of the last successful
                 # run — left in place, it would keep showing as a live discount (wrong
                 # currency/amount) indefinitely, since a failed run otherwise never touches
@@ -103,7 +104,11 @@ async def _refresh(db: Session, report_progress: Callable[[int, int], None]) -> 
                 if cache:
                     data = price_data.get(ppid)
                     platprices_repository.update_price_data(
-                        db, cache, data.current_deal if data else None, data.historical_low if data else None
+                        db,
+                        cache,
+                        data.current_deal if data else None,
+                        data.historical_low if data else None,
+                        region=settings.platprices_region,
                     )
             db.commit()
 

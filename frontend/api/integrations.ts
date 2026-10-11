@@ -5,7 +5,9 @@ export interface IntegrationsStatus {
   steamApiKeyConfigured: boolean;
   steamId64: string | null;
   itadConfigured: boolean;
+  itadCountry: string;
   platpricesConfigured: boolean;
+  platpricesRegion: string;
 }
 
 export async function getIntegrationsStatus(): Promise<IntegrationsStatus> {

@@ -16,7 +16,9 @@ import playstationLogo from "../assets/playstation-logo.png";
 import steamLogo from "../assets/steam-logo.png";
 import xboxLogo from "../assets/xbox-logo.png";
 import type { GameAboutData, GameCompany, IgdbReleaseRegion } from "../api/types";
+import { useStoreRegion } from "../theme/StoreRegionProvider";
 import { gameIdentifier } from "../utils/identifiers";
+import { localiseStoreUrl } from "../utils/storeRegion";
 import { getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import ExpandableText from "./ExpandableText";
 import ScreenshotGallery from "./ScreenshotGallery";
@@ -33,8 +35,11 @@ interface GameAboutSectionProps {
 }
 
 const GameAboutSection = ({ game, preview = false, publicToken }: GameAboutSectionProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const { region: storeRegion } = useStoreRegion();
+  // From i18next rather than LanguageProvider, so this section doesn't pull in i18n setup.
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const isAddonGame = isAddon(game);
   const linksCatalogPages = !preview && publicToken === undefined;
   const parentGameLink = (id: number, slug: string | null, uuid: string, name: string) =>
@@ -317,7 +322,7 @@ const GameAboutSection = ({ game, preview = false, publicToken }: GameAboutSecti
           {game.xboxStoreUrl && (
             <Tooltip title={t("games.about.viewOnXbox")}>
               <a
-                href={game.xboxStoreUrl}
+                href={localiseStoreUrl(game.xboxStoreUrl, "xbox", storeRegion, language)}
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: theme.palette.text.primary }}
@@ -329,7 +334,7 @@ const GameAboutSection = ({ game, preview = false, publicToken }: GameAboutSecti
           {game.playstationStoreUrl && (
             <Tooltip title={t("games.about.viewOnPlaystation")}>
               <a
-                href={game.playstationStoreUrl}
+                href={localiseStoreUrl(game.playstationStoreUrl, "playstation", storeRegion, language)}
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: theme.palette.text.primary }}

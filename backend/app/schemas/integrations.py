@@ -8,7 +8,9 @@ class IntegrationsStatusResponse(CamelModel):
     steam_api_key_configured: bool
     steam_id_64: str | None
     itad_configured: bool
+    itad_country: str
     platprices_configured: bool
+    platprices_region: str
 
 
 class UpdateSteamIdRequest(CamelModel):

@@ -227,6 +227,14 @@
       "description": "Used to label MSRP, purchase price, and collection value — this changes how amounts are displayed, not a live exchange rate or conversion.",
       "label": "Currency"
     },
+    "storeRegion": {
+      "heading": "Store Region",
+      "description": "Opens PlayStation Store and Xbox links in your country's store. Steam, Nintendo, Epic and GOG links stay as they are, since those stores pick the region from your account.",
+      "label": "Region",
+      "automatic": "Automatic ({{region}})",
+      "automaticNotDetected": "Automatic (not detected, links unchanged)",
+      "off": "Don't change store links"
+    },
     "data": {
       "heading": "Data"
     },
@@ -346,6 +354,7 @@
       "steamDescription": "The Steam API key is configured via this server's <1>.env</1> file (<3>STEAM_API_KEY</3>), not through the app. Get a free key at steamcommunity.com/dev/apikey, add it to .env, then restart VideoGameTrackarr.",
       "configuredLabel": "Configured",
       "notConfiguredLabel": "Not configured",
+      "regionLabel": "Region: {{region}}",
       "steamIdLabel": "SteamID64",
       "steamIdPlaceholder": "e.g. 76561197960287930",
       "steamIdHelperText": "Your public SteamID64 — find it on your Steam profile page or via steamid.io. This isn't a secret; it's only used to look up your owned games.",
@@ -356,7 +365,7 @@
       "platpricesHeading": "PlatPrices (PlayStation)",
       "platpricesLogoAlt": "PlatPrices",
       "platpricesDescription": "The PlatPrices API key is configured via this server's <1>.env</1> file (<3>PLATPRICES_API_KEY</3>), not through the app. Get a key by applying at platprices.com/api-request (usually issued within 1-2 business days), add it to .env, then restart VideoGameTrackarr.",
-      "platpricesRegionCaveat": "PlatPrices' free tier lets your account track any 2 PlayStation Store regions at a time (changeable once every 24 hours on platprices.com), plus 1,000 requests/month. Set PLATPRICES_REGION in .env to one of the 2 regions your account is currently tracking, or prices will reflect the wrong region's storefront.",
+      "platpricesRegionCaveat": "PlatPrices' free tier lets your account track any 2 PlayStation Store regions at a time (changeable once every 24 hours on platprices.com), plus 1,000 requests/month. Set PLATPRICES_REGION in .env to the two-letter code of one of them (e.g. GB or IN), then recreate the container with docker compose up -d (a plain restart doesn't pick up .env changes). The region in use is shown above, and prices fetched for any other region are cleared on startup.",
       "platpricesCredit": "PlayStation price data is powered by <1>PlatPrices</1>."
     },
     "emulation": {

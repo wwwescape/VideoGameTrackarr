@@ -2,6 +2,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -58,6 +59,13 @@ class Settings(BaseSettings):
     # key/plan.
     platprices_api_key: str | None = None
     platprices_region: str = "US"
+
+    @field_validator("platprices_region")
+    @classmethod
+    def _normalise_platprices_region(cls, value: str) -> str:
+        # Stored upper-case for display/comparison (PlatPrices echoes "US" in meta.region);
+        # PlatPricesClient sends it lower-case, as PlatPrices' docs show (region=us).
+        return value.strip().upper() or "US"
 
     # Optional response cache backend — falls back to an in-process TTL cache if unset.
     redis_url: str | None = None

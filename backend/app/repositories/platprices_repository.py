@@ -81,8 +81,13 @@ def delete_cache(db: Session, cache: PlatPricesCache) -> None:
 
 
 def update_price_data(
-    db: Session, cache: PlatPricesCache, deal: PlatPricesDeal | None, historical: PlatPricesHistoricalLow | None
+    db: Session,
+    cache: PlatPricesCache,
+    deal: PlatPricesDeal | None,
+    historical: PlatPricesHistoricalLow | None,
+    region: str | None = None,
 ) -> PlatPricesCache:
+    cache.region = region if (deal or historical) else None
     cache.current_price_amount = deal.price_amount if deal else None
     cache.current_price_currency = deal.price_currency if deal else None
     cache.current_shop_name = deal.shop_name if deal else None
@@ -94,3 +99,19 @@ def update_price_data(
     cache.checked_at = datetime.now(UTC)
     db.flush()
     return cache
+
+
+def clear_prices_not_from_region(db: Session, region: str) -> int:
+    """Clears cached prices fetched for any other region (or before regions were recorded),
+    so changing PLATPRICES_REGION never leaves the old region's prices showing as current
+    until the next successful refresh. Matches (ppid) and Ignored state are kept. Returns
+    how many rows were cleared."""
+    stale = db.scalars(
+        select(PlatPricesCache).where(
+            (PlatPricesCache.current_price_amount.is_not(None) | PlatPricesCache.historical_low_amount.is_not(None))
+            & (PlatPricesCache.region.is_(None) | (PlatPricesCache.region != region))
+        )
+    ).all()
+    for cache in stale:
+        update_price_data(db, cache, None, None)
+    return len(stale)

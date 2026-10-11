@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -48,7 +49,7 @@ from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DI
 from app.core.limiter import limiter
 from app.core.logging import configure_logging
 from app.db.session import SessionLocal
-from app.services import job_definitions, job_scheduler, rom_service
+from app.services import job_definitions, job_scheduler, platprices_service, rom_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, IGDBCredentialsError
 
@@ -105,6 +106,7 @@ def isolation_headers_for(requested_path: str, threads: str | None) -> dict[str,
 
 configure_logging()
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -115,6 +117,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     db = SessionLocal()
     try:
         job_scheduler.start(db, SessionLocal)
+        try:
+            cleared = platprices_service.clear_prices_from_other_regions(db)
+            if cleared:
+                logger.info("Cleared %d cached PlatPrices price(s) from a previous region", cleared)
+        except Exception:  # noqa: BLE001 - a stale-price cleanup must never stop startup
+            db.rollback()
+            logger.exception("Couldn't clear PlatPrices prices from a previous region")
     finally:
         db.close()
 

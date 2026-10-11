@@ -12,8 +12,10 @@ import { useCurrentUser, useLogout } from "../hooks/useAuth";
 import { useColorMode } from "../theme/ColorModeProvider";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { useLanguage } from "../theme/LanguageProvider";
+import { useStoreRegion } from "../theme/StoreRegionProvider";
 import { getCurrencySymbol, SUPPORTED_CURRENCIES, type CurrencyOption } from "../utils/currency";
 import { SUPPORTED_LANGUAGES, type LanguageOption } from "../utils/language";
+import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/storeRegion";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
 import SettingsSubNav from "./SettingsSubNav";
@@ -26,6 +28,25 @@ const Settings = () => {
   const { mode, contrast, toggleColorMode, toggleContrast } = useColorMode();
   const { currency, setCurrency } = useCurrency();
   const { language, setLanguage } = useLanguage();
+  const { setting: storeRegion, setSetting: setStoreRegion, detectedRegion } = useStoreRegion();
+
+  // Country names in VGT's own language, via the browser's built-in region names.
+  const regionNames = new Intl.DisplayNames([language], { type: "region" });
+  const regionName = (code: string) => regionNames.of(code) ?? code;
+  const storeRegionOptions = [
+    STORE_REGION_AUTO,
+    STORE_REGION_OFF,
+    ...Object.keys(STORE_REGIONS).sort((a, b) => regionName(a).localeCompare(regionName(b), language)),
+  ];
+  const storeRegionLabel = (option: string) => {
+    if (option === STORE_REGION_AUTO) {
+      return detectedRegion
+        ? t("settings.storeRegion.automatic", { region: regionName(detectedRegion) })
+        : t("settings.storeRegion.automaticNotDetected");
+    }
+    if (option === STORE_REGION_OFF) return t("settings.storeRegion.off");
+    return regionName(option);
+  };
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -102,6 +123,25 @@ const Settings = () => {
             isOptionEqualToValue={(option, val) => option.code === val.code}
             disableClearable
             onChange={(newValue) => setCurrency(newValue!.code)}
+            sx={{ minWidth: 280 }}
+          />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="subtitle1" gutterBottom>
+            {t("settings.storeRegion.heading")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            {t("settings.storeRegion.description")}
+          </Typography>
+          <AutocompleteSelect<string>
+            label={t("settings.storeRegion.label")}
+            options={storeRegionOptions}
+            value={storeRegion}
+            getOptionLabel={storeRegionLabel}
+            isOptionEqualToValue={(option, val) => option === val}
+            disableClearable
+            onChange={(newValue) => setStoreRegion(newValue!)}
             sx={{ minWidth: 280 }}
           />
 

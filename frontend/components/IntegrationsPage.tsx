@@ -20,6 +20,16 @@ import { useIntegrationsStatus, useUpdateSteamId } from "../hooks/useIntegration
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import SettingsSubNav from "./SettingsSubNav";
 
+// The store region prices are fetched for (ITAD_COUNTRY / PLATPRICES_REGION), so a region
+// that doesn't match what you expect is visible here rather than only in the prices.
+const RegionChip = ({ configured, region }: { configured: boolean | undefined; region: string | undefined }) => {
+  const { t } = useTranslation();
+  if (!configured || !region) return null;
+  return (
+    <Chip size="small" variant="outlined" label={t("settings.integrations.regionLabel", { region })} />
+  );
+};
+
 const ConfiguredChip = ({ configured }: { configured: boolean | undefined }) => {
   const { t } = useTranslation();
   if (configured === undefined) return null;
@@ -141,6 +151,7 @@ const IntegrationsPage = () => {
             />
             <Typography variant="subtitle1">{t("settings.integrations.itadHeading")}</Typography>
             <ConfiguredChip configured={status?.itadConfigured} />
+            <RegionChip configured={status?.itadConfigured} region={status?.itadCountry} />
           </Stack>
           <Alert severity="info">
             <Trans
@@ -173,6 +184,7 @@ const IntegrationsPage = () => {
               {t("settings.integrations.platpricesHeading")}
             </Typography>
             <ConfiguredChip configured={status?.platpricesConfigured} />
+            <RegionChip configured={status?.platpricesConfigured} region={status?.platpricesRegion} />
           </Stack>
           <Alert severity="info" sx={{ mb: 1.5 }}>
             <Trans

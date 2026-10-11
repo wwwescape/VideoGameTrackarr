@@ -12,7 +12,9 @@ def get_status(user: User) -> IntegrationsStatusResponse:
         steam_api_key_configured=bool(settings.steam_api_key),
         steam_id_64=user.steam_id_64,
         itad_configured=bool(settings.itad_api_key),
+        itad_country=settings.itad_country.strip().upper(),
         platprices_configured=bool(settings.platprices_api_key),
+        platprices_region=settings.platprices_region,
     )
 
 

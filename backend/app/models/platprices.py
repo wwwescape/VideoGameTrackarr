@@ -28,6 +28,9 @@ class PlatPricesCache(TimestampMixin, Base):
     )
     current_price_amount: Mapped[float | None] = mapped_column()
     current_price_currency: Mapped[str | None] = mapped_column(String(8))
+    region: Mapped[str | None] = mapped_column(
+        String(8), comment="PS Store region the cached prices were fetched for; null = before this was tracked"
+    )
     current_shop_name: Mapped[str | None] = mapped_column(String(100))
     current_cut: Mapped[int | None] = mapped_column(Integer, comment="Current discount percentage")
     historical_low_amount: Mapped[float | None] = mapped_column()

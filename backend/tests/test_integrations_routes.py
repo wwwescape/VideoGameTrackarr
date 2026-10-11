@@ -39,11 +39,15 @@ def test_get_integrations_reflects_configured_credentials(auth_client, monkeypat
     monkeypatch.setattr(settings, "steam_api_key", "test-steam-key")
     monkeypatch.setattr(settings, "itad_api_key", "test-itad-key")
     monkeypatch.setattr(settings, "platprices_api_key", "test-platprices-key")
+    monkeypatch.setattr(settings, "platprices_region", "IN")
+    monkeypatch.setattr(settings, "itad_country", "in")
 
     response = auth_client.get("/api/integrations")
 
     assert response.status_code == 200
     body = response.json()
+    assert body["platpricesRegion"] == "IN"
+    assert body["itadCountry"] == "IN"
     assert body["itadConfigured"] is True
     assert body["igdbConfigured"] is True
     assert body["steamApiKeyConfigured"] is True

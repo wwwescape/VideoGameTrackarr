@@ -7,6 +7,8 @@ from app.services.platprices_client import (
     PLATPRICES_API_BASE,
     PlatPricesClient,
     PlatPricesCredentialsError,
+    PlatPricesInvalidRegionError,
+    PlatPricesRegionMismatchError,
     PlatPricesRegionNotInPlanError,
 )
 
@@ -151,4 +153,54 @@ async def test_region_not_in_plan_raises_a_clear_error():
     )
 
     with pytest.raises(PlatPricesRegionNotInPlanError):
+        await make_client().get_price_data(["222"], "IN")
+
+
+@respx.mock
+async def test_region_is_sent_lower_case_as_platprices_documents_it():
+    search = respx.get(f"{PLATPRICES_API_BASE}/games/search").mock(
+        return_value=httpx.Response(200, json={"success": True, "data": []})
+    )
+    batch = respx.get(f"{PLATPRICES_API_BASE}/games/batch").mock(
+        return_value=httpx.Response(200, json={"success": True, "data": [], "meta": {"region": "IN"}})
+    )
+
+    await make_client().search_game("Ghost of Tsushima", "IN")
+    await make_client().get_price_data(["222"], "IN")
+
+    assert search.calls.last.request.url.params["region"] == "in"
+    assert batch.calls.last.request.url.params["region"] == "in"
+
+
+@respx.mock
+async def test_invalid_region_raises_a_clear_error():
+    respx.get(f"{PLATPRICES_API_BASE}/games/batch").mock(
+        return_value=httpx.Response(
+            400,
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "INVALID_REGION", "message": "Unknown region", "status": 400},
+            },
+        )
+    )
+
+    with pytest.raises(PlatPricesInvalidRegionError):
+        await make_client().get_price_data(["222"], "XX")
+
+
+@respx.mock
+async def test_prices_for_a_different_region_than_asked_are_rejected():
+    respx.get(f"{PLATPRICES_API_BASE}/games/batch").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": [{"PPID": 222, "IsOnSale": 1, "SalePrice": 3599, "DiscPerc": "40", "PriceCurrency": "USD"}],
+                "meta": {"region": "US"},
+            },
+        )
+    )
+
+    with pytest.raises(PlatPricesRegionMismatchError):
         await make_client().get_price_data(["222"], "IN")

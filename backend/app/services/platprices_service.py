@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.config import get_settings
 from app.models.catalog import Game
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.models.platprices import PlatPricesCache
@@ -96,3 +97,15 @@ def remove_ignored_item(db: Session, game_id: int) -> None:
             library_item_repository.update_library_item(db, item, track_for_sales=False)
     platprices_repository.delete_cache(db, cache)
     db.commit()
+
+
+def clear_prices_from_other_regions(db: Session) -> int:
+    """Run at startup: PLATPRICES_REGION only changes with a restart, so this is where a
+    region change takes effect — the previous region's cached prices disappear straight away
+    instead of showing as current until the refresh job next succeeds."""
+    settings = get_settings()
+    if not settings.platprices_api_key:
+        return 0
+    cleared = platprices_repository.clear_prices_not_from_region(db, settings.platprices_region)
+    db.commit()
+    return cleared

@@ -27,3 +27,11 @@ def test_redis_url_falls_back_to_none_when_env_var_is_empty(monkeypatch):
     settings = Settings(_env_file=None)
 
     assert settings.redis_url is None
+
+
+def test_platprices_region_is_normalised_to_upper_case(monkeypatch):
+    monkeypatch.setenv("PLATPRICES_REGION", " in ")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.platprices_region == "IN"

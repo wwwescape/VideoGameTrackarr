@@ -21,10 +21,29 @@ class PlatPricesCredentialsError(Exception):
     """Raised when PLATPRICES_API_KEY isn't configured."""
 
 
-class PlatPricesRegionNotInPlanError(Exception):
+class PlatPricesRegionError(Exception):
+    """Base for every "these prices aren't for PLATPRICES_REGION" failure. The refresh job
+    clears cached prices on any of them, so a wrong region's prices never stay on screen."""
+
+
+class PlatPricesRegionNotInPlanError(PlatPricesRegionError):
     """Raised when PLATPRICES_REGION isn't one of the (up to 2, on the free tier) regions
     this key's account is currently tracking — configurable on the PlatPrices dashboard,
     not something VGT can set on the account's behalf (see .env.example)."""
+
+
+class PlatPricesInvalidRegionError(PlatPricesRegionError):
+    """Raised when PlatPrices doesn't recognise PLATPRICES_REGION at all (400 INVALID_REGION),
+    e.g. a typo or a country without a PlayStation Store."""
+
+
+class PlatPricesRegionMismatchError(PlatPricesRegionError):
+    """Raised when PlatPrices answers for a different region than the one asked for (its
+    meta.region), instead of trusting those prices as PLATPRICES_REGION's."""
+
+
+def _region_param(region: str) -> str:
+    return region.strip().lower()
 
 
 @dataclass
@@ -79,13 +98,15 @@ class PlatPricesClient:
         response = await self._http.request(
             method, f"{PLATPRICES_API_BASE}{path}", headers={"X-API-Key": key}, **kwargs
         )
-        if response.status_code == 403:
+        if response.status_code in (400, 403):
             body = response.json()
             error = body.get("error") or {}
             if error.get("code") == "REGION_NOT_IN_PLAN":
                 raise PlatPricesRegionNotInPlanError(
                     error.get("message") or "Region not enabled for this PlatPrices plan"
                 )
+            if error.get("code") == "INVALID_REGION":
+                raise PlatPricesInvalidRegionError(error.get("message") or "PlatPrices doesn't recognise this region")
         response.raise_for_status()
         return response
 
@@ -96,7 +117,9 @@ class PlatPricesClient:
         (case-insensitive) product-name match is accepted; anything else is treated as
         unmatched, same as a title ITAD itself can't find."""
         key = self._require_key()
-        response = await self._request("GET", "/games/search", key, params={"q": title, "region": region})
+        response = await self._request(
+            "GET", "/games/search", key, params={"q": title, "region": _region_param(region)}
+        )
         for candidate in response.json().get("data") or []:
             name = candidate.get("ProductName") or candidate.get("GameName") or ""
             if name.strip().lower() == title.strip().lower():
@@ -112,9 +135,17 @@ class PlatPricesClient:
         if not ppids:
             return {}
         key = self._require_key()
-        response = await self._request("GET", "/games/batch", key, params={"ppids": ",".join(ppids), "region": region})
+        response = await self._request(
+            "GET", "/games/batch", key, params={"ppids": ",".join(ppids), "region": _region_param(region)}
+        )
+        body = response.json()
+        answered_region = (body.get("meta") or {}).get("region")
+        if answered_region and answered_region.strip().lower() != _region_param(region):
+            raise PlatPricesRegionMismatchError(
+                f"Asked PlatPrices for region {region.upper()} but it answered for {answered_region.upper()}"
+            )
         result: dict[str, PlatPricesGameData] = {}
-        for entry in response.json().get("data") or []:
+        for entry in body.get("data") or []:
             ppid = str(entry["PPID"])
             currency = entry.get("PriceCurrency") or "USD"
 

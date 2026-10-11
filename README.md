@@ -125,14 +125,15 @@ JWT_SECRET_KEY=            # generate with: python -c "import secrets; print(sec
 Get IGDB credentials at https://api-docs.igdb.com/#getting-started (free, requires a Twitch
 developer account).
 
-Optional integrations — add a key and restart. Each shows a live status in **Settings →
-Integrations**:
+Optional integrations — add a key to `.env`, then run `docker compose up -d` (a plain
+`docker compose restart` doesn't pick up `.env` changes). Each shows a live status in
+**Settings → Integrations**, along with the store region in use for the price integrations:
 
 | Integration    | Setting              | Get a key                                                         | Notes                                                                                                                                      |
 | -------------- | -------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Steam          | `STEAM_API_KEY`      | [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) | Your SteamID64 is set in-app, under **Settings → Integrations**.                                                                     |
-| IsThereAnyDeal | `ITAD_API_KEY`       | [isthereanydeal.com/apps/my](https://isthereanydeal.com/apps/my/) | PC, Mac, Linux, and Android prices. `ITAD_COUNTRY` sets the store country.                                                                |
-| PlatPrices     | `PLATPRICES_API_KEY` | [platprices.com/api-request](https://platprices.com/api-request) | PlayStation prices. The free tier tracks 2 PS Store regions, chosen on your PlatPrices dashboard — `PLATPRICES_REGION` must match one. |
+| IsThereAnyDeal | `ITAD_API_KEY`       | [isthereanydeal.com/apps/my](https://isthereanydeal.com/apps/my/) | PC, Mac, Linux, and Android prices. `ITAD_COUNTRY` (two-letter code, default `US`) sets the store country.                                |
+| PlatPrices     | `PLATPRICES_API_KEY` | [platprices.com/api-request](https://platprices.com/api-request) | PlayStation prices. The free tier tracks any 2 PS Store regions, chosen on your PlatPrices dashboard. `PLATPRICES_REGION` (two-letter code such as `GB` or `IN`, default `US`) must be one of them. |
 
 Other options: `ROM_MAX_UPLOAD_MB` (default `2048`) caps ROM uploads — raise your reverse
 proxy's upload limit to match. `DATABASE_URL` (SQLite by default), `REDIS_URL`, and

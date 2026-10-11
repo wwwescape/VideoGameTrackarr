@@ -227,6 +227,14 @@
       "description": "Utilizada para apresentar o PVP, o preço de compra e o valor da coleção — isto altera a forma como os valores são apresentados, não é uma taxa de câmbio ou conversão em tempo real.",
       "label": "Moeda"
     },
+    "storeRegion": {
+      "heading": "Região da loja",
+      "description": "Abre os links da PlayStation Store e do Xbox na loja do seu país. Os links da Steam, Nintendo, Epic e GOG não mudam, pois essas lojas escolhem a região pela sua conta.",
+      "label": "Região",
+      "automatic": "Automática ({{region}})",
+      "automaticNotDetected": "Automática (não detectada, links inalterados)",
+      "off": "Não alterar os links das lojas"
+    },
     "data": {
       "heading": "Dados"
     },
@@ -346,6 +354,7 @@
       "steamDescription": "A chave da API da Steam é configurada através do ficheiro <1>.env</1> deste servidor (<3>STEAM_API_KEY</3>), não através da aplicação. Obtenha uma chave gratuita em steamcommunity.com/dev/apikey, adicione-a ao .env e reinicie o VideoGameTrackarr.",
       "configuredLabel": "Configurado",
       "notConfiguredLabel": "Não configurado",
+      "regionLabel": "Região: {{region}}",
       "steamIdLabel": "SteamID64",
       "steamIdPlaceholder": "ex. 76561197960287930",
       "steamIdHelperText": "O seu SteamID64 público — encontra-se no seu perfil Steam ou em steamid.io. Não é um segredo; serve apenas para consultar os seus jogos.",
@@ -356,7 +365,7 @@
       "platpricesHeading": "PlatPrices (PlayStation)",
       "platpricesLogoAlt": "PlatPrices",
       "platpricesDescription": "A chave da API do PlatPrices é configurada através do ficheiro <1>.env</1> deste servidor (<3>PLATPRICES_API_KEY</3>), não através da aplicação. Peça uma chave em platprices.com/api-request (normalmente emitida em 1-2 dias úteis), adicione-a ao .env e reinicie o VideoGameTrackarr.",
-      "platpricesRegionCaveat": "O plano gratuito do PlatPrices permite que a sua conta acompanhe 2 regiões da PlayStation Store de cada vez (alterável uma vez a cada 24 horas em platprices.com), além de 1000 pedidos por mês. Defina PLATPRICES_REGION no .env com uma das 2 regiões que a sua conta está atualmente a acompanhar, ou os preços refletirão a loja da região errada.",
+      "platpricesRegionCaveat": "O plano gratuito do PlatPrices permite que sua conta acompanhe 2 regiões da PlayStation Store ao mesmo tempo (alteráveis uma vez a cada 24 horas em platprices.com), além de 1.000 solicitações por mês. Defina PLATPRICES_REGION no .env com o código de duas letras de uma delas (ex.: GB ou IN) e recrie o contêiner com docker compose up -d (uma simples reinicialização não aplica as alterações do .env). A região em uso aparece acima, e os preços obtidos para qualquer outra região são apagados ao iniciar.",
       "platpricesCredit": "Os dados de preços da PlayStation são fornecidos por <1>PlatPrices</1>."
     },
     "emulation": {
