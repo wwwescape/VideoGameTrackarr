@@ -46,6 +46,30 @@ def _region_param(region: str) -> str:
     return region.strip().lower()
 
 
+# PlatPrices' PriceCurrency is often null (it is for India, checked live 2026-10-11), and its
+# /regions endpoint only gives a display symbol, not an ISO code. This is each PS Store
+# region's currency, used whenever PriceCurrency is missing. Argentina and Chile really are
+# priced in US dollars (/regions shows "US$" for both).
+REGION_CURRENCIES = {
+    "AE": "AED", "AR": "USD", "AT": "EUR", "AU": "AUD", "BE": "EUR", "BG": "EUR", "BR": "BRL",
+    "CA": "CAD", "CH": "CHF", "CL": "USD", "CZ": "CZK", "DE": "EUR", "DK": "DKK", "ES": "EUR",
+    "FI": "EUR", "FR": "EUR", "GB": "GBP", "GR": "EUR", "HK": "HKD", "HR": "EUR", "HU": "HUF",
+    "ID": "IDR", "IE": "EUR", "IL": "ILS", "IN": "INR", "IS": "EUR", "IT": "EUR", "JP": "JPY",
+    "KR": "KRW", "MX": "MXN", "MY": "MYR", "NL": "EUR", "NO": "NOK", "NZ": "NZD", "PL": "PLN",
+    "PT": "EUR", "RO": "RON", "SA": "SAR", "SE": "SEK", "SG": "SGD", "SK": "EUR", "TH": "THB",
+    "TR": "TRY", "TW": "TWD", "UA": "UAH", "US": "USD", "ZA": "ZAR",
+}  # fmt: skip
+
+# Prices are integers in each region's minor units, scaled by that region's decimalPlaces
+# (PlatPrices' docs: "don't divide by 100 blindly"). Read live from /regions each run; this
+# is the fallback if that call fails — the regions /regions listed with 0 places on 2026-10-11.
+ZERO_DECIMAL_REGIONS = frozenset({"HU", "ID", "IN", "JP", "KR", "TW"})
+
+
+def _currency_for(entry: dict, region: str) -> str:
+    return entry.get("PriceCurrency") or REGION_CURRENCIES.get(region.strip().upper(), "USD")
+
+
 @dataclass
 class PlatPricesDeal:
     shop_name: str
@@ -78,6 +102,7 @@ class PlatPricesClient:
         settings = get_settings()
         self._api_key = api_key or settings.platprices_api_key
         self._http = http_client or httpx.AsyncClient(timeout=10.0)
+        self._decimal_places: dict[str, int] | None = None
 
     async def aclose(self) -> None:
         await self._http.aclose()
@@ -126,6 +151,26 @@ class PlatPricesClient:
                 return str(candidate["PPID"])
         return None
 
+    async def get_decimal_places(self, region: str) -> int:
+        """How many decimal places `region`'s prices carry (0 for India, Japan, …), from
+        PlatPrices' /regions — free, doesn't count against the monthly quota, fetched once per
+        client. Falls back to ZERO_DECIMAL_REGIONS if the call fails, so a /regions hiccup
+        never fails a price refresh."""
+        code = region.strip().upper()
+        if self._decimal_places is None:
+            try:
+                response = await self._request("GET", "/regions", self._require_key())
+                self._decimal_places = {
+                    str(row["region"]).upper(): int(row["decimalPlaces"])
+                    for row in response.json().get("data") or []
+                    if row.get("region") and row.get("decimalPlaces") is not None
+                }
+            except Exception:  # noqa: BLE001 - fall back to the known list below
+                self._decimal_places = {}
+        if code in self._decimal_places:
+            return self._decimal_places[code]
+        return 0 if code in ZERO_DECIMAL_REGIONS else 2
+
     async def get_price_data(self, ppids: list[str], region: str) -> dict[str, PlatPricesGameData]:
         """Batched — one request for every id via /games/batch, not one call per game. Unlike
         ITAD (which needs two separate endpoint calls for current price vs. historical low),
@@ -144,16 +189,17 @@ class PlatPricesClient:
             raise PlatPricesRegionMismatchError(
                 f"Asked PlatPrices for region {region.upper()} but it answered for {answered_region.upper()}"
             )
+        scale = 10 ** await self.get_decimal_places(region)
         result: dict[str, PlatPricesGameData] = {}
         for entry in body.get("data") or []:
             ppid = str(entry["PPID"])
-            currency = entry.get("PriceCurrency") or "USD"
+            currency = _currency_for(entry, region)
 
             current_deal = None
             if entry.get("IsOnSale") and entry.get("SalePrice") is not None:
                 current_deal = PlatPricesDeal(
                     shop_name="PlayStation Store",
-                    price_amount=entry["SalePrice"] / 100,
+                    price_amount=entry["SalePrice"] / scale,
                     price_currency=currency,
                     cut=_parse_cut(entry.get("DiscPerc")),
                 )
@@ -162,7 +208,7 @@ class PlatPricesClient:
             if entry.get("LowestEverPrice") is not None:
                 historical_low = PlatPricesHistoricalLow(
                     shop_name="PlayStation Store",
-                    price_amount=entry["LowestEverPrice"] / 100,
+                    price_amount=entry["LowestEverPrice"] / scale,
                     price_currency=currency,
                 )
 

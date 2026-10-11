@@ -204,3 +204,73 @@ async def test_prices_for_a_different_region_than_asked_are_rejected():
 
     with pytest.raises(PlatPricesRegionMismatchError):
         await make_client().get_price_data(["222"], "IN")
+
+
+def _india_batch_response(price_currency=None):
+    # Shape checked live against PlatPrices on 2026-10-11 for Indiana Jones and the Great
+    # Circle in India: whole rupees, PriceCurrency null.
+    return httpx.Response(
+        200,
+        json={
+            "success": True,
+            "data": [
+                {
+                    "PPID": 153273,
+                    "IsOnSale": 1,
+                    "SalePrice": 3599,
+                    "DiscPerc": 40,
+                    "LowestEverPrice": 3599,
+                    "PriceCurrency": price_currency,
+                    "formattedSalePrice": "Rs 3,599",
+                }
+            ],
+            "meta": {"region": "IN"},
+        },
+    )
+
+
+@respx.mock
+async def test_zero_decimal_region_prices_are_not_divided_by_100_and_get_the_region_currency():
+    respx.get(f"{PLATPRICES_API_BASE}/regions").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": [
+                    {"region": "IN", "currencySymbol": "Rs ", "decimalPlaces": 0},
+                    {"region": "US", "currencySymbol": "$", "decimalPlaces": 2},
+                ],
+            },
+        )
+    )
+    respx.get(f"{PLATPRICES_API_BASE}/games/batch").mock(return_value=_india_batch_response())
+
+    result = await make_client().get_price_data(["153273"], "IN")
+
+    deal = result["153273"].current_deal
+    assert deal.price_amount == 3599
+    assert deal.price_currency == "INR"
+    assert result["153273"].historical_low.price_amount == 3599
+    assert result["153273"].historical_low.price_currency == "INR"
+
+
+@respx.mock
+async def test_known_zero_decimal_regions_still_work_when_regions_lookup_fails():
+    respx.get(f"{PLATPRICES_API_BASE}/regions").mock(return_value=httpx.Response(401, json={"success": False}))
+    respx.get(f"{PLATPRICES_API_BASE}/games/batch").mock(return_value=_india_batch_response())
+
+    result = await make_client().get_price_data(["153273"], "IN")
+
+    assert result["153273"].current_deal.price_amount == 3599
+
+
+@respx.mock
+async def test_price_currency_from_platprices_wins_over_the_region_default():
+    respx.get(f"{PLATPRICES_API_BASE}/regions").mock(
+        return_value=httpx.Response(200, json={"success": True, "data": [{"region": "IN", "decimalPlaces": 0}]})
+    )
+    respx.get(f"{PLATPRICES_API_BASE}/games/batch").mock(return_value=_india_batch_response(price_currency="USD"))
+
+    result = await make_client().get_price_data(["153273"], "IN")
+
+    assert result["153273"].current_deal.price_currency == "USD"
