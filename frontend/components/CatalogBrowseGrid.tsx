@@ -5,7 +5,15 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { CatalogResyncKind, GameCategory, GameSortOption, GameSummary, MediaFormat } from "../api/types";
+import type { MatchAllFilters } from "../api/games";
+import type {
+  CatalogResyncKind,
+  GameCategory,
+  GameSortOption,
+  GameSummary,
+  MediaFormat,
+  PlayStatus,
+} from "../api/types";
 import { useCollectionAddons, useCollections, useFranchiseAddons, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGames } from "../hooks/useGames";
@@ -13,6 +21,7 @@ import { usePlatforms } from "../hooks/usePlatforms";
 import { useStorefronts } from "../hooks/useStorefronts";
 import { useTags } from "../hooks/useTags";
 import { gameIdentifier } from "../utils/identifiers";
+import { matchesOwnership } from "../utils/ownershipFilter";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import CatalogResyncButton from "./CatalogResyncButton";
 import GameCard from "./GameCard";
@@ -26,14 +35,14 @@ function filterByOwnershipAndMissing(
   list: GameSummary[] | undefined,
   ownershipStatuses: OwnershipStatus[],
   ownershipExclude: boolean,
+  ownershipMatchAll: boolean | undefined,
   showMissing: boolean
 ): GameSummary[] {
   let result = list ?? [];
   if (ownershipStatuses.length > 0) {
-    result = result.filter((game) => {
-      const matches = ownershipStatuses.some((status) => (status === "owned" ? game.owned : game.wishlisted));
-      return ownershipExclude ? !matches : matches;
-    });
+    result = result.filter((game) =>
+      matchesOwnership(game, ownershipStatuses, ownershipExclude, ownershipMatchAll)
+    );
   }
   if (!showMissing) {
     result = result.filter((game) => game.owned || game.wishlisted);
@@ -88,6 +97,9 @@ const CatalogBrowseGrid = ({
   const [formatExclude, setFormatExclude] = useSessionState(`${stateKey}.formatExclude`, false);
   const [storefronts, setStorefronts] = useSessionState<string[]>(`${stateKey}.storefronts`, []);
   const [storefrontExclude, setStorefrontExclude] = useSessionState(`${stateKey}.storefrontExclude`, false);
+  const [playStatuses, setPlayStatuses] = useSessionState<PlayStatus[]>(`${stateKey}.playStatuses`, []);
+  const [playStatusExclude, setPlayStatusExclude] = useSessionState(`${stateKey}.playStatusExclude`, false);
+  const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>(`${stateKey}.matchAll`, {});
   const [steelbookOnly, setSteelbookOnly] = useSessionState(`${stateKey}.steelbookOnly`, false);
   const [sort, setSort] = useSessionState<GameSortOption>(`${stateKey}.sort`, "name_asc");
   // Off by default (unlike the Games page's default-on) — preserves the pre-existing "only
@@ -131,6 +143,9 @@ const CatalogBrowseGrid = ({
       formatExclude,
       storefronts: storefronts.length > 0 ? storefronts : undefined,
       storefrontExclude,
+      playStatuses: playStatuses.length > 0 ? playStatuses : undefined,
+      playStatusExclude,
+      matchAll,
       steelbookOnly,
       sort,
     }),
@@ -151,6 +166,9 @@ const CatalogBrowseGrid = ({
       formatExclude,
       storefronts,
       storefrontExclude,
+      playStatuses,
+      playStatusExclude,
+      matchAll,
       steelbookOnly,
       sort,
     ]
@@ -180,12 +198,12 @@ const CatalogBrowseGrid = ({
   const isAddonsLoading = isCollection ? isCollectionAddonsLoading : isFranchiseAddonsLoading;
 
   const visibleGames = useMemo(
-    () => filterByOwnershipAndMissing(games, ownershipStatuses, ownershipExclude, showMissing),
-    [games, ownershipStatuses, ownershipExclude, showMissing]
+    () => filterByOwnershipAndMissing(games, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing),
+    [games, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing]
   );
   const visibleAddons = useMemo(
-    () => filterByOwnershipAndMissing(addons, ownershipStatuses, ownershipExclude, showMissing),
-    [addons, ownershipStatuses, ownershipExclude, showMissing]
+    () => filterByOwnershipAndMissing(addons, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing),
+    [addons, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing]
   );
 
   const handleGameClick = (game: GameSummary) => navigate(`/game/${gameIdentifier(game)}`);
@@ -254,6 +272,12 @@ const CatalogBrowseGrid = ({
             onSteelbookOnlyChange={setSteelbookOnly}
             sort={sort}
             onSortChange={setSort}
+            playStatuses={playStatuses}
+            onPlayStatusesChange={setPlayStatuses}
+            playStatusExclude={playStatusExclude}
+            onPlayStatusExcludeChange={setPlayStatusExclude}
+            matchAll={matchAll}
+            onMatchAllChange={setMatchAll}
             showMissing={showMissing}
             onShowMissingChange={setShowMissing}
             includeAddons={includeAddons}

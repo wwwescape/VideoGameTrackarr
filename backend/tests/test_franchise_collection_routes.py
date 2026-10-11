@@ -6,7 +6,7 @@ from app.models.catalog import (
     GameCollection,
     GameFranchise,
 )
-from app.models.library import LibraryItem, LibraryStatus, MediaFormat
+from app.models.library import GameProgress, LibraryItem, LibraryStatus, MediaFormat, PlayStatus
 
 
 def test_list_franchises_requires_auth(client):
@@ -331,6 +331,40 @@ def test_list_collection_addons_supports_the_full_game_filter_set(
 
     assert [a["name"] for a in response.json()] == ["Digital Addon"]
 
+
+
+def test_list_collection_addons_supports_match_all_and_play_status(
+    auth_client, db_session, seed_game, seed_platform
+):
+    both_formats = Game(
+        igdb_id=5101, name="Both Formats Addon", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    digital_only = Game(
+        igdb_id=5102, name="Digital Only Addon", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id
+    )
+    db_session.add_all([both_formats, digital_only])
+    db_session.flush()
+    owned = {"platform_id": seed_platform.id, "status": LibraryStatus.OWNED}
+    db_session.add_all(
+        [
+            LibraryItem(game_id=both_formats.id, format=MediaFormat.DIGITAL, **owned),
+            LibraryItem(game_id=both_formats.id, format=MediaFormat.PHYSICAL, **owned),
+            LibraryItem(game_id=digital_only.id, format=MediaFormat.DIGITAL, **owned),
+            GameProgress(game_id=digital_only.id, platform_id=seed_platform.id, play_status=PlayStatus.COMPLETED),
+        ]
+    )
+    collection = Collection(igdb_id=5103, name="Match All Collection", slug="match-all-collection")
+    db_session.add(collection)
+    db_session.commit()
+    db_session.add(GameCollection(game_id=seed_game.id, collection_id=collection.id))
+    db_session.commit()
+    url = f"/api/collections/{collection.slug}/addons"
+
+    response = auth_client.get(url, params=[("format", "digital"), ("format", "physical"), ("formatMatchAll", "true")])
+    assert [a["name"] for a in response.json()] == ["Both Formats Addon"]
+
+    response = auth_client.get(url, params={"playStatus": "completed"})
+    assert [a["name"] for a in response.json()] == ["Digital Only Addon"]
 
 def test_list_franchise_addons_returns_addons_of_the_franchises_games(auth_client, db_session, seed_game):
     addon = Game(

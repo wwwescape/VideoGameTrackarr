@@ -29,16 +29,20 @@ import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import type { MatchAllField, MatchAllFilters } from "../api/games";
 import type {
   CatalogRefSummary,
   GameCategory,
   GameSortOption,
   MediaFormat,
   PlatformResponse,
+  PlayStatus,
   Tag,
 } from "../api/types";
 import { GAME_SORT_OPTIONS, type GameSortOptionItem } from "../utils/gameSortOptions";
@@ -60,6 +64,22 @@ interface OwnershipOption {
 const OWNERSHIP_OPTIONS: OwnershipOption[] = [
   { value: "owned", labelKey: "games.listToolbar.filterOwned" },
   { value: "wishlisted", labelKey: "games.listToolbar.filterWishlist" },
+];
+
+interface PlayStatusOption {
+  value: PlayStatus;
+  labelKey: string;
+}
+
+// Same order and labels as the progress dialog's status picker (GameProgressSection.tsx).
+// "Not started" matches a game with no status on any platform (see
+// game_repository._play_status_clause), which includes games with no progress logged at all.
+const PLAY_STATUS_OPTIONS: PlayStatusOption[] = [
+  { value: "none", labelKey: "progress.statusOptions.none" },
+  { value: "backlog", labelKey: "progress.statusOptions.backlog" },
+  { value: "playing", labelKey: "progress.statusOptions.playing" },
+  { value: "completed", labelKey: "progress.statusOptions.completed" },
+  { value: "abandoned", labelKey: "progress.statusOptions.abandoned" },
 ];
 
 interface GameTypeOption {
@@ -123,6 +143,52 @@ const ExcludeCheckbox = ({ checked, onChange, disabled }: ExcludeCheckboxProps) 
       }
       label={t("games.listToolbar.excludeLabel")}
     />
+  );
+};
+
+interface FilterFieldOptionsProps {
+  selectedCount: number;
+  exclude: boolean;
+  onExcludeChange: (value: boolean) => void;
+  // Omitted for Game Types: a game has exactly one, so "all" of two could never match.
+  matchAll?: boolean;
+  onMatchAllChange?: (value: boolean) => void;
+}
+
+// The row under each filter field: Exclude on the left and, where it makes sense, a
+// "Match any / Match all" toggle on the right. The toggle stays disabled until two values
+// are picked, since "all" of a single value is the same as "any".
+const FilterFieldOptions = ({
+  selectedCount,
+  exclude,
+  onExcludeChange,
+  matchAll = false,
+  onMatchAllChange,
+}: FilterFieldOptionsProps) => {
+  const { t } = useTranslation();
+  return (
+    <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+      <ExcludeCheckbox checked={exclude} onChange={onExcludeChange} disabled={selectedCount === 0} />
+      {onMatchAllChange ? (
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={matchAll ? "all" : "any"}
+          onChange={(_event, value: "any" | "all" | null) => {
+            if (value) onMatchAllChange(value === "all");
+          }}
+          disabled={selectedCount < 2}
+          aria-label={t("games.listToolbar.matchModeAriaLabel")}
+        >
+          <ToggleButton value="any" sx={{ py: 0.25, textTransform: "none" }}>
+            {t("games.listToolbar.matchAnyLabel")}
+          </ToggleButton>
+          <ToggleButton value="all" sx={{ py: 0.25, textTransform: "none" }}>
+            {t("games.listToolbar.matchAllLabel")}
+          </ToggleButton>
+        </ToggleButtonGroup>
+      ) : null}
+    </Stack>
   );
 };
 
@@ -207,6 +273,14 @@ interface GameListToolbarProps {
   // Steelbooks" state worth a second control for a single boolean.
   steelbookOnly?: boolean;
   onSteelbookOnlyChange?: (value: boolean) => void;
+  playStatuses: PlayStatus[];
+  onPlayStatusesChange: (value: PlayStatus[]) => void;
+  playStatusExclude: boolean;
+  onPlayStatusExcludeChange: (value: boolean) => void;
+  // Every field's Any/All choice in one map (see api/games.ts's MatchAllFilters), rather
+  // than another value/onChange prop pair per field.
+  matchAll: MatchAllFilters;
+  onMatchAllChange: (value: MatchAllFilters) => void;
   sort: GameSortOption;
   onSortChange: (value: GameSortOption) => void;
   // Optional like includeAddons below — the Games page never shows a still-undiscovered
@@ -278,6 +352,12 @@ const GameListToolbar = ({
   onStorefrontExcludeChange,
   steelbookOnly,
   onSteelbookOnlyChange,
+  playStatuses,
+  onPlayStatusesChange,
+  playStatusExclude,
+  onPlayStatusExcludeChange,
+  matchAll,
+  onMatchAllChange,
   sort,
   onSortChange,
   showMissing,
@@ -300,6 +380,13 @@ const GameListToolbar = ({
   const selectedOwnershipStatuses = OWNERSHIP_OPTIONS.filter((option) =>
     ownershipStatuses.includes(option.value)
   );
+  const selectedPlayStatuses = PLAY_STATUS_OPTIONS.filter((option) =>
+    playStatuses.includes(option.value)
+  );
+  const matchAllProps = (field: MatchAllField) => ({
+    matchAll: Boolean(matchAll[field]),
+    onMatchAllChange: (value: boolean) => onMatchAllChange({ ...matchAll, [field]: value }),
+  });
   const selectedSortOption =
     GAME_SORT_OPTIONS.find((option) => option.value === sort) ?? GAME_SORT_OPTIONS[0];
   const showStorefrontFilter = formats.includes("digital");
@@ -312,6 +399,7 @@ const GameListToolbar = ({
     gameTypes.length +
     formats.length +
     storefronts.length +
+    playStatuses.length +
     (steelbookOnly ? 1 : 0);
   const hasActiveFilters = activeFilterCount > 0;
 
@@ -356,6 +444,9 @@ const GameListToolbar = ({
     onFormatExcludeChange(false);
     onStorefrontsChange([]);
     onStorefrontExcludeChange(false);
+    onPlayStatusesChange([]);
+    onPlayStatusExcludeChange(false);
+    onMatchAllChange({});
     onSteelbookOnlyChange?.(false);
   };
 
@@ -526,10 +617,10 @@ const GameListToolbar = ({
                         placeholder={allPlaceholder}
                         fullWidth
                       />
-                      <ExcludeCheckbox
-                        checked={gameTypeExclude}
-                        onChange={onGameTypeExcludeChange}
-                        disabled={gameTypes.length === 0}
+                      <FilterFieldOptions
+                        selectedCount={gameTypes.length}
+                        exclude={gameTypeExclude}
+                        onExcludeChange={onGameTypeExcludeChange}
                       />
                     </Stack>
                   </Grid>
@@ -552,10 +643,11 @@ const GameListToolbar = ({
                         })
                       }
                     />
-                    <ExcludeCheckbox
-                      checked={tagExclude}
-                      onChange={onTagExcludeChange}
-                      disabled={tagIds.length === 0}
+                    <FilterFieldOptions
+                      selectedCount={tagIds.length}
+                      exclude={tagExclude}
+                      onExcludeChange={onTagExcludeChange}
+                      {...matchAllProps("tag")}
                     />
                   </Stack>
                 </Grid>
@@ -573,10 +665,33 @@ const GameListToolbar = ({
                       placeholder={allPlaceholder}
                       fullWidth
                     />
-                    <ExcludeCheckbox
-                      checked={ownershipExclude}
-                      onChange={onOwnershipExcludeChange}
-                      disabled={ownershipStatuses.length === 0}
+                    <FilterFieldOptions
+                      selectedCount={ownershipStatuses.length}
+                      exclude={ownershipExclude}
+                      onExcludeChange={onOwnershipExcludeChange}
+                      {...matchAllProps("ownership")}
+                    />
+                  </Stack>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Stack spacing={0.5}>
+                    <AutocompleteMultiSelect<PlayStatusOption>
+                      label={t("games.listToolbar.playStatusLabel")}
+                      options={PLAY_STATUS_OPTIONS}
+                      value={selectedPlayStatuses}
+                      onChange={(newValue) =>
+                        onPlayStatusesChange(newValue.map((option) => option.value))
+                      }
+                      getOptionLabel={(option) => t(option.labelKey)}
+                      isOptionEqualToValue={(option, val) => option.value === val.value}
+                      placeholder={allPlaceholder}
+                      fullWidth
+                    />
+                    <FilterFieldOptions
+                      selectedCount={playStatuses.length}
+                      exclude={playStatusExclude}
+                      onExcludeChange={onPlayStatusExcludeChange}
+                      {...matchAllProps("playStatus")}
                     />
                   </Stack>
                 </Grid>
@@ -594,10 +709,11 @@ const GameListToolbar = ({
                       placeholder={allPlaceholder}
                       fullWidth
                     />
-                    <ExcludeCheckbox
-                      checked={platformExclude}
-                      onChange={onPlatformExcludeChange}
-                      disabled={platformIds.length === 0}
+                    <FilterFieldOptions
+                      selectedCount={platformIds.length}
+                      exclude={platformExclude}
+                      onExcludeChange={onPlatformExcludeChange}
+                      {...matchAllProps("platform")}
                     />
                   </Stack>
                 </Grid>
@@ -615,10 +731,11 @@ const GameListToolbar = ({
                       placeholder={allPlaceholder}
                       fullWidth
                     />
-                    <ExcludeCheckbox
-                      checked={formatExclude}
-                      onChange={onFormatExcludeChange}
-                      disabled={formats.length === 0}
+                    <FilterFieldOptions
+                      selectedCount={formats.length}
+                      exclude={formatExclude}
+                      onExcludeChange={onFormatExcludeChange}
+                      {...matchAllProps("format")}
                     />
                   </Stack>
                 </Grid>
@@ -635,10 +752,11 @@ const GameListToolbar = ({
                         placeholder={allPlaceholder}
                         fullWidth
                       />
-                      <ExcludeCheckbox
-                        checked={storefrontExclude}
-                        onChange={onStorefrontExcludeChange}
-                        disabled={storefronts.length === 0}
+                      <FilterFieldOptions
+                        selectedCount={storefronts.length}
+                        exclude={storefrontExclude}
+                        onExcludeChange={onStorefrontExcludeChange}
+                        {...matchAllProps("storefront")}
                       />
                     </Stack>
                   </Grid>
@@ -671,10 +789,11 @@ const GameListToolbar = ({
                         placeholder={allPlaceholder}
                         fullWidth
                       />
-                      <ExcludeCheckbox
-                        checked={collectionExclude}
-                        onChange={onCollectionExcludeChange}
-                        disabled={collectionIds.length === 0}
+                      <FilterFieldOptions
+                        selectedCount={collectionIds.length}
+                        exclude={collectionExclude}
+                        onExcludeChange={onCollectionExcludeChange}
+                        {...matchAllProps("collection")}
                       />
                     </Stack>
                   </Grid>
@@ -694,10 +813,11 @@ const GameListToolbar = ({
                         placeholder={allPlaceholder}
                         fullWidth
                       />
-                      <ExcludeCheckbox
-                        checked={franchiseExclude}
-                        onChange={onFranchiseExcludeChange}
-                        disabled={franchiseIds.length === 0}
+                      <FilterFieldOptions
+                        selectedCount={franchiseIds.length}
+                        exclude={franchiseExclude}
+                        onExcludeChange={onFranchiseExcludeChange}
+                        {...matchAllProps("franchise")}
                       />
                     </Stack>
                   </Grid>

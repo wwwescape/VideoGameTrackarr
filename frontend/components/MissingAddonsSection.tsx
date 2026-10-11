@@ -5,7 +5,8 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { GameSortOption, MediaFormat } from "../api/types";
+import type { MatchAllFilters } from "../api/games";
+import type { GameSortOption, MediaFormat, PlayStatus } from "../api/types";
 import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useMissingAddons } from "../hooks/useInsights";
@@ -13,6 +14,7 @@ import { usePlatforms } from "../hooks/usePlatforms";
 import { useStorefronts } from "../hooks/useStorefronts";
 import { useTags } from "../hooks/useTags";
 import { gameIdentifier } from "../utils/identifiers";
+import { matchesOwnership } from "../utils/ownershipFilter";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import GameCard from "./GameCard";
 import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
@@ -40,6 +42,9 @@ const MissingAddonsSection = () => {
   const [formatExclude, setFormatExclude] = useSessionState("missingAddons.formatExclude", false);
   const [storefronts, setStorefronts] = useSessionState<string[]>("missingAddons.storefronts", []);
   const [storefrontExclude, setStorefrontExclude] = useSessionState("missingAddons.storefrontExclude", false);
+  const [playStatuses, setPlayStatuses] = useSessionState<PlayStatus[]>("missingAddons.playStatuses", []);
+  const [playStatusExclude, setPlayStatusExclude] = useSessionState("missingAddons.playStatusExclude", false);
+  const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>("missingAddons.matchAll", {});
   const [sort, setSort] = useSessionState<GameSortOption>("missingAddons.sort", "name_asc");
 
   const trimmedKeyword = searchKeyword.trim();
@@ -78,6 +83,11 @@ const MissingAddonsSection = () => {
       formatExclude,
       storefronts: storefronts.length > 0 ? storefronts : undefined,
       storefrontExclude,
+      // Filters on the owned parent game's progress, like formats/storefronts above filter
+      // on its copies (see insight_repository.find_missing_addons).
+      playStatuses: playStatuses.length > 0 ? playStatuses : undefined,
+      playStatusExclude,
+      matchAll,
       sort,
     }),
     [
@@ -95,6 +105,9 @@ const MissingAddonsSection = () => {
       formatExclude,
       storefronts,
       storefrontExclude,
+      playStatuses,
+      playStatusExclude,
+      matchAll,
       sort,
     ]
   );
@@ -111,15 +124,12 @@ const MissingAddonsSection = () => {
     return entries
       .map((entry) => ({
         ...entry,
-        missingAddons: entry.missingAddons.filter((addon) => {
-          const matches = ownershipStatuses.some((status) =>
-            status === "owned" ? addon.owned : addon.wishlisted
-          );
-          return ownershipExclude ? !matches : matches;
-        }),
+        missingAddons: entry.missingAddons.filter((addon) =>
+          matchesOwnership(addon, ownershipStatuses, ownershipExclude, matchAll.ownership)
+        ),
       }))
       .filter((entry) => entry.missingAddons.length > 0);
-  }, [entries, ownershipStatuses, ownershipExclude]);
+  }, [entries, ownershipStatuses, ownershipExclude, matchAll.ownership]);
 
   return (
     <>
@@ -167,6 +177,12 @@ const MissingAddonsSection = () => {
           onStorefrontExcludeChange={setStorefrontExclude}
           sort={sort}
           onSortChange={setSort}
+          playStatuses={playStatuses}
+          onPlayStatusesChange={setPlayStatuses}
+          playStatusExclude={playStatusExclude}
+          onPlayStatusExcludeChange={setPlayStatusExclude}
+          matchAll={matchAll}
+          onMatchAllChange={setMatchAll}
         />
       </Box>
       {!entries || entries.length === 0 ? (

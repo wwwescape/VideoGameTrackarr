@@ -8,7 +8,23 @@ import type {
   GameSummary,
   ManualGameInput,
   MediaFormat,
+  PlayStatus,
 } from "./types";
+
+// Filters with an "Any / All" choice in the Filters dialog. Each one is off ("Any": a game
+// matches if it has at least one selected value) unless set. Kept as one map, not a separate
+// flag per filter, so a page holds a single remembered value for all of them. Ownership is
+// applied client-side (it's never sent); the rest map to the backend's xxxMatchAll params.
+export type MatchAllField =
+  | "ownership"
+  | "platform"
+  | "tag"
+  | "collection"
+  | "franchise"
+  | "format"
+  | "storefront"
+  | "playStatus";
+export type MatchAllFilters = Partial<Record<MatchAllField, boolean>>;
 
 export interface GameListFilters {
   search?: string;
@@ -26,6 +42,9 @@ export interface GameListFilters {
   formatExclude?: boolean;
   storefronts?: string[];
   storefrontExclude?: boolean;
+  playStatuses?: PlayStatus[];
+  playStatusExclude?: boolean;
+  matchAll?: MatchAllFilters;
   // Plain boolean, unlike every filter above — a copy either is or isn't a Steelbook, so
   // there's no list/Exclude pair for it. See game_repository._apply_optional_game_filters.
   steelbookOnly?: boolean;
@@ -59,27 +78,42 @@ export function buildGameFilterParams(filters: GameListFilters) {
     formatExclude,
     storefronts,
     storefrontExclude,
+    playStatuses,
+    playStatusExclude,
+    matchAll,
     steelbookOnly,
     sort,
     requiredCollectionId,
     requiredFranchiseId,
   } = filters;
+  // Only sent when it can change the result: "all" of a single value is the same as "any".
+  const matchAllParam = (field: MatchAllField, values: unknown[] | undefined) =>
+    values && values.length > 1 && matchAll?.[field] ? true : undefined;
   return {
     search: search || undefined,
     platformId: platformIds?.length ? platformIds : undefined,
     platformExclude: platformIds?.length ? platformExclude : undefined,
+    platformMatchAll: matchAllParam("platform", platformIds),
     tagId: tagIds?.length ? tagIds : undefined,
     tagExclude: tagIds?.length ? tagExclude : undefined,
+    tagMatchAll: matchAllParam("tag", tagIds),
     collectionId: collectionIds?.length ? collectionIds : undefined,
     collectionExclude: collectionIds?.length ? collectionExclude : undefined,
+    collectionMatchAll: matchAllParam("collection", collectionIds),
     franchiseId: franchiseIds?.length ? franchiseIds : undefined,
     franchiseExclude: franchiseIds?.length ? franchiseExclude : undefined,
+    franchiseMatchAll: matchAllParam("franchise", franchiseIds),
     category: categories?.length ? categories : undefined,
     categoryExclude: categories?.length ? categoryExclude : undefined,
     format: formats?.length ? formats : undefined,
     formatExclude: formats?.length ? formatExclude : undefined,
+    formatMatchAll: matchAllParam("format", formats),
     storefront: storefronts?.length ? storefronts : undefined,
     storefrontExclude: storefronts?.length ? storefrontExclude : undefined,
+    storefrontMatchAll: matchAllParam("storefront", storefronts),
+    playStatus: playStatuses?.length ? playStatuses : undefined,
+    playStatusExclude: playStatuses?.length ? playStatusExclude : undefined,
+    playStatusMatchAll: matchAllParam("playStatus", playStatuses),
     steelbookOnly: steelbookOnly || undefined,
     sort: sort || undefined,
     requiredCollectionId,

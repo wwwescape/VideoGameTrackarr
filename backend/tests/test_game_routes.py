@@ -3,7 +3,17 @@ from datetime import UTC, datetime
 
 from app.models.catalog import Collection, Franchise, Game, GameCategory, GameCollection, GameFranchise, Platform
 from app.models.itad import ItadPriceCache
-from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, MediaFormat, Note, PlaySession, Tag
+from app.models.library import (
+    GameProgress,
+    GameTag,
+    LibraryItem,
+    LibraryStatus,
+    MediaFormat,
+    Note,
+    PlaySession,
+    PlayStatus,
+    Tag,
+)
 from app.services import game_service
 
 
@@ -430,6 +440,194 @@ def test_list_games_category_exclude_shows_everything_except_selected(auth_clien
 
     assert [g["name"] for g in response.json()] == ["Bundle Game"]
 
+
+
+def _seed_tagged_games(db_session, seed_game):
+    """Test Game: Roguelike + Metroidvania; Roguelike Only: Roguelike; Untagged: none."""
+    roguelike_only = Game(igdb_id=2400, name="Roguelike Only", category=GameCategory.MAIN_GAME)
+    untagged = Game(igdb_id=2401, name="Untagged", category=GameCategory.MAIN_GAME)
+    tag_a = Tag(name="Roguelike")
+    tag_b = Tag(name="Metroidvania")
+    db_session.add_all([roguelike_only, untagged, tag_a, tag_b])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameTag(game_id=seed_game.id, tag_id=tag_a.id),
+            GameTag(game_id=seed_game.id, tag_id=tag_b.id),
+            GameTag(game_id=roguelike_only.id, tag_id=tag_a.id),
+        ]
+    )
+    db_session.commit()
+    return tag_a, tag_b
+
+
+def test_list_games_tag_match_all_requires_every_selected_tag(auth_client, db_session, seed_game):
+    tag_a, tag_b = _seed_tagged_games(db_session, seed_game)
+    params = [("tagId", tag_a.id), ("tagId", tag_b.id)]
+
+    any_response = auth_client.get("/api/games", params=params)
+    assert {g["name"] for g in any_response.json()} == {"Test Game", "Roguelike Only"}
+
+    all_response = auth_client.get("/api/games", params=[*params, ("tagMatchAll", "true")])
+    assert [g["name"] for g in all_response.json()] == ["Test Game"]
+
+
+def test_list_games_tag_match_all_with_exclude_hides_only_games_with_every_tag(
+    auth_client, db_session, seed_game
+):
+    tag_a, tag_b = _seed_tagged_games(db_session, seed_game)
+
+    response = auth_client.get(
+        "/api/games",
+        params=[("tagId", tag_a.id), ("tagId", tag_b.id), ("tagMatchAll", "true"), ("tagExclude", "true")],
+    )
+
+    assert [g["name"] for g in response.json()] == ["Roguelike Only", "Untagged"]
+
+
+def test_list_games_platform_format_and_storefront_match_all_need_a_copy_for_each_value(
+    auth_client, db_session, seed_game, seed_platform, seed_pc_platform
+):
+    single_copy = Game(igdb_id=2402, name="PS5 Only", category=GameCategory.MAIN_GAME)
+    db_session.add(single_copy)
+    db_session.commit()
+    db_session.add_all(
+        [
+            LibraryItem(
+                game_id=seed_game.id,
+                platform_id=seed_platform.id,
+                status=LibraryStatus.OWNED,
+                format=MediaFormat.DIGITAL,
+                digital_storefront="PlayStation Store",
+            ),
+            LibraryItem(
+                game_id=seed_game.id,
+                platform_id=seed_pc_platform.id,
+                status=LibraryStatus.OWNED,
+                format=MediaFormat.DIGITAL,
+                digital_storefront="Steam",
+            ),
+            LibraryItem(
+                game_id=seed_game.id,
+                platform_id=seed_platform.id,
+                status=LibraryStatus.OWNED,
+                format=MediaFormat.PHYSICAL,
+            ),
+            LibraryItem(
+                game_id=single_copy.id,
+                platform_id=seed_platform.id,
+                status=LibraryStatus.OWNED,
+                format=MediaFormat.DIGITAL,
+                digital_storefront="Steam",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    platforms = [("platformId", seed_platform.id), ("platformId", seed_pc_platform.id)]
+    response = auth_client.get("/api/games", params=platforms)
+    assert {g["name"] for g in response.json()} == {"Test Game", "PS5 Only"}
+    response = auth_client.get("/api/games", params=[*platforms, ("platformMatchAll", "true")])
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    formats = [("format", "physical"), ("format", "digital"), ("formatMatchAll", "true")]
+    response = auth_client.get("/api/games", params=formats)
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    storefronts = [("storefront", "Steam"), ("storefront", "PlayStation Store"), ("storefrontMatchAll", "true")]
+    response = auth_client.get("/api/games", params=storefronts)
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+
+def test_list_games_collection_and_franchise_match_all(auth_client, db_session, seed_game):
+    other_game = Game(igdb_id=2403, name="Other Game", category=GameCategory.MAIN_GAME)
+    collection_a = Collection(igdb_id=2404, name="Collection A", slug="collection-a")
+    collection_b = Collection(igdb_id=2405, name="Collection B", slug="collection-b")
+    franchise_a = Franchise(igdb_id=2406, name="Franchise A", slug="franchise-a")
+    franchise_b = Franchise(igdb_id=2407, name="Franchise B", slug="franchise-b")
+    db_session.add_all([other_game, collection_a, collection_b, franchise_a, franchise_b])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameCollection(game_id=seed_game.id, collection_id=collection_a.id),
+            GameCollection(game_id=seed_game.id, collection_id=collection_b.id),
+            GameCollection(game_id=other_game.id, collection_id=collection_a.id),
+            GameFranchise(game_id=seed_game.id, franchise_id=franchise_a.id),
+            GameFranchise(game_id=seed_game.id, franchise_id=franchise_b.id),
+            GameFranchise(game_id=other_game.id, franchise_id=franchise_b.id),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get(
+        "/api/games",
+        params=[("collectionId", collection_a.id), ("collectionId", collection_b.id), ("collectionMatchAll", "true")],
+    )
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    response = auth_client.get(
+        "/api/games",
+        params=[("franchiseId", franchise_a.id), ("franchiseId", franchise_b.id), ("franchiseMatchAll", "true")],
+    )
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+
+def _seed_play_statuses(db_session, seed_game, seed_platform, seed_pc_platform):
+    """Test Game: Playing on PS5 + Completed on PC. Abandoned Game: Abandoned. Fresh Game:
+    no progress row at all. Explicit None: a progress row whose status was left at none."""
+    abandoned = Game(igdb_id=2408, name="Abandoned Game", category=GameCategory.MAIN_GAME)
+    fresh = Game(igdb_id=2409, name="Fresh Game", category=GameCategory.MAIN_GAME)
+    explicit_none = Game(igdb_id=2410, name="Explicit None", category=GameCategory.MAIN_GAME)
+    db_session.add_all([abandoned, fresh, explicit_none])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING),
+            GameProgress(game_id=seed_game.id, platform_id=seed_pc_platform.id, play_status=PlayStatus.COMPLETED),
+            GameProgress(game_id=abandoned.id, platform_id=seed_platform.id, play_status=PlayStatus.ABANDONED),
+            GameProgress(game_id=explicit_none.id, platform_id=seed_platform.id, play_status=PlayStatus.NONE),
+        ]
+    )
+    db_session.commit()
+
+
+def test_list_games_filters_by_play_status_on_any_platform(
+    auth_client, db_session, seed_game, seed_platform, seed_pc_platform
+):
+    _seed_play_statuses(db_session, seed_game, seed_platform, seed_pc_platform)
+
+    # Test Game's card shows Playing (the priority pick), but its PC copy is Completed, so
+    # it still matches a Completed filter.
+    response = auth_client.get("/api/games", params={"playStatus": "completed"})
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    response = auth_client.get("/api/games", params=[("playStatus", "abandoned"), ("playStatus", "playing")])
+    assert [g["name"] for g in response.json()] == ["Abandoned Game", "Test Game"]
+
+
+def test_list_games_play_status_none_means_not_started_on_any_platform(
+    auth_client, db_session, seed_game, seed_platform, seed_pc_platform
+):
+    _seed_play_statuses(db_session, seed_game, seed_platform, seed_pc_platform)
+
+    response = auth_client.get("/api/games", params={"playStatus": "none"})
+    assert [g["name"] for g in response.json()] == ["Explicit None", "Fresh Game"]
+
+    response = auth_client.get("/api/games", params=[("playStatus", "none"), ("playStatus", "abandoned")])
+    assert [g["name"] for g in response.json()] == ["Abandoned Game", "Explicit None", "Fresh Game"]
+
+
+def test_list_games_play_status_match_all_and_exclude(
+    auth_client, db_session, seed_game, seed_platform, seed_pc_platform
+):
+    _seed_play_statuses(db_session, seed_game, seed_platform, seed_pc_platform)
+    both = [("playStatus", "playing"), ("playStatus", "completed")]
+
+    response = auth_client.get("/api/games", params=[*both, ("playStatusMatchAll", "true")])
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    response = auth_client.get("/api/games", params={"playStatus": "completed", "playStatusExclude": "true"})
+    assert [g["name"] for g in response.json()] == ["Abandoned Game", "Explicit None", "Fresh Game"]
 
 def test_list_games_defaults_to_name_ascending(auth_client, db_session):
     db_session.add_all(

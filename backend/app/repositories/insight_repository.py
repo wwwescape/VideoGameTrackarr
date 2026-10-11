@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, aliased, joinedload
 
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory, AccessoryDeviceLink, UserAccessory, UserDevice
-from app.models.library import LibraryItem, LibraryStatus, MediaFormat
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PlayStatus
 from app.repositories.game_repository import GameSortOption, _apply_optional_game_filters
 
 # Mirrors the frontend's ADDON_DISPLAY_CATEGORIES (GameAddonsTab.tsx) — bundles, standalone
@@ -39,18 +39,27 @@ def find_missing_addons(
     search: str | None = None,
     platform_ids: list[int] | None = None,
     platform_exclude: bool = False,
+    platform_match_all: bool = False,
     tag_ids: list[int] | None = None,
     tag_exclude: bool = False,
+    tag_match_all: bool = False,
     collection_ids: list[int] | None = None,
     collection_exclude: bool = False,
+    collection_match_all: bool = False,
     franchise_ids: list[int] | None = None,
     franchise_exclude: bool = False,
+    franchise_match_all: bool = False,
     categories: list[GameCategory] | None = None,
     category_exclude: bool = False,
     formats: list[MediaFormat] | None = None,
     format_exclude: bool = False,
+    format_match_all: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    storefront_match_all: bool = False,
+    play_statuses: list[PlayStatus] | None = None,
+    play_status_exclude: bool = False,
+    play_status_match_all: bool = False,
     steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[tuple[Game, list[tuple[Game, bool]]]]:
@@ -87,18 +96,27 @@ def find_missing_addons(
         search=search,
         platform_ids=platform_ids,
         platform_exclude=platform_exclude,
+        platform_match_all=platform_match_all,
         tag_ids=tag_ids,
         tag_exclude=tag_exclude,
+        tag_match_all=tag_match_all,
         collection_ids=collection_ids,
         collection_exclude=collection_exclude,
+        collection_match_all=collection_match_all,
         franchise_ids=franchise_ids,
         franchise_exclude=franchise_exclude,
+        franchise_match_all=franchise_match_all,
         categories=categories,
         category_exclude=category_exclude,
         formats=formats,
         format_exclude=format_exclude,
+        format_match_all=format_match_all,
         storefronts=storefronts,
         storefront_exclude=storefront_exclude,
+        storefront_match_all=storefront_match_all,
+        play_statuses=play_statuses,
+        play_status_exclude=play_status_exclude,
+        play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
         sort=sort,
     )

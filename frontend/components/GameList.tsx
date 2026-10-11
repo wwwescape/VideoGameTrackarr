@@ -6,7 +6,8 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { GameCategory, GameSortOption, GameSummary, MediaFormat } from "../api/types";
+import type { MatchAllFilters } from "../api/games";
+import type { GameCategory, GameSortOption, GameSummary, MediaFormat, PlayStatus } from "../api/types";
 import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDeleteGame, useGames } from "../hooks/useGames";
@@ -15,6 +16,7 @@ import { useStorefronts } from "../hooks/useStorefronts";
 import { useTags } from "../hooks/useTags";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { gameIdentifier } from "../utils/identifiers";
+import { matchesOwnership } from "../utils/ownershipFilter";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import { showUndoToast } from "./UndoToast";
 import GameCard from "./GameCard";
@@ -45,6 +47,9 @@ const GameList = () => {
   const [formatExclude, setFormatExclude] = useSessionState("games.formatExclude", false);
   const [storefronts, setStorefronts] = useSessionState<string[]>("games.storefronts", []);
   const [storefrontExclude, setStorefrontExclude] = useSessionState("games.storefrontExclude", false);
+  const [playStatuses, setPlayStatuses] = useSessionState<PlayStatus[]>("games.playStatuses", []);
+  const [playStatusExclude, setPlayStatusExclude] = useSessionState("games.playStatusExclude", false);
+  const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>("games.matchAll", {});
   const [steelbookOnly, setSteelbookOnly] = useSessionState("games.steelbookOnly", false);
   const [sort, setSort] = useSessionState<GameSortOption>("games.sort", "name_asc");
   const [selectionMode, setSelectionMode] = useState(false);
@@ -93,6 +98,9 @@ const GameList = () => {
       formatExclude,
       storefronts: storefronts.length > 0 ? storefronts : undefined,
       storefrontExclude,
+      playStatuses: playStatuses.length > 0 ? playStatuses : undefined,
+      playStatusExclude,
+      matchAll,
       steelbookOnly,
       sort,
     }),
@@ -113,6 +121,9 @@ const GameList = () => {
       formatExclude,
       storefronts,
       storefrontExclude,
+      playStatuses,
+      playStatusExclude,
+      matchAll,
       steelbookOnly,
       sort,
     ]
@@ -137,15 +148,12 @@ const GameList = () => {
     // GameCard.tsx) since it was never "missing" in that sense.
     let list = games.filter((game) => !(game.autoDiscovered && !game.owned && !game.wishlisted));
     if (ownershipStatuses.length > 0) {
-      list = list.filter((game) => {
-        const matches = ownershipStatuses.some((status) =>
-          status === "owned" ? game.owned : game.wishlisted
-        );
-        return ownershipExclude ? !matches : matches;
-      });
+      list = list.filter((game) =>
+        matchesOwnership(game, ownershipStatuses, ownershipExclude, matchAll.ownership)
+      );
     }
     return list;
-  }, [games, ownershipStatuses, ownershipExclude]);
+  }, [games, ownershipStatuses, ownershipExclude, matchAll.ownership]);
 
   const visibleGames = useMemo(
     () => filteredGames.filter((game) => !isPending(game.id)),
@@ -297,6 +305,12 @@ const GameList = () => {
           onSteelbookOnlyChange={setSteelbookOnly}
           sort={sort}
           onSortChange={setSort}
+          playStatuses={playStatuses}
+          onPlayStatusesChange={setPlayStatuses}
+          playStatusExclude={playStatusExclude}
+          onPlayStatusExcludeChange={setPlayStatusExclude}
+          matchAll={matchAll}
+          onMatchAllChange={setMatchAll}
         />
       </Box>
       {/* Contains z-index in here to its own stacking context — otherwise MUI's

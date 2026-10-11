@@ -1,8 +1,9 @@
 import enum
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, case, delete, exists, select, update
+from sqlalchemy import ColumnElement, Select, and_, case, delete, exists, or_, select, update
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import (
@@ -154,28 +155,64 @@ def _maybe_negate(clause: ColumnElement[bool], exclude: bool) -> ColumnElement[b
     return ~clause if exclude else clause
 
 
+
+def _match_values(
+    build: Callable[[list[Any]], ColumnElement[bool]], values: list[Any], match_all: bool
+) -> ColumnElement[bool]:
+    """A list filter's "Any"/"All" choice. Any is one clause over every selected value
+    ("has at least one of these"); All is one clause per value, ANDed ("has every one of
+    these"). Both go through the same builder, so Exclude (_maybe_negate) composes with
+    either: Exclude + All hides only games that match every selected value."""
+    if match_all and len(values) > 1:
+        return and_(*(build([value]) for value in values))
+    return build(values)
+
+
+def _play_status_clause(statuses: list[PlayStatus]) -> ColumnElement[bool]:
+    """Matches when *any* of the game's platforms has one of these statuses, the same "any
+    copy" rule the platform/format filters use, not the single priority-picked status a card
+    shows (_play_status_subquery). NONE ("Not started") can't be a plain IN value: most
+    unstarted games have no GameProgress row at all, so it means "no platform has a real
+    status yet" instead."""
+    clauses = []
+    started = [status for status in statuses if status != PlayStatus.NONE]
+    if started:
+        clauses.append(exists().where(GameProgress.game_id == Game.id, GameProgress.play_status.in_(started)))
+    if PlayStatus.NONE in statuses:
+        clauses.append(~exists().where(GameProgress.game_id == Game.id, GameProgress.play_status != PlayStatus.NONE))
+    return or_(*clauses)
+
 def _apply_optional_game_filters(
     stmt: Select[Any],
     *,
     search: str | None = None,
     platform_ids: list[int] | None = None,
     platform_exclude: bool = False,
+    platform_match_all: bool = False,
     tag_ids: list[int] | None = None,
     tag_exclude: bool = False,
+    tag_match_all: bool = False,
     collection_ids: list[int] | None = None,
     collection_exclude: bool = False,
+    collection_match_all: bool = False,
     franchise_ids: list[int] | None = None,
     franchise_exclude: bool = False,
+    franchise_match_all: bool = False,
     categories: list[GameCategory] | None = None,
     category_exclude: bool = False,
     formats: list[MediaFormat] | None = None,
     format_exclude: bool = False,
+    format_match_all: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    storefront_match_all: bool = False,
+    play_statuses: list[PlayStatus] | None = None,
+    play_status_exclude: bool = False,
+    play_status_match_all: bool = False,
     steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> Select[Any]:
-    """The Games list's whole optional filter set (search + 7 dimensions + sort), factored
+    """The Games list's whole optional filter set (search + 8 dimensions + sort), factored
     out of list_top_level_games so the Collection/Series "Addons" queries
     (collection_repository.list_addons_for_collection / franchise_repository.list_addons_for_franchise)
     can offer the exact same filters against a differently-scoped base query, with zero
@@ -185,33 +222,61 @@ def _apply_optional_game_filters(
     if platform_ids:
         # The platform of the user's *owned/wishlisted copy* (library_items), not
         # game_platforms — IGDB's full list of platforms a game was ever released on.
-        clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(platform_ids))
+        clause = _match_values(
+            lambda ids: exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(ids)),
+            platform_ids,
+            platform_match_all,
+        )
         stmt = stmt.where(_maybe_negate(clause, platform_exclude))
     if tag_ids:
-        clause = exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(tag_ids))
+        clause = _match_values(
+            lambda ids: exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(ids)),
+            tag_ids,
+            tag_match_all,
+        )
         stmt = stmt.where(_maybe_negate(clause, tag_exclude))
     if categories:
-        # No need to also validate against _BROWSABLE_CATEGORIES here — list_top_level_games'
+        # No "match all" here: a game has exactly one category, so "all of two" could never
+        # match. No need to also validate against _BROWSABLE_CATEGORIES here — list_top_level_games'
         # own base .where() already restricts every row to that set (or NULL) before this
         # runs, so an out-of-range value here would just AND down to zero rows rather than
         # leaking a non-browsable category. The addons queries have no such base restriction,
         # but addons are never browsable-category anyway, so the same reasoning holds.
         stmt = stmt.where(_maybe_negate(Game.category.in_(categories), category_exclude))
     if collection_ids:
-        clause = exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id.in_(collection_ids))
+        clause = _match_values(
+            lambda ids: exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id.in_(ids)),
+            collection_ids,
+            collection_match_all,
+        )
         stmt = stmt.where(_maybe_negate(clause, collection_exclude))
     if franchise_ids:
-        clause = exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id.in_(franchise_ids))
+        clause = _match_values(
+            lambda ids: exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id.in_(ids)),
+            franchise_ids,
+            franchise_match_all,
+        )
         stmt = stmt.where(_maybe_negate(clause, franchise_exclude))
     if formats:
         # Same "does this game have *any* library copy matching" shape as platform_ids above
         # — an independent exists() subquery, not correlated to the platform/storefront
         # filters' own matched row.
-        clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.format.in_(formats))
+        clause = _match_values(
+            lambda values: exists().where(LibraryItem.game_id == Game.id, LibraryItem.format.in_(values)),
+            formats,
+            format_match_all,
+        )
         stmt = stmt.where(_maybe_negate(clause, format_exclude))
     if storefronts:
-        clause = exists().where(LibraryItem.game_id == Game.id, LibraryItem.digital_storefront.in_(storefronts))
+        clause = _match_values(
+            lambda values: exists().where(LibraryItem.game_id == Game.id, LibraryItem.digital_storefront.in_(values)),
+            storefronts,
+            storefront_match_all,
+        )
         stmt = stmt.where(_maybe_negate(clause, storefront_exclude))
+    if play_statuses:
+        clause = _match_values(_play_status_clause, play_statuses, play_status_match_all)
+        stmt = stmt.where(_maybe_negate(clause, play_status_exclude))
     if steelbook_only:
         # A plain presence check, unlike the list-based filters above — no Exclude toggle,
         # since "not a Steelbook" isn't a meaningful thing to filter for on its own.
@@ -224,18 +289,27 @@ def list_top_level_games(
     search: str | None = None,
     platform_ids: list[int] | None = None,
     platform_exclude: bool = False,
+    platform_match_all: bool = False,
     tag_ids: list[int] | None = None,
     tag_exclude: bool = False,
+    tag_match_all: bool = False,
     collection_ids: list[int] | None = None,
     collection_exclude: bool = False,
+    collection_match_all: bool = False,
     franchise_ids: list[int] | None = None,
     franchise_exclude: bool = False,
+    franchise_match_all: bool = False,
     categories: list[GameCategory] | None = None,
     category_exclude: bool = False,
     formats: list[MediaFormat] | None = None,
     format_exclude: bool = False,
+    format_match_all: bool = False,
     storefronts: list[str] | None = None,
     storefront_exclude: bool = False,
+    storefront_match_all: bool = False,
+    play_statuses: list[PlayStatus] | None = None,
+    play_status_exclude: bool = False,
+    play_status_match_all: bool = False,
     steelbook_only: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
@@ -265,18 +339,27 @@ def list_top_level_games(
         search=search,
         platform_ids=platform_ids,
         platform_exclude=platform_exclude,
+        platform_match_all=platform_match_all,
         tag_ids=tag_ids,
         tag_exclude=tag_exclude,
+        tag_match_all=tag_match_all,
         collection_ids=collection_ids,
         collection_exclude=collection_exclude,
+        collection_match_all=collection_match_all,
         franchise_ids=franchise_ids,
         franchise_exclude=franchise_exclude,
+        franchise_match_all=franchise_match_all,
         categories=categories,
         category_exclude=category_exclude,
         formats=formats,
         format_exclude=format_exclude,
+        format_match_all=format_match_all,
         storefronts=storefronts,
         storefront_exclude=storefront_exclude,
+        storefront_match_all=storefront_match_all,
+        play_statuses=play_statuses,
+        play_status_exclude=play_status_exclude,
+        play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
         sort=sort,
     )

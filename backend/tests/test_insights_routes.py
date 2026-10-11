@@ -1,7 +1,7 @@
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import AccessoryDeviceLink, UserAccessory, UserDevice
 from app.models.itad import ItadPriceCache
-from app.models.library import LibraryItem, LibraryStatus, MediaFormat
+from app.models.library import GameProgress, LibraryItem, LibraryStatus, MediaFormat, PlayStatus
 from app.models.platprices import PlatPricesCache
 
 
@@ -217,6 +217,28 @@ def test_missing_addons_filters_by_steelbook_only(auth_client, db_session, seed_
     response = auth_client.get("/api/insights/missing-addons")
     assert {e["game"]["name"] for e in response.json()} == {"Test Game", "Non-Steelbook Owned Game"}
 
+
+
+def test_missing_addons_filters_by_the_owned_parents_play_status(auth_client, db_session, seed_game, seed_platform):
+    other_game = Game(igdb_id=9030, name="Unstarted Owned Game", category=GameCategory.MAIN_GAME)
+    db_session.add(other_game)
+    db_session.flush()
+    db_session.add_all(
+        [
+            Game(igdb_id=9031, name="Unstarted DLC", category=GameCategory.DLC_ADDON, parent_game_id=other_game.id),
+            Game(igdb_id=9032, name="Playing DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id),
+            LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+            LibraryItem(game_id=other_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+            GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/missing-addons", params={"playStatus": "playing"})
+    assert [e["game"]["name"] for e in response.json()] == ["Test Game"]
+
+    response = auth_client.get("/api/insights/missing-addons", params={"playStatus": "none"})
+    assert [e["game"]["name"] for e in response.json()] == ["Unstarted Owned Game"]
 
 def test_missing_addons_excludes_non_dlc_like_categories(auth_client, db_session, seed_game, seed_platform):
     bundle = Game(igdb_id=9004, name="GOTY Edition", category=GameCategory.BUNDLE, parent_game_id=seed_game.id)
