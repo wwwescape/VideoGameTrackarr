@@ -11,9 +11,11 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -46,6 +48,7 @@ import {
   useUnlinkSteamWishlistEntry,
 } from "../hooks/useIntegrations";
 import { useJobsList, useRunJob } from "../hooks/useJobs";
+import { useSessionState } from "../hooks/useSessionState";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import RelinkSteamEntryDialog, { type RelinkTarget } from "./RelinkSteamEntryDialog";
@@ -75,6 +78,13 @@ const isRowActionable = (row: SyncRow) =>
   row.source === "owned"
     ? row.entry.status === "new" || row.entry.status === "update_available"
     : row.entry.status === "new";
+
+// Rows with nothing left to do — what "Hide synced" hides. No catalog match stays visible:
+// those may still need "Add as custom game".
+const isRowDone = (row: SyncRow) =>
+  row.entry.status === "up_to_date" ||
+  row.entry.status === "already_wishlisted" ||
+  row.entry.status === "ignored";
 
 const OWNED_STATUS_CHIP: Record<
   SteamEntryStatus,
@@ -160,6 +170,7 @@ const SteamSyncPage = () => {
   const [unlinkTarget, setUnlinkTarget] = useState<SyncRow | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [hideSynced, setHideSynced] = useSessionState("steamSync.hideSynced", false);
 
   const isImporting = jobs?.find((job) => job.id === STEAM_IMPORT_JOB_ID)?.run.status === "running";
 
@@ -169,7 +180,20 @@ const SteamSyncPage = () => {
     return combined;
   }, [ownedEntries, wishlistEntries]);
 
-  const visibleTrees = trees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  // What the table pages over. With "Hide synced" on, done rows drop out — except a done
+  // parent whose DLC still has something to sync, which stays so those children are reachable.
+  const displayedTrees = useMemo(() => {
+    if (!hideSynced) return trees;
+    return trees
+      .map((tree) => ({ row: tree.row, children: tree.children.filter((child) => !isRowDone(child)) }))
+      .filter((tree) => !isRowDone(tree.row) || tree.children.length > 0);
+  }, [trees, hideSynced]);
+
+  // Clamped so the page never points past the end, e.g. once a sync makes rows disappear
+  // while "Hide synced" is on.
+  const lastPage = Math.max(0, Math.ceil(displayedTrees.length / rowsPerPage) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const visibleTrees = displayedTrees.slice(currentPage * rowsPerPage, currentPage * rowsPerPage + rowsPerPage);
 
   // Flattened top-level rows + their DLC children, across every page — used for resolving
   // "Sync selected" (a selection can span pages) into the actual rows to sync, and for the
@@ -198,6 +222,10 @@ const SteamSyncPage = () => {
   // syncable row on every page (only worth offering when other pages have more).
   const showSelectAllNotice =
     currentPageFullySelected && allActionableKeys.length > actionableCurrentPageRows.length;
+  // A page can hold nothing syncable at all (e.g. only up-to-date games) while other pages
+  // still do — the header checkbox has nothing to tick there, so offer "Select all" directly.
+  const showNothingOnPageNotice =
+    !allActionableSelected && actionableCurrentPageRows.length === 0 && allActionableKeys.length > 0;
 
   // The currently *visible* (rendered) row order on this page — top-level rows plus any
   // expanded children, in on-screen order — used for shift-click range selection, since a
@@ -518,58 +546,58 @@ const SteamSyncPage = () => {
             }),
           }}
         >
-          {selected.length > 0 ? (
-            <>
-              <Typography sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }} color="inherit" variant="subtitle1">
-                {t("insights.steamSync.selectedCount", { count: selected.length })}
-              </Typography>
-              <Box
-                sx={{
-                  // Its own full-width row under the count and Sync button on phones.
-                  flex: "1 1 auto",
-                  order: { xs: 1, sm: 0 },
-                  flexBasis: { xs: "100%", sm: "auto" },
-                  pb: { xs: 1, sm: 0 },
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  columnGap: 0.5,
-                  px: 1,
-                  textAlign: "center",
-                }}
-              >
-                {allActionableSelected && allActionableKeys.length > actionableCurrentPageRows.length ? (
-                  <>
-                    <Typography variant="body2">
-                      {t("insights.steamSync.allSelectedNotice", { count: allActionableKeys.length })}
-                    </Typography>
-                    <Button size="small" onClick={() => setSelected([])}>
-                      {t("insights.steamSync.clearSelectionButton")}
-                    </Button>
-                  </>
-                ) : showSelectAllNotice ? (
-                  <>
-                    <Typography variant="body2">
-                      {t("insights.steamSync.pageSelectedNotice", {
+          <Typography
+            sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }}
+            color="inherit"
+            variant={selected.length > 0 ? "subtitle1" : "h6"}
+          >
+            {selected.length > 0
+              ? t("insights.steamSync.selectedCount", { count: selected.length })
+              : t("insights.steamSync.tableHeading")}
+          </Typography>
+          <Box
+            sx={{
+              // Its own full-width row under the count and Sync button on phones.
+              flex: "1 1 auto",
+              order: { xs: 1, sm: 0 },
+              flexBasis: { xs: "100%", sm: "auto" },
+              pb: { xs: 1, sm: 0 },
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "center",
+              columnGap: 0.5,
+              px: 1,
+              textAlign: "center",
+            }}
+          >
+            {allActionableSelected && allActionableKeys.length > actionableCurrentPageRows.length ? (
+              <>
+                <Typography variant="body2">
+                  {t("insights.steamSync.allSelectedNotice", { count: allActionableKeys.length })}
+                </Typography>
+                <Button size="small" onClick={() => setSelected([])}>
+                  {t("insights.steamSync.clearSelectionButton")}
+                </Button>
+              </>
+            ) : showSelectAllNotice || showNothingOnPageNotice ? (
+              <>
+                <Typography variant="body2">
+                  {showSelectAllNotice
+                    ? t("insights.steamSync.pageSelectedNotice", {
                         count: actionableCurrentPageRows.length,
-                      })}
-                    </Typography>
-                    <Button size="small" onClick={() => setSelected(allActionableKeys)}>
-                      {t("insights.steamSync.selectAllAcrossPagesButton", {
-                        count: allActionableKeys.length,
-                      })}
-                    </Button>
-                  </>
-                ) : null}
-              </Box>
-            </>
-          ) : (
-            <Typography sx={{ flex: "1 1 100%" }} variant="h6">
-              {t("insights.steamSync.tableHeading")}
-            </Typography>
-          )}
-          {selected.length > 0 && (
+                      })
+                    : t("insights.steamSync.nothingOnPageNotice")}
+                </Typography>
+                <Button size="small" onClick={() => setSelected(allActionableKeys)}>
+                  {t("insights.steamSync.selectAllAcrossPagesButton", {
+                    count: allActionableKeys.length,
+                  })}
+                </Button>
+              </>
+            ) : null}
+          </Box>
+          {selected.length > 0 ? (
             <Button
               startIcon={<SyncIcon />}
               onClick={() =>
@@ -588,12 +616,32 @@ const SteamSyncPage = () => {
             >
               {t("insights.steamSync.syncSelectedButton")}
             </Button>
+          ) : (
+            <Tooltip title={t("insights.steamSync.hideSyncedTooltip")} describeChild>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={hideSynced}
+                    onChange={(event) => {
+                      setHideSynced(event.target.checked);
+                      setPage(0);
+                    }}
+                  />
+                }
+                label={t("insights.steamSync.hideSyncedLabel")}
+                sx={{ flexShrink: 0, mr: 0 }}
+              />
+            </Tooltip>
           )}
         </Toolbar>
 
         {trees.length === 0 ? (
           <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
             {t("insights.steamSync.emptyState")}
+          </Box>
+        ) : displayedTrees.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+            {t("insights.steamSync.allSyncedState")}
           </Box>
         ) : (
           <TableContainer>
@@ -791,8 +839,8 @@ const SteamSyncPage = () => {
         )}
         <TablePagination
           component="div"
-          count={trees.length}
-          page={page}
+          count={displayedTrees.length}
+          page={currentPage}
           onPageChange={(_event, newPage) => setPage(newPage)}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(event) => {

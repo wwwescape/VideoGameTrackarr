@@ -120,3 +120,79 @@ describe("SteamSyncPage select all", { timeout: 20_000 }, () => {
     expect(screen.queryByRole("button", { name: /Select all/ })).not.toBeInTheDocument();
   });
 });
+
+// 26 up-to-date entries sort first ("Aaa …"), filling all of page 1, then 5 syncable ones.
+function makeMostlySyncedEntries(): SteamEntry[] {
+  const synced = Array.from({ length: 26 }, (_, i) =>
+    entry(2000 + i, `Aaa Synced ${String(i + 1).padStart(2, "0")}`, "up_to_date")
+  );
+  const syncable = Array.from({ length: 5 }, (_, i) => entry(3000 + i, `Game ${i + 1}`, "new"));
+  return [...synced, ...syncable];
+}
+
+const hideSyncedSwitch = () => screen.getByLabelText("Hide synced");
+
+describe("SteamSyncPage on pages with nothing to sync, and Hide synced", { timeout: 20_000 }, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.sessionStorage.clear();
+    ownedEntries = makeMostlySyncedEntries();
+  });
+
+  it("offers Select all from a page that has nothing syncable on it", () => {
+    renderPage();
+
+    expect(headerCheckbox()).toBeDisabled();
+    expect(screen.getByText("Nothing to sync on this page.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Select all 5 games" }));
+
+    expect(screen.getByText("5 selected")).toBeInTheDocument();
+    expect(screen.getByText("All 5 games are selected.")).toBeInTheDocument();
+  });
+
+  it("hides up-to-date, already-wishlisted and ignored rows but keeps No catalog match", () => {
+    ownedEntries = [
+      ...makeMostlySyncedEntries(),
+      entry(4000, "Ignored Game", "ignored"),
+      entry(4001, "Unmatched Tool", "no_match"),
+    ];
+    renderPage();
+
+    fireEvent.click(hideSyncedSwitch());
+
+    expect(screen.queryByText("Aaa Synced 01")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ignored Game")).not.toBeInTheDocument();
+    expect(screen.getByText("Game 1")).toBeInTheDocument();
+    expect(screen.getByText("Unmatched Tool")).toBeInTheDocument();
+    expect(screen.getByText("1–6 of 6")).toBeInTheDocument();
+    expect(headerCheckbox()).toBeEnabled();
+  });
+
+  it("keeps a synced parent visible while one of its DLC still needs syncing", () => {
+    ownedEntries = [
+      entry(5000, "Base Game", "up_to_date"),
+      { ...entry(5001, "Base Game DLC", "new"), parentGameId: 5000 },
+      entry(5002, "Other Synced Game", "up_to_date"),
+    ];
+    renderPage();
+
+    fireEvent.click(hideSyncedSwitch());
+
+    expect(screen.getByText("Base Game")).toBeInTheDocument();
+    expect(screen.queryByText("Other Synced Game")).not.toBeInTheDocument();
+  });
+
+  it("shows an all-synced message, and remembers the switch for the session", () => {
+    ownedEntries = [entry(6000, "Done Game", "up_to_date")];
+    const { unmount } = renderPage();
+
+    fireEvent.click(hideSyncedSwitch());
+    expect(
+      screen.getByText("Everything is synced. Turn off Hide synced to see every entry.")
+    ).toBeInTheDocument();
+    unmount();
+
+    renderPage();
+    expect(hideSyncedSwitch()).toBeChecked();
+  });
+});
