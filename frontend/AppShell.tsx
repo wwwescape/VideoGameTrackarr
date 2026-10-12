@@ -23,6 +23,7 @@ import Breadcrumbs, { BREADCRUMBS_HEIGHT } from "./navigation/Breadcrumbs";
 import NavDrawer, { NAV_DRAWER_WIDTH } from "./navigation/NavDrawer";
 import NavRail, { NAV_RAIL_WIDTH } from "./navigation/NavRail";
 import { useColorMode } from "./theme/ColorModeProvider";
+import { useAppearance } from "./theme/AppearanceProvider";
 
 // M3's three responsive navigation patterns: Navigation Bar (compact/mobile, bottom),
 // Navigation Rail (medium/tablet, icons-only side rail), Navigation Drawer
@@ -31,6 +32,7 @@ import { useColorMode } from "./theme/ColorModeProvider";
 const AppShell = () => {
   const { t } = useTranslation();
   const { mode, toggleColorMode } = useColorMode();
+  const { appTitle } = useAppearance();
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down("sm"));
   const isExpanded = useMediaQuery(theme.breakpoints.up("lg"));
@@ -83,7 +85,7 @@ const AppShell = () => {
             sx={{ height: 44, width: 44, mr: 1.5 }}
           />
           <Typography variant="h6" component="div" noWrap sx={{ minWidth: 0, flexGrow: 1 }}>
-            VideoGameTrackarr
+            {appTitle}
           </Typography>
           <OfflineStatusIndicator />
           <UpdateAvailableChip />
