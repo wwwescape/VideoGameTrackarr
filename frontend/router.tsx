@@ -27,6 +27,8 @@ import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
 import RouteErrorBoundary from "./components/RouteErrorBoundary";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import SeriesPage from "./components/SeriesPage";
+import PlatformPage from "./components/PlatformPage";
+import PlatformsPage from "./components/PlatformsPage";
 import About from "./components/About";
 import EmulationPage from "./components/EmulationPage";
 import JobsPage from "./components/JobsPage";
@@ -70,6 +72,8 @@ import {
   notFoundCrumbs,
   onSaleCrumbs,
   orphanedAccessoriesCrumbs,
+  platformCrumbs,
+  platformsCrumbs,
   saleTrackedCrumbs,
   salesIgnoredCrumbs,
   seriesCrumbs,
@@ -162,6 +166,16 @@ const router = createBrowserRouter([
             path: "/games/collections/:collectionSlug",
             element: <CollectionPage />,
             handle: { crumbs: collectionCrumbs },
+          },
+          {
+            path: "/games/platforms",
+            element: <PlatformsPage />,
+            handle: { crumbs: platformsCrumbs },
+          },
+          {
+            path: "/games/platforms/:platformSlug",
+            element: <PlatformPage />,
+            handle: { crumbs: platformCrumbs },
           },
           { path: "/hardware", element: <HardwarePage />, handle: { crumbs: hardwareCrumbs } },
           {
