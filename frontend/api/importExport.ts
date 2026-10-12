@@ -40,6 +40,29 @@ export async function acknowledgeRestoreStatus(): Promise<void> {
   await apiClient.post("/api/import/backup/status/acknowledge");
 }
 
+export interface CsvImportRowError {
+  row: number;
+  message: string;
+}
+
+export interface CsvImportResult {
+  imported: number;
+  skipped: number;
+  errors: CsvImportRowError[];
+}
+
+export async function importCsv(file: File): Promise<CsvImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post<CsvImportResult>("/api/import/csv", formData);
+  return response.data;
+}
+
+// The column order a CSV import must use — also rendered in Settings so the documented
+// order can't drift from what the backend parses (see backend CSV_COLUMNS).
+export const CSV_IMPORT_COLUMNS =
+  "name,category,status,platform,region,format,edition,acquired_at,notes";
+
 export async function exportHardwareCsvBlob(): Promise<Blob> {
   const response = await apiClient.get("/api/export/hardware-csv", { responseType: "blob" });
   return response.data;
