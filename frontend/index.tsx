@@ -10,6 +10,7 @@ import "@fontsource/roboto/700.css";
 import "./i18n";
 import { offlinePersistOptions } from "./offline/queryPersistence";
 import router from "./router";
+import { AppearanceProvider } from "./theme/AppearanceProvider";
 import { ColorModeProvider } from "./theme/ColorModeProvider";
 import { CurrencyProvider } from "./theme/CurrencyProvider";
 import { LanguageProvider } from "./theme/LanguageProvider";
@@ -42,6 +43,7 @@ createRoot(rootElement).render(
       persistOptions={offlinePersistOptions}
       onSuccess={() => queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries())}
     >
+      <AppearanceProvider>
       <ColorModeProvider>
         <CurrencyProvider>
           <LanguageProvider>
@@ -51,6 +53,7 @@ createRoot(rootElement).render(
           </LanguageProvider>
         </CurrencyProvider>
       </ColorModeProvider>
+      </AppearanceProvider>
     </PersistQueryClientProvider>
   </StrictMode>
 );
