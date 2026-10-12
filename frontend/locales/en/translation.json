@@ -911,7 +911,8 @@
       "confirmAddonNote_other": "This will also sync {{count}} DLC.",
       "wishlist": {
         "confirmAddDescription": "This will add \"{{name}}\" to your Wishlist (PC, Digital, Steam)."
-      }
+      },
+      "syncAllButton": "Sync all"
     },
     "saleTracked": {
       "heading": "Sale - Tracked",
