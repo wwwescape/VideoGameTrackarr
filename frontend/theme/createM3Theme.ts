@@ -43,8 +43,8 @@ declare module "@mui/material/styles" {
   }
 }
 
-export function createM3Theme(mode: ColorMode, contrast: ContrastLevel): Theme {
-  const scheme = buildM3Scheme(mode, contrast);
+export function createM3Theme(mode: ColorMode, contrast: ContrastLevel, seedHex?: string): Theme {
+  const scheme = buildM3Scheme(mode, contrast, seedHex);
 
   return createTheme({
     palette: {
