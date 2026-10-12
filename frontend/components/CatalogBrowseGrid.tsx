@@ -55,9 +55,9 @@ interface CatalogBrowseGridProps {
   name: string | undefined;
   entityId: number | undefined;
   isLoading: boolean;
-  resyncKind: CatalogResyncKind;
+  resyncKind?: CatalogResyncKind;
   slug: string | undefined;
-  resyncLabel: string;
+  resyncLabel?: string;
 }
 
 // A sibling of GameList.tsx — same filter-state shape, same GameListToolbar, reused as-is —
@@ -222,7 +222,9 @@ const CatalogBrowseGrid = ({
             {t("catalog.browseGrid.importedOnlyNotice")}
           </Typography>
         </Box>
-        {slug ? <CatalogResyncButton kind={resyncKind} slug={slug} label={resyncLabel} /> : null}
+        {slug && resyncKind && resyncLabel ? (
+          <CatalogResyncButton kind={resyncKind} slug={slug} label={resyncLabel} />
+        ) : null}
       </Box>
       {entityId ? (
         <Box sx={{ mb: 3 }}>
