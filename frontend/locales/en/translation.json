@@ -37,7 +37,8 @@
     "accessoryNotFoundTitle": "Accessory not found",
     "seriesNotFoundTitle": "Series not found",
     "collectionNotFoundTitle": "Collection not found",
-    "eventNotFoundTitle": "Event not found"
+    "eventNotFoundTitle": "Event not found",
+    "platformNotFoundTitle": "Platform not found"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -62,7 +63,8 @@
     "jobs": "Jobs",
     "integrations": "Integrations",
     "about": "About",
-    "emulation": "Emulation"
+    "emulation": "Emulation",
+    "platforms": "Platforms"
   },
   "breadcrumbs": {
     "edit": "Edit",
@@ -255,7 +257,14 @@
       "restoreStartError": "Could not start the restore. Please try again.",
       "exportFullBackupWithFiles": "Full backup with files (ZIP)",
       "includeFilesLabel": "Include ROMs, saves and BIOS files",
-      "includeFilesHelp": "Downloads a .zip instead of the JSON file — it can be as large as all your ROMs together. Restoring a .zip replaces ROMs, saves and BIOS files too."
+      "includeFilesHelp": "Downloads a .zip instead of the JSON file — it can be as large as all your ROMs together. Restoring a .zip replaces ROMs, saves and BIOS files too.",
+      "importHeading": "Import",
+      "importCsvDescription": "Add games to your library from a CSV file — handy for bulk imports from spreadsheets or other tools. Columns must appear in this order:",
+      "importCsvValuesHelp": "A header row with these exact names is optional. name is required per row; category accepts main_game, dlc_addon, expansion, bundle, standalone_expansion, mod, episode, season, remake, remaster, expanded_game, port, fork, pack or update (blank defaults to main_game); status accepts owned or wishlist (blank defaults to owned); format accepts physical, digital, iso, rom, abandonware or other; acquired_at uses YYYY-MM-DD. Rows with problems are skipped and reported, while the rest still import. Games already in your library are skipped, not duplicated.",
+      "downloadCsvTemplate": "Download CSV template",
+      "importCsvButton": "Import from CSV",
+      "importCsvError": "Could not import the CSV. Please try again.",
+      "importCsvResult": "{{imported}} imported, {{skipped}} skipped"
     },
     "jobs": {
       "heading": "Jobs",
@@ -547,7 +556,8 @@
       "allGames": "All Games",
       "addGame": "Add Game",
       "collections": "Collections",
-      "series": "Series"
+      "series": "Series",
+      "platforms": "Platforms"
     },
     "add": {
       "pageTitle": "Add Game",
@@ -774,6 +784,16 @@
       "notInLibrary": "Not in your library yet",
       "backToSearch": "Back to search",
       "addedToast": "{{name}} added to your library"
+    },
+    "platformsPage": {
+      "title": "Platforms",
+      "description": "Platforms with at least one game in your library.",
+      "emptyMessage": "No platforms yet — they show up here once you've added a game on one.",
+      "searchLabel": "Search platforms",
+      "searchPlaceholder": "Enter platform name"
+    },
+    "platformPage": {
+      "kindLabel": "Platform"
     }
   },
   "events": {
@@ -911,7 +931,8 @@
       "confirmAddonNote_other": "This will also sync {{count}} DLC.",
       "wishlist": {
         "confirmAddDescription": "This will add \"{{name}}\" to your Wishlist (PC, Digital, Steam)."
-      }
+      },
+      "syncAllButton": "Sync all"
     },
     "saleTracked": {
       "heading": "Sale - Tracked",
