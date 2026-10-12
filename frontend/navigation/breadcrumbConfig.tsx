@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import type { Params } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccessoryItem } from "../hooks/useAccessories";
-import { useCollection, useFranchise } from "../hooks/useCatalogBrowse";
+import { useCollection, useFranchise, usePlatform } from "../hooks/useCatalogBrowse";
 import { useEvent } from "../hooks/useEvents";
 import { useGame } from "../hooks/useGames";
 import { useDeviceItem } from "../hooks/useDevice";
@@ -43,6 +43,14 @@ const CollectionCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { data: collection, isError } = useCollection(slug);
   return (
     <>{isError ? t("errors.collectionNotFoundTitle") : (collection?.name ?? t("common.loading"))}</>
+  );
+};
+
+const PlatformCrumbLabel = ({ slug }: { slug: string | undefined }) => {
+  const { t } = useTranslation();
+  const { data: platform, isError } = usePlatform(slug);
+  return (
+    <>{isError ? t("errors.platformNotFoundTitle") : (platform?.name ?? t("common.loading"))}</>
   );
 };
 
@@ -122,6 +130,16 @@ export const collectionsCrumbs: CrumbsFn = (_params, t) => [
 export const collectionCrumbs: CrumbsFn = (params, t) => [
   { label: t("nav.collections"), to: "/games/collections" },
   { label: <CollectionCrumbLabel slug={params.collectionSlug} /> },
+];
+
+export const platformsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.games"), to: "/games" },
+  { label: t("nav.platforms") },
+];
+
+export const platformCrumbs: CrumbsFn = (params, t) => [
+  { label: t("nav.platforms"), to: "/games/platforms" },
+  { label: <PlatformCrumbLabel slug={params.platformSlug} /> },
 ];
 
 export const hardwareCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.hardware") }];
