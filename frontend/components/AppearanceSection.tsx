@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -26,7 +26,6 @@ const AppearanceSection = () => {
   const { t } = useTranslation();
   const { accentColor, setAccentColor, appTitle, setAppTitle, resetAppearance } = useAppearance();
   const [titleDraft, setTitleDraft] = useState(appTitle);
-  const colorInputRef = useRef<HTMLInputElement>(null);
 
   const handleTitleBlur = () => {
     if (titleDraft !== appTitle) {
@@ -82,14 +81,6 @@ const AppearanceSection = () => {
           />
         ))}
         <Box
-          role="button"
-          tabIndex={0}
-          aria-label={t("settings.appearance.customColor")}
-          title={t("settings.appearance.customColor")}
-          onClick={() => colorInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") colorInputRef.current?.click();
-          }}
           sx={{
             width: 36,
             height: 36,
@@ -101,23 +92,27 @@ const AppearanceSection = () => {
             border: (theme) => `2px dashed ${theme.palette.text.secondary}`,
             fontSize: 20,
             color: "text.secondary",
+            position: "relative",
+            overflow: "hidden",
           }}
+          title={t("settings.appearance.customColor")}
         >
           +
+          <input
+            type="color"
+            value={accentColor}
+            onChange={(e) => setAccentColor(e.target.value)}
+            aria-label={t("settings.appearance.customColor")}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0,
+              cursor: "pointer",
+            }}
+          />
         </Box>
-        <input
-          ref={colorInputRef}
-          type="color"
-          value={accentColor}
-          onChange={(e) => setAccentColor(e.target.value)}
-          style={{
-            position: "absolute",
-            width: 0,
-            height: 0,
-            opacity: 0,
-            pointerEvents: "none",
-          }}
-        />
       </Box>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
         {t("settings.appearance.accentColorHelp")}
