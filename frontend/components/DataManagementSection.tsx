@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import DownloadIcon from "@mui/icons-material/Download";
 import RestoreIcon from "@mui/icons-material/Restore";
+import UploadIcon from "@mui/icons-material/Upload";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -13,13 +14,16 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import ConfirmDialog from "./ConfirmDialog";
+import { CSV_IMPORT_COLUMNS, type CsvImportResult } from "../api/importExport";
 import {
   useExportBackup,
   useExportCsv,
   useExportHardwareCsv,
+  useImportCsv,
   useRestoreBackup,
   useRestoreStatus,
 } from "../hooks/useImportExport";
+import { downloadBlob } from "../utils/download";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
 const DataManagementSection = () => {
@@ -30,8 +34,11 @@ const DataManagementSection = () => {
   const restoreBackup = useRestoreBackup();
   const restoreStatus = useRestoreStatus();
   const restoreInProgress = restoreBackup.isPending || restoreStatus.data?.status === "running";
+  const importCsv = useImportCsv();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<CsvImportResult | null>(null);
   const [includeFiles, setIncludeFiles] = useState(false);
 
   const handleExportCsv = async () => {
@@ -58,6 +65,26 @@ const DataManagementSection = () => {
     } catch (error) {
       console.error("Error exporting backup:", error);
       toast.error(t("settings.dataManagement.exportBackupError"), TOAST_OPTIONS);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([`${CSV_IMPORT_COLUMNS}\n`], { type: "text/csv" });
+    downloadBlob(blob, "videogametrackarr-import-template.csv");
+  };
+
+  const handleCsvFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImportResult(null);
+    try {
+      const result = await importCsv.mutateAsync(file);
+      setImportResult(result);
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      toast.error(t("settings.dataManagement.importCsvError"), TOAST_OPTIONS);
+    } finally {
+      if (csvInputRef.current) csvInputRef.current.value = "";
     }
   };
 
@@ -114,6 +141,70 @@ const DataManagementSection = () => {
           label={t("settings.dataManagement.includeFilesLabel")}
         />
         <FormHelperText sx={{ mt: 0 }}>{t("settings.dataManagement.includeFilesHelp")}</FormHelperText>
+      </Box>
+
+      <Divider />
+
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          {t("settings.dataManagement.importHeading")}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          {t("settings.dataManagement.importCsvDescription")}
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ mb: 1, fontFamily: "monospace", fontSize: "0.8rem", wordBreak: "break-all" }}
+        >
+          {CSV_IMPORT_COLUMNS}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          {t("settings.dataManagement.importCsvValuesHelp")}
+        </Typography>
+        <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap" }}>
+          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleDownloadTemplate}>
+            {t("settings.dataManagement.downloadCsvTemplate")}
+          </Button>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<UploadIcon />}
+            disabled={importCsv.isPending}
+          >
+            {t("settings.dataManagement.importCsvButton")}
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              disabled={importCsv.isPending}
+              onChange={(event) => void handleCsvFileSelected(event)}
+            />
+          </Button>
+        </Stack>
+        {importResult && (
+          <Alert
+            severity={importResult.errors.length > 0 ? "warning" : "success"}
+            sx={{ mt: 1.5 }}
+          >
+            {t("settings.dataManagement.importCsvResult", {
+              imported: importResult.imported,
+              skipped: importResult.skipped,
+            })}
+            {importResult.errors.slice(0, 5).map((error) => (
+              <Typography key={error.row} variant="body2">
+                {t("settings.dataManagement.importCsvRowError", {
+                  row: error.row,
+                  message: error.message,
+                })}
+              </Typography>
+            ))}
+            {importResult.errors.length > 5 &&
+              t("settings.dataManagement.importCsvMoreErrors", {
+                count: importResult.errors.length - 5,
+              })}
+          </Alert>
+        )}
       </Box>
 
       <Divider />
