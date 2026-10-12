@@ -393,6 +393,16 @@
       "deleteTitle": "Delete BIOS file?",
       "deleteDescription": "{{name}} will be deleted from the server. Games that need it won't start until you upload it again.",
       "deleteErrorToast": "Couldn't delete the BIOS file. Please try again."
+    },
+    "appearance": {
+      "heading": "Appearance",
+      "description": "Customize the look of the interface.",
+      "accentColor": "Accent color",
+      "accentColorHelp": "Changes buttons, highlights and other accent elements throughout the app.",
+      "customColor": "Pick a custom color",
+      "appTitle": "App title",
+      "appTitleHelp": "Shown in the title bar and the browser tab.",
+      "reset": "Reset to defaults"
     }
   },
   "auth": {
