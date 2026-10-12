@@ -6,6 +6,7 @@ import {
   exportCsvBlob,
   exportHardwareCsvBlob,
   fetchRestoreStatus,
+  importCsv,
   restoreBackup,
 } from "../api/importExport";
 import { resolveAssetUrl } from "../api/client";
@@ -87,6 +88,19 @@ export function useExportHardwareCsv() {
     mutationFn: async () => {
       const blob = await exportHardwareCsvBlob();
       downloadBlob(blob, "videogametrackarr-hardware.csv");
+    },
+  });
+}
+
+export function useImportCsv() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: importCsv,
+    // Like restore: a File can't survive the offline persister's JSON serialization, so
+    // this runs (or fails) immediately instead of being queued.
+    networkMode: "always",
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games"] });
     },
   });
 }
