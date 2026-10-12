@@ -13,6 +13,7 @@ from app.api.deps import get_current_user, get_db, get_session_factory
 from app.core.security import TokenError, TokenType, create_backup_download_token, decode_token
 from app.models.system import User
 from app.schemas.backup import FullBackupLinkResponse, RestoreStatusResponse
+from app.schemas.csv_import import CsvImportResult
 from app.services import backup_service, csv_service, hardware_csv_service, restore_job
 
 router = APIRouter(tags=["import-export"], dependencies=[Depends(get_current_user)])
@@ -79,6 +80,23 @@ def download_full_backup(token: str, filename: str, db: Session = Depends(get_db
     if db.get(User, int(payload["sub"])) is None:
         raise HTTPException(status_code=401, detail="Invalid or expired download link")
     return _full_backup_response(db)
+
+
+@router.post("/api/import/csv", response_model=CsvImportResult)
+async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)) -> CsvImportResult:
+    """Import library items from a CSV file.
+
+    Columns must be in export order: name, category, status, platform, region, format,
+    edition, acquired_at, notes. A header row with those exact names is optional.
+    Rows are validated individually — a bad row is skipped (reported in `errors`) while
+    the rest still import. Nothing is wiped: this adds to the library, unlike restore.
+    """
+    raw = await file.read()
+    try:
+        csv_text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"Not a valid UTF-8 CSV file: {exc}") from exc
+    return csv_service.import_csv(db, csv_text)
 
 
 @router.post("/api/import/backup", response_model=RestoreStatusResponse, status_code=status.HTTP_202_ACCEPTED)
