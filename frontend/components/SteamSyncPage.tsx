@@ -201,6 +201,10 @@ const SteamSyncPage = () => {
   const allRows = useMemo(() => trees.flatMap((tree) => [tree.row, ...tree.children]), [trees]);
   const allActionableKeys = useMemo(() => allRows.filter(isRowActionable).map(rowKey), [allRows]);
   const selectedRows = allRows.filter((row) => selectedSet.has(rowKey(row)) && isRowActionable(row));
+  // Every actionable row across all pages — the "Sync all" target. Unlike the per-page
+  // "select all" checkbox, this deliberately reaches across pages: syncing everything
+  // pending is the explicit point of the button.
+  const actionableRows = useMemo(() => allRows.filter(isRowActionable), [allRows]);
   const allActionableSelected =
     allActionableKeys.length > 0 && selectedRows.length === allActionableKeys.length;
 
@@ -633,6 +637,22 @@ const SteamSyncPage = () => {
               />
             </Tooltip>
           )}
+          <Button
+            startIcon={<SyncIcon />}
+            onClick={() =>
+              setConfirmTarget(
+                actionableRows.map((row) => ({
+                  source: row.source,
+                  entry: row.entry,
+                  childCount: childCountFor(row),
+                }))
+              )
+            }
+            disabled={actionableRows.length === 0 || syncEntries.isPending || syncWishlistEntries.isPending}
+            sx={{ flexShrink: 0 }}
+          >
+            {t("insights.steamSync.syncAllButton")}
+          </Button>
         </Toolbar>
 
         {trees.length === 0 ? (
