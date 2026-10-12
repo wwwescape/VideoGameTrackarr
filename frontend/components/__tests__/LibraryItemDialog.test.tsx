@@ -45,9 +45,9 @@ const nesRom: RomFileSummary = {
 const noChanges = { added: [], replaced: [], relabelled: [], removed: [] };
 
 const platforms: PlatformResponse[] = [
-  { id: 1, igdbId: 6, name: "PC (Microsoft Windows)", slug: "win", abbreviation: "PC" },
-  { id: 2, igdbId: 48, name: "Sony PlayStation 4", slug: "ps4", abbreviation: "PS4" },
-  { id: 3, igdbId: 18, name: "Nintendo Entertainment System", slug: "nes", abbreviation: "NES" },
+  { id: 1, igdbId: 6, name: "PC (Microsoft Windows)", slug: "win", abbreviation: "PC", gameCount: 0 },
+  { id: 2, igdbId: 48, name: "Sony PlayStation 4", slug: "ps4", abbreviation: "PS4", gameCount: 0 },
+  { id: 3, igdbId: 18, name: "Nintendo Entertainment System", slug: "nes", abbreviation: "NES", gameCount: 0 },
 ];
 
 const regions: RegionResponse[] = [{ id: 1, name: "Worldwide" }];
