@@ -17,6 +17,7 @@ import { getCurrencySymbol, SUPPORTED_CURRENCIES, type CurrencyOption } from "..
 import { SUPPORTED_LANGUAGES, type LanguageOption } from "../utils/language";
 import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/storeRegion";
 import AutocompleteSelect from "./AutocompleteSelect";
+import AppearanceSection from "./AppearanceSection";
 import DataManagementSection from "./DataManagementSection";
 import SettingsSubNav from "./SettingsSubNav";
 import ShareSection from "./ShareSection";
@@ -90,6 +91,13 @@ const Settings = () => {
             label={t("settings.display.highContrast")}
             sx={{ display: "block" }}
           />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="subtitle1" gutterBottom>
+            {t("settings.appearance.heading")}
+          </Typography>
+          <AppearanceSection />
 
           <Divider sx={{ my: 3 }} />
 
