@@ -37,7 +37,8 @@
     "accessoryNotFoundTitle": "Accessoire introuvable",
     "seriesNotFoundTitle": "Série introuvable",
     "collectionNotFoundTitle": "Collection introuvable",
-    "eventNotFoundTitle": "Événement introuvable"
+    "eventNotFoundTitle": "Événement introuvable",
+    "platformNotFoundTitle": "Plateforme introuvable"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -62,7 +63,8 @@
     "jobs": "Tâches",
     "integrations": "Intégrations",
     "about": "À propos",
-    "emulation": "Émulation"
+    "emulation": "Émulation",
+    "platforms": "Plateformes"
   },
   "breadcrumbs": {
     "edit": "Modifier",
@@ -255,7 +257,14 @@
       "restoreStartError": "Impossible de démarrer la restauration. Veuillez réessayer.",
       "exportFullBackupWithFiles": "Sauvegarde complète avec fichiers (ZIP)",
       "includeFilesLabel": "Inclure les ROM, sauvegardes et fichiers BIOS",
-      "includeFilesHelp": "Télécharge un .zip au lieu du fichier JSON — il peut être aussi volumineux que toutes vos ROM réunies. Restaurer un .zip remplace aussi les ROM, sauvegardes et fichiers BIOS."
+      "includeFilesHelp": "Télécharge un .zip au lieu du fichier JSON — il peut être aussi volumineux que toutes vos ROM réunies. Restaurer un .zip remplace aussi les ROM, sauvegardes et fichiers BIOS.",
+      "importHeading": "Importer",
+      "importCsvDescription": "Ajoutez des jeux à votre bibliothèque depuis un fichier CSV — pratique pour les imports en masse depuis des tableurs ou d'autres outils. Les colonnes doivent apparaître dans cet ordre :",
+      "importCsvValuesHelp": "Une ligne d'en-tête avec ces noms exacts est facultative. name est requis pour chaque ligne ; category accepte main_game, dlc_addon, expansion, bundle, standalone_expansion, mod, episode, season, remake, remaster, expanded_game, port, fork, pack ou update (vide = main_game) ; status accepte owned ou wishlist (vide = owned) ; format accepte physical, digital, iso, rom, abandonware ou other ; acquired_at utilise AAAA-MM-JJ. Les lignes problématiques sont ignorées et signalées, les autres sont importées. Les jeux déjà dans votre bibliothèque sont ignorés, pas dupliqués.",
+      "downloadCsvTemplate": "Télécharger le modèle CSV",
+      "importCsvButton": "Importer depuis CSV",
+      "importCsvError": "Impossible d'importer le CSV. Veuillez réessayer.",
+      "importCsvResult": "{{imported}} importés, {{skipped}} ignorés"
     },
     "jobs": {
       "heading": "Tâches",
@@ -547,7 +556,8 @@
       "allGames": "Tous les jeux",
       "addGame": "Ajouter un jeu",
       "collections": "Collections",
-      "series": "Séries"
+      "series": "Séries",
+      "platforms": "Plateformes"
     },
     "add": {
       "pageTitle": "Ajouter un jeu",
@@ -774,6 +784,16 @@
       "notInLibrary": "Pas encore dans votre bibliothèque",
       "backToSearch": "Retour à la recherche",
       "addedToast": "{{name}} ajouté à votre bibliothèque"
+    },
+    "platformsPage": {
+      "title": "Plateformes",
+      "description": "Plateformes avec au moins un jeu dans votre bibliothèque.",
+      "emptyMessage": "Aucune plateforme pour l'instant — elles apparaîtront ici dès que vous ajouterez un jeu sur l'une d'elles.",
+      "searchLabel": "Rechercher des plateformes",
+      "searchPlaceholder": "Nom de la plateforme"
+    },
+    "platformPage": {
+      "kindLabel": "Plateforme"
     }
   },
   "events": {
@@ -911,7 +931,8 @@
       "confirmAddonNote_other": "Ceci synchronisera aussi {{count}} DLC.",
       "wishlist": {
         "confirmAddDescription": "Ceci ajoutera « {{name}} » à votre Liste de souhaits (PC, Numérique, Steam)."
-      }
+      },
+      "syncAllButton": "Tout synchroniser"
     },
     "saleTracked": {
       "heading": "Promotions - suivies",
