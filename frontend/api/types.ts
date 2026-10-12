@@ -21,6 +21,7 @@ export interface PlatformResponse {
   name: string;
   slug: string | null;
   abbreviation: string | null;
+  gameCount: number;
 }
 
 export interface RegionResponse {
