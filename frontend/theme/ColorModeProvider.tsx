@@ -3,6 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { createM3Theme } from "./createM3Theme";
+import { useAppearance } from "./AppearanceProvider";
 import type { ColorMode, ContrastLevel } from "./m3Colors";
 
 interface ColorModeContextValue {
@@ -57,7 +58,8 @@ export const ColorModeProvider = ({ children }: { children: ReactNode }) => {
   const toggleColorMode = () => setMode((prev) => (prev === "light" ? "dark" : "light"));
   const toggleContrast = () => setContrast((prev) => (prev === "normal" ? "high" : "normal"));
 
-  const theme = useMemo(() => createM3Theme(mode, contrast), [mode, contrast]);
+  const { accentColor } = useAppearance();
+  const theme = useMemo(() => createM3Theme(mode, contrast, accentColor), [mode, contrast, accentColor]);
 
   return (
     <ColorModeContext.Provider value={{ mode, contrast, toggleColorMode, toggleContrast }}>
