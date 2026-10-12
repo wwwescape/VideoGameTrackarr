@@ -255,7 +255,14 @@
       "restoreStartError": "Could not start the restore. Please try again.",
       "exportFullBackupWithFiles": "Full backup with files (ZIP)",
       "includeFilesLabel": "Include ROMs, saves and BIOS files",
-      "includeFilesHelp": "Downloads a .zip instead of the JSON file — it can be as large as all your ROMs together. Restoring a .zip replaces ROMs, saves and BIOS files too."
+      "includeFilesHelp": "Downloads a .zip instead of the JSON file — it can be as large as all your ROMs together. Restoring a .zip replaces ROMs, saves and BIOS files too.",
+      "downloadCsvTemplate": "Download CSV template",
+      "importCsvButton": "Import from CSV",
+      "importCsvDescription": "Add games to your library from a CSV file — handy for bulk imports from spreadsheets or other tools. Columns must appear in this order:",
+      "importCsvError": "Could not import the CSV. Please try again.",
+      "importCsvResult": "{{imported}} imported, {{skipped}} skipped",
+      "importCsvValuesHelp": "A header row with these exact names is optional. name is required per row; category accepts main_game, dlc_addon, expansion, bundle, standalone_expansion, mod, episode, season, remake, remaster, expanded_game, port, fork, pack or update (blank defaults to main_game); status accepts owned or wishlist (blank defaults to owned); format accepts physical, digital, iso, rom, abandonware or other; acquired_at uses YYYY-MM-DD. Rows with problems are skipped and reported, while the rest still import. Games already in your library are skipped, not duplicated.",
+      "importHeading": "Import"
     },
     "jobs": {
       "heading": "Jobs",
