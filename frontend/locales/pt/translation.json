@@ -402,6 +402,16 @@
       "deleteTitle": "Excluir arquivo de BIOS?",
       "deleteDescription": "{{name}} será excluído do servidor. Os jogos que precisam dele não iniciarão até você enviá-lo novamente.",
       "deleteErrorToast": "Não foi possível excluir o arquivo de BIOS. Tente novamente."
+    },
+    "appearance": {
+      "heading": "Aparência",
+      "description": "Personalize a aparência da interface.",
+      "accentColor": "Cor de destaque",
+      "accentColorHelp": "Altera botões, destaques e outros elementos de destaque no aplicativo.",
+      "customColor": "Escolher uma cor personalizada",
+      "appTitle": "Título do aplicativo",
+      "appTitleHelp": "Exibido na barra de título e na aba do navegador.",
+      "reset": "Restaurar padrões"
     }
   },
   "auth": {
