@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCollection, listCollectionAddons, listCollections } from "../api/collections";
 import { getFranchise, listFranchiseAddons, listFranchises } from "../api/franchises";
+import { getPlatform, listPlatformAddons } from "../api/platforms";
 import type { GameListFilters } from "../api/games";
 
 export function useFranchises() {
@@ -51,6 +52,23 @@ export function useCollectionAddons(slug: string | undefined, filters: GameListF
   return useQuery({
     queryKey: ["collections", slug, "addons", filters],
     queryFn: ({ signal }) => listCollectionAddons(slug!, filters, signal),
+    enabled: enabled && !!slug,
+  });
+}
+
+export function usePlatform(slug: string | undefined) {
+  return useQuery({
+    queryKey: ["platforms", slug],
+    queryFn: () => getPlatform(slug!),
+    enabled: !!slug,
+  });
+}
+
+// See useFranchiseAddons above — same reasoning, mirrored for platforms.
+export function usePlatformAddons(slug: string | undefined, filters: GameListFilters, enabled: boolean) {
+  return useQuery({
+    queryKey: ["platforms", slug, "addons", filters],
+    queryFn: ({ signal }) => listPlatformAddons(slug!, filters, signal),
     enabled: enabled && !!slug,
   });
 }
