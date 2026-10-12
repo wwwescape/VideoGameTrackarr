@@ -402,6 +402,16 @@
       "deleteTitle": "Supprimer le fichier BIOS ?",
       "deleteDescription": "{{name}} sera supprimé du serveur. Les jeux qui en ont besoin ne démarreront plus tant que vous ne l'aurez pas renvoyé.",
       "deleteErrorToast": "Impossible de supprimer le fichier BIOS. Veuillez réessayer."
+    },
+    "appearance": {
+      "heading": "Apparence",
+      "description": "Personnalisez l'aspect de l'interface.",
+      "accentColor": "Couleur d'accent",
+      "accentColorHelp": "Modifie les boutons, les surlignages et autres éléments d'accent dans l'application.",
+      "customColor": "Choisir une couleur personnalisée",
+      "appTitle": "Titre de l'application",
+      "appTitleHelp": "Affiché dans la barre de titre et l'onglet du navigateur.",
+      "reset": "Réinitialiser"
     }
   },
   "auth": {
