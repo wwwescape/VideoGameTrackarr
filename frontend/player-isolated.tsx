@@ -21,7 +21,7 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ColorModeProvider>
+      <ColorModeProvider syncThemeColorMeta={false}>
         <LanguageProvider>
           <IsolatedPlayerPage />
         </LanguageProvider>

@@ -218,7 +218,23 @@
     "display": {
       "heading": "Visualização",
       "darkMode": "Modo escuro",
-      "highContrast": "Alto contraste"
+      "highContrast": "Alto contraste",
+      "accentColor": "Cor de destaque",
+      "accentColorHelp": "Muda os botões, realces e outros elementos de destaque em todo o aplicativo. Salva neste navegador.",
+      "customAccentColor": "Cor personalizada",
+      "resetAccentColor": "Redefinir cor",
+      "accentColors": {
+        "purple": "Roxo",
+        "indigo": "Índigo",
+        "lightBlue": "Azul-claro",
+        "teal": "Verde-azulado",
+        "green": "Verde",
+        "yellow": "Amarelo",
+        "orange": "Laranja",
+        "red": "Vermelho",
+        "pink": "Rosa",
+        "violet": "Violeta"
+      }
     },
     "language": {
       "heading": "Idioma",

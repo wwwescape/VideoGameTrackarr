@@ -218,7 +218,23 @@
     "display": {
       "heading": "Display",
       "darkMode": "Dark mode",
-      "highContrast": "High contrast"
+      "highContrast": "High contrast",
+      "accentColor": "Accent color",
+      "accentColorHelp": "Changes buttons, highlights and other accent elements throughout the app. Saved in this browser.",
+      "customAccentColor": "Custom color",
+      "resetAccentColor": "Reset color",
+      "accentColors": {
+        "purple": "Purple",
+        "indigo": "Indigo",
+        "lightBlue": "Light blue",
+        "teal": "Teal",
+        "green": "Green",
+        "yellow": "Yellow",
+        "orange": "Orange",
+        "red": "Red",
+        "pink": "Pink",
+        "violet": "Violet"
+      }
     },
     "language": {
       "heading": "Language",

@@ -16,6 +16,7 @@ import { useStoreRegion } from "../theme/StoreRegionProvider";
 import { getCurrencySymbol, SUPPORTED_CURRENCIES, type CurrencyOption } from "../utils/currency";
 import { SUPPORTED_LANGUAGES, type LanguageOption } from "../utils/language";
 import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/storeRegion";
+import AccentColorSetting from "./AccentColorSetting";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
 import SettingsSubNav from "./SettingsSubNav";
@@ -90,6 +91,7 @@ const Settings = () => {
             label={t("settings.display.highContrast")}
             sx={{ display: "block" }}
           />
+          <AccentColorSetting />
 
           <Divider sx={{ my: 3 }} />
 
