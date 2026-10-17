@@ -346,6 +346,69 @@ def test_ignore_steam_entry_marks_it_ignored(auth_client, db_session):
     assert response.json()["status"] == "ignored"
 
 
+def test_unignore_steam_entry_requires_auth(client):
+    response = client.post("/api/integrations/steam/220/unignore")
+
+    assert response.status_code == 401
+
+
+def test_unignore_steam_entry_recalculates_its_status(auth_client, db_session):
+    _seed_matched_entry(db_session, dismissed=True)
+
+    response = auth_client.post("/api/integrations/steam/220/unignore")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "new"
+    assert db_session.query(SteamLibraryEntry).filter_by(steam_app_id=220).one().dismissed is False
+
+
+def test_unignore_steam_entry_with_no_match_reports_no_match(auth_client, db_session):
+    db_session.add(SteamLibraryEntry(steam_app_id=220, steam_name="Delisted", steam_playtime_minutes=5, dismissed=True))
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/220/unignore")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "no_match"
+
+
+def test_unignore_steam_entry_that_is_not_ignored_is_a_no_op(auth_client, db_session):
+    _seed_matched_entry(db_session)
+
+    response = auth_client.post("/api/integrations/steam/220/unignore")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "new"
+
+
+def test_unignore_steam_entry_returns_404_for_an_unknown_app(auth_client):
+    response = auth_client.post("/api/integrations/steam/999999/unignore")
+
+    assert response.status_code == 404
+
+
+def test_ignore_steam_entries_requires_auth(client):
+    response = client.post("/api/integrations/steam/ignore", json={"steamAppIds": [220]})
+
+    assert response.status_code == 401
+
+
+def test_ignore_steam_entries_ignores_every_id_and_reports_unknown_ones(auth_client, db_session):
+    _seed_matched_entry(db_session)
+    db_session.add(SteamLibraryEntry(steam_app_id=400, steam_name="Portal", steam_playtime_minutes=10))
+    db_session.commit()
+
+    response = auth_client.post("/api/integrations/steam/ignore", json={"steamAppIds": [220, 400, 999999]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ignored"] == 2
+    assert body["failed"] == 1
+    assert body["failures"][0]["steamAppId"] == 999999
+    entries = auth_client.get("/api/integrations/steam/entries").json()
+    assert {entry["steamAppId"]: entry["status"] for entry in entries} == {220: "ignored", 400: "ignored"}
+
+
 def test_relink_steam_entry_requires_auth(client):
     response = client.post("/api/integrations/steam/220/relink", json={"gameId": 1})
 
@@ -512,6 +575,15 @@ def test_sync_steam_entries_does_not_cascade_to_a_dismissed_dlc(auth_client, db_
     assert db_session.query(LibraryItem).filter(LibraryItem.game_id == dlc.id).count() == 0
 
 
+def test_sync_steam_entries_cascades_to_a_dlc_again_once_unignored(auth_client, db_session):
+    parent, dlc = _seed_matched_parent_with_dlc(db_session, dlc_dismissed=True)
+
+    auth_client.post("/api/integrations/steam/221/unignore")
+    auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
+
+    assert db_session.query(LibraryItem).filter(LibraryItem.game_id == dlc.id).count() == 1
+
+
 def _seed_matched_wishlist_entry(db_session, steam_app_id=220, dismissed=False):
     game = Game(igdb_id=233, name="Half-Life 2", slug="half-life-2", category=GameCategory.MAIN_GAME)
     db_session.add(game)
@@ -639,6 +711,61 @@ def test_ignore_steam_wishlist_entry_marks_it_ignored(auth_client, db_session):
 
     assert response.status_code == 200
     assert response.json()["status"] == "ignored"
+
+
+def test_unignore_steam_wishlist_entry_requires_auth(client):
+    response = client.post("/api/integrations/steam/wishlist/220/unignore")
+
+    assert response.status_code == 401
+
+
+def test_unignore_steam_wishlist_entry_recalculates_its_status(auth_client, db_session):
+    _seed_matched_wishlist_entry(db_session, dismissed=True)
+
+    response = auth_client.post("/api/integrations/steam/wishlist/220/unignore")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "new"
+    assert db_session.query(SteamWishlistEntry).filter_by(steam_app_id=220).one().dismissed is False
+
+
+def test_unignore_steam_wishlist_entry_reports_already_wishlisted(auth_client, db_session, seed_pc_platform):
+    game = _seed_matched_wishlist_entry(db_session, dismissed=True)
+    auth_client.post("/api/integrations/steam/wishlist/220/unignore")
+    auth_client.post("/api/integrations/steam/wishlist/sync", json={"steamAppIds": [220]})
+    auth_client.post("/api/integrations/steam/wishlist/220/ignore")
+
+    response = auth_client.post("/api/integrations/steam/wishlist/220/unignore")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "already_wishlisted"
+    assert db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).count() == 1
+
+
+def test_unignore_steam_wishlist_entry_returns_404_for_an_unknown_app(auth_client):
+    response = auth_client.post("/api/integrations/steam/wishlist/999999/unignore")
+
+    assert response.status_code == 404
+
+
+def test_ignore_steam_wishlist_entries_requires_auth(client):
+    response = client.post("/api/integrations/steam/wishlist/ignore", json={"steamAppIds": [220]})
+
+    assert response.status_code == 401
+
+
+def test_ignore_steam_wishlist_entries_ignores_every_id_and_reports_unknown_ones(auth_client, db_session):
+    _seed_matched_wishlist_entry(db_session)
+
+    response = auth_client.post("/api/integrations/steam/wishlist/ignore", json={"steamAppIds": [220, 999999]})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ignored"] == 1
+    assert body["failed"] == 1
+    assert body["failures"][0]["steamAppId"] == 999999
+    [entry] = auth_client.get("/api/integrations/steam/wishlist/entries").json()
+    assert entry["status"] == "ignored"
 
 
 def test_relink_steam_wishlist_entry_requires_auth(client):

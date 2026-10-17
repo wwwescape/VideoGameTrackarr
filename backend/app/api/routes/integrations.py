@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.system import User
 from app.schemas.integrations import (
+    IgnoreResultResponse,
     IntegrationsStatusResponse,
     RelinkSteamEntryRequest,
     SteamEntryResponse,
@@ -45,9 +46,29 @@ def sync_steam_entries(payload: SyncSteamEntriesRequest, db: Session = Depends(g
     return SyncResultResponse.model_validate(steam_service.sync_entries(db, payload.steam_app_ids))
 
 
+# Both bulk Ignore routes sit above every /steam/{steam_app_id}/... route: declared after
+# them, "/steam/wishlist/ignore" would match "/steam/{steam_app_id}/ignore" first and fail
+# with a 422 on "wishlist".
+@router.post("/api/integrations/steam/ignore", response_model=IgnoreResultResponse)
+def ignore_steam_entries(payload: SyncSteamEntriesRequest, db: Session = Depends(get_db)) -> IgnoreResultResponse:
+    return IgnoreResultResponse.model_validate(steam_service.ignore_entries(db, payload.steam_app_ids))
+
+
+@router.post("/api/integrations/steam/wishlist/ignore", response_model=IgnoreResultResponse)
+def ignore_steam_wishlist_entries(
+    payload: SyncSteamEntriesRequest, db: Session = Depends(get_db)
+) -> IgnoreResultResponse:
+    return IgnoreResultResponse.model_validate(steam_wishlist_service.ignore_entries(db, payload.steam_app_ids))
+
+
 @router.post("/api/integrations/steam/{steam_app_id}/ignore", response_model=SteamEntryResponse)
 def ignore_steam_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamEntryResponse:
     return _entry_response(steam_service.ignore_entry(db, steam_app_id))
+
+
+@router.post("/api/integrations/steam/{steam_app_id}/unignore", response_model=SteamEntryResponse)
+def unignore_steam_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamEntryResponse:
+    return _entry_response(steam_service.unignore_entry(db, steam_app_id))
 
 
 @router.post("/api/integrations/steam/{steam_app_id}/relink", response_model=SteamEntryResponse)
@@ -88,6 +109,13 @@ def sync_steam_wishlist_entries(
 )
 def ignore_steam_wishlist_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamWishlistEntryResponse:
     return _wishlist_entry_response(steam_wishlist_service.ignore_entry(db, steam_app_id))
+
+
+@router.post(
+    "/api/integrations/steam/wishlist/{steam_app_id}/unignore", response_model=SteamWishlistEntryResponse
+)
+def unignore_steam_wishlist_entry(steam_app_id: int, db: Session = Depends(get_db)) -> SteamWishlistEntryResponse:
+    return _wishlist_entry_response(steam_wishlist_service.unignore_entry(db, steam_app_id))
 
 
 @router.post(

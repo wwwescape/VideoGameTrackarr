@@ -52,6 +52,12 @@ class SyncResultResponse(CamelModel):
     failures: list[SyncResultFailure]
 
 
+class IgnoreResultResponse(CamelModel):
+    ignored: int
+    failed: int
+    failures: list[SyncResultFailure]
+
+
 class SteamStoreDetailsResponse(CamelModel):
     name: str
     summary: str | None

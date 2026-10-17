@@ -60,6 +60,12 @@ export interface SyncResult {
   failures: { steamAppId: number; error: string }[];
 }
 
+export interface IgnoreResult {
+  ignored: number;
+  failed: number;
+  failures: { steamAppId: number; error: string }[];
+}
+
 export interface SteamStoreDetails {
   name: string;
   summary: string | null;
@@ -80,6 +86,18 @@ export async function syncSteamEntries(steamAppIds: number[]): Promise<SyncResul
 
 export async function ignoreSteamEntry(steamAppId: number): Promise<SteamEntry> {
   const response = await apiClient.post<SteamEntry>(`/api/integrations/steam/${steamAppId}/ignore`);
+  return response.data;
+}
+
+export async function unignoreSteamEntry(steamAppId: number): Promise<SteamEntry> {
+  const response = await apiClient.post<SteamEntry>(`/api/integrations/steam/${steamAppId}/unignore`);
+  return response.data;
+}
+
+export async function ignoreSteamEntries(steamAppIds: number[]): Promise<IgnoreResult> {
+  const response = await apiClient.post<IgnoreResult>("/api/integrations/steam/ignore", {
+    steamAppIds,
+  });
   return response.data;
 }
 
@@ -118,6 +136,20 @@ export async function ignoreSteamWishlistEntry(steamAppId: number): Promise<Stea
   const response = await apiClient.post<SteamWishlistEntry>(
     `/api/integrations/steam/wishlist/${steamAppId}/ignore`
   );
+  return response.data;
+}
+
+export async function unignoreSteamWishlistEntry(steamAppId: number): Promise<SteamWishlistEntry> {
+  const response = await apiClient.post<SteamWishlistEntry>(
+    `/api/integrations/steam/wishlist/${steamAppId}/unignore`
+  );
+  return response.data;
+}
+
+export async function ignoreSteamWishlistEntries(steamAppIds: number[]): Promise<IgnoreResult> {
+  const response = await apiClient.post<IgnoreResult>("/api/integrations/steam/wishlist/ignore", {
+    steamAppIds,
+  });
   return response.data;
 }
 

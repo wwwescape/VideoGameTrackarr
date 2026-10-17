@@ -5,6 +5,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import RestoreIcon from "@mui/icons-material/Restore";
 import SyncIcon from "@mui/icons-material/Sync";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -31,6 +32,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   getSteamStoreDetails,
+  type IgnoreResult,
   type SteamEntry,
   type SteamEntryStatus,
   type SteamWishlistEntry,
@@ -38,12 +40,16 @@ import {
   type SyncResult,
 } from "../api/integrations";
 import {
+  useIgnoreSteamEntries,
   useIgnoreSteamEntry,
+  useIgnoreSteamWishlistEntries,
   useIgnoreSteamWishlistEntry,
   useSteamEntries,
   useSteamWishlistEntries,
   useSyncSteamEntries,
   useSyncSteamWishlistEntries,
+  useUnignoreSteamEntry,
+  useUnignoreSteamWishlistEntry,
   useUnlinkSteamEntry,
   useUnlinkSteamWishlistEntry,
 } from "../hooks/useIntegrations";
@@ -156,6 +162,10 @@ const SteamSyncPage = () => {
   const syncWishlistEntries = useSyncSteamWishlistEntries();
   const ignoreEntry = useIgnoreSteamEntry();
   const ignoreWishlistEntry = useIgnoreSteamWishlistEntry();
+  const ignoreEntries = useIgnoreSteamEntries();
+  const ignoreWishlistEntries = useIgnoreSteamWishlistEntries();
+  const unignoreEntry = useUnignoreSteamEntry();
+  const unignoreWishlistEntry = useUnignoreSteamWishlistEntry();
   const unlinkEntry = useUnlinkSteamEntry();
   const unlinkWishlistEntry = useUnlinkSteamWishlistEntry();
   const { data: jobs } = useJobsList();
@@ -168,6 +178,7 @@ const SteamSyncPage = () => {
   const [confirmTarget, setConfirmTarget] = useState<SyncTarget[] | null>(null);
   const [relinkTarget, setRelinkTarget] = useState<RelinkTarget | null>(null);
   const [unlinkTarget, setUnlinkTarget] = useState<SyncRow | null>(null);
+  const [ignoreTarget, setIgnoreTarget] = useState<SyncRow[] | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [hideSynced, setHideSynced] = useSessionState("steamSync.hideSynced", false);
@@ -364,6 +375,53 @@ const SteamSyncPage = () => {
     }
   };
 
+  // An entry ignored before IGDB matched it comes back as No catalog match: the import job
+  // skips matching ignored entries, so only the next Import can match it.
+  const handleUnignore = async (row: SyncRow) => {
+    try {
+      const updated =
+        row.source === "owned"
+          ? await unignoreEntry.mutateAsync(row.entry.steamAppId)
+          : await unignoreWishlistEntry.mutateAsync(row.entry.steamAppId);
+      if (updated.status === "no_match") {
+        toast.info(t("insights.steamSync.unignoreNoMatchToast"), TOAST_OPTIONS);
+      }
+    } catch (error) {
+      console.error(`Error un-ignoring Steam app ${row.entry.steamAppId}:`, error);
+      toast.error(t("insights.steamSync.unignoreErrorToast"), TOAST_OPTIONS);
+    }
+  };
+
+  const handleConfirmBulkIgnore = async () => {
+    if (!ignoreTarget) return;
+    try {
+      const ownedIds = ignoreTarget.filter((row) => row.source === "owned").map((row) => row.entry.steamAppId);
+      const wishlistIds = ignoreTarget
+        .filter((row) => row.source === "wishlist")
+        .map((row) => row.entry.steamAppId);
+
+      const emptyResult: IgnoreResult = { ignored: 0, failed: 0, failures: [] };
+      const [ownedResult, wishlistResult] = await Promise.all([
+        ownedIds.length > 0 ? ignoreEntries.mutateAsync(ownedIds) : Promise.resolve(emptyResult),
+        wishlistIds.length > 0 ? ignoreWishlistEntries.mutateAsync(wishlistIds) : Promise.resolve(emptyResult),
+      ]);
+      const ignored = ownedResult.ignored + wishlistResult.ignored;
+      const failed = ownedResult.failed + wishlistResult.failed;
+
+      if (failed > 0) {
+        toast.error(t("insights.steamSync.ignorePartialErrorToast", { failed }), TOAST_OPTIONS);
+      } else {
+        toast.success(t("insights.steamSync.ignoreSuccessToast", { count: ignored }), TOAST_OPTIONS);
+      }
+      setSelected([]);
+    } catch (error) {
+      console.error("Error ignoring Steam entries:", error);
+      toast.error(t("insights.steamSync.ignoreBulkErrorToast"), TOAST_OPTIONS);
+    } finally {
+      setIgnoreTarget(null);
+    }
+  };
+
   const handleConfirmUnlink = async () => {
     if (!unlinkTarget) return;
     try {
@@ -491,7 +549,13 @@ const SteamSyncPage = () => {
             </IconButton>
           </Tooltip>
         )}
-        {row.entry.status !== "ignored" && (
+        {row.entry.status === "ignored" ? (
+          <Tooltip title={t("insights.steamSync.unignoreButton")}>
+            <IconButton size="small" onClick={() => void handleUnignore(row)}>
+              <RestoreIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : (
           <Tooltip title={t("insights.steamSync.ignoreButton")}>
             <IconButton size="small" onClick={() => void handleIgnore(row)}>
               <BlockIcon fontSize="small" />
@@ -598,24 +662,34 @@ const SteamSyncPage = () => {
             ) : null}
           </Box>
           {selected.length > 0 ? (
-            <Button
-              startIcon={<SyncIcon />}
-              onClick={() =>
-                setConfirmTarget(
-                  selectedRows.map((row) => ({
-                    source: row.source,
-                    entry: row.entry,
-                    childCount: childCountFor(row),
-                  }))
-                )
-              }
-              disabled={
-                selectedRows.length === 0 || syncEntries.isPending || syncWishlistEntries.isPending
-              }
-              sx={{ flexShrink: 0 }}
-            >
-              {t("insights.steamSync.syncSelectedButton")}
-            </Button>
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+              <Button
+                startIcon={<BlockIcon />}
+                onClick={() => setIgnoreTarget(selectedRows)}
+                disabled={
+                  selectedRows.length === 0 || ignoreEntries.isPending || ignoreWishlistEntries.isPending
+                }
+              >
+                {t("insights.steamSync.ignoreSelectedButton")}
+              </Button>
+              <Button
+                startIcon={<SyncIcon />}
+                onClick={() =>
+                  setConfirmTarget(
+                    selectedRows.map((row) => ({
+                      source: row.source,
+                      entry: row.entry,
+                      childCount: childCountFor(row),
+                    }))
+                  )
+                }
+                disabled={
+                  selectedRows.length === 0 || syncEntries.isPending || syncWishlistEntries.isPending
+                }
+              >
+                {t("insights.steamSync.syncSelectedButton")}
+              </Button>
+            </Stack>
           ) : (
             <Tooltip title={t("insights.steamSync.hideSyncedTooltip")} describeChild>
               <FormControlLabel
@@ -863,6 +937,16 @@ const SteamSyncPage = () => {
         confirmDisabled={syncEntries.isPending || syncWishlistEntries.isPending}
         onClose={() => setConfirmTarget(null)}
         onConfirm={() => void handleConfirmSync()}
+      />
+
+      <ConfirmDialog
+        open={ignoreTarget !== null}
+        title={t("insights.steamSync.ignoreConfirmTitle", { count: ignoreTarget?.length ?? 0 })}
+        description={t("insights.steamSync.ignoreConfirmDescription")}
+        confirmLabel={t("insights.steamSync.ignoreButton")}
+        confirmDisabled={ignoreEntries.isPending || ignoreWishlistEntries.isPending}
+        onClose={() => setIgnoreTarget(null)}
+        onConfirm={() => void handleConfirmBulkIgnore()}
       />
 
       <RelinkSteamEntryDialog target={relinkTarget} onClose={() => setRelinkTarget(null)} />

@@ -53,8 +53,32 @@ def sync_entries(db: Session, steam_app_ids: list[int]) -> dict[str, Any]:
 
 
 def ignore_entry(db: Session, steam_app_id: int) -> SteamWishlistEntryWithStatus:
+    return _set_ignored(db, steam_app_id, True)
+
+
+def unignore_entry(db: Session, steam_app_id: int) -> SteamWishlistEntryWithStatus:
+    """Same as steam_service.unignore_entry."""
+    return _set_ignored(db, steam_app_id, False)
+
+
+def ignore_entries(db: Session, steam_app_ids: list[int]) -> dict[str, Any]:
+    """Same as steam_service.ignore_entries."""
+    ignored = 0
+    failures: list[dict[str, Any]] = []
+    for steam_app_id in steam_app_ids:
+        try:
+            _set_ignored(db, steam_app_id, True)
+            ignored += 1
+        except Exception as exc:  # noqa: BLE001 - one bad id must not abort the batch
+            db.rollback()
+            failures.append({"steamAppId": steam_app_id, "error": str(exc)})
+
+    return {"ignored": ignored, "failed": len(failures), "failures": failures}
+
+
+def _set_ignored(db: Session, steam_app_id: int, ignored: bool) -> SteamWishlistEntryWithStatus:
     entry = _require_entry(db, steam_app_id)
-    steam_wishlist_repository.set_ignored(db, entry, True)
+    steam_wishlist_repository.set_ignored(db, entry, ignored)
     db.commit()
     return _with_status(db, entry)
 
