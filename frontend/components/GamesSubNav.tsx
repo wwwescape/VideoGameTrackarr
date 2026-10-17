@@ -8,9 +8,10 @@ const SUB_NAV_ITEMS = [
   { to: "/games/add", labelKey: "games.subNav.addGame" },
   { to: "/games/collections", labelKey: "games.subNav.collections" },
   { to: "/games/series", labelKey: "games.subNav.series" },
+  { to: "/games/platforms", labelKey: "games.subNav.platforms" },
 ] as const;
 
-// Route-driven segmented control shown atop Games/Collections/Series — these pages form
+// Route-driven segmented control shown atop Games/Collections/Series/Platforms — these pages form
 // one logical section, so the same switcher renders identically on each, regardless of
 // breakpoint (NavDrawer/NavRail/BottomNavBar no longer list Collections/Series directly).
 const GamesSubNav = () => {

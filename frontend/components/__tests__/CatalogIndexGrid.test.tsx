@@ -15,6 +15,7 @@ function renderGrid(stateKey: string) {
         searchPlaceholder="Enter collection name"
         entries={[]}
         isLoading={false}
+        getCount={() => 0}
         getHref={() => "/"}
       />
     </MemoryRouter>

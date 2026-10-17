@@ -17,6 +17,8 @@ class CollectionSummaryResponse(CamelModel):
     name: str
     slug: str | None
     game_count: int
+    # Up to 4, for the card's cover grid (see catalog_cover_repository).
+    cover_urls: list[str]
 
 
 def collection_detail_from_orm(
@@ -34,7 +36,9 @@ def collection_detail_from_orm(
     )
 
 
-def collection_summary_from_orm(collection: Collection, game_count: int) -> CollectionSummaryResponse:
+def collection_summary_from_orm(
+    collection: Collection, game_count: int, cover_urls: list[str] | None = None
+) -> CollectionSummaryResponse:
     return CollectionSummaryResponse(
-        id=collection.id, name=collection.name, slug=collection.slug, game_count=game_count
+        id=collection.id, name=collection.name, slug=collection.slug, game_count=game_count, cover_urls=cover_urls or []
     )

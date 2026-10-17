@@ -143,3 +143,20 @@ describe("buildGameFilterParams", () => {
     expect(params.playStatusMatchAll).toBe(true);
   });
 });
+
+describe("GameListToolbar on a Platform page", () => {
+  it("hides the Platforms field when hidePlatformsField is set", async () => {
+    renderToolbar({ hidePlatformsField: true });
+    const { dialog } = await openFilters();
+
+    expect(within(dialog).queryByLabelText("Platforms")).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Tags")).toBeInTheDocument();
+  });
+
+  it("shows the Platforms field by default", async () => {
+    renderToolbar();
+    const { dialog } = await openFilters();
+
+    expect(within(dialog).getByLabelText("Platforms")).toBeInTheDocument();
+  });
+});

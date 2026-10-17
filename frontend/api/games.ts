@@ -55,6 +55,10 @@ export interface GameListFilters {
   // letting every other field filter on top. See game_repository.list_top_level_games.
   requiredCollectionId?: number;
   requiredFranchiseId?: number;
+  requiredPlatformId?: number;
+  // With requiredPlatformId, for a PC storefront card's page (see utils/platformScope.ts).
+  requiredPlatformFormat?: MediaFormat;
+  requiredPlatformStorefront?: string;
 }
 
 // Shared by listGames below and CatalogBrowseGrid.tsx's Addons-section fetches
@@ -85,6 +89,9 @@ export function buildGameFilterParams(filters: GameListFilters) {
     sort,
     requiredCollectionId,
     requiredFranchiseId,
+    requiredPlatformId,
+    requiredPlatformFormat,
+    requiredPlatformStorefront,
   } = filters;
   // Only sent when it can change the result: "all" of a single value is the same as "any".
   const matchAllParam = (field: MatchAllField, values: unknown[] | undefined) =>
@@ -118,6 +125,9 @@ export function buildGameFilterParams(filters: GameListFilters) {
     sort: sort || undefined,
     requiredCollectionId,
     requiredFranchiseId,
+    requiredPlatformId,
+    requiredPlatformFormat,
+    requiredPlatformStorefront,
   };
 }
 

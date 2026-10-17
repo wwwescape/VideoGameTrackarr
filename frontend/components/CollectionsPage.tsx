@@ -19,6 +19,7 @@ const CollectionsPage = () => {
         searchPlaceholder={t("games.collectionsPage.searchPlaceholder")}
         entries={collections}
         isLoading={isLoading}
+        getCount={(entry) => entry.gameCount}
         getHref={(entry) => `/games/collections/${entry.slug ?? ""}`}
       />
     </>

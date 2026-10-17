@@ -25,6 +25,8 @@ import MissingAddonsPage from "./components/MissingAddonsPage";
 import NotFoundPage from "./components/NotFoundPage";
 import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
 import RouteErrorBoundary from "./components/RouteErrorBoundary";
+import PlatformDetailPage from "./components/PlatformDetailPage";
+import PlatformsPage from "./components/PlatformsPage";
 import SeriesDetailPage from "./components/SeriesDetailPage";
 import SeriesPage from "./components/SeriesPage";
 import About from "./components/About";
@@ -72,6 +74,8 @@ import {
   orphanedAccessoriesCrumbs,
   saleTrackedCrumbs,
   salesIgnoredCrumbs,
+  platformCrumbs,
+  platformsCrumbs,
   seriesCrumbs,
   settingsCrumbs,
   steamSyncCrumbs,
@@ -152,6 +156,12 @@ const router = createBrowserRouter([
             path: "/games/series/:seriesSlug",
             element: <SeriesDetailPage />,
             handle: { crumbs: franchiseCrumbs },
+          },
+          { path: "/games/platforms", element: <PlatformsPage />, handle: { crumbs: platformsCrumbs } },
+          {
+            path: "/games/platforms/:platformSlug",
+            element: <PlatformDetailPage />,
+            handle: { crumbs: platformCrumbs },
           },
           {
             path: "/games/collections",

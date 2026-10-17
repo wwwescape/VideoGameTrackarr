@@ -80,6 +80,9 @@ def search_local_games(
     sort: game_repository.GameSortOption = game_repository.GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
+    required_platform_id: int | None = None,
+    required_platform_format: MediaFormat | None = None,
+    required_platform_storefront: str | None = None,
 ) -> list[GameWithStatus]:
     return game_repository.list_top_level_games(
         db,
@@ -111,6 +114,9 @@ def search_local_games(
         sort=sort,
         required_collection_id=required_collection_id,
         required_franchise_id=required_franchise_id,
+        required_platform_id=required_platform_id,
+        required_platform_format=required_platform_format,
+        required_platform_storefront=required_platform_storefront,
     )
 
 

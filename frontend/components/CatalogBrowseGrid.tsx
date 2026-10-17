@@ -7,7 +7,6 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { MatchAllFilters } from "../api/games";
 import type {
-  CatalogResyncKind,
   GameCategory,
   GameSortOption,
   GameSummary,
@@ -17,10 +16,11 @@ import type {
 import { useCollectionAddons, useCollections, useFranchiseAddons, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGames } from "../hooks/useGames";
-import { usePlatforms } from "../hooks/usePlatforms";
+import { usePlatformAddons, usePlatforms } from "../hooks/usePlatforms";
 import { useStorefronts } from "../hooks/useStorefronts";
 import { useTags } from "../hooks/useTags";
 import { gameIdentifier } from "../utils/identifiers";
+import type { PlatformScope } from "../utils/platformScope";
 import { matchesOwnership } from "../utils/ownershipFilter";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import CatalogResyncButton from "./CatalogResyncButton";
@@ -50,35 +50,46 @@ function filterByOwnershipAndMissing(
   return result;
 }
 
+export type CatalogBrowseKind = "collection" | "series" | "platform";
+
 interface CatalogBrowseGridProps {
+  kind: CatalogBrowseKind;
   kindLabel: string;
   name: string | undefined;
   entityId: number | undefined;
   isLoading: boolean;
-  resyncKind: CatalogResyncKind;
   slug: string | undefined;
-  resyncLabel: string;
+  // Collections and Series only: a Platform page lists your own copies, so there's nothing
+  // to resync from IGDB.
+  resyncLabel?: string;
+  // Platform pages only: a PC storefront card's format/storefront (see utils/platformScope.ts).
+  platformScope?: PlatformScope;
 }
 
 // A sibling of GameList.tsx — same filter-state shape, same GameListToolbar, reused as-is —
-// but scoped to one Collection/Series (via requiredCollectionId/requiredFranchiseId on the
-// Games fetch, and the dedicated .../addons endpoints for the Addons section) instead of the
-// whole library, and with no bulk-selection support (this page has no bulk actions).
+// but scoped to one Collection/Series/Platform (via requiredCollectionId/requiredFranchiseId/
+// requiredPlatformId on the Games fetch, and the dedicated .../addons endpoints for the Addons
+// section) instead of the whole library, and with no bulk-selection support (this page has no
+// bulk actions).
 const CatalogBrowseGrid = ({
+  kind,
   kindLabel,
   name,
   entityId,
   isLoading,
-  resyncKind,
   slug,
   resyncLabel,
+  platformScope,
 }: CatalogBrowseGridProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isCollection = resyncKind === "collection";
-  // Remembered per collection/series for the session, so filters set on one don't carry
-  // over to another (see hooks/useSessionState.ts).
-  const stateKey = `${isCollection ? "collection" : "series"}.${slug ?? ""}`;
+  const isCollection = kind === "collection";
+  const isSeries = kind === "series";
+  const isPlatform = kind === "platform";
+  // Remembered per collection/series/platform for the session, so filters set on one don't
+  // carry over to another (see hooks/useSessionState.ts).
+  const scopeKey = platformScope?.format ? `.${platformScope.format}.${platformScope.storefront ?? ""}` : "";
+  const stateKey = `${kind}.${slug ?? ""}${scopeKey}`;
 
   const [searchKeyword, setSearchKeyword] = useSessionState(`${stateKey}.searchKeyword`, "");
   const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>(`${stateKey}.ownershipStatuses`, []);
@@ -178,9 +189,20 @@ const CatalogBrowseGrid = ({
     () => ({
       ...sharedFilters,
       requiredCollectionId: isCollection ? entityId : undefined,
-      requiredFranchiseId: !isCollection ? entityId : undefined,
+      requiredFranchiseId: isSeries ? entityId : undefined,
+      requiredPlatformId: isPlatform ? entityId : undefined,
+      requiredPlatformFormat: isPlatform ? platformScope?.format : undefined,
+      requiredPlatformStorefront: isPlatform ? platformScope?.storefront : undefined,
     }),
-    [sharedFilters, isCollection, entityId]
+    [sharedFilters, isCollection, isSeries, isPlatform, entityId, platformScope?.format, platformScope?.storefront]
+  );
+  const platformAddonFilters = useMemo(
+    () => ({
+      ...sharedFilters,
+      requiredPlatformFormat: platformScope?.format,
+      requiredPlatformStorefront: platformScope?.storefront,
+    }),
+    [sharedFilters, platformScope?.format, platformScope?.storefront]
   );
   const { data: games, isLoading: isGamesLoading } = useGames(gamesFilters, { enabled: !!entityId });
 
@@ -190,12 +212,21 @@ const CatalogBrowseGrid = ({
     includeAddons && isCollection
   );
   const { data: franchiseAddons, isLoading: isFranchiseAddonsLoading } = useFranchiseAddons(
-    !isCollection ? slug : undefined,
+    isSeries ? slug : undefined,
     sharedFilters,
-    includeAddons && !isCollection
+    includeAddons && isSeries
   );
-  const addons = isCollection ? collectionAddons : franchiseAddons;
-  const isAddonsLoading = isCollection ? isCollectionAddonsLoading : isFranchiseAddonsLoading;
+  const { data: platformAddons, isLoading: isPlatformAddonsLoading } = usePlatformAddons(
+    isPlatform ? slug : undefined,
+    platformAddonFilters,
+    includeAddons && isPlatform
+  );
+  const addons = isCollection ? collectionAddons : isSeries ? franchiseAddons : platformAddons;
+  const isAddonsLoading = isCollection
+    ? isCollectionAddonsLoading
+    : isSeries
+      ? isFranchiseAddonsLoading
+      : isPlatformAddonsLoading;
 
   const visibleGames = useMemo(
     () => filterByOwnershipAndMissing(games, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing),
@@ -219,10 +250,12 @@ const CatalogBrowseGrid = ({
             {name ?? t("common.loading")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t("catalog.browseGrid.importedOnlyNotice")}
+            {isPlatform ? t("catalog.browseGrid.platformNotice") : t("catalog.browseGrid.importedOnlyNotice")}
           </Typography>
         </Box>
-        {slug ? <CatalogResyncButton kind={resyncKind} slug={slug} label={resyncLabel} /> : null}
+        {slug && resyncLabel && !isPlatform ? (
+          <CatalogResyncButton kind={isCollection ? "collection" : "franchise"} slug={slug} label={resyncLabel} />
+        ) : null}
       </Box>
       {entityId ? (
         <Box sx={{ mb: 3 }}>
@@ -234,6 +267,7 @@ const CatalogBrowseGrid = ({
             ownershipExclude={ownershipExclude}
             onOwnershipExcludeChange={setOwnershipExclude}
             platformOptions={platforms}
+            hidePlatformsField={isPlatform}
             platformIds={platformIds}
             onPlatformIdsChange={setPlatformIds}
             platformExclude={platformExclude}
@@ -254,7 +288,7 @@ const CatalogBrowseGrid = ({
             onFranchiseIdsChange={setFranchiseIds}
             franchiseExclude={franchiseExclude}
             onFranchiseExcludeChange={setFranchiseExclude}
-            hideFranchisesField={!isCollection}
+            hideFranchisesField={isSeries}
             gameTypes={gameTypes}
             onGameTypesChange={setGameTypes}
             gameTypeExclude={gameTypeExclude}
@@ -278,8 +312,9 @@ const CatalogBrowseGrid = ({
             onPlayStatusExcludeChange={setPlayStatusExclude}
             matchAll={matchAll}
             onMatchAllChange={setMatchAll}
-            showMissing={showMissing}
-            onShowMissingChange={setShowMissing}
+            // Every game on a Platform page is already one of your copies.
+            showMissing={isPlatform ? undefined : showMissing}
+            onShowMissingChange={isPlatform ? undefined : setShowMissing}
             includeAddons={includeAddons}
             onIncludeAddonsChange={setIncludeAddons}
           />

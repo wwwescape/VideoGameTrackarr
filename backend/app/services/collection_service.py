@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Collection
-from app.repositories import collection_repository
+from app.repositories import catalog_cover_repository, collection_repository
 from app.repositories.game_repository import GameWithStatus
 from app.services.exceptions import NotFoundError
 
@@ -21,8 +21,12 @@ def get_collection_with_games(
     )
 
 
-def list_collections(db: Session) -> list[tuple[Collection, int]]:
-    return collection_repository.list_collections_with_counts(db)
+def list_collections(db: Session) -> list[tuple[Collection, int, list[str]]]:
+    covers = catalog_cover_repository.cover_urls_by_collection(db)
+    return [
+        (collection, count, covers.get(collection.id, []))
+        for collection, count in collection_repository.list_collections_with_counts(db)
+    ]
 
 
 def list_collection_addons(db: Session, slug: str, **filters: Any) -> list[GameWithStatus]:

@@ -24,11 +24,11 @@ const SeriesDetailPage = () => {
 
   return (
     <CatalogBrowseGrid
+      kind="series"
       kindLabel={t("games.seriesDetailPage.kindLabel")}
       name={data?.name}
       entityId={data?.id}
       isLoading={isLoading}
-      resyncKind="franchise"
       slug={seriesSlug}
       resyncLabel={t("games.seriesDetailPage.resyncButton")}
     />

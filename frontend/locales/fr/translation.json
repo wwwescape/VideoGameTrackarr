@@ -37,6 +37,7 @@
     "accessoryNotFoundTitle": "Accessoire introuvable",
     "seriesNotFoundTitle": "Série introuvable",
     "collectionNotFoundTitle": "Collection introuvable",
+    "platformNotFoundTitle": "Plateforme introuvable",
     "eventNotFoundTitle": "Événement introuvable"
   },
   "nav": {
@@ -46,6 +47,7 @@
     "addGame": "Ajouter un jeu",
     "collections": "Collections",
     "series": "Séries",
+    "platforms": "Plateformes",
     "hardware": "Matériel",
     "addDevice": "Ajouter un appareil",
     "addAccessory": "Ajouter un accessoire",
@@ -521,6 +523,7 @@
       "sortByLabel": "Trier par",
       "sortNameAsc": "Nom (ASC)",
       "sortNameDesc": "Nom (DESC)",
+      "sortMostGames": "Plus de jeux",
       "sortReleaseDateAsc": "Date de sortie (ASC)",
       "sortReleaseDateDesc": "Date de sortie (DESC)",
       "showMissingLabel": "Afficher ce qu'il me manque ?",
@@ -547,7 +550,8 @@
       "allGames": "Tous les jeux",
       "addGame": "Ajouter un jeu",
       "collections": "Collections",
-      "series": "Séries"
+      "series": "Séries",
+      "platforms": "Plateformes"
     },
     "add": {
       "pageTitle": "Ajouter un jeu",
@@ -600,6 +604,20 @@
       "emptyMessage": "Aucune série pour l'instant — elles apparaîtront ici dès que vous aurez importé un jeu qui en fait partie.",
       "searchLabel": "Rechercher des séries",
       "searchPlaceholder": "Entrez le nom de la série"
+    },
+    "platformDetailPage": {
+      "kindLabel": "Plateforme"
+    },
+    "platformsPage": {
+      "title": "Plateformes",
+      "description": "Les plateformes avec au moins un jeu dans votre bibliothèque.",
+      "emptyMessage": "Aucune plateforme pour l'instant — elles apparaissent ici dès que vous ajoutez un jeu sur l'une d'elles à votre bibliothèque.",
+      "searchLabel": "Rechercher des plateformes",
+      "searchPlaceholder": "Saisissez le nom de la plateforme",
+      "ownedCount_one": "{{count}} possédé",
+      "ownedCount_other": "{{count}} possédés",
+      "wishlistedCount_one": "{{count}} souhaité",
+      "wishlistedCount_other": "{{count}} souhaités"
     },
     "about": {
       "companyRoleDeveloper": "Développé par",
@@ -969,6 +987,7 @@
   "catalog": {
     "browseGrid": {
       "importedOnlyNotice": "Seuls les jeux que vous avez déjà importés apparaissent ici.",
+      "platformNotice": "Les jeux que vous possédez ou souhaitez sur cette plateforme.",
       "emptyMessage": "Aucun jeu connu localement dans cette {{kind}} pour l'instant.",
       "includeAddonsLabel": "Inclure les extensions",
       "gamesSectionTitle": "Jeux",

@@ -224,6 +224,8 @@ interface GameListToolbarProps {
   platformOptions: PlatformResponse[];
   platformIds: number[];
   onPlatformIdsChange: (value: number[]) => void;
+  // Same reasoning as hideCollectionsField below, for a Platform detail page.
+  hidePlatformsField?: boolean;
   platformExclude: boolean;
   onPlatformExcludeChange: (value: boolean) => void;
   tagOptions: Tag[];
@@ -315,6 +317,7 @@ const GameListToolbar = ({
   onManageTagsClick,
   onBulkDelete = () => {},
   platformOptions,
+  hidePlatformsField = false,
   platformIds,
   onPlatformIdsChange,
   platformExclude,
@@ -695,6 +698,7 @@ const GameListToolbar = ({
                     />
                   </Stack>
                 </Grid>
+                {!hidePlatformsField ? (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Stack spacing={0.5}>
                     <AutocompleteMultiSelect<PlatformResponse>
@@ -717,6 +721,7 @@ const GameListToolbar = ({
                     />
                   </Stack>
                 </Grid>
+                ) : null}
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Stack spacing={0.5}>
                     <AutocompleteMultiSelect<FormatOption>

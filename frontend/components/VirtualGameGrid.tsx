@@ -23,7 +23,7 @@ const SAVE_THROTTLE_MS = 100;
 // doesn't depend on the row-height estimate being accurate at save time, unlike a raw scrollY
 // would. Scoped by location only (not per grid instance) — fine today since no single route
 // renders two VirtualGameGrids at once.
-const visibleItemKeyByLocation = new Map<string, number>();
+const visibleItemKeyByLocation = new Map<string, number | string>();
 
 function locationKey(pathname: string, search: string): string {
   return `${pathname}${search}`;
@@ -31,7 +31,7 @@ function locationKey(pathname: string, search: string): string {
 
 interface VirtualGameGridProps<T> {
   items: T[];
-  getKey: (item: T) => number;
+  getKey: (item: T) => number | string;
   renderItem: (item: T) => ReactNode;
   // Overrides the cover-art-card height guess below — for grids of shorter, imageless
   // tiles (e.g. catalog ref cards) where that estimate would be way too tall.

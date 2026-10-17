@@ -17,6 +17,8 @@ class FranchiseSummaryResponse(CamelModel):
     name: str
     slug: str | None
     game_count: int
+    # Up to 4, for the card's cover grid (see catalog_cover_repository).
+    cover_urls: list[str]
 
 
 def franchise_detail_from_orm(
@@ -34,5 +36,9 @@ def franchise_detail_from_orm(
     )
 
 
-def franchise_summary_from_orm(franchise: Franchise, game_count: int) -> FranchiseSummaryResponse:
-    return FranchiseSummaryResponse(id=franchise.id, name=franchise.name, slug=franchise.slug, game_count=game_count)
+def franchise_summary_from_orm(
+    franchise: Franchise, game_count: int, cover_urls: list[str] | None = None
+) -> FranchiseSummaryResponse:
+    return FranchiseSummaryResponse(
+        id=franchise.id, name=franchise.name, slug=franchise.slug, game_count=game_count, cover_urls=cover_urls or []
+    )

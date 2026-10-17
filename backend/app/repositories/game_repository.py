@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, and_, case, delete, exists, or_, select, update
+from sqlalchemy import ColumnElement, Select, and_, case, delete, exists, func, or_, select, update
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import (
@@ -48,6 +48,27 @@ class GameWithStatus:
     wishlisted: bool
     play_status: PlayStatus | None
     rating: float | None
+
+
+def platform_copy_exists(
+    game_id_column: ColumnElement[int],
+    platform_id: int,
+    media_format: MediaFormat | None = None,
+    storefront: str | None = None,
+) -> ColumnElement[bool]:
+    """A library copy (owned or wishlisted) on this platform — optionally only one in this
+    format and, for digital copies, from this storefront (None meaning "no storefront set").
+    Every condition is on the *same* copy, so a game owned on Steam but wishlisted on GOG
+    matches each storefront on its own. Copies with no format count as "other"."""
+    conditions = [LibraryItem.game_id == game_id_column, LibraryItem.platform_id == platform_id]
+    if media_format is not None:
+        if media_format == MediaFormat.OTHER:
+            conditions.append(or_(LibraryItem.format == MediaFormat.OTHER, LibraryItem.format.is_(None)))
+        else:
+            conditions.append(LibraryItem.format == media_format)
+        if media_format == MediaFormat.DIGITAL:
+            conditions.append(func.coalesce(LibraryItem.digital_storefront, "") == (storefront or ""))
+    return exists().where(*conditions)
 
 
 def _owned_exists(game_id_column: ColumnElement[int]) -> ColumnElement[bool]:
@@ -314,6 +335,9 @@ def list_top_level_games(
     sort: GameSortOption = GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
+    required_platform_id: int | None = None,
+    required_platform_format: MediaFormat | None = None,
+    required_platform_storefront: str | None = None,
 ) -> list[GameWithStatus]:
     stmt = select(
         Game,
@@ -333,6 +357,15 @@ def list_top_level_games(
     if required_franchise_id is not None:
         stmt = stmt.where(
             exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id == required_franchise_id)
+        )
+    # A Platform page: games with a library copy on this platform (the same "your copy" rule
+    # as the platform_ids filter, not IGDB's game_platforms release list) — for a PC storefront
+    # card, only copies in that format/storefront.
+    if required_platform_id is not None:
+        stmt = stmt.where(
+            platform_copy_exists(
+                Game.id, required_platform_id, required_platform_format, required_platform_storefront
+            )
         )
     stmt = _apply_optional_game_filters(
         stmt,

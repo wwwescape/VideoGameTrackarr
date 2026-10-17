@@ -19,6 +19,7 @@ const SeriesPage = () => {
         searchPlaceholder={t("games.seriesPage.searchPlaceholder")}
         entries={franchises}
         isLoading={isLoading}
+        getCount={(entry) => entry.gameCount}
         getHref={(entry) => `/games/series/${entry.slug ?? ""}`}
       />
     </>

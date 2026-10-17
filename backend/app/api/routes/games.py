@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_igdb_client, get_session_factory
 from app.api.routes.game_filters import GameFilterParams
+from app.models.library import MediaFormat
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
@@ -53,6 +54,10 @@ def list_games(
     # of the collectionId/franchiseId OR-filter GameFilterParams already carries).
     required_collection_id: int | None = Query(default=None, alias="requiredCollectionId"),
     required_franchise_id: int | None = Query(default=None, alias="requiredFranchiseId"),
+    required_platform_id: int | None = Query(default=None, alias="requiredPlatformId"),
+    # Only used with requiredPlatformId, for a PC storefront card (see platform_repository).
+    required_platform_format: MediaFormat | None = Query(default=None, alias="requiredPlatformFormat"),
+    required_platform_storefront: str | None = Query(default=None, alias="requiredPlatformStorefront"),
     db: Session = Depends(get_db),
 ) -> list[GameSummaryResponse]:
     games = game_service.search_local_games(
@@ -60,6 +65,9 @@ def list_games(
         **vars(params),
         required_collection_id=required_collection_id,
         required_franchise_id=required_franchise_id,
+        required_platform_id=required_platform_id,
+        required_platform_format=required_platform_format,
+        required_platform_storefront=required_platform_storefront,
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     return [game_summary_from_orm(game, on_sale_game_ids) for game in games]

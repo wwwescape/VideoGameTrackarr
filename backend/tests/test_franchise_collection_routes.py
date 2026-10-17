@@ -406,3 +406,74 @@ def test_list_collection_addons_respects_sort(auth_client, db_session, seed_game
     response = auth_client.get(f"/api/collections/{collection.slug}/addons", params={"sort": "name_asc"})
 
     assert [a["name"] for a in response.json()] == ["A Addon", "B Addon"]
+
+
+def _covered_game(db_session, igdb_id, name, release, cover=True, category=GameCategory.MAIN_GAME):
+    game = Game(
+        igdb_id=igdb_id,
+        name=name,
+        slug=f"covered-{igdb_id}",
+        category=category,
+        first_release_date=release,
+        cover_url=f"https://img.example/{igdb_id}.jpg" if cover else None,
+    )
+    db_session.add(game)
+    db_session.commit()
+    return game
+
+
+def test_list_franchises_returns_up_to_four_covers_owned_first_then_earliest(auth_client, db_session, seed_platform):
+    franchise = Franchise(igdb_id=596, name="The Legend of Zelda", slug="zelda")
+    db_session.add(franchise)
+    db_session.commit()
+    games = [
+        _covered_game(db_session, 101, "Breath of the Wild", 1488499200),
+        _covered_game(db_session, 102, "The Legend of Zelda", 509328000),
+        _covered_game(db_session, 103, "Ocarina of Time", 911347200),
+        _covered_game(db_session, 104, "A Link to the Past", 690595200),
+        _covered_game(db_session, 105, "Undated Spin-off", None),
+        _covered_game(db_session, 106, "No Cover", 400000000, cover=False),
+        _covered_game(db_session, 107, "Some DLC", 300000000, category=GameCategory.DLC_ADDON),
+    ]
+    for game in games:
+        db_session.add(GameFranchise(game_id=game.id, franchise_id=franchise.id))
+    # The one game you have comes first, even though it's the newest.
+    db_session.add(LibraryItem(game_id=games[0].id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/franchises").json()
+
+    assert entry["coverUrls"] == [
+        "https://img.example/101.jpg",
+        "https://img.example/102.jpg",
+        "https://img.example/104.jpg",
+        "https://img.example/103.jpg",
+    ]
+
+
+def test_list_collections_returns_an_empty_cover_list_without_covers(auth_client, db_session, seed_game):
+    collection = Collection(igdb_id=777, name="No Art Here", slug="no-art")
+    db_session.add(collection)
+    db_session.commit()
+    seed_game.cover_url = None
+    db_session.add(GameCollection(game_id=seed_game.id, collection_id=collection.id))
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/collections").json()
+
+    assert entry["coverUrls"] == []
+
+
+def test_list_collections_puts_undated_games_after_dated_ones(auth_client, db_session):
+    collection = Collection(igdb_id=778, name="Mixed", slug="mixed")
+    db_session.add(collection)
+    db_session.commit()
+    undated = _covered_game(db_session, 201, "Undated", None)
+    dated = _covered_game(db_session, 202, "Dated", 1000000000)
+    for game in (undated, dated):
+        db_session.add(GameCollection(game_id=game.id, collection_id=collection.id))
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/collections").json()
+
+    assert entry["coverUrls"] == ["https://img.example/202.jpg", "https://img.example/201.jpg"]

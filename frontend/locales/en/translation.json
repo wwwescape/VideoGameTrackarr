@@ -37,6 +37,7 @@
     "accessoryNotFoundTitle": "Accessory not found",
     "seriesNotFoundTitle": "Series not found",
     "collectionNotFoundTitle": "Collection not found",
+    "platformNotFoundTitle": "Platform not found",
     "eventNotFoundTitle": "Event not found"
   },
   "nav": {
@@ -46,6 +47,7 @@
     "addGame": "Add Game",
     "collections": "Collections",
     "series": "Series",
+    "platforms": "Platforms",
     "hardware": "Hardware",
     "addDevice": "Add Device",
     "addAccessory": "Add Accessory",
@@ -521,6 +523,7 @@
       "sortByLabel": "Sort By",
       "sortNameAsc": "Name (ASC)",
       "sortNameDesc": "Name (DESC)",
+      "sortMostGames": "Most games",
       "sortReleaseDateAsc": "Release Date (ASC)",
       "sortReleaseDateDesc": "Release Date (DESC)",
       "showMissingLabel": "Show what I am missing?",
@@ -547,7 +550,8 @@
       "allGames": "All Games",
       "addGame": "Add Game",
       "collections": "Collections",
-      "series": "Series"
+      "series": "Series",
+      "platforms": "Platforms"
     },
     "add": {
       "pageTitle": "Add Game",
@@ -600,6 +604,20 @@
       "emptyMessage": "No series yet — they show up here once you've imported a game that belongs to one.",
       "searchLabel": "Search series",
       "searchPlaceholder": "Enter series name"
+    },
+    "platformDetailPage": {
+      "kindLabel": "Platform"
+    },
+    "platformsPage": {
+      "title": "Platforms",
+      "description": "Platforms with at least one game in your library.",
+      "emptyMessage": "No platforms yet — they show up here once you've added a game to your library on one.",
+      "searchLabel": "Search platforms",
+      "searchPlaceholder": "Enter platform name",
+      "ownedCount_one": "{{count}} owned",
+      "ownedCount_other": "{{count}} owned",
+      "wishlistedCount_one": "{{count}} wishlisted",
+      "wishlistedCount_other": "{{count}} wishlisted"
     },
     "about": {
       "companyRoleDeveloper": "Developed by",
@@ -969,6 +987,7 @@
   "catalog": {
     "browseGrid": {
       "importedOnlyNotice": "Only games you've already imported show up here.",
+      "platformNotice": "Games you own or wishlisted on this platform.",
       "emptyMessage": "No locally-known games in this {{kind}} yet.",
       "includeAddonsLabel": "Include Addons",
       "gamesSectionTitle": "Games",

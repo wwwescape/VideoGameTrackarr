@@ -19,6 +19,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import SellIcon from "@mui/icons-material/Sell";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
+import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import SteamIcon from "../icons/SteamIcon";
 
@@ -56,6 +57,7 @@ export function getNavDestinations(t: TFunction): NavDestination[] {
         { to: "/games/add", label: t("nav.addGame"), icon: <AddIcon /> },
         { to: "/games/collections", label: t("nav.collections"), icon: <CollectionsIcon /> },
         { to: "/games/series", label: t("nav.series"), icon: <AccountTreeIcon /> },
+        { to: "/games/platforms", label: t("nav.platforms"), icon: <VideogameAssetIcon /> },
       ],
     },
     {

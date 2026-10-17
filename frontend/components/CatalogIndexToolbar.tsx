@@ -29,6 +29,7 @@ interface SortOption {
 const SORT_OPTIONS: SortOption[] = [
   { value: "name_asc", labelKey: "games.listToolbar.sortNameAsc" },
   { value: "name_desc", labelKey: "games.listToolbar.sortNameDesc" },
+  { value: "count_desc", labelKey: "games.listToolbar.sortMostGames" },
 ];
 
 interface CatalogIndexToolbarProps {
@@ -40,9 +41,9 @@ interface CatalogIndexToolbarProps {
   onSortChange: (value: CatalogSortOption) => void;
 }
 
-// Trimmed sibling of GameListToolbar's Filters & Sort dialog — Collections/Series are just a
-// name + game count each, so there's nothing to filter (the Filter tab says so plainly) and
-// Sort only ever offers Name ASC/DESC. No selection-mode toggle either, since these index
+// Trimmed sibling of GameListToolbar's Filters & Sort dialog — Collections/Series/Platforms are
+// just a name + game count each, so there's nothing to filter (the Filter tab says so plainly)
+// and Sort only offers Name ASC/DESC and Most games. No selection-mode toggle either, since these index
 // pages have no bulk actions.
 const CatalogIndexToolbar = ({
   searchLabel,
