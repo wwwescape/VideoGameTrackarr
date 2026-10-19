@@ -5,6 +5,7 @@ from app.models.catalog import Franchise, Game, GameCategory, GameFranchise
 from app.models.library import MediaFormat, PlayStatus
 from app.repositories.game_repository import (
     GameSortOption,
+    GameSource,
     GameWithStatus,
     _apply_optional_game_filters,
     _is_browsable_game,
@@ -119,6 +120,8 @@ def list_addons_for_franchise(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    sources: list[GameSource] | None = None,
+    source_exclude: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this franchise's top-level games — see
@@ -171,6 +174,8 @@ def list_addons_for_franchise(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        sources=sources,
+        source_exclude=source_exclude,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

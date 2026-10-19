@@ -159,6 +159,14 @@ class GameSortOption(enum.Enum):
     RELEASE_DATE_DESC = "release_date_desc"
 
 
+class GameSource(enum.Enum):
+    """Where a game's metadata comes from — imported from IGDB, or added by hand via the
+    manual game form (no igdb_id; shown with a "Custom" chip on its card)."""
+
+    IGDB = "igdb"
+    CUSTOM = "custom"
+
+
 def _order_by_for_sort(sort: GameSortOption) -> ColumnElement[Any]:
     if sort == GameSortOption.NAME_DESC:
         return Game.name.desc()
@@ -231,6 +239,8 @@ def _apply_optional_game_filters(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    sources: list[GameSource] | None = None,
+    source_exclude: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> Select[Any]:
     """The Games list's whole optional filter set (search + 8 dimensions + sort), factored
@@ -302,6 +312,12 @@ def _apply_optional_game_filters(
         # A plain presence check, unlike the list-based filters above — no Exclude toggle,
         # since "not a Steelbook" isn't a meaningful thing to filter for on its own.
         stmt = stmt.where(exists().where(LibraryItem.game_id == Game.id, LibraryItem.steelbook.is_(True)))
+    if sources:
+        # No "match all", same as categories: a game is either IGDB-backed or custom, never both.
+        clause = or_(
+            *(Game.igdb_id.is_not(None) if source == GameSource.IGDB else Game.igdb_id.is_(None) for source in sources)
+        )
+        stmt = stmt.where(_maybe_negate(clause, source_exclude))
     return stmt.order_by(_order_by_for_sort(sort))
 
 
@@ -332,6 +348,8 @@ def list_top_level_games(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    sources: list[GameSource] | None = None,
+    source_exclude: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
@@ -394,6 +412,8 @@ def list_top_level_games(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        sources=sources,
+        source_exclude=source_exclude,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

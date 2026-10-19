@@ -41,6 +41,9 @@ export interface RegionResponse {
   name: string;
 }
 
+// Where a game's metadata comes from: imported from IGDB, or added by hand (igdbId null).
+export type GameSource = "igdb" | "custom";
+
 export type PlayStatus = "none" | "backlog" | "playing" | "completed" | "abandoned";
 
 export interface GameSummary {

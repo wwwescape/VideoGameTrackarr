@@ -79,3 +79,24 @@ def test_run_prunes_events_that_have_since_ended(db_session, monkeypatch):
 
     assert result["pruned"] == 1
     assert db_session.query(Event).count() == 0
+
+
+def test_run_prunes_events_igdb_no_longer_lists_as_upcoming(db_session, monkeypatch):
+    # IGDB corrected this event's end_time (a typo'd future year) to one that's already
+    # passed, so it drops out of get_upcoming_events — the stored row's stale future
+    # end_time must not keep it around.
+    _configure_igdb(monkeypatch)
+    db_session.add(Event(igdb_id=1180, name="Stale Dates", slug="stale-dates", end_time=9999999999))
+    db_session.add(Event(igdb_id=1, name="Still Upcoming", slug="still-upcoming", end_time=9999999999))
+    db_session.commit()
+
+    async def fake_get_upcoming_events(self):
+        return [{"id": 1, "name": "Still Upcoming", "slug": "still-upcoming", "end_time": 9999999999}]
+
+    monkeypatch.setattr(IGDBClient, "get_upcoming_events", fake_get_upcoming_events)
+
+    result = event_sync_jobs.run(lambda: db_session)
+
+    assert result["pruned"] == 1
+    [event] = db_session.query(Event).all()
+    assert event.igdb_id == 1

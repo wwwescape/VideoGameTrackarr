@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.events import Event, EventGame, EventNetwork, EventVideo
@@ -99,13 +99,22 @@ def upsert_from_igdb_payload(db: Session, payload: dict) -> Event:
     return event
 
 
-def prune_ended(db: Session) -> int:
-    """Drops any previously-synced event whose end_time has since passed — get_upcoming_events
-    naturally excludes these going forward, but a row already in the DB would otherwise
-    linger forever without this. Cascades to child tables via each relationship's
-    cascade="all, delete-orphan"."""
+def prune_ended(db: Session, upcoming_igdb_ids: set[int]) -> int:
+    """Drops any previously-synced event that's no longer upcoming — either its stored
+    end_time has passed, or IGDB's own upcoming list (upcoming_igdb_ids, the full set the
+    sync just fetched) no longer includes it. The second case matters when IGDB corrects an
+    event's dates after we synced it: e.g. an end_time typo'd a year late, later fixed to
+    one that's already passed, drops the event out of get_upcoming_events entirely, so it's
+    never re-upserted and its stale future end_time alone would keep it on the Dashboard
+    forever. Cascades to child tables via each relationship's cascade="all, delete-orphan"."""
     now = int(datetime.now(UTC).timestamp())
-    ended = list(db.scalars(select(Event).where(Event.end_time.is_not(None), Event.end_time <= now)))
+    stmt = select(Event).where(
+        or_(
+            and_(Event.end_time.is_not(None), Event.end_time <= now),
+            Event.igdb_id.not_in(upcoming_igdb_ids),
+        )
+    )
+    ended = list(db.scalars(stmt))
     for event in ended:
         db.delete(event)
     db.flush()

@@ -5,6 +5,7 @@ from app.models.catalog import Collection, Game, GameCategory, GameCollection
 from app.models.library import MediaFormat, PlayStatus
 from app.repositories.game_repository import (
     GameSortOption,
+    GameSource,
     GameWithStatus,
     _apply_optional_game_filters,
     _is_browsable_game,
@@ -115,6 +116,8 @@ def list_addons_for_collection(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    sources: list[GameSource] | None = None,
+    source_exclude: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this collection's top-level games — parent_game_id is only ever set for
@@ -173,6 +176,8 @@ def list_addons_for_collection(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        sources=sources,
+        source_exclude=source_exclude,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

@@ -52,7 +52,10 @@ async def _sync(db: Session, report_progress: Callable[[int, int], None]) -> dic
                 )
             report_progress(index + 1, len(events))
 
-        pruned = event_repository.prune_ended(db)
+        # Every fetched id, not just the ones that upserted cleanly — a payload that failed
+        # this run is still upcoming, so a row synced for it on an earlier run should stay.
+        upcoming_igdb_ids = {payload["id"] for payload in events if payload.get("id") is not None}
+        pruned = event_repository.prune_ended(db, upcoming_igdb_ids)
         db.commit()
 
         return {

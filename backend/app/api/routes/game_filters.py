@@ -4,7 +4,7 @@ from fastapi import Query
 
 from app.models.catalog import GameCategory
 from app.models.library import MediaFormat, PlayStatus
-from app.repositories.game_repository import GameSortOption
+from app.repositories.game_repository import GameSortOption, GameSource
 
 
 @dataclass
@@ -43,4 +43,6 @@ class GameFilterParams:
     # A plain boolean, unlike every filter above — a copy either is or isn't a Steelbook, so
     # there's no multi-value list and no "Exclude" toggle worth offering for a single flag.
     steelbook_only: bool = Query(default=False, alias="steelbookOnly")
+    sources: list[GameSource] | None = Query(default=None, alias="source")
+    source_exclude: bool = Query(default=False, alias="sourceExclude")
     sort: GameSortOption = Query(default=GameSortOption.NAME_ASC)

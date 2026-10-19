@@ -7,7 +7,14 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { MatchAllFilters } from "../api/games";
-import type { GameCategory, GameSortOption, GameSummary, MediaFormat, PlayStatus } from "../api/types";
+import type {
+  GameCategory,
+  GameSortOption,
+  GameSource,
+  GameSummary,
+  MediaFormat,
+  PlayStatus,
+} from "../api/types";
 import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDeleteGame, useGames } from "../hooks/useGames";
@@ -51,6 +58,8 @@ const GameList = () => {
   const [playStatusExclude, setPlayStatusExclude] = useSessionState("games.playStatusExclude", false);
   const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>("games.matchAll", {});
   const [steelbookOnly, setSteelbookOnly] = useSessionState("games.steelbookOnly", false);
+  const [sources, setSources] = useSessionState<GameSource[]>("games.sources", []);
+  const [sourceExclude, setSourceExclude] = useSessionState("games.sourceExclude", false);
   const [sort, setSort] = useSessionState<GameSortOption>("games.sort", "name_asc");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
@@ -102,6 +111,8 @@ const GameList = () => {
       playStatusExclude,
       matchAll,
       steelbookOnly,
+      sources: sources.length > 0 ? sources : undefined,
+      sourceExclude,
       sort,
     }),
     [
@@ -125,6 +136,8 @@ const GameList = () => {
       playStatusExclude,
       matchAll,
       steelbookOnly,
+      sources,
+      sourceExclude,
       sort,
     ]
   );
@@ -303,6 +316,10 @@ const GameList = () => {
           onStorefrontExcludeChange={setStorefrontExclude}
           steelbookOnly={steelbookOnly}
           onSteelbookOnlyChange={setSteelbookOnly}
+          sources={sources}
+          onSourcesChange={setSources}
+          sourceExclude={sourceExclude}
+          onSourceExcludeChange={setSourceExclude}
           sort={sort}
           onSortChange={setSort}
           playStatuses={playStatuses}
@@ -334,6 +351,8 @@ const GameList = () => {
                   gameTypes.length > 0 ||
                   formats.length > 0 ||
                   storefronts.length > 0 ||
+                  playStatuses.length > 0 ||
+                  sources.length > 0 ||
                   steelbookOnly
                 ? t("games.list.noGamesMatchFilter")
                 : t("games.list.pleaseAddGames")}

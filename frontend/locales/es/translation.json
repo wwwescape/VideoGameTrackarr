@@ -529,9 +529,12 @@
       "storefrontLabel": "Tienda",
       "excludeLabel": "Excluir",
       "playStatusLabel": "Estado de juego",
+      "sourceLabel": "Origen",
+      "sourceIgdb": "IGDB",
       "matchAnyLabel": "Alguno",
       "matchAllLabel": "Todos",
       "matchModeAriaLabel": "Coincidir con alguno o con todos los valores seleccionados",
+      "matchModeTooltip": "Coincidir con cualquiera: el juego necesita al menos uno de los valores seleccionados. Coincidir con todos: los necesita todos. Selecciona dos o más valores para cambiar.",
       "allOption": "Todos",
       "filtersButtonLabel": "Filtros y más",
       "filterTabLabel": "Filtro",
@@ -560,7 +563,8 @@
       "deselectAriaLabel": "Deseleccionar {{name}}",
       "nameYearTooltip": "{{name}} ({{year}})",
       "onSaleLabel": "En oferta",
-      "missingLabel": "Falta"
+      "missingLabel": "Falta",
+      "customLabel": "Personalizado"
     },
     "subNav": {
       "allGames": "Todos los juegos",

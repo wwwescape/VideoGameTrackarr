@@ -6,7 +6,7 @@ import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
-import { green } from "@mui/material/colors";
+import { green, grey } from "@mui/material/colors";
 import Skeleton from "@mui/material/Skeleton";
 import { styled, useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
@@ -63,6 +63,9 @@ export interface GameCardGame {
   // Dashboard's On Sale sections, built from OnSaleItem rather than a full GameSummary)
   // need to set it explicitly.
   isOnSale?: boolean;
+  // Null for a manually-added (non-IGDB) game, which gets the "Custom" chip. Left undefined
+  // by hand-built card objects (e.g. the Dashboard's On Sale sections), which never show it.
+  igdbId?: number | null;
 }
 
 interface GameCardProps {
@@ -111,6 +114,9 @@ const GameCard = ({
   // greyscaled the same way, but showing "Missing" on it would be wrong (nothing's missing;
   // the user added it on purpose and just hasn't marked ownership yet).
   const showMissingChip = isGreyscale && Boolean(game.autoDiscovered);
+  // Shares the bottom-right corner with the Missing chip — never both in practice (a
+  // discovered game always comes from IGDB), but Missing wins if they ever did.
+  const showCustomChip = showsBadges && game.igdbId === null && !showMissingChip;
   const opensSeparately = context === "add" && onOpen !== undefined;
   const isClickable =
     context === "list" ||
@@ -265,6 +271,22 @@ const GameCard = ({
                 right: 8,
                 zIndex: 1,
                 fontWeight: 600,
+                boxShadow: theme.shadows[3],
+              }}
+            />
+          ) : null}
+          {showCustomChip ? (
+            <Chip
+              label={t("games.card.customLabel")}
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 8,
+                right: 8,
+                zIndex: 1,
+                fontWeight: 600,
+                color: theme.palette.common.white,
+                bgcolor: grey[600],
                 boxShadow: theme.shadows[3],
               }}
             />

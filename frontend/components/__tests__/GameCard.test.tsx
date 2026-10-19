@@ -105,6 +105,25 @@ describe("GameCard", () => {
     expect(screen.queryByText("On Sale")).not.toBeInTheDocument();
   });
 
+  it("shows a Custom chip for a manually-added game (null igdbId)", () => {
+    renderWithTheme(
+      <GameCard game={{ ...baseGame, igdbId: null }} context="list" contextFunction={vi.fn()} />
+    );
+
+    expect(screen.getByText("Custom")).toBeInTheDocument();
+  });
+
+  it("does not show a Custom chip for an IGDB game, or a card with no igdbId field", () => {
+    const { unmount } = renderWithTheme(
+      <GameCard game={{ ...baseGame, igdbId: 14593 }} context="list" contextFunction={vi.fn()} />
+    );
+    expect(screen.queryByText("Custom")).not.toBeInTheDocument();
+    unmount();
+
+    renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} />);
+    expect(screen.queryByText("Custom")).not.toBeInTheDocument();
+  });
+
   it("shows a play status chip when set to something other than 'none'", () => {
     renderWithTheme(
       <GameCard

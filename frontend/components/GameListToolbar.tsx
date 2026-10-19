@@ -40,6 +40,7 @@ import type {
   CatalogRefSummary,
   GameCategory,
   GameSortOption,
+  GameSource,
   MediaFormat,
   PlatformResponse,
   PlayStatus,
@@ -100,6 +101,16 @@ const GAME_TYPE_OPTIONS: GameTypeOption[] = [
   { value: "remaster", label: "Remaster" },
   { value: "expanded_game", label: "Expanded Game" },
   { value: "port", label: "Port" },
+];
+
+interface SourceOption {
+  value: GameSource;
+  labelKey: string;
+}
+
+const SOURCE_OPTIONS: SourceOption[] = [
+  { value: "igdb", labelKey: "games.listToolbar.sourceIgdb" },
+  { value: "custom", labelKey: "games.card.customLabel" },
 ];
 
 interface FormatOption {
@@ -170,23 +181,29 @@ const FilterFieldOptions = ({
     <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 1 }}>
       <ExcludeCheckbox checked={exclude} onChange={onExcludeChange} disabled={selectedCount === 0} />
       {onMatchAllChange ? (
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={matchAll ? "all" : "any"}
-          onChange={(_event, value: "any" | "all" | null) => {
-            if (value) onMatchAllChange(value === "all");
-          }}
-          disabled={selectedCount < 2}
-          aria-label={t("games.listToolbar.matchModeAriaLabel")}
-        >
-          <ToggleButton value="any" sx={{ py: 0.25, textTransform: "none" }}>
-            {t("games.listToolbar.matchAnyLabel")}
-          </ToggleButton>
-          <ToggleButton value="all" sx={{ py: 0.25, textTransform: "none" }}>
-            {t("games.listToolbar.matchAllLabel")}
-          </ToggleButton>
-        </ToggleButtonGroup>
+        // Wrapped in a span so the tooltip still shows while the group is disabled (a
+        // disabled button fires no pointer events) — that's exactly when it's needed.
+        <Tooltip title={t("games.listToolbar.matchModeTooltip")}>
+          <span>
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={matchAll ? "all" : "any"}
+              onChange={(_event, value: "any" | "all" | null) => {
+                if (value) onMatchAllChange(value === "all");
+              }}
+              disabled={selectedCount < 2}
+              aria-label={t("games.listToolbar.matchModeAriaLabel")}
+            >
+              <ToggleButton value="any" sx={{ py: 0.25, textTransform: "none" }}>
+                {t("games.listToolbar.matchAnyLabel")}
+              </ToggleButton>
+              <ToggleButton value="all" sx={{ py: 0.25, textTransform: "none" }}>
+                {t("games.listToolbar.matchAllLabel")}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </span>
+        </Tooltip>
       ) : null}
     </Stack>
   );
@@ -275,6 +292,12 @@ interface GameListToolbarProps {
   // Steelbooks" state worth a second control for a single boolean.
   steelbookOnly?: boolean;
   onSteelbookOnlyChange?: (value: boolean) => void;
+  // Optional, same "only rendered when provided" pattern as steelbookOnly — only the Games
+  // page passes these. IGDB-imported vs manually-added (custom) games.
+  sources?: GameSource[];
+  onSourcesChange?: (value: GameSource[]) => void;
+  sourceExclude?: boolean;
+  onSourceExcludeChange?: (value: boolean) => void;
   playStatuses: PlayStatus[];
   onPlayStatusesChange: (value: PlayStatus[]) => void;
   playStatusExclude: boolean;
@@ -355,6 +378,10 @@ const GameListToolbar = ({
   onStorefrontExcludeChange,
   steelbookOnly,
   onSteelbookOnlyChange,
+  sources = [],
+  onSourcesChange,
+  sourceExclude = false,
+  onSourceExcludeChange,
   playStatuses,
   onPlayStatusesChange,
   playStatusExclude,
@@ -383,6 +410,7 @@ const GameListToolbar = ({
   const selectedOwnershipStatuses = OWNERSHIP_OPTIONS.filter((option) =>
     ownershipStatuses.includes(option.value)
   );
+  const selectedSources = SOURCE_OPTIONS.filter((option) => sources.includes(option.value));
   const selectedPlayStatuses = PLAY_STATUS_OPTIONS.filter((option) =>
     playStatuses.includes(option.value)
   );
@@ -403,6 +431,7 @@ const GameListToolbar = ({
     formats.length +
     storefronts.length +
     playStatuses.length +
+    sources.length +
     (steelbookOnly ? 1 : 0);
   const hasActiveFilters = activeFilterCount > 0;
 
@@ -451,6 +480,8 @@ const GameListToolbar = ({
     onPlayStatusExcludeChange(false);
     onMatchAllChange({});
     onSteelbookOnlyChange?.(false);
+    onSourcesChange?.([]);
+    onSourceExcludeChange?.(false);
   };
 
   if (selectionMode) {
@@ -823,6 +854,29 @@ const GameListToolbar = ({
                         exclude={franchiseExclude}
                         onExcludeChange={onFranchiseExcludeChange}
                         {...matchAllProps("franchise")}
+                      />
+                    </Stack>
+                  </Grid>
+                ) : null}
+                {onSourcesChange ? (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Stack spacing={0.5}>
+                      <AutocompleteMultiSelect<SourceOption>
+                        label={t("games.listToolbar.sourceLabel")}
+                        options={SOURCE_OPTIONS}
+                        value={selectedSources}
+                        onChange={(newValue) =>
+                          onSourcesChange(newValue.map((option) => option.value))
+                        }
+                        getOptionLabel={(option) => t(option.labelKey)}
+                        isOptionEqualToValue={(option, val) => option.value === val.value}
+                        placeholder={allPlaceholder}
+                        fullWidth
+                      />
+                      <FilterFieldOptions
+                        selectedCount={sources.length}
+                        exclude={sourceExclude}
+                        onExcludeChange={(value) => onSourceExcludeChange?.(value)}
                       />
                     </Stack>
                   </Grid>

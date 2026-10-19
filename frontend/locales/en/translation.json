@@ -529,9 +529,12 @@
       "storefrontLabel": "Storefront",
       "excludeLabel": "Exclude",
       "playStatusLabel": "Play Status",
+      "sourceLabel": "Source",
+      "sourceIgdb": "IGDB",
       "matchAnyLabel": "Match any",
       "matchAllLabel": "Match all",
       "matchModeAriaLabel": "Match any or all of the selected values",
+      "matchModeTooltip": "Match any: a game needs at least one of the selected values. Match all: it needs every one. Select two or more values to switch.",
       "allOption": "All",
       "filtersButtonLabel": "Filters & More",
       "filterTabLabel": "Filter",
@@ -560,7 +563,8 @@
       "deselectAriaLabel": "Deselect {{name}}",
       "nameYearTooltip": "{{name}} ({{year}})",
       "onSaleLabel": "On Sale",
-      "missingLabel": "Missing"
+      "missingLabel": "Missing",
+      "customLabel": "Custom"
     },
     "subNav": {
       "allGames": "All Games",

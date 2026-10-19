@@ -441,6 +441,22 @@ def test_list_games_category_exclude_shows_everything_except_selected(auth_clien
     assert [g["name"] for g in response.json()] == ["Bundle Game"]
 
 
+def test_list_games_source_filter_splits_igdb_and_custom_games(auth_client, db_session, seed_game):
+    # seed_game is IGDB-backed; a manually-added game has no igdb_id.
+    db_session.add(Game(igdb_id=None, name="Custom Game", category=GameCategory.MAIN_GAME))
+    db_session.commit()
+
+    custom = auth_client.get("/api/games", params={"source": "custom"})
+    igdb = auth_client.get("/api/games", params={"source": "igdb"})
+    not_custom = auth_client.get("/api/games", params={"source": "custom", "sourceExclude": "true"})
+    both = auth_client.get("/api/games", params={"source": ["igdb", "custom"]})
+
+    assert [g["name"] for g in custom.json()] == ["Custom Game"]
+    assert [g["name"] for g in igdb.json()] == [seed_game.name]
+    assert [g["name"] for g in not_custom.json()] == [seed_game.name]
+    assert sorted(g["name"] for g in both.json()) == sorted(["Custom Game", seed_game.name])
+
+
 
 def _seed_tagged_games(db_session, seed_game):
     """Test Game: Roguelike + Metroidvania; Roguelike Only: Roguelike; Untagged: none."""

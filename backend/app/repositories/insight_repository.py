@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, aliased, joinedload
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory, AccessoryDeviceLink, UserAccessory, UserDevice
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PlayStatus
-from app.repositories.game_repository import GameSortOption, _apply_optional_game_filters
+from app.repositories.game_repository import GameSortOption, GameSource, _apply_optional_game_filters
 
 # Mirrors the frontend's ADDON_DISPLAY_CATEGORIES (GameAddonsTab.tsx) — bundles, standalone
 # expansions, mods, updates, etc. all carry parent_game too, but aren't "DLC" a user would
@@ -61,6 +61,8 @@ def find_missing_addons(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    sources: list[GameSource] | None = None,
+    source_exclude: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[tuple[Game, list[tuple[Game, bool]]]]:
     """For every owned, top-level game: its DLC/expansions/packs (per parent_game_id,
@@ -118,6 +120,8 @@ def find_missing_addons(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        sources=sources,
+        source_exclude=source_exclude,
         sort=sort,
     )
     # _apply_optional_game_filters' own order_by only covers Game's sort field — Addon.name

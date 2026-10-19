@@ -160,3 +160,39 @@ describe("GameListToolbar on a Platform page", () => {
     expect(within(dialog).getByLabelText("Platforms")).toBeInTheDocument();
   });
 });
+
+describe("GameListToolbar Source filter", () => {
+  it("is hidden unless the page wires it up", async () => {
+    renderToolbar();
+    const { dialog } = await openFilters();
+
+    expect(within(dialog).queryByLabelText("Source")).not.toBeInTheDocument();
+  });
+
+  it("offers IGDB and Custom, and is cleared with the other filters", async () => {
+    const props = renderToolbar({
+      sources: ["custom"],
+      onSourcesChange: vi.fn(),
+      sourceExclude: true,
+      onSourceExcludeChange: vi.fn(),
+    });
+    const { user, dialog } = await openFilters();
+
+    await user.click(within(dialog).getByLabelText("Source"));
+    expect(await screen.findByRole("option", { name: "IGDB" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Custom" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await user.click(within(dialog).getByRole("button", { name: "Clear filters" }));
+    expect(props.onSourcesChange).toHaveBeenCalledWith([]);
+    expect(props.onSourceExcludeChange).toHaveBeenCalledWith(false);
+  });
+
+  it("sends source params only when a source is picked", () => {
+    expect(buildGameFilterParams({ sources: ["custom"], sourceExclude: true })).toMatchObject({
+      source: ["custom"],
+      sourceExclude: true,
+    });
+    expect(buildGameFilterParams({ sourceExclude: true }).sourceExclude).toBeUndefined();
+  });
+});
