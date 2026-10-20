@@ -7,8 +7,10 @@ import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Tooltip from "@mui/material/Tooltip";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -31,6 +33,7 @@ import {
   useUpdateLibraryItem,
   useUpdateRomLabel,
 } from "../hooks/useLibrary";
+import { useUpdateGameVisibility } from "../hooks/useGames";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -64,6 +67,7 @@ interface GameLibrarySectionProps {
   platforms: PlatformResponse[] | undefined;
   regions: RegionResponse[] | undefined;
   gameCategory?: GameCategory | null;
+  hideFromPublic?: boolean;
 }
 
 const GameLibrarySection = ({
@@ -72,6 +76,7 @@ const GameLibrarySection = ({
   platforms,
   regions,
   gameCategory,
+  hideFromPublic = false,
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
   const addLibraryItem = useAddLibraryItem(gameId);
@@ -81,6 +86,7 @@ const GameLibrarySection = ({
   const replaceRom = useReplaceRom(gameId);
   const updateRomLabel = useUpdateRomLabel(gameId);
   const deleteRom = useDeleteRom(gameId);
+  const updateVisibility = useUpdateGameVisibility(gameId);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadStep, setUploadStep] = useState<{ current: number; total: number } | null>(null);
   // Moving an owned copy that holds a ROM to the Wishlist deletes the ROM (see
@@ -406,6 +412,19 @@ const GameLibrarySection = ({
           headCells={headCells}
           tableName={t("games.library.collectionTableName")}
           tableIcon={<CheckCircleIcon color="secondary" />}
+          headerAction={
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={hideFromPublic}
+                  onChange={(e) => updateVisibility.mutate(e.target.checked)}
+                  size="small"
+                />
+              }
+              label={t("games.library.hideFromPublicLabel")}
+              sx={{ mr: 1 }}
+            />
+          }
           onAddClick={() => handleAddClick("owned")}
           onDeleteClick={(ids) => handleDeleteClick(ids, "owned")}
           onMoveClick={(rowId) => handleMoveClick(rowId, "owned")}

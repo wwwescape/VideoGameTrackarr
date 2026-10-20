@@ -137,6 +137,7 @@ const GameDetails = () => {
                 libraryItems={libraryItems}
                 platforms={platforms}
                 regions={regions}
+                hideFromPublic={game.hideFromPublic}
                 gameCategory={game.category}
               />
             </Card>
