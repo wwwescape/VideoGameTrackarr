@@ -20,6 +20,7 @@ const SeriesPage = () => {
         entries={franchises}
         isLoading={isLoading}
         getCount={(entry) => entry.gameCount}
+        showMinGamesFilter
         getHref={(entry) => `/games/series/${entry.slug ?? ""}`}
       />
     </>

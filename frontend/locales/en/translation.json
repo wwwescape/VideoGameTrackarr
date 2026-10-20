@@ -1009,6 +1009,7 @@
       "importedOnlyNotice": "Only games you've already imported show up here.",
       "platformNotice": "Games you own or wishlisted on this platform.",
       "emptyMessage": "No locally-known games in this {{kind}} yet.",
+      "minGamesLabel": "{{count}}+ Games",
       "includeAddonsLabel": "Include Addons",
       "gamesSectionTitle": "Games",
       "addonsSectionTitle": "Addons"

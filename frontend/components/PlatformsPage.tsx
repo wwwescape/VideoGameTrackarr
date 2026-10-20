@@ -59,6 +59,8 @@ const PlatformsPage = () => {
         isLoading={isLoading}
         getKey={(entry) => entry.key}
         getCount={totalGames}
+        showMinGamesFilter
+        minGamesDefault={1}
         getHref={(entry) => `/games/platforms/${platformIdentifier(entry)}${platformScopeQuery(entry.scope)}`}
         renderCard={(entry, onClick) => <PlatformCard platform={entry} scope={entry.scope} onClick={onClick} />}
         estimateRowHeight={(columns) => PLATFORM_CARD_HEIGHT_BY_COLUMNS[columns] ?? 164}
