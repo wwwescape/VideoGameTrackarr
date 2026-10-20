@@ -206,6 +206,11 @@
     "syncingChanges_one": "Syncing {{count}} change...",
     "syncingChanges_other": "Syncing {{count}} changes..."
   },
+  "displayMode": {
+    "noSlides": "No owned games with cover art found. Add some games with covers first.",
+    "noSlidesHint": "Tip: choose which media types appear in Settings \u2192 Display Mode.",
+    "backToDashboard": "Back to dashboard"
+  },
   "settings": {
     "title": "Settings",
     "subNav": {
@@ -235,6 +240,21 @@
         "pink": "Pink",
         "violet": "Violet"
       }
+    },
+    "displayMode": {
+      "heading": "Display Mode",
+      "description": "Fullscreen slideshow of random media from your library. Hidden and wishlisted games are excluded unless allowed below. Tap anywhere to exit. The screen stays awake while it runs.",
+      "slideInterval": "Change slide every {{seconds}} seconds",
+      "seconds": "{{count}}s",
+      "showTitle": "Show game title",
+      "showHidden": "Show hidden games",
+      "showWishlisted": "Show wishlisted games",
+      "mediaHeading": "Media to show",
+      "mediaCoverArt": "Cover Art",
+      "mediaScreenshots": "Screenshots",
+      "mediaArtwork": "Artwork",
+      "mediaVideos": "Videos",
+      "volume": "Volume"
     },
     "language": {
       "heading": "Language",
@@ -502,7 +522,10 @@
       "noGamesMatchFilter": "No games match this filter",
       "pleaseAddGames": "Please add some games",
       "gamesRemovedToast_one": "{{count}} game removed from your library",
-      "gamesRemovedToast_other": "{{count}} games removed from your library"
+      "gamesRemovedToast_other": "{{count}} games removed from your library",
+      "gamesHiddenToast": "{{count}} game(s) hidden from public",
+      "gamesUnhiddenToast": "{{count}} game(s) unhidden",
+      "gamesHiddenErrorToast": "Failed to hide games from public"
     },
     "listToolbar": {
       "exitSelectionModeAriaLabel": "Exit selection mode",
@@ -512,6 +535,8 @@
       "deselectAllTooltip": "Deselect all",
       "deselectAllAriaLabel": "Deselect all visible games",
       "manageTagsButton": "Tags",
+      "hideFromPublicButton": "Hide",
+      "unhideButton": "Unhide",
       "moreBulkActionsAriaLabel": "More bulk actions",
       "compareButton": "Compare",
       "searchLabel": "Search games",
@@ -710,7 +735,7 @@
       "noImageAvailable": "No Image Available"
     },
     "library": {
-    "hideFromPublicLabel": "Hide",
+      "hideFromPublicLabel": "Hide",
       "formatPhysical": "Physical",
       "formatDigital": "Digital",
       "formatIso": "ISO",
@@ -849,7 +874,8 @@
       "hardwareCalendarHeading": "Hardware Release Calendar",
       "onSaleHeading": "On Sale Now",
       "eventsHeading": "Ongoing/Upcoming Events",
-      "welcomeMessage": "Welcome to VideoGameTrackarr"
+      "welcomeMessage": "Welcome to VideoGameTrackarr",
+      "displayModeButton": "Display Mode"
     },
     "page": {
       "gamesHeading": "Games",
