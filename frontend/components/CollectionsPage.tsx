@@ -20,6 +20,7 @@ const CollectionsPage = () => {
         entries={collections}
         isLoading={isLoading}
         getCount={(entry) => entry.gameCount}
+        showMinGamesFilter
         getHref={(entry) => `/games/collections/${entry.slug ?? ""}`}
       />
     </>
