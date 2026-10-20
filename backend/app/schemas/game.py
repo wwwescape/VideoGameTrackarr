@@ -46,6 +46,7 @@ class GameSummaryResponse(CamelModel):
     # owned/wishlisted yet (greyscale, no chip) — both look identical via owned/wishlisted
     # alone.
     auto_discovered: bool
+    hide_from_public: bool
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
@@ -98,6 +99,7 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "play_status": status.play_status,
         "rating": status.rating,
         "auto_discovered": game.auto_discovered,
+        "hide_from_public": game.hide_from_public,
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,

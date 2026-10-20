@@ -175,6 +175,13 @@ class Game(TimestampMixin, Base):
             "back to False once it's True"
         ),
     )
+    hide_from_public: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="When True, this game is excluded from all public share pages",
+    )
 
     # Two self-referential FKs to the same table means SQLAlchemy can't infer which one each
     # relationship below is for — foreign_keys disambiguates explicitly.

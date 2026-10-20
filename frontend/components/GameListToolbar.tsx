@@ -7,6 +7,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LabelIcon from "@mui/icons-material/Label";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import SearchIcon from "@mui/icons-material/Search";
 import Badge from "@mui/material/Badge";
 import Button from "@mui/material/Button";
@@ -238,6 +240,10 @@ interface GameListToolbarProps {
   // toolbar itself generic.
   onManageTagsClick?: () => void;
   onBulkDelete?: () => void;
+  // Same "only the Games page wires this up" pattern as onManageTagsClick — bulk
+  // hide/unhide from public share pages, in the same Remove split-button dropdown.
+  onBulkHide?: () => void;
+  onBulkUnhide?: () => void;
   platformOptions: PlatformResponse[];
   platformIds: number[];
   onPlatformIdsChange: (value: number[]) => void;
@@ -339,6 +345,8 @@ const GameListToolbar = ({
   onToggleSelectAll = () => {},
   onManageTagsClick,
   onBulkDelete = () => {},
+  onBulkHide,
+  onBulkUnhide,
   platformOptions,
   hidePlatformsField = false,
   platformIds,
@@ -523,7 +531,7 @@ const GameListToolbar = ({
             <Button startIcon={<DeleteIcon />} onClick={onBulkDelete}>
               {t("common.remove")}
             </Button>
-            {onManageTagsClick ? (
+            {onManageTagsClick || onBulkHide || onBulkUnhide ? (
               <Button
                 size="small"
                 onClick={() => setBulkActionsMenuOpen(true)}
@@ -565,6 +573,34 @@ const GameListToolbar = ({
                   <LabelIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>{t("games.listToolbar.manageTagsButton")}</ListItemText>
+              </MenuItem>
+            ) : null}
+            {onBulkUnhide ? (
+              <MenuItem
+                onClick={() => {
+                  setBulkActionsMenuOpen(false);
+                  onBulkUnhide();
+                }}
+                sx={{ minHeight: buttonGroupRef.current?.offsetHeight }}
+              >
+                <ListItemIcon>
+                  <VisibilityIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t("games.listToolbar.unhideButton")}</ListItemText>
+              </MenuItem>
+            ) : null}
+            {onBulkHide ? (
+              <MenuItem
+                onClick={() => {
+                  setBulkActionsMenuOpen(false);
+                  onBulkHide();
+                }}
+                sx={{ minHeight: buttonGroupRef.current?.offsetHeight }}
+              >
+                <ListItemIcon>
+                  <VisibilityOffIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t("games.listToolbar.hideFromPublicButton")}</ListItemText>
               </MenuItem>
             ) : null}
           </Menu>

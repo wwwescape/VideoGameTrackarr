@@ -6,7 +6,8 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { MatchAllFilters } from "../api/games";
+import { toast } from "react-toastify";
+import { bulkUpdateGameVisibility, type MatchAllFilters } from "../api/games";
 import type {
   GameCategory,
   GameSortOption,
@@ -224,6 +225,28 @@ const GameList = () => {
     );
   };
 
+  const handleBulkVisibility = async (hide: boolean) => {
+    const gamesToUpdate = visibleGames.filter((game) => selectedIds.has(game.id));
+    if (gamesToUpdate.length === 0) {
+      return;
+    }
+    try {
+      const result = await bulkUpdateGameVisibility(
+        gamesToUpdate.map((g) => g.id),
+        hide
+      );
+      toast.success(
+        t(hide ? "games.list.gamesHiddenToast" : "games.list.gamesUnhiddenToast", {
+          count: result.updated,
+        })
+      );
+    } catch {
+      toast.error(t("games.list.gamesHiddenErrorToast"));
+    }
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
   return (
     <>
       <Box
@@ -281,6 +304,8 @@ const GameList = () => {
           onToggleSelectAll={handleToggleSelectAll}
           onManageTagsClick={() => setManageTagsOpen(true)}
           onBulkDelete={handleBulkDelete}
+          onBulkHide={() => handleBulkVisibility(true)}
+          onBulkUnhide={() => handleBulkVisibility(false)}
           platformOptions={platforms}
           platformIds={platformIds}
           onPlatformIdsChange={setPlatformIds}

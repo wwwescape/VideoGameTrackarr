@@ -19,6 +19,7 @@ import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/sto
 import AccentColorSetting from "./AccentColorSetting";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
+import DisplayModeSection from "./DisplayModeSection";
 import SettingsSubNav from "./SettingsSubNav";
 import ShareSection from "./ShareSection";
 
@@ -92,6 +93,13 @@ const Settings = () => {
             sx={{ display: "block" }}
           />
           <AccentColorSetting />
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="subtitle1" gutterBottom>
+            {t("settings.displayMode.heading")}
+          </Typography>
+          <DisplayModeSection />
 
           <Divider sx={{ my: 3 }} />
 

@@ -2,6 +2,7 @@
 autogenerate and for the cross-module string-based relationship() references to resolve."""
 
 from app.db.base import Base
+from app.models.app_settings import AppSetting  # noqa: F401
 from app.models.catalog import (  # noqa: F401
     Artwork,
     Collection,

@@ -21,6 +21,7 @@ from app.api.routes import (
     companies,
     dashboard,
     device,
+    displaymode,
     events,
     franchises,
     games,
@@ -180,6 +181,8 @@ app.include_router(collections.router)
 app.include_router(catalog_resync.router)
 app.include_router(events.router)
 app.include_router(dashboard.router)
+app.include_router(displaymode.router)
+app.include_router(displaymode.settings_router)
 app.include_router(hardware_lookups.router)
 app.include_router(device.router)
 app.include_router(accessories.router)
