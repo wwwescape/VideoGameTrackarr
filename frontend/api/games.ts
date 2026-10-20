@@ -168,6 +168,21 @@ export async function deleteGame(gameId: number): Promise<void> {
   await apiClient.delete(`/api/games/${gameId}`);
 }
 
+export async function updateGameVisibility(gameId: number, hideFromPublic: boolean): Promise<GameDetail> {
+  const response = await apiClient.patch<GameDetail>(`/api/games/${gameId}/visibility`, {
+    hideFromPublic,
+  });
+  return response.data;
+}
+
+export async function bulkUpdateGameVisibility(gameIds: number[], hideFromPublic: boolean): Promise<{ updated: number }> {
+  const response = await apiClient.post<{ updated: number }>("/api/games/bulk-visibility", {
+    gameIds,
+    hideFromPublic,
+  });
+  return response.data;
+}
+
 export async function importGame(igdbId: number): Promise<GameDetail> {
   const response = await apiClient.post<GameDetail>("/api/games", { igdbId });
   return response.data;

@@ -65,6 +65,7 @@ export interface GameSummary {
   // discovered-but-unclaimed game (greyscale + "Missing" chip) from a manually-added one
   // that just isn't owned/wishlisted yet (greyscale, no chip) — see GameCard.tsx.
   autoDiscovered: boolean;
+  hideFromPublic: boolean;
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;
