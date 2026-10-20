@@ -710,6 +710,7 @@
       "noImageAvailable": "No Image Available"
     },
     "library": {
+    "hideFromPublicLabel": "Hide",
       "formatPhysical": "Physical",
       "formatDigital": "Digital",
       "formatIso": "ISO",
