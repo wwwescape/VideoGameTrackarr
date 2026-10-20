@@ -1009,6 +1009,7 @@
       "importedOnlyNotice": "Only games you've already imported show up here.",
       "platformNotice": "Games you own or wishlisted on this platform.",
       "emptyMessage": "No locally-known games in this {{kind}} yet.",
+      "minGamesLabel": "{{count}}+ Games",
       "includeAddonsLabel": "Include Addons",
       "gamesSectionTitle": "Games",
       "addonsSectionTitle": "Addons"
@@ -1334,9 +1335,9 @@
     "startRequiredError": "A start time is required to log a session.",
     "addSuccessToast": "Play session logged!",
     "addErrorToast": "Error logging play session. Please try again.",
-    "updateSuccessToast": "Play session updated!",
-    "updateErrorToast": "Error updating play session. Please try again.",
-    "deleteErrorToast": "Error deleting play session. Please try again.",
+    "updateSuccessToast": "Progress added!",
+    "updateErrorToast": "Error updating progress. Please try again.",
+    "deleteErrorToast": "Error deleting progress. Please try again.",
     "removedToast_one": "Play session removed",
     "removedToast_other": "Play sessions removed"
   },
