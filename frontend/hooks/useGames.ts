@@ -14,6 +14,7 @@ import {
   mergeGameIntoIgdb,
   resyncGame,
   startBulkImport,
+  updateGameVisibility,
   updateManualGame,
   type GameListFilters,
 } from "../api/games";
@@ -67,6 +68,17 @@ export function useDeleteGame() {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useUpdateGameVisibility(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hideFromPublic: boolean) => updateGameVisibility(gameId, hideFromPublic),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games", gameId] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
     },
   });
 }
