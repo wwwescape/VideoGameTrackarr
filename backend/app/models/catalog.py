@@ -334,3 +334,4 @@ class ReleaseDate(Base):
 
     game: Mapped["Game"] = relationship(back_populates="release_dates")
     platform: Mapped["Platform | None"] = relationship()
+# Bookshelf Mode port
