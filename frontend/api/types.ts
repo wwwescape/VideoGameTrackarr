@@ -21,6 +21,46 @@ export interface PlatformResponse {
   name: string;
   slug: string | null;
   abbreviation: string | null;
+  // Bookshelf mode: blank spine template image for this platform's cases.
+  spineTemplateUrl: string | null;
+  // Bookshelf mode: user-chosen actual case size (mm) for this platform.
+  caseHeightMm: number | null;
+  caseSpineMm: number | null;
+  // Bookshelf mode: generic-spine colour override and icon key.
+  spineColor: string | null;
+  spineIcon: string | null;
+  spineIconUrl: string | null;
+}
+
+// One slim Bookshelf row per owned (game x platform) from
+// GET /api/games/bookshelf — the shelf page loads only this, not the full
+// games list plus every library item.
+export interface BookshelfEntry {
+  gameId: number;
+  gameSlug: string | null;
+  gameUuid: string;
+  name: string;
+  platformLabel: string;
+  formats: string[];
+}
+
+// Public (share-link) Bookshelf payload: the same slim entries as the
+// private endpoint, plus the platform display records the cases render with.
+export interface PublicBookshelfPlatform {
+  label: string;
+  name: string;
+  abbreviation: string | null;
+  spineTemplateUrl: string | null;
+  caseHeightMm: number | null;
+  caseSpineMm: number | null;
+  spineColor: string | null;
+  spineIcon: string | null;
+  spineIconUrl: string | null;
+}
+
+export interface PublicBookshelf {
+  entries: BookshelfEntry[];
+  platforms: PublicBookshelfPlatform[];
 }
 
 // A Games → Platforms card: a platform with copies in your library.
