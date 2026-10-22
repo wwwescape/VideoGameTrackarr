@@ -1,6 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { GameListFilters } from "../api/games";
-import { getPlatform, listLibraryPlatforms, listPlatformAddons, listPlatforms } from "../api/platforms";
+import {
+  getPlatform,
+  listLibraryPlatforms,
+  listPlatformAddons,
+  listPlatforms,
+  setPlatformCaseSize,
+  setPlatformSpineStyle,
+  setPlatformSpineTemplate,
+} from "../api/platforms";
 
 export function usePlatforms() {
   return useQuery({ queryKey: ["platforms"], queryFn: listPlatforms });
@@ -29,5 +37,48 @@ export function usePlatformAddons(slugOrId: string | undefined, filters: GameLis
     queryKey: ["games", "platform-addons", slugOrId, filters],
     queryFn: ({ signal }) => listPlatformAddons(slugOrId!, filters, signal),
     enabled: enabled && !!slugOrId,
+  });
+}
+
+export function useSetPlatformSpineTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ platformId, spineUrl }: { platformId: number; spineUrl: string | null }) =>
+      setPlatformSpineTemplate(platformId, spineUrl),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platforms"] }),
+  });
+}
+
+export function useSetPlatformCaseSize() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      platformId,
+      heightMm,
+      spineMm,
+    }: {
+      platformId: number;
+      heightMm: number | null;
+      spineMm: number | null;
+    }) => setPlatformCaseSize(platformId, heightMm, spineMm),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platforms"] }),
+  });
+}
+
+export function useSetPlatformSpineStyle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      platformId,
+      color,
+      icon,
+      iconUrl,
+    }: {
+      platformId: number;
+      color: string | null;
+      icon: string | null;
+      iconUrl?: string | null;
+    }) => setPlatformSpineStyle(platformId, color, icon, iconUrl ?? null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platforms"] }),
   });
 }
