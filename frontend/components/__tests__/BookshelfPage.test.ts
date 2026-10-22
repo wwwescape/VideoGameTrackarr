@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BookshelfEntry, PlatformResponse } from "../../api/types";
 import { buildCaseFormatsFromEntries, buildShelvesFromEntries, buildTemplateCaseSizes, caseFormatsKey, caseSize, contrastTextColor, indexPlatformsByLabel, packRows, resolvePlatformCaseSizes, spineStyle, TITLE_BOTTOM_INSET, TITLE_TOP_INSET, titleBandLight } from "../BookshelfPage";
+import { presetForDimensions } from "../../utils/caseSizes";
 
 const entry = (overrides: Partial<BookshelfEntry>): BookshelfEntry => ({
   gameId: 1,
@@ -117,6 +118,17 @@ describe("caseSize", () => {
 
   it("uses the precomputed template size when the platform has one", () => {
     expect(caseSize("Steam", 10, { width: 48, height: 190 })).toEqual({ width: 48, height: 190 });
+  });
+});
+
+describe("case size presets", () => {
+  it("resolves the Slim DVD preset at 184 x 7 mm", () => {
+    expect(presetForDimensions(184, 7)?.id).toBe("slimdvd");
+    expect(presetForDimensions(184, 7)?.label).toBe("Slim DVD case");
+  });
+
+  it("still resolves the standard DVD preset at 184 x 14 mm", () => {
+    expect(presetForDimensions(184, 14)?.id).toBe("dvd");
   });
 });
 
