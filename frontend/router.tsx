@@ -33,6 +33,8 @@ import About from "./components/About";
 import EmulationPage from "./components/EmulationPage";
 import JobsPage from "./components/JobsPage";
 import PublicGameDetailsPage from "./components/PublicGameDetailsPage";
+import BookshelfPage from "./components/BookshelfPage";
+import PublicBookshelfPage from "./components/PublicBookshelfPage";
 import PublicGamesPage from "./components/PublicGamesPage";
 import PublicHardwarePage from "./components/PublicHardwarePage";
 import Settings from "./components/Settings";
@@ -111,6 +113,7 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     children: [
       { path: "/public/:token/games", element: <PublicGamesPage /> },
+      { path: "/public/:token/bookshelf", element: <PublicBookshelfPage /> },
       { path: "/public/:token/games/:gameId", element: <PublicGameDetailsPage /> },
       { path: "/public/:token/hardware", element: <PublicHardwarePage /> },
     ],
@@ -130,6 +133,7 @@ const router = createBrowserRouter([
             handle: { crumbs: eventDetailCrumbs },
           },
           { path: "/games", element: <GameList />, handle: { crumbs: gamesCrumbs } },
+          { path: "/games/bookshelf", element: <BookshelfPage /> },
           { path: "/games/add", element: <AddGame />, handle: { crumbs: addGameCrumbs } },
           {
             path: "/games/add/igdb/:igdbId",
