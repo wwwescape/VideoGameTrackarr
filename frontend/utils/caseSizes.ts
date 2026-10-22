@@ -14,6 +14,7 @@ export const CASE_SIZE_PRESETS: CaseSizePreset[] = [
   { id: "switch", label: "Nintendo Switch", heightMm: 170, spineMm: 10.4 },
   { id: "bluray", label: "Blu-ray case", heightMm: 171, spineMm: 12 },
   { id: "dvd", label: "DVD case", heightMm: 184, spineMm: 14 },
+  { id: "slimdvd", label: "Slim DVD case", heightMm: 184, spineMm: 7 },
   { id: "genesis", label: "Sega Genesis / Mega Drive", heightMm: 184, spineMm: 25 },
   { id: "saturn", label: "Sega Saturn longbox", heightMm: 212, spineMm: 22 },
   { id: "jewel", label: "CD jewel case", heightMm: 142, spineMm: 10 },
