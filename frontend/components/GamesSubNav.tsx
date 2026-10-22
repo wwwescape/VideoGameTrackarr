@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 const SUB_NAV_ITEMS = [
   { to: "/games", labelKey: "games.subNav.allGames" },
+  { to: "/games/bookshelf", labelKey: "games.subNav.bookshelf" },
   { to: "/games/add", labelKey: "games.subNav.addGame" },
   { to: "/games/collections", labelKey: "games.subNav.collections" },
   { to: "/games/series", labelKey: "games.subNav.series" },
