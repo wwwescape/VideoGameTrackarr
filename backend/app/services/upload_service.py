@@ -52,22 +52,33 @@ def save_accessory_image(raw: bytes) -> str:
 
 
 def save_spine_image(raw: bytes) -> str:
-    """Validates an uploaded spine scan and stores it under SPINES_DIR, preserving
+    """Validates an uploaded spine image and stores it under SPINES_DIR, preserving
     its aspect ratio (downscaling only when the long edge exceeds SPINE_MAX_EDGE).
-    Returns the /uploads/spines/... URL it's served at."""
+    Returns the /uploads/spines/... URL it's served at.
+
+    This endpoint serves two kinds of image: opaque spine scans (re-encoded as
+    JPEG, as before) and platform logos used as spine icons, which arrive as
+    transparent PNGs. Transparency is preserved by storing those as PNG —
+    flattening them through JPEG painted every transparent pixel black,
+    because the raw RGB under a fully transparent pixel is usually (0, 0, 0)."""
     try:
         image = Image.open(BytesIO(raw))
         image.load()
     except UnidentifiedImageError as exc:
         raise ValueError("Not a valid image file") from exc
 
-    image = image.convert("RGB")
+    image = image.convert("RGBA")
+    transparent = image.getchannel("A").getextrema()[0] < 255
     if max(image.size) > SPINE_MAX_EDGE:
         image.thumbnail((SPINE_MAX_EDGE, SPINE_MAX_EDGE), resample=Image.Resampling.LANCZOS)
 
     SPINES_DIR.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4()}.jpg"
-    image.save(SPINES_DIR / filename, format="JPEG", quality=JPEG_QUALITY)
+    if transparent:
+        filename = f"{uuid.uuid4()}.png"
+        image.save(SPINES_DIR / filename, format="PNG")
+    else:
+        filename = f"{uuid.uuid4()}.jpg"
+        image.convert("RGB").save(SPINES_DIR / filename, format="JPEG", quality=JPEG_QUALITY)
     return f"{SPINES_URL_PREFIX}{filename}"
 
 
