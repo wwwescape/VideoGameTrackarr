@@ -53,6 +53,20 @@ class Platform(TimestampMixin, Base):
     slug: Mapped[str | None] = mapped_column(String(255), index=True)
     abbreviation: Mapped[str | None] = mapped_column(String(50))
     logo_url: Mapped[str | None] = mapped_column(String(1024))
+    # Bookshelf mode: a user-supplied blank spine template image rendered
+    # behind every case of this platform (uploaded /uploads/spines/... URL).
+    spine_template_url: Mapped[str | None] = mapped_column(String(1024))
+    # Bookshelf mode: the platform's ACTUAL physical case size in millimetres
+    # (height x spine thickness), chosen in the template dialog when the app
+    # has no known size for the system. Cases render at a fixed 40% of this.
+    case_height_mm: Mapped[float | None] = mapped_column()
+    case_spine_mm: Mapped[float | None] = mapped_column()
+    # Bookshelf mode: generic-spine styling chosen per platform — a hex
+    # colour override and an icon key rendered at the top of the spine.
+    spine_color: Mapped[str | None] = mapped_column(String(9))
+    spine_icon: Mapped[str | None] = mapped_column(String(32))
+    # Uploaded custom spine icon image (when spine_icon == "custom").
+    spine_icon_url: Mapped[str | None] = mapped_column(String(1024))
 
 
 class Region(TimestampMixin, Base):
@@ -334,4 +348,3 @@ class ReleaseDate(Base):
 
     game: Mapped["Game"] = relationship(back_populates="release_dates")
     platform: Mapped["Platform | None"] = relationship()
-# Bookshelf Mode port
