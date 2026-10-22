@@ -4,6 +4,7 @@ import type {
   PublicAccessorySummary,
   PublicDeviceSummary,
   PublicGameDetail,
+  PublicBookshelf,
   PublicGameSummary,
 } from "./types";
 
@@ -15,6 +16,11 @@ export async function listPublicGames(
   const response = await publicClient.get<PublicGameSummary[]>(`/api/public/${token}/games`, {
     params: { search: search || undefined, sort },
   });
+  return response.data;
+}
+
+export async function fetchPublicBookshelf(token: string): Promise<PublicBookshelf> {
+  const response = await publicClient.get<PublicBookshelf>(`/api/public/${token}/bookshelf`);
   return response.data;
 }
 
