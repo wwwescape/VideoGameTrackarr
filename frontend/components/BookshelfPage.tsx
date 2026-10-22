@@ -15,7 +15,7 @@ import { fetchBookshelfEntries } from "../api/games";
 import type { BookshelfEntry, PlatformResponse } from "../api/types";
 import { usePlatforms } from "../hooks/usePlatforms";
 import { gameIdentifier } from "../utils/identifiers";
-import BookshelfGrid, { packRows, useTemplateInfo } from "./BookshelfGrid";
+import BookshelfGrid, { packRows, useShelfWidth, useTemplateInfo } from "./BookshelfGrid";
 import type { Shelf, ShelfCase, ShelfGame, TemplateInfo } from "./BookshelfGrid";
 import GamesSubNav from "./GamesSubNav";
 import PlatformTemplateDialog from "./PlatformTemplateDialog";
@@ -201,19 +201,10 @@ const BookshelfPage = () => {
   const totalCases = shelves.reduce((sum, shelf) => sum + shelf.cases.length, 0);
 
   // Rows are packed against the real shelf width (repacked on resize) so each
-  // row of cases gets its own shelf board at any window size.
-  const shelfRef = useRef<HTMLDivElement>(null);
-  const [shelfWidth, setShelfWidth] = useState(1200);
-  useEffect(() => {
-    const element = shelfRef.current;
-    if (!element) return;
-    const update = () => setShelfWidth(element.clientWidth);
-    update();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  // row of cases gets its own shelf board at any window size. The shelf only
+  // renders once the entries arrive, so the width is measured whenever the
+  // shelf element (re)mounts — see useShelfWidth in BookshelfGrid.
+  const { shelfRef, shelfWidth } = useShelfWidth();
   const rows = useMemo(
     () => packRows(visibleShelves, Math.max(shelfWidth - 16, 200), platformCaseSizes),
     [visibleShelves, shelfWidth, platformCaseSizes]
@@ -241,7 +232,7 @@ const BookshelfPage = () => {
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [rows.length, visibleRowCount]);
+  }, [rows, visibleRowCount]);
   const visibleRows = rows.slice(0, visibleRowCount);
 
   return (

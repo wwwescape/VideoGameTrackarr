@@ -22,7 +22,7 @@ import {
   resolvePlatformCaseSizes,
   TEMPLATE_TARGET_HEIGHT,
 } from "./BookshelfPage";
-import BookshelfGrid, { packRows, useTemplateInfo } from "./BookshelfGrid";
+import BookshelfGrid, { packRows, useShelfWidth, useTemplateInfo } from "./BookshelfGrid";
 
 // The share-link Bookshelf: same shelf as the private page (shared grid,
 // builders, and sizing), fed by the public endpoint — hidden games never
@@ -106,18 +106,9 @@ const PublicBookshelfPage = () => {
 
   const totalCases = shelves.reduce((sum, shelf) => sum + shelf.cases.length, 0);
 
-  const shelfRef = useRef<HTMLDivElement>(null);
-  const [shelfWidth, setShelfWidth] = useState(1200);
-  useEffect(() => {
-    const element = shelfRef.current;
-    if (!element) return;
-    const update = () => setShelfWidth(element.clientWidth);
-    update();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  // Same late-mount width measurement as the private shelf (see
+  // useShelfWidth in BookshelfGrid).
+  const { shelfRef, shelfWidth } = useShelfWidth();
   const rows = useMemo(
     () => packRows(visibleShelves, Math.max(shelfWidth - 16, 200), platformCaseSizes),
     [visibleShelves, shelfWidth, platformCaseSizes]
@@ -143,7 +134,7 @@ const PublicBookshelfPage = () => {
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [rows.length, visibleRowCount]);
+  }, [rows, visibleRowCount]);
   const visibleRows = rows.slice(0, visibleRowCount);
 
   return (

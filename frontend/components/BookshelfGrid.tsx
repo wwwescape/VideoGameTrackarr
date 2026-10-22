@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
@@ -218,6 +218,32 @@ export function useTemplateInfo(
     }
   }, [platforms, templateInfo]);
   return templateInfo;
+}
+
+// Measures the shelf container's width for row packing. The shelf only
+// renders after its data loads, so the measurement has to follow the
+// element: a mount-once effect reads a null ref while the page is still
+// loading and never runs again, leaving rows packed for the 1200px default
+// on every cold load — overflowing narrow screens, underfilling wide ones,
+// and stalling the progressive loader whose sentinel math assumes rows of
+// the real width. A callback ref + layout effect measures on every
+// (re)mount, before paint, and keeps tracking resizes.
+export function useShelfWidth(): {
+  shelfRef: (element: HTMLDivElement | null) => void;
+  shelfWidth: number;
+} {
+  const [shelfElement, setShelfElement] = useState<HTMLDivElement | null>(null);
+  const [shelfWidth, setShelfWidth] = useState(1200);
+  useLayoutEffect(() => {
+    if (!shelfElement) return;
+    const update = () => setShelfWidth(shelfElement.clientWidth);
+    update();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(update);
+    observer.observe(shelfElement);
+    return () => observer.disconnect();
+  }, [shelfElement]);
+  return { shelfRef: setShelfElement, shelfWidth };
 }
 
 export interface BookshelfGridProps {
