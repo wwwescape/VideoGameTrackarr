@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -13,6 +13,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import BlockIcon from "@mui/icons-material/Block";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -55,6 +56,14 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
   const setSpineStyle = useSetPlatformSpineStyle();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState(false);
+  // Custom case size entry: picking "Custom…" in the dropdown reveals
+  // height/spine fields; Save stores the entered millimetres on the platform.
+  const [customEditing, setCustomEditing] = useState(false);
+  const [customHeight, setCustomHeight] = useState("");
+  const [customSpine, setCustomSpine] = useState("");
+  useEffect(() => {
+    setCustomEditing(false);
+  }, [platform?.id]);
 
   const busy = uploadSpine.isPending || setTemplate.isPending;
   const templateUrl = platform?.spineTemplateUrl ?? null;
@@ -64,8 +73,7 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
   const hasOverride = platform != null && platform.caseHeightMm != null && platform.caseSpineMm != null;
   const overridePreset =
     hasOverride && platform ? presetForDimensions(platform.caseHeightMm!, platform.caseSpineMm!) : null;
-  const customPreset = hasOverride && !overridePreset ? "custom" : null;
-  const caseSizeValue = !hasOverride ? "auto" : (overridePreset?.id ?? "custom");
+  const caseSizeValue = customEditing ? "custom" : !hasOverride ? "auto" : (overridePreset?.id ?? "custom");
   const defaultPreset = platform ? defaultCaseSizeForPlatform(platform) : null;
   const autoLabel = defaultPreset
     ? t("games.bookshelf.caseSize.autoKnown", {
@@ -75,8 +83,26 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
       })
     : t("games.bookshelf.caseSize.autoUnknown");
   const effectiveMm = platform ? effectiveCaseSizeMm(platform) : null;
-  const renderedSize = effectiveMm
-    ? caseSizeToPixels(effectiveMm.heightMm, effectiveMm.spineMm)
+  // The renders-at helper follows the custom inputs while they're being
+  // edited, so the pixel preview updates before anything is saved.
+  const parsedHeight = Number(customHeight);
+  const parsedSpine = Number(customSpine);
+  const customValid =
+    customHeight.trim() !== "" &&
+    customSpine.trim() !== "" &&
+    Number.isFinite(parsedHeight) &&
+    Number.isFinite(parsedSpine) &&
+    parsedHeight > 0 &&
+    parsedSpine > 0 &&
+    parsedHeight <= 1000 &&
+    parsedSpine <= 1000;
+  const previewMm = customEditing
+    ? customValid
+      ? { heightMm: parsedHeight, spineMm: parsedSpine }
+      : null
+    : effectiveMm;
+  const renderedSize = previewMm
+    ? caseSizeToPixels(previewMm.heightMm, previewMm.spineMm)
     : { width: 0, height: 0 };
 
   const saveSpineStyle = async (color: string | null, icon: string | null, iconUrl?: string | null) => {
@@ -115,7 +141,17 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
   };
 
   const handleCaseSizeChange = async (value: string) => {
-    if (!platform || value === "custom") return;
+    if (!platform) return;
+    if (value === "custom") {
+      // Ask for the size instead of saving anything: prefill from the size
+      // currently in effect so tweaking one dimension is a one-field edit.
+      const start = effectiveMm ?? { heightMm: 184, spineMm: 14 };
+      setCustomHeight(String(start.heightMm));
+      setCustomSpine(String(start.spineMm));
+      setCustomEditing(true);
+      return;
+    }
+    setCustomEditing(false);
     setError(false);
     try {
       if (value === "auto") {
@@ -129,6 +165,21 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
           spineMm: preset.spineMm,
         });
       }
+    } catch {
+      setError(true);
+    }
+  };
+
+  const handleApplyCustom = async () => {
+    if (!platform || !customValid) return;
+    setError(false);
+    try {
+      await setCaseSize.mutateAsync({
+        platformId: platform.id,
+        heightMm: parsedHeight,
+        spineMm: parsedSpine,
+      });
+      setCustomEditing(false);
     } catch {
       setError(true);
     }
@@ -197,22 +248,23 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
           </Typography>
         )}
         <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-          <InputLabel>{t("games.bookshelf.caseSize.label")}</InputLabel>
+          <InputLabel id="case-size-label">{t("games.bookshelf.caseSize.label")}</InputLabel>
           <Select
+            labelId="case-size-label"
             value={caseSizeValue}
             label={t("games.bookshelf.caseSize.label")}
             onChange={(event) => handleCaseSizeChange(event.target.value)}
             disabled={busy || setCaseSize.isPending}
           >
             <MenuItem value="auto">{autoLabel}</MenuItem>
-            {customPreset === "custom" && (
-              <MenuItem value="custom">
-                {t("games.bookshelf.caseSize.custom", {
-                  height: platform?.caseHeightMm,
-                  spine: platform?.caseSpineMm,
-                })}
-              </MenuItem>
-            )}
+            <MenuItem value="custom">
+              {hasOverride && !overridePreset
+                ? t("games.bookshelf.caseSize.custom", {
+                    height: platform?.caseHeightMm,
+                    spine: platform?.caseSpineMm,
+                  })
+                : t("games.bookshelf.caseSize.customOption")}
+            </MenuItem>
             {CASE_SIZE_PRESETS.map((preset) => (
               <MenuItem key={preset.id} value={preset.id}>
                 {t("games.bookshelf.caseSize.preset", {
@@ -223,7 +275,7 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
               </MenuItem>
             ))}
           </Select>
-          {effectiveMm && (
+          {previewMm && (
             <FormHelperText>
               {t("games.bookshelf.caseSize.renders", {
                 height: renderedSize.height,
@@ -232,6 +284,36 @@ const PlatformTemplateDialog = ({ platform, onClose }: PlatformTemplateDialogPro
             </FormHelperText>
           )}
         </FormControl>
+        {customEditing && (
+          <Stack direction="row" spacing={1.5} sx={{ mb: 2, alignItems: "flex-start" }}>
+            <TextField
+              size="small"
+              label={t("games.bookshelf.caseSize.heightLabel")}
+              type="number"
+              value={customHeight}
+              onChange={(event) => setCustomHeight(event.target.value)}
+              slotProps={{ htmlInput: { min: 0, step: "any" } }}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              size="small"
+              label={t("games.bookshelf.caseSize.spineLabel")}
+              type="number"
+              value={customSpine}
+              onChange={(event) => setCustomSpine(event.target.value)}
+              slotProps={{ htmlInput: { min: 0, step: "any" } }}
+              sx={{ flex: 1 }}
+            />
+            <Button
+              variant="contained"
+              onClick={handleApplyCustom}
+              disabled={!customValid || setCaseSize.isPending}
+              sx={{ height: 40, flexShrink: 0 }}
+            >
+              {t("common.save")}
+            </Button>
+          </Stack>
+        )}
         <Divider sx={{ my: 2 }} />
         <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
           {t("games.bookshelf.spineStyle.section")}
