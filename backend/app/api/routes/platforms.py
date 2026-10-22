@@ -6,7 +6,13 @@ from app.api.routes.game_filters import GameFilterParams
 from app.models.library import MediaFormat
 from app.repositories import platform_repository
 from app.schemas.game import GameSummaryResponse, game_summary_from_orm
-from app.schemas.platform import LibraryPlatformResponse, PlatformResponse
+from app.schemas.platform import (
+    LibraryPlatformResponse,
+    PlatformCaseSizeRequest,
+    PlatformResponse,
+    PlatformSpineStyleRequest,
+    PlatformSpineTemplateRequest,
+)
 from app.services import insight_service, platform_service
 
 router = APIRouter(prefix="/api/platforms", tags=["platforms"], dependencies=[Depends(get_current_user)])
@@ -55,3 +61,29 @@ def list_platform_addons(
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     return [game_summary_from_orm(addon, on_sale_game_ids) for addon in addons]
+
+
+@router.put("/{platform_id}/spine-template", response_model=PlatformResponse)
+def set_platform_spine_template(
+    platform_id: int, body: PlatformSpineTemplateRequest, db: Session = Depends(get_db)
+) -> PlatformResponse:
+    platform = platform_service.set_platform_spine_template(db, platform_id, body.spine_url)
+    return PlatformResponse.model_validate(platform)
+
+
+@router.put("/{platform_id}/case-size", response_model=PlatformResponse)
+def set_platform_case_size(
+    platform_id: int, body: PlatformCaseSizeRequest, db: Session = Depends(get_db)
+) -> PlatformResponse:
+    platform = platform_service.set_platform_case_size(db, platform_id, body.height_mm, body.spine_mm)
+    return PlatformResponse.model_validate(platform)
+
+
+@router.put("/{platform_id}/spine-style", response_model=PlatformResponse)
+def set_platform_spine_style(
+    platform_id: int, body: PlatformSpineStyleRequest, db: Session = Depends(get_db)
+) -> PlatformResponse:
+    platform = platform_service.set_platform_spine_style(
+        db, platform_id, body.color, body.icon, body.icon_url
+    )
+    return PlatformResponse.model_validate(platform)

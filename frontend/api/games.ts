@@ -3,6 +3,7 @@ import type {
   BulkImportRequest,
   BulkImportStatusResponse,
   GameCategory,
+  BookshelfEntry,
   GameDetail,
   GameSource,
   GameSortOption,
@@ -151,6 +152,11 @@ export async function listGames(
     paramsSerializer: { indexes: null },
     signal,
   });
+  return response.data;
+}
+
+export async function fetchBookshelfEntries(): Promise<BookshelfEntry[]> {
+  const response = await apiClient.get<BookshelfEntry[]>("/api/games/bookshelf");
   return response.data;
 }
 

@@ -64,7 +64,8 @@
     "jobs": "Jobs",
     "integrations": "Integrations",
     "about": "About",
-    "emulation": "Emulation"
+    "emulation": "Emulation",
+    "bookshelf": "Bookshelf"
   },
   "breadcrumbs": {
     "edit": "Edit",
@@ -571,7 +572,8 @@
       "addGame": "Add Game",
       "collections": "Collections",
       "series": "Series",
-      "platforms": "Platforms"
+      "platforms": "Platforms",
+      "bookshelf": "Bookshelf"
     },
     "add": {
       "pageTitle": "Add Game",
@@ -812,6 +814,55 @@
       "notInLibrary": "Not in your library yet",
       "backToSearch": "Back to search",
       "addedToast": "{{name}} added to your library"
+    },
+    "bookshelf": {
+      "title": "Bookshelf",
+      "summary": "{{cases}} cases on the shelf",
+      "searchPlaceholder": "Search the shelf…",
+      "empty": "Nothing on the shelf yet — own some games first.",
+      "template": {
+        "title": "Spine template · {{platform}}",
+        "forPlatform": "Spine template for {{platform}}",
+        "hint": "This image becomes the blank spine behind every case of this platform on the shelf. Game titles print over it.",
+        "empty": "No template yet — this platform's cases use the plain platform colour.",
+        "upload": "Upload template",
+        "replace": "Replace",
+        "remove": "Remove",
+        "saveError": "That template couldn't be saved"
+      },
+      "caseSize": {
+        "label": "Case size",
+        "autoKnown": "Auto — {{name}} ({{height}} × {{spine}} mm)",
+        "autoUnknown": "Auto — no known size for this system",
+        "preset": "{{name}} ({{height}} × {{spine}} mm)",
+        "custom": "Custom ({{height}} × {{spine}} mm)",
+        "customOption": "Custom…",
+        "heightLabel": "Height (mm)",
+        "spineLabel": "Spine (mm)",
+        "renders": "Cases render at 40% of actual: {{height}} px tall, {{width}} px spine"
+      },
+      "spineStyle": {
+        "section": "Generic spine",
+        "hint": "Colour and icon for this platform's default spines (used when there is no template image).",
+        "colorLabel": "Spine colour",
+        "colorAuto": "Auto",
+        "customColor": "Custom colour",
+        "iconLabel": "Spine icon",
+        "icon": {
+          "logo": "Platform logo",
+          "gamepad": "Gamepad",
+          "disc": "Disc",
+          "cartridge": "Cartridge",
+          "arcade": "Arcade cabinet",
+          "star": "Star",
+          "trophy": "Trophy",
+          "heart": "Heart",
+          "bolt": "Bolt",
+          "none": "No icon"
+        },
+        "uploadIcon": "Upload custom icon",
+        "replaceIcon": "Replace custom icon"
+      }
     }
   },
   "events": {
@@ -1383,7 +1434,8 @@
   "public": {
     "nav": {
       "games": "Games",
-      "hardware": "Hardware"
+      "hardware": "Hardware",
+      "bookshelf": "Bookshelf"
     },
     "games": {
       "title": "Games",

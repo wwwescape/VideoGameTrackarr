@@ -3,8 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.repositories.game_repository import GameSortOption
+from app.schemas.game import BookshelfEntryResponse
 from app.schemas.public import (
     PublicAccessorySummaryResponse,
+    PublicBookshelfPlatformResponse,
+    PublicBookshelfResponse,
     PublicDeviceSummaryResponse,
     PublicGameDetailResponse,
     PublicGameSummaryResponse,
@@ -18,6 +21,49 @@ from app.services import accessory_service, auth_service, device_service, game_s
 # No auth dependency — this is the app's one deliberately unauthenticated router, gated
 # instead by the unlisted per-user token in the path. See auth_service.get_user_by_share_token.
 router = APIRouter(prefix="/api/public/{token}", tags=["public"])
+
+
+@router.get("/bookshelf", response_model=PublicBookshelfResponse)
+def get_public_bookshelf(
+    token: str,
+    db: Session = Depends(get_db),
+) -> PublicBookshelfResponse:
+    auth_service.get_user_by_share_token(db, token)
+    entries = game_service.list_bookshelf_entries(db)
+    # The shelf's platform display records (template art, case size, spine
+    # styling) for just the platforms that have cases on it.
+    from app.models.catalog import Platform
+
+    labels = {entry.platform_label for entry in entries}
+    platforms = [
+        PublicBookshelfPlatformResponse(
+            label=platform.abbreviation or platform.name,
+            name=platform.name,
+            abbreviation=platform.abbreviation,
+            spine_template_url=platform.spine_template_url,
+            case_height_mm=platform.case_height_mm,
+            case_spine_mm=platform.case_spine_mm,
+            spine_color=platform.spine_color,
+            spine_icon=platform.spine_icon,
+            spine_icon_url=platform.spine_icon_url,
+        )
+        for platform in db.query(Platform).all()
+        if (platform.abbreviation or platform.name) in labels
+    ]
+    return PublicBookshelfResponse(
+        entries=[
+            BookshelfEntryResponse(
+                game_id=entry.game_id,
+                game_slug=entry.game_slug,
+                game_uuid=entry.game_uuid,
+                name=entry.name,
+                platform_label=entry.platform_label,
+                formats=entry.formats,
+            )
+            for entry in entries
+        ],
+        platforms=platforms,
+    )
 
 
 @router.get("/games", response_model=list[PublicGameSummaryResponse])

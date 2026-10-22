@@ -29,3 +29,40 @@ export async function listPlatformAddons(
   });
   return response.data;
 }
+
+export async function setPlatformSpineTemplate(
+  platformId: number,
+  spineUrl: string | null
+): Promise<PlatformResponse> {
+  const response = await apiClient.put<PlatformResponse>(
+    `/api/platforms/${platformId}/spine-template`,
+    { spineUrl }
+  );
+  return response.data;
+}
+
+export async function setPlatformCaseSize(
+  platformId: number,
+  heightMm: number | null,
+  spineMm: number | null
+): Promise<PlatformResponse> {
+  const response = await apiClient.put<PlatformResponse>(`/api/platforms/${platformId}/case-size`, {
+    heightMm,
+    spineMm,
+  });
+  return response.data;
+}
+
+export async function setPlatformSpineStyle(
+  platformId: number,
+  color: string | null,
+  icon: string | null,
+  iconUrl: string | null = null
+): Promise<PlatformResponse> {
+  const response = await apiClient.put<PlatformResponse>(`/api/platforms/${platformId}/spine-style`, {
+    color,
+    icon,
+    iconUrl,
+  });
+  return response.data;
+}

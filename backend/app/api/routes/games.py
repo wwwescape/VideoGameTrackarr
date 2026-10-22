@@ -10,6 +10,7 @@ from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
 from app.schemas.game import (
+    BookshelfEntryResponse,
     GameDetailResponse,
     GameImportRequest,
     GameSummaryResponse,
@@ -110,6 +111,21 @@ def get_bulk_import_status() -> BulkImportStatusResponse:
 @router.post("/bulk-import/status/acknowledge", status_code=status.HTTP_204_NO_CONTENT)
 def acknowledge_bulk_import_status() -> None:
     bulk_import_job.acknowledge()
+
+
+@router.get("/bookshelf", response_model=list[BookshelfEntryResponse])
+def list_bookshelf_entries(db: Session = Depends(get_db)) -> list[BookshelfEntryResponse]:
+    return [
+        BookshelfEntryResponse(
+            game_id=entry.game_id,
+            game_slug=entry.game_slug,
+            game_uuid=entry.game_uuid,
+            name=entry.name,
+            platform_label=entry.platform_label,
+            formats=entry.formats,
+        )
+        for entry in game_service.list_bookshelf_entries(db)
+    ]
 
 
 @router.get("/{identifier}", response_model=GameDetailResponse)

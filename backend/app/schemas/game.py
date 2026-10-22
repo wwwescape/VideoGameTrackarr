@@ -54,6 +54,19 @@ class GameSummaryResponse(CamelModel):
     gog_store_url: str | None
 
 
+class BookshelfEntryResponse(CamelModel):
+    """One slim row per owned (game x platform) for the Bookshelf page —
+    just what the shelf renders, instead of the full games list plus the
+    full library-items payload."""
+
+    game_id: int
+    game_slug: str | None
+    game_uuid: str
+    name: str
+    platform_label: str
+    formats: list[str]
+
+
 class GameDetailResponse(GameSummaryResponse):
     summary: str | None
     storyline: str | None
@@ -297,6 +310,12 @@ def igdb_game_preview_from_payload(
                 name=platform["name"],
                 slug=platform.get("slug"),
                 abbreviation=platform.get("abbreviation"),
+                spine_template_url=None,
+                case_height_mm=None,
+                case_spine_mm=None,
+                spine_color=None,
+                spine_icon=None,
+                spine_icon_url=None,
             )
             for platform in igdb_game.get("platforms") or []
             if platform.get("id") is not None and platform.get("name")

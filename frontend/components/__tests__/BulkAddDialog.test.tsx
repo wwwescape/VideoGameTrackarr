@@ -12,7 +12,7 @@ vi.mock("../../hooks/useGames", () => ({
 }));
 
 const platforms: PlatformResponse[] = [
-  { id: 1, igdbId: 6, name: "PC (Microsoft Windows)", slug: "win", abbreviation: "PC" },
+  { id: 1, igdbId: 6, name: "PC (Microsoft Windows)", slug: "win", abbreviation: "PC", spineTemplateUrl: null, caseHeightMm: null, caseSpineMm: null, spineColor: null, spineIcon: null, spineIconUrl: null },
 ];
 
 vi.mock("../../hooks/usePlatforms", () => ({

@@ -15,6 +15,7 @@ from app.schemas.catalog import (
     genre_ref_from_orm,
     release_date_from_orm,
 )
+from app.schemas.game import BookshelfEntryResponse
 from app.schemas.platform import PlatformResponse
 from app.services.hardware_reference_image_service import resolve_image_url
 
@@ -179,3 +180,23 @@ def public_accessory_from_orm(item: AccessoryWithStatus) -> PublicAccessorySumma
         wishlisted=item.wishlisted,
         owned_quantity=item.owned_quantity,
     )
+
+
+class PublicBookshelfPlatformResponse(CamelModel):
+    """The display fields a public Bookshelf case needs for one platform:
+    template art, physical case size, and generic-spine styling."""
+
+    label: str
+    name: str
+    abbreviation: str | None
+    spine_template_url: str | None
+    case_height_mm: float | None
+    case_spine_mm: float | None
+    spine_color: str | None
+    spine_icon: str | None
+    spine_icon_url: str | None
+
+
+class PublicBookshelfResponse(CamelModel):
+    entries: list[BookshelfEntryResponse]
+    platforms: list[PublicBookshelfPlatformResponse]

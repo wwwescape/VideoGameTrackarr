@@ -17,6 +17,16 @@ async def upload_cover(file: UploadFile = File(...)) -> UploadResponse:
     return UploadResponse(url=url)
 
 
+@router.post("/spines", response_model=UploadResponse, status_code=201)
+async def upload_spine(file: UploadFile = File(...)) -> UploadResponse:
+    raw = await file.read()
+    try:
+        url = upload_service.save_spine_image(raw)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return UploadResponse(url=url)
+
+
 @router.post("/accessory-images", response_model=UploadResponse, status_code=201)
 async def upload_accessory_image(file: UploadFile = File(...)) -> UploadResponse:
     raw = await file.read()
