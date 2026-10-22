@@ -1,11 +1,13 @@
 import enum
+from dataclasses import dataclass
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.identifiers import extract_uuid
-from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion
-from app.models.library import MediaFormat, PlayStatus
+from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion, Platform
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PlayStatus
 from app.repositories import (
     collection_repository,
     company_repository,
@@ -48,6 +50,47 @@ class CatalogSyncScope(enum.Enum):
 # Public (not module-private) — steam_service also uses this to hide DLC/expansion/pack
 # entries from the main Steam Sync table.
 HIERARCHICAL_ADDON_CATEGORIES = {GameCategory.DLC_ADDON, GameCategory.EXPANSION, GameCategory.PACK}
+
+
+@dataclass
+class BookshelfEntry:
+    game_id: int
+    game_slug: str | None
+    game_uuid: str
+    name: str
+    platform_label: str
+    formats: list[str]
+
+
+def list_bookshelf_entries(db: Session) -> list[BookshelfEntry]:
+    """Slim Bookshelf payload: one entry per owned (game x platform), with
+    the platform label resolved (abbreviation ?? name) and the copy formats
+    merged — replaces the full games list + full library-items download the
+    Bookshelf page used to need."""
+    rows = db.execute(
+        select(LibraryItem, Game, Platform)
+        .join(Game, LibraryItem.game_id == Game.id)
+        .join(Platform, LibraryItem.platform_id == Platform.id)
+        .where(LibraryItem.status == LibraryStatus.OWNED, LibraryItem.platform_id.is_not(None))
+        .order_by(Game.name, Platform.name)
+    ).all()
+    merged: dict[tuple[int, int], BookshelfEntry] = {}
+    for item, game, platform in rows:
+        key = (game.id, platform.id)
+        entry = merged.get(key)
+        if entry is None:
+            entry = BookshelfEntry(
+                game_id=game.id,
+                game_slug=game.slug,
+                game_uuid=game.uuid,
+                name=game.name,
+                platform_label=platform.abbreviation or platform.name,
+                formats=[],
+            )
+            merged[key] = entry
+        if item.format is not None and item.format.value not in entry.formats:
+            entry.formats.append(item.format.value)
+    return list(merged.values())
 
 
 def search_local_games(

@@ -10,6 +10,12 @@ COVERS_DIR = UPLOADS_DIR / "covers"
 COVERS_URL_PREFIX = "/uploads/covers/"
 ACCESSORY_IMAGES_DIR = UPLOADS_DIR / "accessory-images"
 ACCESSORY_IMAGES_URL_PREFIX = "/uploads/accessory-images/"
+SPINES_DIR = UPLOADS_DIR / "spines"
+SPINES_URL_PREFIX = "/uploads/spines/"
+# Spine scans vary wildly in aspect ratio (a Switch spine vs an N64 top spine), so
+# unlike covers they are never cropped to a fixed size — only capped on the long
+# edge and re-encoded, preserving the scan's own proportions for Bookshelf mode.
+SPINE_MAX_EDGE = 1200
 # Matches IGDB's t_720p cover size (see igdb_client.py) so uploaded covers render identically
 # to IGDB-sourced ones instead of relying on CSS object-fit to paper over a mismatched source.
 COVER_TARGET_SIZE = (540, 720)
@@ -43,6 +49,38 @@ def save_cover_image(raw: bytes) -> str:
 
 def save_accessory_image(raw: bytes) -> str:
     return _save_optimized_image(raw, ACCESSORY_IMAGES_DIR, ACCESSORY_IMAGES_URL_PREFIX, ACCESSORY_TARGET_SIZE)
+
+
+def save_spine_image(raw: bytes) -> str:
+    """Validates an uploaded spine scan and stores it under SPINES_DIR, preserving
+    its aspect ratio (downscaling only when the long edge exceeds SPINE_MAX_EDGE).
+    Returns the /uploads/spines/... URL it's served at."""
+    try:
+        image = Image.open(BytesIO(raw))
+        image.load()
+    except UnidentifiedImageError as exc:
+        raise ValueError("Not a valid image file") from exc
+
+    image = image.convert("RGB")
+    if max(image.size) > SPINE_MAX_EDGE:
+        image.thumbnail((SPINE_MAX_EDGE, SPINE_MAX_EDGE), resample=Image.Resampling.LANCZOS)
+
+    SPINES_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4()}.jpg"
+    image.save(SPINES_DIR / filename, format="JPEG", quality=JPEG_QUALITY)
+    return f"{SPINES_URL_PREFIX}{filename}"
+
+
+def delete_spine_if_local(url: str | None) -> None:
+    """Best-effort cleanup for a spine upload that's being replaced or cleared —
+    a no-op for external URLs and None. Same resolve-and-contain guard as
+    delete_if_local_upload (the stored value can come from a request body)."""
+    if url is None or not url.startswith(SPINES_URL_PREFIX):
+        return
+    filename = url.removeprefix(SPINES_URL_PREFIX)
+    candidate = (SPINES_DIR / filename).resolve()
+    if candidate.is_relative_to(SPINES_DIR.resolve()):
+        candidate.unlink(missing_ok=True)
 
 
 def delete_if_local_upload(url: str | None) -> None:
