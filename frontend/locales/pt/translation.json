@@ -836,6 +836,9 @@
         "autoUnknown": "Auto — no known size for this system",
         "preset": "{{name}} ({{height}} × {{spine}} mm)",
         "custom": "Custom ({{height}} × {{spine}} mm)",
+        "customOption": "Custom…",
+        "heightLabel": "Height (mm)",
+        "spineLabel": "Spine (mm)",
         "renders": "Cases render at 40% of actual: {{height}} px tall, {{width}} px spine"
       },
       "spineStyle": {
