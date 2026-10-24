@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
@@ -20,6 +20,7 @@ import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
 import FreeSoloLookupField from "./FreeSoloLookupField";
 import Page from "./Page";
+import { useEditReturn } from "../utils/navState";
 
 interface StatusOption {
   value: LibraryStatus;
@@ -51,7 +52,7 @@ interface EditDeviceFormProps {
 // "custom" identity to re-resolve here, only the catalog/ownership details below it.
 const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const returnToDetail = useEditReturn();
   const updateDevice = useUpdateDevice(device.id);
   const addUserDevice = useAddUserDevice(device.id);
   const updateUserDevice = useUpdateUserDevice(device.id);
@@ -110,7 +111,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
         await addUserDevice.mutateAsync(ownershipInput);
       }
       toast.success(t("hardware.editDevice.updatedSuccess"), TOAST_OPTIONS);
-      navigate(`/hardware/device/${hardwareIdentifier(officialName.trim(), device.uuid)}`);
+      returnToDetail(`/hardware/device/${hardwareIdentifier(officialName.trim(), device.uuid)}`);
     } catch (error) {
       console.error("Error updating device:", error);
       toast.error(t("hardware.editDevice.updateError"), TOAST_OPTIONS);
@@ -276,7 +277,7 @@ const EditDeviceForm = ({ device, primaryOwnership }: EditDeviceFormProps) => {
             </Button>
             <Button
               variant="text"
-              onClick={() => navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`)}
+              onClick={() => returnToDetail(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`)}
               disabled={isSubmitting}
             >
               {t("common.cancel")}

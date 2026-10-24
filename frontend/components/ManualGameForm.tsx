@@ -128,7 +128,7 @@ const ManualGameForm = ({ initialValues, steamAppId }: ManualGameFormProps) => {
         steamAppId,
       });
       toast.success(t("games.manualForm.addSuccessToast"), TOAST_OPTIONS);
-      navigate(`/game/${gameIdentifier(game)}`);
+      navigate(`/game/${gameIdentifier(game)}`, { replace: true });
     } catch (error) {
       console.error("Error adding game manually:", error);
       toast.error(t("games.manualForm.addErrorToast"), TOAST_OPTIONS);

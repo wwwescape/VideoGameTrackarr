@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { SectionNote } from "./Detail";
 
 // Minimal shape this component needs — both the game-specific `Note` and the
 // device-specific `DeviceNote` types satisfy this structurally, so no shared type is needed.
@@ -30,6 +31,8 @@ interface NotesSectionProps {
   onDelete: (noteId: number) => Promise<unknown>;
   isCreating?: boolean;
   subheader?: string;
+  // Inside a detail page's Section, which titles it: only the explanation line is shown.
+  inSection?: boolean;
 }
 
 const NoteRow = ({
@@ -114,6 +117,7 @@ const NotesSection = ({
   onDelete,
   isCreating,
   subheader,
+  inSection = false,
 }: NotesSectionProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState("");
@@ -132,7 +136,11 @@ const NotesSection = ({
 
   return (
     <>
-      <CardHeader title={t("notes.title")} subheader={resolvedSubheader} />
+      {inSection ? (
+        <SectionNote>{resolvedSubheader}</SectionNote>
+      ) : (
+        <CardHeader title={t("notes.title")} subheader={resolvedSubheader} />
+      )}
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1}>

@@ -1,12 +1,9 @@
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
+import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
-import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
@@ -14,13 +11,11 @@ import { toast } from "react-toastify";
 import { useImportGame } from "../hooks/useGames";
 import { useIgdbGamePreview } from "../hooks/useIgdbSearch";
 import { gameIdentifier } from "../utils/identifiers";
+import { useStepBack } from "../utils/navState";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import GameAboutSection from "./GameAboutSection";
-import GameCoverCard from "./GameCoverCard";
+import { GameAboutBlock, GameHero, GameMediaSections } from "./GameDetailParts";
 import NotFoundPage from "./NotFoundPage";
-import Page from "./Page";
-
-const sectionCardSx = { borderRadius: 2, overflow: "hidden" } as const;
+import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
 // Add Game → click a search result: read about a game straight from IGDB before adding it.
 // Nothing is stored until "Add Game" is pressed (the backend preview endpoint never writes),
@@ -33,6 +28,8 @@ const IgdbGamePreviewPage = () => {
   const igdbId = Number(igdbIdParam);
   const { data: preview, isLoading, error } = useIgdbGamePreview(igdbId);
   const importGameMutation = useImportGame();
+  const routeCrumbs = useRouteCrumbs();
+  const stepBack = useStepBack();
 
   if (!Number.isFinite(igdbId) || (isAxiosError(error) && error.response?.status === 404)) {
     return (
@@ -82,45 +79,32 @@ const IgdbGamePreviewPage = () => {
   };
 
   return (
-    <Page>
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Stack spacing={2}>
-            <GameCoverCard game={preview} />
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-              {t("games.preview.notInLibrary")}
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={
-                importGameMutation.isPending ? (
-                  <CircularProgress size={18} color="inherit" />
-                ) : (
-                  <AddIcon />
-                )
-              }
-              disabled={importGameMutation.isPending}
-              onClick={() => void handleAddGame()}
-              fullWidth
-            >
-              {t("games.actions.addGameButton")}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate(-1)}
-              fullWidth
-            >
-              {t("games.preview.backToSearch")}
-            </Button>
-          </Stack>
-        </Grid>
-        <Grid size={{ xs: 12, md: 9 }}>
-          <Card sx={sectionCardSx}>
-            <GameAboutSection game={preview} preview />
-          </Card>
-        </Grid>
-      </Grid>
+    <Page
+      crumbs={[]}
+      toolbar={
+        <>
+          <ToolbarButton
+            icon={<ArrowBackIcon />}
+            label={t("games.preview.backToSearch")}
+            onClick={() => stepBack("/games/add")}
+          />
+          <ToolbarDivider />
+          <ToolbarButton
+            primary
+            icon={importGameMutation.isPending ? <CircularProgress size={18} color="inherit" /> : <AddIcon />}
+            label={t("games.actions.addGameButton")}
+            disabled={importGameMutation.isPending}
+            onClick={() => void handleAddGame()}
+          />
+          <Box component="span" sx={{ px: 1, color: "text.secondary", fontSize: 13, whiteSpace: "nowrap" }}>
+            {t("games.preview.notInLibrary")}
+          </Box>
+        </>
+      }
+      hero={<GameHero game={preview} status={{ coverUrl: preview.coverUrl }} crumbs={routeCrumbs.slice(0, -1)} preview />}
+    >
+      <GameAboutBlock game={preview} />
+      <GameMediaSections game={preview} />
     </Page>
   );
 };

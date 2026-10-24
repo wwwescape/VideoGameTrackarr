@@ -28,11 +28,14 @@ import EnhancedTable, { type HeadCell } from "./EnhancedTable";
 import PlaySessionDialog, { type PlaySessionFormValues } from "./PlaySessionDialog";
 import ProgressDialog, { type ProgressFormValues } from "./ProgressDialog";
 import { showUndoToast } from "./UndoToast";
+import { SectionNote } from "./Detail";
 
 interface GameProgressSectionProps {
   gameId: number;
   libraryItems: LibraryItem[] | undefined;
   platforms: PlatformResponse[] | undefined;
+  // Inside a detail page's Section, which titles it: only the explanation line is shown.
+  inSection?: boolean;
 }
 
 // Fixed widths (not just the shared Platform one) so both tables get table-layout: fixed
@@ -63,7 +66,7 @@ function formatDuration(minutes: number | null): string {
   return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
 }
 
-const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSectionProps) => {
+const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = false }: GameProgressSectionProps) => {
   const { t } = useTranslation();
 
   const { data: progressRows } = useGameProgressList(gameId);
@@ -332,7 +335,11 @@ const GameProgressSection = ({ gameId, libraryItems, platforms }: GameProgressSe
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      <CardHeader title={t("progress.title")} subheader={t("progress.subheader")} />
+      {inSection ? (
+        <SectionNote>{t("progress.subheader")}</SectionNote>
+      ) : (
+        <CardHeader title={t("progress.title")} subheader={t("progress.subheader")} />
+      )}
       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
         <EnhancedTable
           rows={progressTableRows}

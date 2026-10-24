@@ -32,9 +32,11 @@ function logoForNetworkType(networkType: string | null): string {
 
 interface EventNetworksSectionProps {
   networks: EventNetwork[];
+  // Leave out the heading when the page's own section already titles it.
+  hideTitle?: boolean;
 }
 
-const EventNetworksSection = ({ networks }: EventNetworksSectionProps) => {
+const EventNetworksSection = ({ networks, hideTitle = false }: EventNetworksSectionProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
 
@@ -42,9 +44,11 @@ const EventNetworksSection = ({ networks }: EventNetworksSectionProps) => {
 
   return (
     <>
-      <Typography variant="subtitle2" gutterBottom>
-        {t("events.networks.heading")}
-      </Typography>
+      {hideTitle ? null : (
+        <Typography variant="subtitle2" gutterBottom>
+          {t("events.networks.heading")}
+        </Typography>
+      )}
       <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 2 }}>
         {networks.map((network) => {
           const logo = logoForNetworkType(network.networkType);

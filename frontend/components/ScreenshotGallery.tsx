@@ -17,17 +17,21 @@ interface ScreenshotGalleryProps {
   urls: string[];
   altPrefix: string;
   title?: string;
+  // Leave out the heading when the page's own section already titles it.
+  hideTitle?: boolean;
 }
 
-const ScreenshotGallery = ({ urls, altPrefix, title }: ScreenshotGalleryProps) => {
+const ScreenshotGallery = ({ urls, altPrefix, title, hideTitle = false }: ScreenshotGalleryProps) => {
   const { t } = useTranslation();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
     <>
-      <Typography variant="subtitle2" gutterBottom>
-        {title ?? t("screenshotGallery.title")}
-      </Typography>
+      {hideTitle ? null : (
+        <Typography variant="subtitle2" gutterBottom>
+          {title ?? t("screenshotGallery.title")}
+        </Typography>
+      )}
       <ImageList
         cols={3}
         gap={8}

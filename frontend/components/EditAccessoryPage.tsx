@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -30,6 +30,7 @@ import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
 import FreeSoloLookupField from "./FreeSoloLookupField";
 import Page from "./Page";
+import { useEditReturn } from "../utils/navState";
 
 interface StatusOption {
   value: LibraryStatus;
@@ -66,7 +67,7 @@ interface EditAccessoryFormProps {
 // fields editable, since they were never resolved from the reference cascade to begin with.
 const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const returnToDetail = useEditReturn();
   const updateAccessory = useUpdateAccessory(accessory.id);
   const addUserAccessory = useAddUserAccessory(accessory.id);
   const updateUserAccessory = useUpdateUserAccessory(accessory.id);
@@ -164,7 +165,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
         await addUserAccessory.mutateAsync(ownershipInput);
       }
       toast.success(t("hardware.editAccessory.updateSuccess"), TOAST_OPTIONS);
-      navigate(`/hardware/accessory/${hardwareIdentifier(officialName.trim(), accessory.uuid)}`);
+      returnToDetail(`/hardware/accessory/${hardwareIdentifier(officialName.trim(), accessory.uuid)}`);
     } catch (error) {
       console.error("Error updating accessory:", error);
       toast.error(t("hardware.editAccessory.updateError"), TOAST_OPTIONS);
@@ -470,7 +471,7 @@ const EditAccessoryForm = ({ accessory, primaryOwnership }: EditAccessoryFormPro
             <Button
               variant="text"
               onClick={() =>
-                navigate(`/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`)
+                returnToDetail(`/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`)
               }
               disabled={isSubmitting}
             >

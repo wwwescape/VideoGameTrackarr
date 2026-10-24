@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -28,6 +28,7 @@ import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
 import Page from "./Page";
+import { useEditReturn } from "../utils/navState";
 
 interface CategoryOption {
   value: GameCategory;
@@ -58,7 +59,7 @@ interface EditGameFormProps {
 const EditGameForm = ({ game }: EditGameFormProps) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const navigate = useNavigate();
+  const returnToDetail = useEditReturn();
   const updateManualGame = useUpdateManualGame(game.id);
   const uploadCover = useUploadCover();
   const { data: existingGames } = useGames();
@@ -127,7 +128,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         parentGameId: showParentGameField ? parentGame?.id ?? null : null,
       });
       toast.success(t("games.edit.updateSuccessToast"), TOAST_OPTIONS);
-      navigate(`/game/${gameIdentifier({ slug: game.slug, uuid: game.uuid, name: name.trim() })}`);
+      returnToDetail(`/game/${gameIdentifier({ slug: game.slug, uuid: game.uuid, name: name.trim() })}`);
     } catch (error) {
       console.error("Error updating game:", error);
       toast.error(t("games.edit.updateErrorToast"), TOAST_OPTIONS);
@@ -297,7 +298,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
             </Button>
             <Button
               variant="text"
-              onClick={() => navigate(`/game/${gameIdentifier(game)}`)}
+              onClick={() => returnToDetail(`/game/${gameIdentifier(game)}`)}
               disabled={updateManualGame.isPending}
             >
               {t("common.cancel")}

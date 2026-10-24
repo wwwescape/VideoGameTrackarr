@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import Card from "@mui/material/Card";
-import Grid from "@mui/material/Grid";
-import Stack from "@mui/material/Stack";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import { useAddons, useGame } from "../hooks/useGames";
@@ -12,23 +11,19 @@ import { usePlatforms } from "../hooks/usePlatforms";
 import { useRegions } from "../hooks/useRegions";
 import { useAttachTag, useDetachTag } from "../hooks/useTags";
 import { gameIdentifier } from "../utils/identifiers";
-import GameAboutSection from "./GameAboutSection";
+import { useCanonicalAddress, useDetailBack } from "../utils/navState";
+import { DetailColumns, Panel, Section, Strip } from "./Detail";
 import GameActionButtons from "./GameActionButtons";
-import GameAddonsSection from "./GameAddonsSection";
-import GameCoverCard from "./GameCoverCard";
+import GameCard from "./GameCard";
+import { ADDON_DISPLAY_CATEGORIES, GameAboutBlock, GameHero, GameMediaSections } from "./GameDetailParts";
 import GameLibrarySection from "./GameLibrarySection";
 import GameProgressSection from "./GameProgressSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
-import Page, { SECTION_SCROLL_MARGIN_TOP } from "./Page";
+import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
 
-const sectionCardSx = {
-  borderRadius: 2,
-  overflow: "hidden",
-  scrollMarginTop: SECTION_SCROLL_MARGIN_TOP,
-} as const;
 
 const GameDetails = () => {
   const { t } = useTranslation();
@@ -48,6 +43,11 @@ const GameDetails = () => {
   const createNote = useCreateNote(gameId);
   const updateNote = useUpdateNote(gameId);
   const deleteNote = useDeleteNote(gameId);
+
+  const routeCrumbs = useRouteCrumbs();
+  const { back, toList } = useDetailBack("/games");
+  // A rename (custom games) changes the address; correct it in place.
+  useCanonicalAddress(game ? `/${location.pathname.startsWith("/addon/") ? "addon" : "game"}/${gameIdentifier(game)}` : null);
 
   // Replaces the old tab-based deep links (e.g. jumping straight to the Actions tab) —
   // deferred to the next paint via requestAnimationFrame so the layout above the target
@@ -93,79 +93,126 @@ const GameDetails = () => {
     navigate(`/addon/${gameIdentifier(addon)}`);
   };
 
+  // Short platform names of the user's own copies, for the hero's pills.
+  const copyPlatforms = Array.from(
+    new Set(
+      (libraryItems ?? [])
+        .map(
+          (item) =>
+            platforms?.find((platform) => platform.id === item.platformId)?.abbreviation ?? item.platformName
+        )
+        .filter((name): name is string => Boolean(name))
+    )
+  ).sort();
+  const displayedAddons = (addons ?? []).filter((addon) => ADDON_DISPLAY_CATEGORIES.has(addon.category));
+
   return (
-    <Page>
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Stack spacing={2}>
-            <GameCoverCard game={game} />
-            <GameActionButtons
-              gameId={gameId}
-              gameIdentifier={identifier!}
-              gameName={game.name}
-              gameCategory={game.category}
-              hasParentGame={hasParentGame}
-              hasIgdbId={game.igdbId !== null}
-              resyncGameId={resyncGameId}
-              isAutoDiscovered={isAutoDiscovered}
-              libraryItems={libraryItems}
-              onGameRemoved={() => navigate("/")}
-            />
-          </Stack>
-        </Grid>
-        <Grid size={{ xs: 12, md: 9 }}>
-          <Stack spacing={3}>
-            <Card id="about" sx={sectionCardSx}>
-              <GameAboutSection game={game} />
-            </Card>
-            {!isAutoDiscovered ? (
-              <Card id="tags" sx={sectionCardSx}>
-                <TagsSection
-                  tags={game.tags}
-                  onAttach={(tagId) => attachTag.mutateAsync(tagId)}
-                  onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-                />
-              </Card>
-            ) : null}
-            {!isAutoDiscovered ? (
-              <Card id="library" sx={sectionCardSx}>
-                <GameLibrarySection
-                  gameId={gameId}
-                  libraryItems={libraryItems}
-                  platforms={platforms}
-                  regions={regions}
-                  gameCategory={game.category}
-                />
-              </Card>
-            ) : null}
+    <Page
+      crumbs={[]}
+      toolbar={
+        <>
+          <ToolbarButton icon={<ArrowBackIcon />} label={toList ? t("nav.games") : t("detail.back")} onClick={back} />
+          <ToolbarDivider />
+          <GameActionButtons
+            gameId={gameId}
+            gameIdentifier={identifier!}
+            gameName={game.name}
+            gameCategory={game.category}
+            hasParentGame={hasParentGame}
+            hasIgdbId={game.igdbId !== null}
+            resyncGameId={resyncGameId}
+            isAutoDiscovered={isAutoDiscovered}
+            libraryItems={libraryItems}
+            onGameRemoved={() => navigate("/games", { replace: true })}
+          />
+        </>
+      }
+      hero={
+        <GameHero
+          game={game}
+          status={{
+            coverUrl: game.coverUrl,
+            owned: game.owned,
+            wishlisted: game.wishlisted,
+            playStatus: game.playStatus,
+            isOnSale: game.isOnSale,
+            autoDiscovered: game.autoDiscovered,
+            copyPlatforms,
+          }}
+          crumbs={routeCrumbs.slice(0, -1)}
+        />
+      }
+    >
+      <DetailColumns
+        main={
+          <>
+            <GameAboutBlock game={game} />
+            <GameMediaSections game={game} />
             {!hasParentGame ? (
-              <Card id="addons" sx={sectionCardSx}>
-                <GameAddonsSection addons={addons} onAddonClick={handleAddonClick} />
-              </Card>
+              <Section id="addons" title={t("games.addons.title")}>
+                {displayedAddons.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {t("games.addons.empty")}
+                  </Typography>
+                ) : (
+                  <Strip>
+                    {displayedAddons.map((addon) => (
+                      <GameCard key={addon.id} game={addon} context="addon" contextFunction={() => handleAddonClick(addon)} />
+                    ))}
+                  </Strip>
+                )}
+              </Section>
             ) : null}
-            {!hasParentGame && !isAutoDiscovered ? (
-              <Card id="progress" sx={sectionCardSx}>
-                <GameProgressSection
-                  gameId={gameId}
-                  libraryItems={libraryItems}
-                  platforms={platforms}
-                />
-              </Card>
-            ) : null}
-            {!isAutoDiscovered ? (
-              <Card id="notes" sx={sectionCardSx}>
-                <NotesSection
-                  notes={notes}
-                  isCreating={createNote.isPending}
-                  onCreate={(body) => createNote.mutateAsync(body)}
-                  onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-                  onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-                />
-              </Card>
-            ) : null}
-          </Stack>
-        </Grid>
-      </Grid>
+          </>
+        }
+        side={
+          !isAutoDiscovered ? (
+            <>
+              <Section id="library" title={t("games.library.title")}>
+                <Panel>
+                  <GameLibrarySection
+                    gameId={gameId}
+                    libraryItems={libraryItems}
+                    platforms={platforms}
+                    regions={regions}
+                    gameCategory={game.category}
+                    inSection
+                  />
+                </Panel>
+              </Section>
+              {!hasParentGame ? (
+                <Section id="progress" title={t("progress.title")}>
+                  <Panel>
+                    <GameProgressSection gameId={gameId} libraryItems={libraryItems} platforms={platforms} inSection />
+                  </Panel>
+                </Section>
+              ) : null}
+              <Section id="tags" title={t("tags.title")}>
+                <Panel>
+                  <TagsSection
+                    tags={game.tags}
+                    onAttach={(tagId) => attachTag.mutateAsync(tagId)}
+                    onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+                    inSection
+                  />
+                </Panel>
+              </Section>
+              <Section id="notes" title={t("notes.title")}>
+                <Panel>
+                  <NotesSection
+                    notes={notes}
+                    isCreating={createNote.isPending}
+                    onCreate={(body) => createNote.mutateAsync(body)}
+                    onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+                    onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+                    inSection
+                  />
+                </Panel>
+              </Section>
+            </>
+          ) : null
+        }
+      />
     </Page>
   );
 };

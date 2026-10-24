@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import type { LibraryItem } from "../../api/types";
 import GameActionButtons from "../GameActionButtons";
@@ -11,6 +12,9 @@ vi.mock("../../hooks/useGames", () => ({
   useResyncGame: () => mutation,
   useClaimDiscoveredGame: () => mutation,
 }));
+
+// Only rendered for custom games; its own hooks aren't what these tests are about.
+vi.mock("../LinkToIgdbDialog", () => ({ default: () => null }));
 
 function renderButtons(libraryItems: LibraryItem[] | undefined) {
   return render(
@@ -61,10 +65,47 @@ describe("GameActionButtons Play Game", () => {
     expect(screen.queryByRole("button", { name: "Play Game" })).not.toBeInTheDocument();
   });
 
-  it("appears below Resync/Remove once an owned copy has a playable ROM", () => {
+  it("leads the toolbar once an owned copy has a playable ROM, with Remove kept at the far end", () => {
     renderButtons([ownedWithRom(true)]);
 
     const buttons = screen.getAllByRole("button").map((b) => b.textContent);
-    expect(buttons).toEqual(["Resync Game", "Remove Game", "Play Game"]);
+    expect(buttons).toEqual(["Play Game", "Resync Game", "Remove Game"]);
+  });
+});
+
+describe("GameActionButtons Edit", () => {
+  it("opens a custom game's edit page marked as coming from its page, so saving steps back", async () => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/game/:id",
+          element: (
+            <GameActionButtons
+              gameId={1}
+              gameIdentifier="my-homebrew-uuid1"
+              gameName="My Homebrew"
+              gameCategory="main_game"
+              hasParentGame={false}
+              hasIgdbId={false}
+              resyncGameId={1}
+              isAutoDiscovered={false}
+              onGameRemoved={vi.fn()}
+            />
+          ),
+        },
+        { path: "/game/:id/edit", element: <div>Edit page</div> },
+      ],
+      { initialEntries: ["/game/my-homebrew-uuid1"] }
+    );
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit Game" }));
+
+    expect(router.state.location.pathname).toBe("/game/my-homebrew-uuid1/edit");
+    expect(router.state.location.state).toEqual({ fromDetail: true });
   });
 });

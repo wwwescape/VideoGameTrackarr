@@ -179,7 +179,7 @@ const AddAccessoryForm = () => {
         },
       });
       toast.success(t("hardware.addAccessory.addSuccess"), TOAST_OPTIONS);
-      navigate(`/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`);
+      navigate(`/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`, { replace: true });
     } catch (error) {
       console.error("Error adding accessory:", error);
       toast.error(t("hardware.addAccessory.addError"), TOAST_OPTIONS);

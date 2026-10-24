@@ -638,7 +638,7 @@
       "regionChina": "China",
       "regionAsia": "Ásia",
       "regionWorldwide": "Mundial",
-      "customTooltip": "Adicionado manualmente, sem associação a uma entrada do IGDB — utilize Associar ao IGDB, por baixo do cartaz, para o associar.",
+      "customTooltip": "Adicionado manualmente, sem associação a uma entrada do IGDB — utilize Associar ao IGDB, na barra de ferramentas, para o associar.",
       "customLabel": "Personalizado",
       "igdbRatingLabel": "Classificação IGDB: {{rating}}/100",
       "forConnector": " para ",
@@ -825,6 +825,12 @@
       "removeFilter": "Remover filtro {{label}}",
       "excludedChip": "Exceto {{label}}",
       "filterTitle": "Filtros"
+    },
+    "detail": {
+      "aboutTitle": "Sobre",
+      "platformsLabel": "Plataformas",
+      "genresLabel": "Géneros",
+      "releaseDatesTitle": "Datas de lançamento"
     }
   },
   "events": {
@@ -1404,5 +1410,9 @@
       "collection": "Coleções",
       "igdb": "IGDB"
     }
+  },
+  "detail": {
+    "back": "Voltar",
+    "detailsTitle": "Detalhes"
   }
 }
