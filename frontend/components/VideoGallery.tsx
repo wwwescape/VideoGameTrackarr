@@ -12,13 +12,15 @@ import VideoDialog from "./VideoDialog";
 
 interface VideoGalleryProps {
   videos: GameVideo[];
+  // Leave out the heading when the page's own section already titles it.
+  hideTitle?: boolean;
 }
 
 function youtubeThumbnailUrl(videoId: string): string {
   return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 }
 
-const VideoGallery = ({ videos }: VideoGalleryProps) => {
+const VideoGallery = ({ videos, hideTitle = false }: VideoGalleryProps) => {
   const { t } = useTranslation();
   const [dialogIndex, setDialogIndex] = useState<number | null>(null);
 
@@ -26,9 +28,11 @@ const VideoGallery = ({ videos }: VideoGalleryProps) => {
 
   return (
     <>
-      <Typography variant="subtitle2" gutterBottom>
-        {t("games.about.videosTitle")}
-      </Typography>
+      {hideTitle ? null : (
+        <Typography variant="subtitle2" gutterBottom>
+          {t("games.about.videosTitle")}
+        </Typography>
+      )}
       <ImageList
         cols={3}
         gap={8}

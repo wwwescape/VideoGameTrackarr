@@ -38,6 +38,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
 import LibraryItemDialog, { type LibraryItemFormValues, type RomChanges } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
+import { SectionNote } from "./Detail";
 
 // Shared across the Owned and Wishlist tables below so their Platform/Format & Storefront/
 // Edition/Steelbook/action columns line up pixel-for-pixel — the two tables are now fully
@@ -64,6 +65,8 @@ interface GameLibrarySectionProps {
   platforms: PlatformResponse[] | undefined;
   regions: RegionResponse[] | undefined;
   gameCategory?: GameCategory | null;
+  // Inside a detail page's Section, which titles it: only the explanation line is shown.
+  inSection?: boolean;
 }
 
 const GameLibrarySection = ({
@@ -72,6 +75,7 @@ const GameLibrarySection = ({
   platforms,
   regions,
   gameCategory,
+  inSection = false,
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
   const addLibraryItem = useAddLibraryItem(gameId);
@@ -399,7 +403,11 @@ const GameLibrarySection = ({
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      <CardHeader title={t("games.library.title")} subheader={t("games.library.subheader")} />
+      {inSection ? (
+        <SectionNote>{t("games.library.subheader")}</SectionNote>
+      ) : (
+        <CardHeader title={t("games.library.title")} subheader={t("games.library.subheader")} />
+      )}
       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
         <EnhancedTable
           rows={owned}

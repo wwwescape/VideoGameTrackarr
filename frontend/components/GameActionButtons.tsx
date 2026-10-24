@@ -5,20 +5,21 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import RemoveIcon from "@mui/icons-material/Remove";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
-import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
-import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameCategory, LibraryItem } from "../api/types";
 import { useClaimDiscoveredGame, useDeleteGame, useResyncGame } from "../hooks/useGames";
+import { editFromDetail } from "../utils/navState";
 import { hasPlayableRom } from "../utils/roms";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import LinkToIgdbDialog from "./LinkToIgdbDialog";
+import { ToolbarButton } from "./Page";
 import PlayGameDialog from "./PlayGameDialog";
 
 interface GameActionButtonsProps {
@@ -123,112 +124,92 @@ const GameActionButtons = ({
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      <Stack spacing={1.5}>
-        {isAutoDiscovered ? (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => void handleClaimGame()}
-            disabled={claimGameMutation.isPending}
-            fullWidth
-          >
-            {hasParentGame ? t("games.actions.addAddonButton") : t("games.actions.addGameButton")}
-          </Button>
-        ) : hasIgdbId ? (
-          <>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<RefreshIcon />}
-              onClick={() => setResyncGameDialogOpen(true)}
-              fullWidth
-            >
-              {hasParentGame ? t("games.actions.resyncAddonButton") : t("games.actions.resyncGameButton")}
-            </Button>
-            <ConfirmDialog
-              open={resyncGameDialogOpen}
-              title={t("games.actions.resyncConfirmTitle")}
-              description={
-                hasParentGame
-                  ? t("games.actions.resyncAddonConfirmDescription")
-                  : t("games.actions.resyncGameConfirmDescription")
-              }
-              confirmLabel={t("games.actions.resyncConfirmLabel")}
-              onClose={() => setResyncGameDialogOpen(false)}
-              onConfirm={handleResyncGame}
-            />
-          </>
-        ) : (
-          <>
-            <Button
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={() => navigate(`/game/${gameIdentifier}/edit`)}
-              fullWidth
-            >
-              {t("games.actions.editGameButton")}
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<LinkIcon />}
-              onClick={() => setLinkIgdbDialogOpen(true)}
-              fullWidth
-            >
-              {t("games.actions.linkToIgdbButton")}
-            </Button>
-            <LinkToIgdbDialog
-              open={linkIgdbDialogOpen}
-              gameId={gameId}
-              gameName={gameName}
-              gameCategory={gameCategory}
-              onClose={() => setLinkIgdbDialogOpen(false)}
-            />
-          </>
-        )}
-        {!hasParentGame && !isAutoDiscovered ? (
-          <>
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<RemoveIcon />}
-              onClick={() => setRemoveGameDialogOpen(true)}
-              fullWidth
-            >
-              {t("games.actions.removeGameButton")}
-            </Button>
-            <ConfirmDialog
-              open={removeGameDialogOpen}
-              title={t("games.actions.removeConfirmTitle")}
-              description={t("games.actions.removeConfirmDescription", { name: gameName })}
-              confirmLabel={t("common.delete")}
-              confirmColor="error"
-              onClose={() => setRemoveGameDialogOpen(false)}
-              onConfirm={() => void handleRemoveGame()}
-            />
-          </>
-        ) : null}
-        {hasPlayableRom(libraryItems) ? (
-          <>
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<SportsEsportsIcon />}
-              onClick={() => setPlayDialogOpen(true)}
-              fullWidth
-            >
-              {t("games.actions.playGameButton")}
-            </Button>
-            <PlayGameDialog
-              open={playDialogOpen}
-              gameName={gameName}
-              libraryItems={libraryItems ?? []}
-              onClose={() => setPlayDialogOpen(false)}
-            />
-          </>
-        ) : null}
-      </Stack>
+      {hasPlayableRom(libraryItems) ? (
+        <>
+          <ToolbarButton
+            primary
+            icon={<SportsEsportsIcon />}
+            label={t("games.actions.playGameButton")}
+            onClick={() => setPlayDialogOpen(true)}
+          />
+          <PlayGameDialog
+            open={playDialogOpen}
+            gameName={gameName}
+            libraryItems={libraryItems ?? []}
+            onClose={() => setPlayDialogOpen(false)}
+          />
+        </>
+      ) : null}
+      {isAutoDiscovered ? (
+        <ToolbarButton
+          primary
+          icon={<AddIcon />}
+          label={hasParentGame ? t("games.actions.addAddonButton") : t("games.actions.addGameButton")}
+          onClick={() => void handleClaimGame()}
+          disabled={claimGameMutation.isPending}
+        />
+      ) : hasIgdbId ? (
+        <>
+          <ToolbarButton
+            icon={<RefreshIcon />}
+            label={hasParentGame ? t("games.actions.resyncAddonButton") : t("games.actions.resyncGameButton")}
+            onClick={() => setResyncGameDialogOpen(true)}
+          />
+          <ConfirmDialog
+            open={resyncGameDialogOpen}
+            title={t("games.actions.resyncConfirmTitle")}
+            description={
+              hasParentGame
+                ? t("games.actions.resyncAddonConfirmDescription")
+                : t("games.actions.resyncGameConfirmDescription")
+            }
+            confirmLabel={t("games.actions.resyncConfirmLabel")}
+            onClose={() => setResyncGameDialogOpen(false)}
+            onConfirm={handleResyncGame}
+          />
+        </>
+      ) : (
+        <>
+          <ToolbarButton
+            icon={<EditIcon />}
+            label={t("games.actions.editGameButton")}
+            onClick={() => navigate(`/game/${gameIdentifier}/edit`, { state: editFromDetail })}
+          />
+          <ToolbarButton
+            icon={<LinkIcon />}
+            label={t("games.actions.linkToIgdbButton")}
+            onClick={() => setLinkIgdbDialogOpen(true)}
+          />
+          <LinkToIgdbDialog
+            open={linkIgdbDialogOpen}
+            gameId={gameId}
+            gameName={gameName}
+            gameCategory={gameCategory}
+            onClose={() => setLinkIgdbDialogOpen(false)}
+          />
+        </>
+      )}
+      {!hasParentGame && !isAutoDiscovered ? (
+        <>
+          {/* Remove sits at the far end of the toolbar, away from the everyday actions. */}
+          <Box sx={{ flexGrow: 1 }} />
+          <ToolbarButton
+            danger
+            icon={<DeleteOutlineIcon />}
+            label={t("games.actions.removeGameButton")}
+            onClick={() => setRemoveGameDialogOpen(true)}
+          />
+          <ConfirmDialog
+            open={removeGameDialogOpen}
+            title={t("games.actions.removeConfirmTitle")}
+            description={t("games.actions.removeConfirmDescription", { name: gameName })}
+            confirmLabel={t("common.delete")}
+            confirmColor="error"
+            onClose={() => setRemoveGameDialogOpen(false)}
+            onConfirm={() => void handleRemoveGame()}
+          />
+        </>
+      ) : null}
     </>
   );
 };

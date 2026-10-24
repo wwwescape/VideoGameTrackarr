@@ -10,6 +10,8 @@ import { gameIdentifier } from "../utils/identifiers";
 
 interface EventGamesSectionProps {
   games: EventGameTile[];
+  // Leave out the heading when the page's own section already titles it.
+  hideTitle?: boolean;
 }
 
 const GameTile = ({ game }: { game: EventGameTile }) => {
@@ -75,16 +77,18 @@ const GameTile = ({ game }: { game: EventGameTile }) => {
   return <Box>{cover}</Box>;
 };
 
-const EventGamesSection = ({ games }: EventGamesSectionProps) => {
+const EventGamesSection = ({ games, hideTitle = false }: EventGamesSectionProps) => {
   const { t } = useTranslation();
 
   if (games.length === 0) return null;
 
   return (
     <>
-      <Typography variant="subtitle2" gutterBottom>
-        {t("events.games.heading")}
-      </Typography>
+      {hideTitle ? null : (
+        <Typography variant="subtitle2" gutterBottom>
+          {t("events.games.heading")}
+        </Typography>
+      )}
       <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         {games.map((game) => (
           <Grid key={game.igdbGameId} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>

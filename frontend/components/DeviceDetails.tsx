@@ -1,21 +1,16 @@
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CheckIcon from "@mui/icons-material/Check";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import EditIcon from "@mui/icons-material/Edit";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
-import Divider from "@mui/material/Divider";
-import Grid from "@mui/material/Grid";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "./ConfirmDialog";
-import FieldRow from "./FieldRow";
-import HardwareCoverCard from "./HardwareCoverCard";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
@@ -33,9 +28,10 @@ import { useUserDeviceList } from "../hooks/useUserDevice";
 import { CONDITION_LABELS, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import Page from "./Page";
-
-const sectionCardSx = { borderRadius: 2, overflow: "hidden" } as const;
+import { useCanonicalAddress, useDetailBack, editFromDetail } from "../utils/navState";
+import { DetailColumns, Facts, Panel, Pill, Section } from "./Detail";
+import { HardwareHero, LinkedHardware } from "./HardwareDetailParts";
+import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
 const DeviceDetails = () => {
   const { t } = useTranslation();
@@ -47,6 +43,11 @@ const DeviceDetails = () => {
   const { currency } = useCurrency();
   const deleteDevice = useDeleteDevice();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  const routeCrumbs = useRouteCrumbs();
+  const { back, toList } = useDetailBack("/hardware");
+  // The address includes the name; correct it in place after a rename.
+  useCanonicalAddress(device ? `/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}` : null);
 
   const { data: ownershipRows } = useUserDeviceList(deviceId);
 
@@ -86,7 +87,7 @@ const DeviceDetails = () => {
     try {
       await deleteDevice.mutateAsync(deviceId);
       toast.success(t("hardware.deviceDetails.removeSuccess"), TOAST_OPTIONS);
-      navigate("/hardware");
+      navigate("/hardware", { replace: true });
     } catch (error) {
       console.error("Error deleting device:", error);
       toast.error(t("hardware.deviceDetails.removeError"), TOAST_OPTIONS);
@@ -94,174 +95,152 @@ const DeviceDetails = () => {
   };
 
   return (
-    <Page>
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Stack spacing={2}>
-            <HardwareCoverCard
-              name={device.officialName}
-              imageUrl={device.imageUrl}
-              owned={device.owned}
-              wishlisted={device.wishlisted}
-            />
-            <Stack spacing={1.5}>
-              <Button
-                variant="contained"
-                startIcon={<EditIcon />}
-                onClick={() => navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}/edit`)}
-                fullWidth
-              >
-                {t("hardware.deviceDetails.editButton")}
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={() => setDeleteConfirmOpen(true)}
-                fullWidth
-              >
-                {t("hardware.deviceDetails.removeButton")}
-              </Button>
-            </Stack>
-          </Stack>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 9 }}>
-          <Stack spacing={3}>
-            <Card sx={sectionCardSx}>
-              <CardContent>
-                <Typography variant="h4" component="h2">
-                  {device.officialName}
-                  {device.hardwareReference?.releaseDate ? (
-                    <Typography variant="subtitle2" color="text.secondary" component="span">
-                      {" "}
-                      ({device.hardwareReference.releaseDate})
-                    </Typography>
-                  ) : null}
-                </Typography>
-                <Stack spacing={0.5} sx={{ mt: 1 }}>
-                  <FieldRow label={t("hardware.detailsShared.brandLabel")} value={device.manufacturerName} />
-                  <FieldRow label={t("hardware.deviceDetails.consoleLabel")} value={device.hardwarePlatformName} />
-                  <FieldRow label={t("hardware.deviceDetails.variantLabel")} value={device.hardwareReference?.artefact} />
-                </Stack>
-                {device.hardwareReference?.summary ? (
-                  <>
-                    <Divider sx={{ my: 1.5 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                      {device.hardwareReference.summary}
-                    </Typography>
-                  </>
-                ) : null}
-                <Divider sx={{ my: 1.5 }} />
-                <Stack spacing={0.5}>
-                  <FieldRow label={t("hardware.detailsShared.modelNumberLabel")} value={device.model} />
-                  <FieldRow label={t("hardware.detailsShared.serialNumberLabel")} value={primaryOwnership?.serialNumber} />
-                  <FieldRow label={t("hardware.detailsShared.colorLabel")} value={device.colorName} />
-                  <FieldRow label={t("hardware.deviceDetails.storageLabel")} value={device.storageVariantName} />
-                  <FieldRow label={t("hardware.detailsShared.revisionLabel")} value={device.revision} />
-                  <FieldRow
-                    label={t("hardware.detailsShared.ratingsBoardLabel")}
-                    value={device.ratingBoard ? RATING_BOARD_LABELS[device.ratingBoard] : null}
-                  />
-                </Stack>
-              </CardContent>
-            </Card>
-
-            <Card sx={sectionCardSx}>
-              <CardHeader title={t("hardware.detailsShared.priceTitle")} />
-              <CardContent>
-                <Typography variant="body2">
-                  {primaryOwnership?.purchasePrice != null
-                    ? formatCurrency(primaryOwnership.purchasePrice, currency)
-                    : t("hardware.detailsShared.priceNotSet")}
-                </Typography>
-              </CardContent>
-            </Card>
-
-            <Card sx={sectionCardSx}>
-              <TagsSection
-                tags={device.tags}
-                onAttach={(tagId) => attachTag.mutateAsync(tagId)}
-                onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-                subheader={t("hardware.detailsShared.tagsSubheader")}
-              />
-            </Card>
-
-            <Card sx={sectionCardSx}>
-              <CardHeader title={t("hardware.detailsShared.inventoryTitle")} />
-              <CardContent>
-                {primaryOwnership ? (
-                  <Stack spacing={0.5}>
-                    <FieldRow
-                      label={t("hardware.detailsShared.statusLabel")}
-                      value={
-                        primaryOwnership.status === "owned"
-                          ? t("hardware.detailsShared.statusOwned")
-                          : t("hardware.detailsShared.statusWishlist")
-                      }
-                    />
-                    <FieldRow
-                      label={t("hardware.detailsShared.conditionLabel")}
-                      value={primaryOwnership.condition ? CONDITION_LABELS[primaryOwnership.condition] : null}
-                    />
-                  </Stack>
-                ) : (
-                  <Typography color="text.secondary">{t("hardware.detailsShared.inventoryNotTracked")}</Typography>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card sx={sectionCardSx}>
-              <CardHeader title={t("hardware.detailsShared.linkedAccessoriesTitle")} />
-              <CardContent>
-                {device.linkedAccessories.length === 0 ? (
-                  <Typography color="text.secondary">
-                    {t("hardware.deviceDetails.noLinkedAccessories")}
-                  </Typography>
-                ) : (
-                  <Stack spacing={1.5}>
-                    {device.linkedAccessories.map((linkedAccessory) => (
-                      <Paper
-                        key={linkedAccessory.id}
-                        variant="outlined"
-                        sx={{ p: 1.5, cursor: "pointer" }}
-                        onClick={() =>
-                          navigate(
-                            `/hardware/accessory/${hardwareIdentifier(linkedAccessory.officialName, linkedAccessory.uuid)}`
-                          )
-                        }
-                      >
-                        <Typography variant="subtitle2">{linkedAccessory.officialName}</Typography>
-                      </Paper>
-                    ))}
-                  </Stack>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card sx={sectionCardSx}>
-              <NotesSection
-                notes={deviceNotes}
-                isCreating={createNote.isPending}
-                subheader={t("hardware.detailsShared.notesSubheader")}
-                onCreate={(body) => createNote.mutateAsync(body)}
-                onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-                onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-              />
-            </Card>
-          </Stack>
-        </Grid>
-
-        <ConfirmDialog
-          open={deleteConfirmOpen}
-          title={t("hardware.deviceDetails.deleteConfirmTitle")}
-          description={t("hardware.deviceDetails.deleteConfirmDescription", { name: device.officialName })}
-          confirmLabel={t("common.delete")}
-          confirmColor="error"
-          onClose={() => setDeleteConfirmOpen(false)}
-          onConfirm={handleDelete}
+    <Page
+      crumbs={[]}
+      toolbar={
+        <>
+          <ToolbarButton icon={<ArrowBackIcon />} label={toList ? t("nav.hardware") : t("detail.back")} onClick={back} />
+          <ToolbarDivider />
+          <ToolbarButton
+            icon={<EditIcon />}
+            label={t("hardware.deviceDetails.editButton")}
+            onClick={() =>
+              navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}/edit`, { state: editFromDetail })
+            }
+          />
+          <Box sx={{ flexGrow: 1 }} />
+          <ToolbarButton
+            danger
+            icon={<DeleteOutlineIcon />}
+            label={t("hardware.deviceDetails.removeButton")}
+            onClick={() => setDeleteConfirmOpen(true)}
+          />
+        </>
+      }
+      hero={
+        <HardwareHero
+          name={device.officialName}
+          imageUrl={device.imageUrl}
+          owned={device.owned}
+          wishlisted={device.wishlisted}
+          crumbs={routeCrumbs.slice(0, -1)}
+          subline={[device.manufacturerName, device.hardwarePlatformName, device.hardwareReference?.artefact, device.hardwareReference?.releaseDate]}
+          pills={
+            <>
+              {device.owned ? (
+                <Pill tone="owned" icon={<CheckIcon />}>
+                  {t("hardware.detailsShared.statusOwned")}
+                </Pill>
+              ) : null}
+              {device.wishlisted ? <Pill icon={<FavoriteIcon />}>{t("hardware.detailsShared.statusWishlist")}</Pill> : null}
+              {primaryOwnership?.condition ? <Pill>{CONDITION_LABELS[primaryOwnership.condition]}</Pill> : null}
+              {device.ratingBoard ? <Pill>{RATING_BOARD_LABELS[device.ratingBoard]}</Pill> : null}
+            </>
+          }
         />
-      </Grid>
+      }
+    >
+      <DetailColumns
+        main={
+          <>
+            {device.hardwareReference?.summary ? (
+              <Section id="about" title={t("games.detail.aboutTitle")}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", maxWidth: 900 }}>
+                  {device.hardwareReference?.summary}
+                </Typography>
+              </Section>
+            ) : null}
+            <Section id="details" title={t("detail.detailsTitle")}>
+              <Facts
+                facts={[
+              [t("hardware.detailsShared.brandLabel"), device.manufacturerName],
+              [t("hardware.deviceDetails.consoleLabel"), device.hardwarePlatformName],
+              [t("hardware.deviceDetails.variantLabel"), device.hardwareReference?.artefact],
+              [t("hardware.detailsShared.modelNumberLabel"), device.model],
+              [t("hardware.detailsShared.serialNumberLabel"), primaryOwnership?.serialNumber],
+              [t("hardware.detailsShared.colorLabel"), device.colorName],
+              [t("hardware.deviceDetails.storageLabel"), device.storageVariantName],
+              [t("hardware.detailsShared.revisionLabel"), device.revision],
+              [
+                t("hardware.detailsShared.ratingsBoardLabel"),
+                device.ratingBoard ? RATING_BOARD_LABELS[device.ratingBoard] : null,
+              ],
+              [
+                t("hardware.detailsShared.priceTitle"),
+                primaryOwnership?.purchasePrice != null
+                  ? formatCurrency(primaryOwnership.purchasePrice, currency)
+                  : t("hardware.detailsShared.priceNotSet"),
+              ],
+              [
+                t("hardware.detailsShared.statusLabel"),
+                primaryOwnership
+                  ? primaryOwnership.status === "owned"
+                    ? t("hardware.detailsShared.statusOwned")
+                    : t("hardware.detailsShared.statusWishlist")
+                  : null,
+              ],
+              [
+                t("hardware.detailsShared.conditionLabel"),
+                primaryOwnership?.condition ? CONDITION_LABELS[primaryOwnership.condition] : null,
+              ],
+                ]}
+              />
+              {!primaryOwnership ? (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                  {t("hardware.detailsShared.inventoryNotTracked")}
+                </Typography>
+              ) : null}
+            </Section>
+            <Section id="linked" title={t("hardware.detailsShared.linkedAccessoriesTitle")}>
+              <LinkedHardware
+                items={device.linkedAccessories.map((linked) => ({
+                  key: linked.id,
+                  label: linked.officialName,
+                  to: `/hardware/accessory/${hardwareIdentifier(linked.officialName, linked.uuid)}`,
+                }))}
+                emptyText={t("hardware.deviceDetails.noLinkedAccessories")}
+              />
+            </Section>
+          </>
+        }
+        side={
+          <>
+            <Section id="tags" title={t("tags.title")}>
+              <Panel>
+                <TagsSection
+                  tags={device.tags}
+                  onAttach={(tagId) => attachTag.mutateAsync(tagId)}
+                  onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+                  subheader={t("hardware.detailsShared.tagsSubheader")}
+                  inSection
+                />
+              </Panel>
+            </Section>
+            <Section id="notes" title={t("notes.title")}>
+              <Panel>
+                <NotesSection
+                  notes={deviceNotes}
+                  isCreating={createNote.isPending}
+                  subheader={t("hardware.detailsShared.notesSubheader")}
+                  onCreate={(body) => createNote.mutateAsync(body)}
+                  onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+                  onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+                  inSection
+                />
+              </Panel>
+            </Section>
+          </>
+        }
+      />
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title={t("hardware.deviceDetails.deleteConfirmTitle")}
+        description={t("hardware.deviceDetails.deleteConfirmDescription", { name: device.officialName })}
+        confirmLabel={t("common.delete")}
+        confirmColor="error"
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+      />
     </Page>
   );
 };

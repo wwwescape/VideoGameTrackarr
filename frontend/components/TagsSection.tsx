@@ -8,17 +8,20 @@ import type { Tag } from "../api/types";
 import { useCreateTag, useTags } from "../hooks/useTags";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import TagChip from "./TagChip";
+import { SectionNote } from "./Detail";
 
 interface TagsSectionProps {
   tags: Tag[];
   onAttach: (tagId: number) => Promise<unknown>;
   onDetach: (tagId: number) => Promise<unknown>;
   subheader?: string;
+  // Inside a detail page's Section, which titles it: only the explanation line is shown.
+  inSection?: boolean;
 }
 
 // Entity-agnostic — the parent owns how attach/detach are scoped (to a game, a device, ...).
 // Tag creation isn't entity-specific, so this still calls useCreateTag() directly.
-const TagsSection = ({ tags, onAttach, onDetach, subheader }: TagsSectionProps) => {
+const TagsSection = ({ tags, onAttach, onDetach, subheader, inSection = false }: TagsSectionProps) => {
   const { t } = useTranslation();
   const { data: allTags } = useTags();
   const createTag = useCreateTag();
@@ -76,7 +79,11 @@ const TagsSection = ({ tags, onAttach, onDetach, subheader }: TagsSectionProps) 
 
   return (
     <>
-      <CardHeader title={t("tags.title")} subheader={subheader ?? t("tags.defaultSubheader")} />
+      {inSection ? (
+        <SectionNote>{subheader ?? t("tags.defaultSubheader")}</SectionNote>
+      ) : (
+        <CardHeader title={t("tags.title")} subheader={subheader ?? t("tags.defaultSubheader")} />
+      )}
       <CardContent>
         <Autocomplete
           multiple

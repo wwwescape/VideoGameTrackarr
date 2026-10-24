@@ -2,14 +2,13 @@ import { useState } from "react";
 import { isAxiosError } from "axios";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import Backdrop from "@mui/material/Backdrop";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useResyncEvent } from "../hooks/useEvents";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
+import { ToolbarButton } from "./Page";
 
 interface EventActionButtonsProps {
   eventId: number;
@@ -47,25 +46,19 @@ const EventActionButtons = ({ eventId }: EventActionButtonsProps) => {
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      <Stack spacing={1.5}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<RefreshIcon />}
-          onClick={() => setResyncDialogOpen(true)}
-          fullWidth
-        >
-          {t("events.actions.resyncButton")}
-        </Button>
-        <ConfirmDialog
-          open={resyncDialogOpen}
-          title={t("events.actions.resyncConfirmTitle")}
-          description={t("events.actions.resyncConfirmDescription")}
-          confirmLabel={t("events.actions.resyncConfirmLabel")}
-          onClose={() => setResyncDialogOpen(false)}
-          onConfirm={() => void handleResync()}
-        />
-      </Stack>
+      <ToolbarButton
+        icon={<RefreshIcon />}
+        label={t("events.actions.resyncButton")}
+        onClick={() => setResyncDialogOpen(true)}
+      />
+      <ConfirmDialog
+        open={resyncDialogOpen}
+        title={t("events.actions.resyncConfirmTitle")}
+        description={t("events.actions.resyncConfirmDescription")}
+        confirmLabel={t("events.actions.resyncConfirmLabel")}
+        onClose={() => setResyncDialogOpen(false)}
+        onConfirm={() => void handleResync()}
+      />
     </>
   );
 };

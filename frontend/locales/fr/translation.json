@@ -638,7 +638,7 @@
       "regionChina": "Chine",
       "regionAsia": "Asie",
       "regionWorldwide": "Monde entier",
-      "customTooltip": "Ajouté manuellement, non lié à une entrée IGDB — utilisez « Lier à IGDB » sous l'affiche pour le lier.",
+      "customTooltip": "Ajouté manuellement, non lié à une entrée IGDB — utilisez « Lier à IGDB » dans la barre d'outils pour le lier.",
       "customLabel": "Personnalisé",
       "igdbRatingLabel": "Note IGDB : {{rating}}/100",
       "forConnector": " pour ",
@@ -825,6 +825,12 @@
       "removeFilter": "Retirer le filtre {{label}}",
       "excludedChip": "Sauf {{label}}",
       "filterTitle": "Filtres"
+    },
+    "detail": {
+      "aboutTitle": "À propos",
+      "platformsLabel": "Plateformes",
+      "genresLabel": "Genres",
+      "releaseDatesTitle": "Dates de sortie"
     }
   },
   "events": {
@@ -1404,5 +1410,9 @@
       "collection": "Collections",
       "igdb": "IGDB"
     }
+  },
+  "detail": {
+    "back": "Retour",
+    "detailsTitle": "Détails"
   }
 }

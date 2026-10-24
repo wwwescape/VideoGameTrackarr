@@ -117,7 +117,7 @@ const AddDeviceForm = () => {
         },
       });
       toast.success(t("hardware.addDevice.addedSuccess"), TOAST_OPTIONS);
-      navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`);
+      navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`, { replace: true });
     } catch (error) {
       console.error("Error adding device:", error);
       toast.error(t("hardware.addDevice.addError"), TOAST_OPTIONS);
