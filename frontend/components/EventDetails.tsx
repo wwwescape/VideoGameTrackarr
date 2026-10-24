@@ -12,10 +12,8 @@ import EventGamesSection from "./EventGamesSection";
 import EventNetworksSection from "./EventNetworksSection";
 import NotFoundPage from "./NotFoundPage";
 import VideoGallery from "./VideoGallery";
+import Page, { SECTION_SCROLL_MARGIN_TOP } from "./Page";
 
-// Same fixed chrome offset as GameDetails.tsx — see that file's comment for the exact pixel
-// breakdown (AppBar + Breadcrumbs bar + buffer).
-const SECTION_SCROLL_MARGIN_TOP = { xs: 104, sm: 112 };
 
 const sectionCardSx = {
   borderRadius: 2,
@@ -40,46 +38,48 @@ const EventDetails = () => {
   }
 
   if (!event) {
-    return <>{t("common.loading")}</>;
+    return <Page>{t("common.loading")}</Page>;
   }
 
   return (
-    <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-      <Grid size={{ xs: 12, md: 3 }}>
-        <Stack spacing={2}>
-          <EventCoverCard event={event} />
-          <EventActionButtons eventId={event.id} />
-        </Stack>
+    <Page>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Stack spacing={2}>
+            <EventCoverCard event={event} />
+            <EventActionButtons eventId={event.id} />
+          </Stack>
+        </Grid>
+        <Grid size={{ xs: 12, md: 9 }}>
+          <Stack spacing={3}>
+            <Card id="about" sx={sectionCardSx}>
+              <EventAboutSection event={event} />
+            </Card>
+            {event.videos.length > 0 ? (
+              <Card id="videos" sx={sectionCardSx}>
+                <CardContent>
+                  <VideoGallery videos={event.videos} />
+                </CardContent>
+              </Card>
+            ) : null}
+            {event.networks.length > 0 ? (
+              <Card id="networks" sx={sectionCardSx}>
+                <CardContent>
+                  <EventNetworksSection networks={event.networks} />
+                </CardContent>
+              </Card>
+            ) : null}
+            {event.games.length > 0 ? (
+              <Card id="games" sx={sectionCardSx}>
+                <CardContent>
+                  <EventGamesSection games={event.games} />
+                </CardContent>
+              </Card>
+            ) : null}
+          </Stack>
+        </Grid>
       </Grid>
-      <Grid size={{ xs: 12, md: 9 }}>
-        <Stack spacing={3}>
-          <Card id="about" sx={sectionCardSx}>
-            <EventAboutSection event={event} />
-          </Card>
-          {event.videos.length > 0 ? (
-            <Card id="videos" sx={sectionCardSx}>
-              <CardContent>
-                <VideoGallery videos={event.videos} />
-              </CardContent>
-            </Card>
-          ) : null}
-          {event.networks.length > 0 ? (
-            <Card id="networks" sx={sectionCardSx}>
-              <CardContent>
-                <EventNetworksSection networks={event.networks} />
-              </CardContent>
-            </Card>
-          ) : null}
-          {event.games.length > 0 ? (
-            <Card id="games" sx={sectionCardSx}>
-              <CardContent>
-                <EventGamesSection games={event.games} />
-              </CardContent>
-            </Card>
-          ) : null}
-        </Stack>
-      </Grid>
-    </Grid>
+    </Page>
   );
 };
 

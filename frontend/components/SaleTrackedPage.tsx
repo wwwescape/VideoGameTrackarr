@@ -11,7 +11,6 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -22,7 +21,7 @@ import { useCurrency } from "../theme/CurrencyProvider";
 import { formatCurrency } from "../utils/currency";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
 
 const SaleTrackedPage = () => {
   const { t } = useTranslation();
@@ -56,16 +55,7 @@ const SaleTrackedPage = () => {
   };
 
   return (
-    <>
-      <SettingsSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("insights.saleTracked.heading")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t("insights.saleTracked.description")}
-        </Typography>
-      </Box>
+    <SettingsFrame description={t("insights.saleTracked.description")}>
 
       <Paper sx={{ width: "100%", overflow: "hidden", borderRadius: 2 }}>
         {rows.length === 0 ? (
@@ -138,7 +128,7 @@ const SaleTrackedPage = () => {
           rowsPerPageOptions={[10, 25, 50]}
         />
       </Paper>
-    </>
+    </SettingsFrame>
   );
 };
 

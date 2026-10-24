@@ -15,7 +15,6 @@ import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { resolveAssetUrl } from "../api/client";
@@ -28,6 +27,7 @@ import { useLanguage } from "../theme/LanguageProvider";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
+import Page from "./Page";
 
 interface CategoryOption {
   value: GameCategory;
@@ -316,22 +316,25 @@ const EditGamePage = () => {
   const { data: game, isLoading } = useGame(identifier);
 
   if (isLoading || !game) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
+    return (
+      <Page>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
+      </Page>
+    );
   }
 
   if (game.igdbId !== null) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.edit.notEditableMessage")}</Paper>;
+    return (
+      <Page>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.edit.notEditableMessage")}</Paper>
+      </Page>
+    );
   }
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("games.edit.pageTitle")}
-        </Typography>
-      </Box>
+    <Page>
       <EditGameForm game={game} />
-    </>
+    </Page>
   );
 };
 

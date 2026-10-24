@@ -3,7 +3,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameAboutData } from "../../api/types";
-import { createM3Theme } from "../../theme/createM3Theme";
+import { createVgtTheme } from "../../theme/createVgtTheme";
 import { StoreRegionProvider } from "../../theme/StoreRegionProvider";
 import GameAboutSection from "../GameAboutSection";
 
@@ -46,7 +46,7 @@ const game: GameAboutData = {
 
 function renderSection() {
   return render(
-    <ThemeProvider theme={createM3Theme("light", "normal")}>
+    <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
       <MemoryRouter>
         <StoreRegionProvider>
           <GameAboutSection game={game} />

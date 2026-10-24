@@ -25,7 +25,7 @@ const RouteErrorBoundary = () => {
           {is404 ? t("errors.pageNotFoundMessage") : t("errors.unexpectedErrorMessage")}
         </Typography>
         <Button variant="contained" onClick={() => navigate("/")}>
-          {t("errors.backToDashboard")}
+          {t("errors.backToOverview")}
         </Button>
       </Paper>
     </Box>

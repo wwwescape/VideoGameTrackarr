@@ -18,7 +18,7 @@ import platpricesLogo from "../assets/platprices-logo.png";
 import steamLogo from "../assets/steam-logo.png";
 import { useIntegrationsStatus, useUpdateSteamId } from "../hooks/useIntegrations";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
 
 // The store region prices are fetched for (ITAD_COUNTRY / PLATPRICES_REGION), so a region
 // that doesn't match what you expect is visible here rather than only in the prices.
@@ -73,13 +73,7 @@ const IntegrationsPage = () => {
   };
 
   return (
-    <>
-      <SettingsSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("nav.integrations")}
-        </Typography>
-      </Box>
+    <SettingsFrame>
       <Card sx={{ maxWidth: 640 }}>
         <CardContent>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1.5 }}>
@@ -205,7 +199,7 @@ const IntegrationsPage = () => {
           </Typography>
         </CardContent>
       </Card>
-    </>
+    </SettingsFrame>
   );
 };
 

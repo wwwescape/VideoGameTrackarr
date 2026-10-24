@@ -15,11 +15,7 @@ export default defineConfig({
     // isn't enough — @mui itself needs to go through Vite's resolver too.
     server: {
       deps: {
-        // Same issue as the @mui/react-transition-group case above: @material/material-
-        // color-utilities' dynamiccolor/*.js files import sibling modules by extensionless
-        // relative path, which Vite's resolver accepts but Node's native ESM loader (used
-        // for modules Vitest treats as external) rejects.
-        inline: [/@mui\//, "react-transition-group", /@material\//],
+        inline: [/@mui\//, "react-transition-group"],
       },
     },
     coverage: {

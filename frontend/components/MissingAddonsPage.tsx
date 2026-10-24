@@ -1,22 +1,12 @@
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { useTranslation } from "react-i18next";
-import InsightsSubNav from "./InsightsSubNav";
 import MissingAddonsSection from "./MissingAddonsSection";
+import Page from "./Page";
 
 const MissingAddonsPage = () => {
-  const { t } = useTranslation();
 
   return (
-    <>
-      <InsightsSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("nav.missingAddons")}
-        </Typography>
-      </Box>
+    <Page>
       <MissingAddonsSection />
-    </>
+    </Page>
   );
 };
 

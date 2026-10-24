@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { DetailQueryOptions } from "./detailQueryOptions";
 import { getCollection, listCollectionAddons, listCollections } from "../api/collections";
 import { getFranchise, listFranchiseAddons, listFranchises } from "../api/franchises";
 import type { GameListFilters } from "../api/games";
@@ -10,11 +11,12 @@ export function useFranchises() {
   });
 }
 
-export function useFranchise(slug: string | undefined) {
+export function useFranchise(slug: string | undefined, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["franchises", slug],
     queryFn: () => getFranchise(slug!),
     enabled: !!slug,
+    ...options,
   });
 }
 
@@ -38,11 +40,12 @@ export function useCollections() {
   });
 }
 
-export function useCollection(slug: string | undefined) {
+export function useCollection(slug: string | undefined, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["collections", slug],
     queryFn: () => getCollection(slug!),
     enabled: !!slug,
+    ...options,
   });
 }
 

@@ -6,7 +6,7 @@ import { AxiosError, AxiosHeaders } from "axios";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicGameDetail } from "../../api/types";
-import { createM3Theme } from "../../theme/createM3Theme";
+import { createVgtTheme } from "../../theme/createVgtTheme";
 import PublicGameDetailsPage from "../PublicGameDetailsPage";
 
 const getPublicGame = vi.fn();
@@ -58,7 +58,7 @@ const game: PublicGameDetail = {
 function renderPage(path = "/public/tok/games/42") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <ThemeProvider theme={createM3Theme("light", "normal")}>
+    <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
       <QueryClientProvider client={client}>
         <MemoryRouter initialEntries={[path]}>
           <Routes>

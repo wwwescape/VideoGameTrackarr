@@ -93,7 +93,7 @@ const NotFoundRouteElement = () => {
     <NotFoundPage
       title={t("errors.pageNotFoundTitle")}
       message={t("errors.pageNotFoundMessage")}
-      actionLabel={t("errors.backToDashboard")}
+      actionLabel={t("errors.backToOverview")}
       actionTo="/"
     />
   );

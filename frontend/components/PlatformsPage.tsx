@@ -5,7 +5,6 @@ import { useLibraryPlatforms } from "../hooks/usePlatforms";
 import { platformIdentifier } from "../utils/platformLogos";
 import { platformDisplayName, platformScopeQuery, type PlatformScope } from "../utils/platformScope";
 import CatalogIndexGrid from "./CatalogIndexGrid";
-import GamesSubNav from "./GamesSubNav";
 import PlatformCard from "./PlatformCard";
 
 // Taller than a CatalogRefCard: each card has a logo area above the name and counts.
@@ -46,24 +45,19 @@ const PlatformsPage = () => {
   );
 
   return (
-    <>
-      <GamesSubNav />
-      <CatalogIndexGrid
-        stateKey="platforms"
-        title={t("games.platformsPage.title")}
-        description={t("games.platformsPage.description")}
-        emptyMessage={t("games.platformsPage.emptyMessage")}
-        searchLabel={t("games.platformsPage.searchLabel")}
-        searchPlaceholder={t("games.platformsPage.searchPlaceholder")}
-        entries={entries}
-        isLoading={isLoading}
-        getKey={(entry) => entry.key}
-        getCount={totalGames}
-        getHref={(entry) => `/games/platforms/${platformIdentifier(entry)}${platformScopeQuery(entry.scope)}`}
-        renderCard={(entry, onClick) => <PlatformCard platform={entry} scope={entry.scope} onClick={onClick} />}
-        estimateRowHeight={(columns) => PLATFORM_CARD_HEIGHT_BY_COLUMNS[columns] ?? 164}
-      />
-    </>
+    <CatalogIndexGrid
+      stateKey="platforms"
+      emptyMessage={t("games.platformsPage.emptyMessage")}
+      searchLabel={t("games.platformsPage.searchLabel")}
+      searchPlaceholder={t("games.platformsPage.searchPlaceholder")}
+      entries={entries}
+      isLoading={isLoading}
+      getKey={(entry) => entry.key}
+      getCount={totalGames}
+      getHref={(entry) => `/games/platforms/${platformIdentifier(entry)}${platformScopeQuery(entry.scope)}`}
+      renderCard={(entry, onClick) => <PlatformCard platform={entry} scope={entry.scope} onClick={onClick} />}
+      estimateRowHeight={(columns) => PLATFORM_CARD_HEIGHT_BY_COLUMNS[columns] ?? 164}
+    />
   );
 };
 

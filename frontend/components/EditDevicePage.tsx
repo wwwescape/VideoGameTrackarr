@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import type { DeviceDetail, HardwareCondition, LibraryStatus, RatingBoard, UserDevice } from "../api/types";
 import { useDeviceItem, useUpdateDevice } from "../hooks/useDevice";
 import { useColors, useStorageVariants } from "../hooks/useHardwareLookups";
@@ -21,6 +19,7 @@ import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
 import FreeSoloLookupField from "./FreeSoloLookupField";
+import Page from "./Page";
 
 interface StatusOption {
   value: LibraryStatus;
@@ -297,20 +296,19 @@ const EditDevicePage = () => {
   const { data: ownershipRows, isLoading: isOwnershipLoading } = useUserDeviceList(device?.id ?? NaN);
 
   if (isDeviceLoading || isOwnershipLoading || !device) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
+    return (
+      <Page>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
+      </Page>
+    );
   }
 
   const primaryOwnership = ownershipRows?.find((row) => row.status === "owned") ?? ownershipRows?.[0] ?? null;
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("hardware.editDevice.pageTitle")}
-        </Typography>
-      </Box>
+    <Page>
       <EditDeviceForm device={device} primaryOwnership={primaryOwnership} />
-    </>
+    </Page>
   );
 };
 

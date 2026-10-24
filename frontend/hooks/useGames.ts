@@ -1,4 +1,5 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { DetailQueryOptions } from "./detailQueryOptions";
 import {
   acknowledgeBulkImportStatus,
   claimDiscoveredGame,
@@ -27,11 +28,12 @@ export function useGames(filters: GameListFilters = {}, options?: { enabled?: bo
   });
 }
 
-export function useGame(identifier: string | undefined) {
+export function useGame(identifier: string | undefined, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["games", identifier],
     queryFn: () => getGame(identifier!),
     enabled: !!identifier,
+    ...options,
   });
 }
 

@@ -29,7 +29,7 @@
     "pageNotFoundMessage": "A página que procura não existe ou pode ter sido movida.",
     "unexpectedErrorTitle": "Algo correu mal",
     "unexpectedErrorMessage": "Ocorreu um erro inesperado. Tente novamente.",
-    "backToDashboard": "Voltar ao painel",
+    "backToOverview": "Voltar à visão geral",
     "notFoundMessage": "Isto pode ter sido removido, ou a ligação pode estar incorreta.",
     "backTo": "Voltar a {{page}}",
     "gameNotFoundTitle": "Jogo não encontrado",
@@ -41,7 +41,6 @@
     "eventNotFoundTitle": "Evento não encontrado"
   },
   "nav": {
-    "dashboard": "Painel",
     "events": "Eventos",
     "games": "Jogos",
     "addGame": "Adicionar Jogo",
@@ -64,7 +63,15 @@
     "jobs": "Tarefas",
     "integrations": "Integrações",
     "about": "Sobre",
-    "emulation": "Emulação"
+    "emulation": "Emulação",
+    "overview": "Visão geral",
+    "settingsGeneral": "Geral",
+    "primary": "Navegação principal",
+    "groups": {
+      "library": "Biblioteca",
+      "insights": "Estatísticas",
+      "system": "Sistema"
+    }
   },
   "breadcrumbs": {
     "edit": "Editar",
@@ -73,7 +80,9 @@
   "appShell": {
     "skipToMainContent": "Saltar para o conteúdo principal",
     "darkMode": "Modo escuro",
-    "updateAvailable": "Nova versão disponível: {{version}}"
+    "updateAvailable": "Nova versão disponível: {{version}}",
+    "lightMode": "Modo claro",
+    "openMenu": "Abrir menu"
   },
   "dialogs": {
     "message": {
@@ -207,10 +216,6 @@
     "syncingChanges_other": "A sincronizar {{count}} alterações..."
   },
   "settings": {
-    "title": "Definições",
-    "subNav": {
-      "overview": "Visão geral"
-    },
     "account": {
       "heading": "Conta",
       "signedInAs": "Sessão iniciada como <1>{{username}}</1>."
@@ -327,7 +332,7 @@
         },
         "eventsSync": {
           "name": "Sincronizar eventos",
-          "description": "Obtém os eventos da indústria de jogos atualmente próximos a partir do IGDB e remove qualquer evento previamente sincronizado que já tenha terminado — alimenta a página Eventos e o resumo do painel."
+          "description": "Obtém os eventos da indústria de jogos atualmente próximos a partir do IGDB e remove qualquer evento previamente sincronizado que já tenha terminado — alimenta a página Eventos e a Visão geral."
         }
       }
     },
@@ -459,7 +464,6 @@
       "uploadCoverError": "Erro ao carregar a imagem de capa. Por favor, tente novamente."
     },
     "edit": {
-      "pageTitle": "Editar Jogo",
       "notEditableMessage": "Este jogo não pode ser editado. Todas as informações provêm do IGDB.",
       "notesHelperText": "Adiciona uma nova nota junto às existentes — faça a gestão das notas existentes na secção de Notas do próprio jogo.",
       "saveChangesButton": "Guardar Alterações",
@@ -474,7 +478,6 @@
     "compare": {
       "selectPrompt": "Selecione dois ou mais jogos da sua biblioteca para os comparar aqui.",
       "loading": "A carregar comparação...",
-      "title": "Comparar Jogos",
       "subtitle": "Comparação lado a lado de {{count}} jogos da sua biblioteca.",
       "columnHeaderReleaseYear": "Ano de lançamento",
       "columnHeaderGenres": "Géneros",
@@ -494,8 +497,6 @@
       "playStatusAbandoned": "Abandonado"
     },
     "list": {
-      "pageTitle": "Jogos",
-      "pageSubtitle": "Pesquise e explore a sua coleção, lista de desejos e complementos monitorizados.",
       "addGameButton": "Adicionar Jogo",
       "searching": "A pesquisar...",
       "noGamesFound": "Nenhum jogo encontrado",
@@ -566,16 +567,7 @@
       "missingLabel": "Em Falta",
       "customLabel": "Personalizado"
     },
-    "subNav": {
-      "allGames": "Todos os Jogos",
-      "addGame": "Adicionar Jogo",
-      "collections": "Coleções",
-      "series": "Séries",
-      "platforms": "Plataformas"
-    },
     "add": {
-      "pageTitle": "Adicionar Jogo",
-      "pageSubtitle": "Pesquise no IGDB e adicione títulos ao seu monitor local.",
       "addGameError": "Erro ao adicionar o jogo. Por favor, tente novamente.",
       "fromIgdbLabel": "Do IGDB",
       "manuallyLabel": "Manualmente",
@@ -608,8 +600,6 @@
       "resyncButton": "Ressincronizar coleção"
     },
     "collectionsPage": {
-      "title": "Coleções",
-      "description": "Coleções do IGDB com pelo menos um jogo na sua biblioteca.",
       "emptyMessage": "Ainda não há coleções — aparecem aqui assim que importar um jogo que pertença a uma.",
       "searchLabel": "Pesquisar coleções",
       "searchPlaceholder": "Introduza o nome da coleção"
@@ -619,8 +609,6 @@
       "resyncButton": "Ressincronizar série"
     },
     "seriesPage": {
-      "title": "Séries",
-      "description": "Séries de jogos (franquias do IGDB) com pelo menos um jogo na sua biblioteca.",
       "emptyMessage": "Ainda não há séries — aparecem aqui assim que importar um jogo que pertença a uma.",
       "searchLabel": "Pesquisar séries",
       "searchPlaceholder": "Introduza o nome da série"
@@ -629,8 +617,6 @@
       "kindLabel": "Plataforma"
     },
     "platformsPage": {
-      "title": "Plataformas",
-      "description": "Plataformas com pelo menos um jogo na sua biblioteca.",
       "emptyMessage": "Ainda não há plataformas — elas aparecem aqui quando você adiciona à sua biblioteca um jogo em uma delas.",
       "searchLabel": "Pesquisar plataformas",
       "searchPlaceholder": "Digite o nome da plataforma",
@@ -816,7 +802,6 @@
   },
   "events": {
     "page": {
-      "description": "Próximos eventos da indústria de jogos vindos do IGDB (E3, Gamescom e similares) — sincronizados automaticamente, do mais próximo ao mais distante. Um evento desaparece desta lista assim que termina.",
       "emptyState": "Sem eventos próximos por agora.",
       "ongoingHeading": "A decorrer",
       "upcomingHeading": "Próximos"
@@ -854,9 +839,6 @@
       "gamesHeading": "Jogos",
       "hardwareHeading": "Hardware"
     },
-    "subNav": {
-      "overview": "Visão geral"
-    },
     "duplicates": {
       "statusOwned": "Possuído",
       "statusWishlist": "Lista de desejos",
@@ -870,7 +852,6 @@
       "noneFound": "Nenhum complemento em falta — tem tudo o que foi importado para os jogos que possui."
     },
     "steamSync": {
-      "heading": "Sincronização Steam",
       "description": "Todos os jogos que a Steam diz que possui ou tem na lista de desejos, comparados com o seu catálogo VGT. Nada muda aqui até sincronizar uma linha explicitamente — Importar apenas obtém e associa dados, nunca escreve na sua biblioteca por si só.",
       "tableHeading": "Biblioteca e lista de desejos Steam",
       "emptyState": "Ainda não há nada aqui. Defina o seu SteamID64 em Definições → Integrações e depois execute Importar.",
@@ -963,7 +944,6 @@
       }
     },
     "saleTracked": {
-      "heading": "Promoções - Monitorizadas",
       "description": "Todos os jogos ou addons da sua lista de desejos com monitorização de promoções ativada, com a sua plataforma, formato, loja e preço-alvo (se definido). Remova um daqui para deixar de o monitorizar — o preço-alvo guardado é mantido caso reative a monitorização mais tarde.",
       "emptyState": "Ainda não há nada aqui. Marque \"Acompanhar promoções\" na caixa de edição de um item da lista de desejos para o adicionar.",
       "columnName": "Nome",
@@ -977,7 +957,6 @@
       "untrackErrorToast": "Não foi possível remover este item da monitorização. Tente novamente."
     },
     "salesIgnored": {
-      "heading": "Promoções - Ignoradas",
       "description": "Jogos da sua lista de desejos para os quais o ITAD ou o PlatPrices não encontraram uma correspondência exata de título. São ignorados em todas as atualizações a partir de agora — use Repetir para dar outra oportunidade a um título na próxima execução.",
       "emptyState": "Não há nada aqui. Todos os títulos monitorizados ou já corresponderam ou ainda não foram pesquisados.",
       "columnName": "Nome",
@@ -1061,7 +1040,6 @@
       "submitButton": "Adicionar Acessório"
     },
     "editAccessory": {
-      "title": "Editar Acessório",
       "consoleLabel": "Consola",
       "accessoryReadOnlyLabel": "Acessório",
       "saveButton": "Guardar Alterações",
@@ -1137,7 +1115,6 @@
       "submitButton": "Adicionar Dispositivo"
     },
     "editDevice": {
-      "pageTitle": "Editar Dispositivo",
       "brandLabel": "Marca",
       "consoleLabel": "Consola",
       "variantLabel": "Variante",
@@ -1157,12 +1134,6 @@
       "consoleLabel": "Consola",
       "variantLabel": "Variante"
     },
-    "addAccessoryPage": {
-      "title": "Adicionar Acessório"
-    },
-    "addDevicePage": {
-      "title": "Adicionar Dispositivo"
-    },
     "accessoriesWithoutOwnedHardware": {
       "empty": "Nenhum acessório encontrado — todos os acessórios possuídos estão associados a hardware que possui."
     },
@@ -1181,8 +1152,6 @@
       "sortByLabel": "Ordenar por"
     },
     "page": {
-      "title": "Hardware",
-      "subtitle": "Monitorize consolas, portáteis e acessórios possuídos e na lista de desejos.",
       "addDeviceButton": "Adicionar Dispositivo",
       "addAccessoryButton": "Adicionar Acessório",
       "devicesHeading": "Dispositivos",
@@ -1199,11 +1168,6 @@
       "collectionValue": "Valor da coleção",
       "byManufacturer": "Por fabricante",
       "byPlatform": "Por plataforma"
-    },
-    "subNav": {
-      "allHardware": "Todo o Hardware",
-      "addDevice": "Adicionar Dispositivo",
-      "addAccessory": "Adicionar Acessório"
     },
     "accessoryList": {
       "typeLabel": "Tipo de acessório",
@@ -1252,7 +1216,6 @@
     "mergeProgressConflictError": "Ambas as entradas já registam progresso de jogo — resolva isso manualmente e tente novamente."
   },
   "about": {
-    "title": "Sobre",
     "appName": "VideoGameTrackarr",
     "version": "Versão {{version}}",
     "checkForUpdates": "Procurar atualizações",
@@ -1400,6 +1363,19 @@
       "devicesHeading": "Dispositivos",
       "accessoriesHeading": "Acessórios",
       "emptyState": "Nenhum hardware encontrado."
+    }
+  },
+  "search": {
+    "placeholder": "Pesquisar jogos, hardware, séries…",
+    "label": "Pesquisar",
+    "igdb": "Pesquisar «{{query}}» no IGDB",
+    "groups": {
+      "game": "Jogos",
+      "device": "Dispositivos",
+      "accessory": "Acessórios",
+      "series": "Séries",
+      "collection": "Coleções",
+      "igdb": "IGDB"
     }
   }
 }

@@ -1,28 +1,22 @@
 import { useTranslation } from "react-i18next";
 import { useCollections } from "../hooks/useCatalogBrowse";
 import CatalogIndexGrid from "./CatalogIndexGrid";
-import GamesSubNav from "./GamesSubNav";
 
 const CollectionsPage = () => {
   const { t } = useTranslation();
   const { data: collections, isLoading } = useCollections();
 
   return (
-    <>
-      <GamesSubNav />
-      <CatalogIndexGrid
-        stateKey="collections"
-        title={t("games.collectionsPage.title")}
-        description={t("games.collectionsPage.description")}
-        emptyMessage={t("games.collectionsPage.emptyMessage")}
-        searchLabel={t("games.collectionsPage.searchLabel")}
-        searchPlaceholder={t("games.collectionsPage.searchPlaceholder")}
-        entries={collections}
-        isLoading={isLoading}
-        getCount={(entry) => entry.gameCount}
-        getHref={(entry) => `/games/collections/${entry.slug ?? ""}`}
-      />
-    </>
+    <CatalogIndexGrid
+      stateKey="collections"
+      emptyMessage={t("games.collectionsPage.emptyMessage")}
+      searchLabel={t("games.collectionsPage.searchLabel")}
+      searchPlaceholder={t("games.collectionsPage.searchPlaceholder")}
+      entries={collections}
+      isLoading={isLoading}
+      getCount={(entry) => entry.gameCount}
+      getHref={(entry) => `/games/collections/${entry.slug ?? ""}`}
+    />
   );
 };
 

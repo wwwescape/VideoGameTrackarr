@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { isAxiosError } from "axios";
 import LabelIcon from "@mui/icons-material/Label";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { Tag } from "../api/types";
@@ -10,7 +8,7 @@ import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from "../hooks/useT
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import EnhancedTable, { type HeadCell } from "./EnhancedTable";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
 import TagDialog from "./TagDialog";
 
 const TagManagerPage = () => {
@@ -94,16 +92,7 @@ const TagManagerPage = () => {
       : t("settings.tagManager.deleteConfirmDescription_bulk", { count: deleteCount });
 
   return (
-    <>
-      <SettingsSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("nav.tagManager")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t("settings.tagManager.description")}
-        </Typography>
-      </Box>
+    <SettingsFrame description={t("settings.tagManager.description")}>
 
       <EnhancedTable
         rows={rows}
@@ -136,7 +125,7 @@ const TagManagerPage = () => {
         onClose={() => setSelectedPendingDelete([])}
         onConfirm={handleDelete}
       />
-    </>
+    </SettingsFrame>
   );
 };
 

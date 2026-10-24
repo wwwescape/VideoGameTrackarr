@@ -1,5 +1,4 @@
 import LogoutIcon from "@mui/icons-material/Logout";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -19,7 +18,7 @@ import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/sto
 import AccentColorSetting from "./AccentColorSetting";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
 import ShareSection from "./ShareSection";
 
 const Settings = () => {
@@ -50,11 +49,7 @@ const Settings = () => {
   };
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <SettingsSubNav />
-      <Typography variant="h4" component="h1" gutterBottom>
-        {t("settings.title")}
-      </Typography>
+    <SettingsFrame>
       <Card sx={{ maxWidth: 640 }}>
         <CardContent>
           <Typography variant="subtitle1" gutterBottom>
@@ -162,7 +157,7 @@ const Settings = () => {
           <ShareSection />
         </CardContent>
       </Card>
-    </Box>
+    </SettingsFrame>
   );
 };
 

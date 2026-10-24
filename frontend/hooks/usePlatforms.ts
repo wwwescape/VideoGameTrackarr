@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { DetailQueryOptions } from "./detailQueryOptions";
 import type { GameListFilters } from "../api/games";
 import { getPlatform, listLibraryPlatforms, listPlatformAddons, listPlatforms } from "../api/platforms";
 
@@ -13,11 +14,12 @@ export function useLibraryPlatforms() {
   return useQuery({ queryKey: ["games", "platforms-library"], queryFn: listLibraryPlatforms });
 }
 
-export function usePlatform(slugOrId: string | undefined) {
+export function usePlatform(slugOrId: string | undefined, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["platforms", "detail", slugOrId],
     queryFn: () => getPlatform(slugOrId!),
     enabled: !!slugOrId,
+    ...options,
   });
 }
 

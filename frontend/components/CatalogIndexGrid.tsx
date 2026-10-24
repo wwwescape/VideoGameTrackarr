@@ -1,14 +1,13 @@
 import { useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { CatalogSortOption } from "../api/types";
 import CatalogIndexToolbar from "./CatalogIndexToolbar";
 import CatalogRefCard from "./CatalogRefCard";
 import VirtualGameGrid from "./VirtualGameGrid";
 import { useSessionState } from "../hooks/useSessionState";
+import Page from "./Page";
 
 interface CatalogIndexEntry {
   id: number;
@@ -18,8 +17,6 @@ interface CatalogIndexEntry {
 }
 
 interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
-  title: string;
-  description: string;
   emptyMessage: string;
   searchLabel: string;
   searchPlaceholder: string;
@@ -43,8 +40,6 @@ interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
 // pagination), unlike the Games list's server-side filtering — there's no comparable dataset
 // size concern here.
 const CatalogIndexGrid = <T extends CatalogIndexEntry>({
-  title,
-  description,
   emptyMessage,
   searchLabel,
   searchPlaceholder,
@@ -76,15 +71,7 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   }, [entries, searchKeyword, sort, getCount]);
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </Box>
+    <Page>
       <CatalogIndexToolbar
         searchLabel={searchLabel}
         searchPlaceholder={searchPlaceholder}
@@ -120,7 +107,7 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
           }}
         />
       )}
-    </>
+    </Page>
   );
 };
 

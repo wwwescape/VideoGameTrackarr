@@ -21,12 +21,8 @@ import GameProgressSection from "./GameProgressSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
+import Page, { SECTION_SCROLL_MARGIN_TOP } from "./Page";
 
-// Total fixed chrome stacked above the scrollable content: AppShell.tsx's AppBar (56px
-// compact / 64px at sm+) plus Breadcrumbs.tsx's separately-fixed bar (its own 40px,
-// positioned at top: appBarHeight) — 96/104px — plus an 8px buffer so a scrolled-to
-// section's header isn't flush against the breadcrumb bar.
-const SECTION_SCROLL_MARGIN_TOP = { xs: 104, sm: 112 };
 
 const sectionCardSx = {
   borderRadius: 2,
@@ -76,7 +72,7 @@ const GameDetails = () => {
   }
 
   if (!game) {
-    return <>{t("common.loading")}</>;
+    return <Page>{t("common.loading")}</Page>;
   }
 
   // Whether removal/the Addons section make sense here is about the *relationship* (does
@@ -98,77 +94,79 @@ const GameDetails = () => {
   };
 
   return (
-    <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-      <Grid size={{ xs: 12, md: 3 }}>
-        <Stack spacing={2}>
-          <GameCoverCard game={game} />
-          <GameActionButtons
-            gameId={gameId}
-            gameIdentifier={identifier!}
-            gameName={game.name}
-            gameCategory={game.category}
-            hasParentGame={hasParentGame}
-            hasIgdbId={game.igdbId !== null}
-            resyncGameId={resyncGameId}
-            isAutoDiscovered={isAutoDiscovered}
-            libraryItems={libraryItems}
-            onGameRemoved={() => navigate("/")}
-          />
-        </Stack>
+    <Page>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Stack spacing={2}>
+            <GameCoverCard game={game} />
+            <GameActionButtons
+              gameId={gameId}
+              gameIdentifier={identifier!}
+              gameName={game.name}
+              gameCategory={game.category}
+              hasParentGame={hasParentGame}
+              hasIgdbId={game.igdbId !== null}
+              resyncGameId={resyncGameId}
+              isAutoDiscovered={isAutoDiscovered}
+              libraryItems={libraryItems}
+              onGameRemoved={() => navigate("/")}
+            />
+          </Stack>
+        </Grid>
+        <Grid size={{ xs: 12, md: 9 }}>
+          <Stack spacing={3}>
+            <Card id="about" sx={sectionCardSx}>
+              <GameAboutSection game={game} />
+            </Card>
+            {!isAutoDiscovered ? (
+              <Card id="tags" sx={sectionCardSx}>
+                <TagsSection
+                  tags={game.tags}
+                  onAttach={(tagId) => attachTag.mutateAsync(tagId)}
+                  onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+                />
+              </Card>
+            ) : null}
+            {!isAutoDiscovered ? (
+              <Card id="library" sx={sectionCardSx}>
+                <GameLibrarySection
+                  gameId={gameId}
+                  libraryItems={libraryItems}
+                  platforms={platforms}
+                  regions={regions}
+                  gameCategory={game.category}
+                />
+              </Card>
+            ) : null}
+            {!hasParentGame ? (
+              <Card id="addons" sx={sectionCardSx}>
+                <GameAddonsSection addons={addons} onAddonClick={handleAddonClick} />
+              </Card>
+            ) : null}
+            {!hasParentGame && !isAutoDiscovered ? (
+              <Card id="progress" sx={sectionCardSx}>
+                <GameProgressSection
+                  gameId={gameId}
+                  libraryItems={libraryItems}
+                  platforms={platforms}
+                />
+              </Card>
+            ) : null}
+            {!isAutoDiscovered ? (
+              <Card id="notes" sx={sectionCardSx}>
+                <NotesSection
+                  notes={notes}
+                  isCreating={createNote.isPending}
+                  onCreate={(body) => createNote.mutateAsync(body)}
+                  onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+                  onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+                />
+              </Card>
+            ) : null}
+          </Stack>
+        </Grid>
       </Grid>
-      <Grid size={{ xs: 12, md: 9 }}>
-        <Stack spacing={3}>
-          <Card id="about" sx={sectionCardSx}>
-            <GameAboutSection game={game} />
-          </Card>
-          {!isAutoDiscovered ? (
-            <Card id="tags" sx={sectionCardSx}>
-              <TagsSection
-                tags={game.tags}
-                onAttach={(tagId) => attachTag.mutateAsync(tagId)}
-                onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-              />
-            </Card>
-          ) : null}
-          {!isAutoDiscovered ? (
-            <Card id="library" sx={sectionCardSx}>
-              <GameLibrarySection
-                gameId={gameId}
-                libraryItems={libraryItems}
-                platforms={platforms}
-                regions={regions}
-                gameCategory={game.category}
-              />
-            </Card>
-          ) : null}
-          {!hasParentGame ? (
-            <Card id="addons" sx={sectionCardSx}>
-              <GameAddonsSection addons={addons} onAddonClick={handleAddonClick} />
-            </Card>
-          ) : null}
-          {!hasParentGame && !isAutoDiscovered ? (
-            <Card id="progress" sx={sectionCardSx}>
-              <GameProgressSection
-                gameId={gameId}
-                libraryItems={libraryItems}
-                platforms={platforms}
-              />
-            </Card>
-          ) : null}
-          {!isAutoDiscovered ? (
-            <Card id="notes" sx={sectionCardSx}>
-              <NotesSection
-                notes={notes}
-                isCreating={createNote.isPending}
-                onCreate={(body) => createNote.mutateAsync(body)}
-                onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-                onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-              />
-            </Card>
-          ) : null}
-        </Stack>
-      </Grid>
-    </Grid>
+    </Page>
   );
 };
 

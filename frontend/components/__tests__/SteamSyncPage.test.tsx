@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { toast } from "react-toastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SteamEntry, SteamWishlistEntry } from "../../api/integrations";
-import { createM3Theme } from "../../theme/createM3Theme";
+import { createVgtTheme } from "../../theme/createVgtTheme";
 import SteamSyncPage from "../SteamSyncPage";
 
 vi.mock("react-toastify", () => ({
@@ -83,7 +83,7 @@ function makeEntries(syncable: number): SteamEntry[] {
 
 function renderPage() {
   return render(
-    <ThemeProvider theme={createM3Theme("light", "normal")}>
+    <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
       <MemoryRouter>
         <SteamSyncPage />
       </MemoryRouter>

@@ -18,6 +18,7 @@ import { TOAST_OPTIONS } from "../utils/toastOptions";
 import GameAboutSection from "./GameAboutSection";
 import GameCoverCard from "./GameCoverCard";
 import NotFoundPage from "./NotFoundPage";
+import Page from "./Page";
 
 const sectionCardSx = { borderRadius: 2, overflow: "hidden" } as const;
 
@@ -47,17 +48,21 @@ const IgdbGamePreviewPage = () => {
   if (error) {
     const notConfigured = isAxiosError(error) && error.response?.status === 503;
     return (
-      <Alert severity="error" sx={{ mt: 2 }}>
-        {notConfigured ? t("games.add.igdbNotConfigured") : t("games.preview.loadError")}
-      </Alert>
+      <Page>
+        <Alert severity="error">
+          {notConfigured ? t("games.add.igdbNotConfigured") : t("games.preview.loadError")}
+        </Alert>
+      </Page>
     );
   }
 
   if (isLoading || !preview) {
     return (
-      <Stack sx={{ alignItems: "center", py: 6 }}>
-        <CircularProgress />
-      </Stack>
+      <Page>
+        <Stack sx={{ alignItems: "center", py: 6 }}>
+          <CircularProgress />
+        </Stack>
+      </Page>
     );
   }
 
@@ -77,44 +82,46 @@ const IgdbGamePreviewPage = () => {
   };
 
   return (
-    <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-      <Grid size={{ xs: 12, md: 3 }}>
-        <Stack spacing={2}>
-          <GameCoverCard game={preview} />
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-            {t("games.preview.notInLibrary")}
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={
-              importGameMutation.isPending ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <AddIcon />
-              )
-            }
-            disabled={importGameMutation.isPending}
-            onClick={() => void handleAddGame()}
-            fullWidth
-          >
-            {t("games.actions.addGameButton")}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
-            fullWidth
-          >
-            {t("games.preview.backToSearch")}
-          </Button>
-        </Stack>
+    <Page>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Stack spacing={2}>
+            <GameCoverCard game={preview} />
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
+              {t("games.preview.notInLibrary")}
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={
+                importGameMutation.isPending ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  <AddIcon />
+                )
+              }
+              disabled={importGameMutation.isPending}
+              onClick={() => void handleAddGame()}
+              fullWidth
+            >
+              {t("games.actions.addGameButton")}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate(-1)}
+              fullWidth
+            >
+              {t("games.preview.backToSearch")}
+            </Button>
+          </Stack>
+        </Grid>
+        <Grid size={{ xs: 12, md: 9 }}>
+          <Card sx={sectionCardSx}>
+            <GameAboutSection game={preview} preview />
+          </Card>
+        </Grid>
       </Grid>
-      <Grid size={{ xs: 12, md: 9 }}>
-        <Card sx={sectionCardSx}>
-          <GameAboutSection game={preview} preview />
-        </Card>
-      </Grid>
-    </Grid>
+    </Page>
   );
 };
 

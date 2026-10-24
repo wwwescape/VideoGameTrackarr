@@ -29,7 +29,7 @@
     "pageNotFoundMessage": "The page you're looking for doesn't exist or may have been moved.",
     "unexpectedErrorTitle": "Something went wrong",
     "unexpectedErrorMessage": "An unexpected error occurred. Please try again.",
-    "backToDashboard": "Back to Dashboard",
+    "backToOverview": "Back to Overview",
     "notFoundMessage": "It may have been removed, or the link might be incorrect.",
     "backTo": "Back to {{page}}",
     "gameNotFoundTitle": "Game not found",
@@ -41,7 +41,6 @@
     "eventNotFoundTitle": "Event not found"
   },
   "nav": {
-    "dashboard": "Dashboard",
     "events": "Events",
     "games": "Games",
     "addGame": "Add Game",
@@ -64,7 +63,15 @@
     "jobs": "Jobs",
     "integrations": "Integrations",
     "about": "About",
-    "emulation": "Emulation"
+    "emulation": "Emulation",
+    "overview": "Overview",
+    "settingsGeneral": "General",
+    "primary": "Main navigation",
+    "groups": {
+      "library": "Library",
+      "insights": "Insights",
+      "system": "System"
+    }
   },
   "breadcrumbs": {
     "edit": "Edit",
@@ -73,7 +80,9 @@
   "appShell": {
     "skipToMainContent": "Skip to main content",
     "darkMode": "Dark Mode",
-    "updateAvailable": "New version available: {{version}}"
+    "updateAvailable": "New version available: {{version}}",
+    "lightMode": "Light Mode",
+    "openMenu": "Open menu"
   },
   "dialogs": {
     "message": {
@@ -207,10 +216,6 @@
     "syncingChanges_other": "Syncing {{count}} changes..."
   },
   "settings": {
-    "title": "Settings",
-    "subNav": {
-      "overview": "Overview"
-    },
     "account": {
       "heading": "Account",
       "signedInAs": "Signed in as <1>{{username}}</1>."
@@ -327,7 +332,7 @@
         },
         "eventsSync": {
           "name": "Sync Events",
-          "description": "Fetches currently-upcoming gaming-industry events from IGDB and drops any previously-synced event that has since ended — powers the Events page and Dashboard teaser."
+          "description": "Fetches currently-upcoming gaming-industry events from IGDB and drops any previously-synced event that has since ended — powers the Events page and Overview teaser."
         }
       }
     },
@@ -459,7 +464,6 @@
       "uploadCoverError": "Error uploading cover image. Please try again."
     },
     "edit": {
-      "pageTitle": "Edit Game",
       "notEditableMessage": "This game cannot be edited. All information comes from IGDB.",
       "notesHelperText": "Adds a new note alongside any existing ones — manage existing notes from the game's own Notes section.",
       "saveChangesButton": "Save Changes",
@@ -474,7 +478,6 @@
     "compare": {
       "selectPrompt": "Select two or more games from your library to compare them here.",
       "loading": "Loading comparison...",
-      "title": "Compare Games",
       "subtitle": "Side-by-side comparison of {{count}} games from your library.",
       "columnHeaderReleaseYear": "Release year",
       "columnHeaderGenres": "Genres",
@@ -494,8 +497,6 @@
       "playStatusAbandoned": "Abandoned"
     },
     "list": {
-      "pageTitle": "Games",
-      "pageSubtitle": "Search and browse your collection, wishlist, and tracked addons.",
       "addGameButton": "Add Game",
       "searching": "Searching...",
       "noGamesFound": "No games found",
@@ -566,16 +567,7 @@
       "missingLabel": "Missing",
       "customLabel": "Custom"
     },
-    "subNav": {
-      "allGames": "All Games",
-      "addGame": "Add Game",
-      "collections": "Collections",
-      "series": "Series",
-      "platforms": "Platforms"
-    },
     "add": {
-      "pageTitle": "Add Game",
-      "pageSubtitle": "Search IGDB and add titles to your local tracker.",
       "addGameError": "Error adding game. Please try again.",
       "fromIgdbLabel": "From IGDB",
       "manuallyLabel": "Manually",
@@ -608,8 +600,6 @@
       "resyncButton": "Resync Collection"
     },
     "collectionsPage": {
-      "title": "Collections",
-      "description": "IGDB collections with at least one game in your library.",
       "emptyMessage": "No collections yet — they show up here once you've imported a game that belongs to one.",
       "searchLabel": "Search collections",
       "searchPlaceholder": "Enter collection name"
@@ -619,8 +609,6 @@
       "resyncButton": "Resync Series"
     },
     "seriesPage": {
-      "title": "Series",
-      "description": "Game series (IGDB franchises) with at least one game in your library.",
       "emptyMessage": "No series yet — they show up here once you've imported a game that belongs to one.",
       "searchLabel": "Search series",
       "searchPlaceholder": "Enter series name"
@@ -629,8 +617,6 @@
       "kindLabel": "Platform"
     },
     "platformsPage": {
-      "title": "Platforms",
-      "description": "Platforms with at least one game in your library.",
       "emptyMessage": "No platforms yet — they show up here once you've added a game to your library on one.",
       "searchLabel": "Search platforms",
       "searchPlaceholder": "Enter platform name",
@@ -816,7 +802,6 @@
   },
   "events": {
     "page": {
-      "description": "Upcoming gaming-industry events from IGDB (E3, Gamescom, and similar) — synced automatically, soonest first. An event drops off this list once it ends.",
       "emptyState": "No upcoming events right now.",
       "ongoingHeading": "Ongoing",
       "upcomingHeading": "Upcoming"
@@ -854,9 +839,6 @@
       "gamesHeading": "Games",
       "hardwareHeading": "Hardware"
     },
-    "subNav": {
-      "overview": "Overview"
-    },
     "duplicates": {
       "statusOwned": "Owned",
       "statusWishlist": "Wishlist",
@@ -870,7 +852,6 @@
       "noneFound": "No missing addons found — you have everything that's been imported for the games you own."
     },
     "steamSync": {
-      "heading": "Steam Sync",
       "description": "Every game Steam knows you own or have wishlisted, matched against your VGT catalog. Nothing changes here until you explicitly Sync a row — Import only fetches and matches, it never writes to your library on its own.",
       "tableHeading": "Steam Library & Wishlist",
       "emptyState": "Nothing here yet. Set your SteamID64 in Settings → Integrations, then run Import.",
@@ -963,7 +944,6 @@
       }
     },
     "saleTracked": {
-      "heading": "Sale - Tracked",
       "description": "Every wishlisted game or addon you've opted into sale tracking, with its platform, format, storefront, and target price (if set). Remove one here to stop tracking it — its saved target price is kept in case you re-enable tracking later.",
       "emptyState": "Nothing here yet. Check \"Track for sales\" on a wishlist item's Edit dialog to add it.",
       "columnName": "Name",
@@ -977,7 +957,6 @@
       "untrackErrorToast": "Could not remove this item from tracking. Please try again."
     },
     "salesIgnored": {
-      "heading": "Sale - Ignored List",
       "description": "Wishlisted games that ITAD or PlatPrices couldn't find an exact title match for. They're skipped on every refresh from here on — use Retry to give a title another chance on the next run.",
       "emptyState": "Nothing here. Every tracked title has either matched or hasn't been searched yet.",
       "columnName": "Name",
@@ -1061,7 +1040,6 @@
       "submitButton": "Add Accessory"
     },
     "editAccessory": {
-      "title": "Edit Accessory",
       "consoleLabel": "Console",
       "accessoryReadOnlyLabel": "Accessory",
       "saveButton": "Save Changes",
@@ -1137,7 +1115,6 @@
       "submitButton": "Add Device"
     },
     "editDevice": {
-      "pageTitle": "Edit Device",
       "brandLabel": "Brand",
       "consoleLabel": "Console",
       "variantLabel": "Variant",
@@ -1157,12 +1134,6 @@
       "consoleLabel": "Console",
       "variantLabel": "Variant"
     },
-    "addAccessoryPage": {
-      "title": "Add Accessory"
-    },
-    "addDevicePage": {
-      "title": "Add Device"
-    },
     "accessoriesWithoutOwnedHardware": {
       "empty": "No accessories found — every owned accessory is linked to hardware you own."
     },
@@ -1181,8 +1152,6 @@
       "sortByLabel": "Sort by"
     },
     "page": {
-      "title": "Hardware",
-      "subtitle": "Track owned and wishlisted consoles, handhelds, and accessories.",
       "addDeviceButton": "Add Device",
       "addAccessoryButton": "Add Accessory",
       "devicesHeading": "Devices",
@@ -1199,11 +1168,6 @@
       "collectionValue": "Collection value",
       "byManufacturer": "By manufacturer",
       "byPlatform": "By platform"
-    },
-    "subNav": {
-      "allHardware": "All Hardware",
-      "addDevice": "Add Device",
-      "addAccessory": "Add Accessory"
     },
     "accessoryList": {
       "typeLabel": "Accessory type",
@@ -1252,7 +1216,6 @@
     "mergeProgressConflictError": "Both entries already track play progress — resolve that manually, then try again."
   },
   "about": {
-    "title": "About",
     "appName": "VideoGameTrackarr",
     "version": "Version {{version}}",
     "checkForUpdates": "Check for updates",
@@ -1400,6 +1363,19 @@
       "devicesHeading": "Devices",
       "accessoriesHeading": "Accessories",
       "emptyState": "No hardware found."
+    }
+  },
+  "search": {
+    "placeholder": "Search games, hardware, series…",
+    "label": "Search",
+    "igdb": "Search IGDB for “{{query}}”",
+    "groups": {
+      "game": "Games",
+      "device": "Devices",
+      "accessory": "Accessories",
+      "series": "Series",
+      "collection": "Collections",
+      "igdb": "IGDB"
     }
   }
 }

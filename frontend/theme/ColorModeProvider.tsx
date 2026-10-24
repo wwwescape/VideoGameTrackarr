@@ -2,13 +2,13 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { createM3Theme } from "./createM3Theme";
-import { SEED_COLOR_HEX, type ColorMode, type ContrastLevel } from "./m3Colors";
+import { DEFAULT_ACCENT_HEX, type ColorMode, type ContrastLevel } from "./colors";
+import { createVgtTheme } from "./createVgtTheme";
 
 interface ColorModeContextValue {
   mode: ColorMode;
   contrast: ContrastLevel;
-  // The seed the whole M3 scheme is generated from (Settings → Display → Accent color).
+  // Settings → Display → Accent color, used as-is for primary actions and highlights.
   accentColor: string;
   toggleColorMode: () => void;
   toggleContrast: () => void;
@@ -19,7 +19,7 @@ interface ColorModeContextValue {
 const ColorModeContext = createContext<ColorModeContextValue>({
   mode: "light",
   contrast: "normal",
-  accentColor: SEED_COLOR_HEX,
+  accentColor: DEFAULT_ACCENT_HEX,
   toggleColorMode: () => {},
   toggleContrast: () => {},
   setAccentColor: () => {},
@@ -48,10 +48,10 @@ function readStoredContrast(): ContrastLevel | null {
 // the default rather than breaking the theme.
 function readStoredAccent(): string {
   const stored = localStorage.getItem(ACCENT_STORAGE_KEY);
-  return stored && HEX_COLOR.test(stored) ? stored.toLowerCase() : SEED_COLOR_HEX.toLowerCase();
+  return stored && HEX_COLOR.test(stored) ? stored.toLowerCase() : DEFAULT_ACCENT_HEX.toLowerCase();
 }
 
-const isDefaultAccent = (hex: string) => hex.toLowerCase() === SEED_COLOR_HEX.toLowerCase();
+const isDefaultAccent = (hex: string) => hex.toLowerCase() === DEFAULT_ACCENT_HEX.toLowerCase();
 
 interface ColorModeProviderProps {
   children: ReactNode;
@@ -98,9 +98,9 @@ export const ColorModeProvider = ({ children, syncThemeColorMeta = true }: Color
   const setAccentColor = (hex: string) => {
     if (HEX_COLOR.test(hex)) setAccentColorState(hex.toLowerCase());
   };
-  const resetAccentColor = () => setAccentColorState(SEED_COLOR_HEX.toLowerCase());
+  const resetAccentColor = () => setAccentColorState(DEFAULT_ACCENT_HEX.toLowerCase());
 
-  const theme = useMemo(() => createM3Theme(mode, contrast, accentColor), [mode, contrast, accentColor]);
+  const theme = useMemo(() => createVgtTheme(mode, contrast, accentColor), [mode, contrast, accentColor]);
 
   return (
     <ColorModeContext.Provider
