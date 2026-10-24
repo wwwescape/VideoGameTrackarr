@@ -19,6 +19,7 @@ from app.schemas.catalog import (
 from app.schemas.platform import PlatformResponse
 from app.schemas.progress import GameProgressResponse, game_progress_from_orm
 from app.schemas.tag import TagResponse, tag_from_orm
+from app.services.game_card_service import GameCardExtras
 
 
 class GameSummaryResponse(CamelModel):
@@ -52,6 +53,10 @@ class GameSummaryResponse(CamelModel):
     nintendo_store_url: str | None
     epic_games_store_url: str | None
     gog_store_url: str | None
+    # Only filled by the Games list (see game_card_service.get_card_extras); empty/False on
+    # every other endpoint that returns summaries.
+    library_platforms: list[str] = []
+    playable: bool = False
 
 
 class GameDetailResponse(GameSummaryResponse):
@@ -108,9 +113,16 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
 
 
 def game_summary_from_orm(
-    status: GameWithStatus, on_sale_game_ids: frozenset[int] = frozenset()
+    status: GameWithStatus,
+    on_sale_game_ids: frozenset[int] = frozenset(),
+    extras: GameCardExtras | None = None,
 ) -> GameSummaryResponse:
-    return GameSummaryResponse(**_game_fields(status.game, status), is_on_sale=status.game.id in on_sale_game_ids)
+    return GameSummaryResponse(
+        **_game_fields(status.game, status),
+        is_on_sale=status.game.id in on_sale_game_ids,
+        library_platforms=extras.platforms if extras else [],
+        playable=extras.playable if extras else False,
+    )
 
 
 def game_detail_from_orm(

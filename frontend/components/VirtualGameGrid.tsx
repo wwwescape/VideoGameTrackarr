@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Box from "@mui/material/Box";
 import { useLocation, useNavigationType } from "react-router-dom";
@@ -16,6 +25,9 @@ const ESTIMATED_ROW_HEIGHT_BY_COLUMNS: Record<number, number> = {
 };
 
 const GRID_GAP_PX = 16;
+// Below this container width a size-driven grid (minItemWidth) always shows two columns, as
+// the breakpoint grid does on phones, whatever card size is chosen.
+const PHONE_MAX_WIDTH_PX = 600;
 const SAVE_THROTTLE_MS = 100;
 
 // Session-lifetime, in-memory — the topmost-visible item's own key (e.g. a game id), not a
@@ -29,6 +41,10 @@ function locationKey(pathname: string, search: string): string {
   return `${pathname}${search}`;
 }
 
+export interface VirtualGridHandle {
+  scrollToIndex: (index: number) => void;
+}
+
 interface VirtualGameGridProps<T> {
   items: T[];
   getKey: (item: T) => number | string;
@@ -36,15 +52,47 @@ interface VirtualGameGridProps<T> {
   // Overrides the cover-art-card height guess below — for grids of shorter, imageless
   // tiles (e.g. catalog ref cards) where that estimate would be way too tall.
   estimateRowHeight?: (columns: number) => number;
+  // Columns from the grid's own width instead of the screen breakpoint: as many cards of at
+  // least this width as fit (the Games list's card-size slider). Phones keep two columns.
+  minItemWidth?: number;
+  // Height of sticky chrome above the grid (header, page toolbar), so a jump to an item
+  // (scrollToIndex, Back restoring the position) lands below it rather than under it.
+  scrollPaddingStart?: number;
+  handleRef?: Ref<VirtualGridHandle>;
+}
+
+function columnsForWidth(width: number, minItemWidth: number): number {
+  if (width < PHONE_MAX_WIDTH_PX) return 2;
+  return Math.max(1, Math.floor((width + GRID_GAP_PX) / (minItemWidth + GRID_GAP_PX)));
 }
 
 // A responsive, windowed grid for the game card layout. Renders only the rows near the
 // viewport (via the page's own scroll, not an inner scroll pane — see useWindowVirtualizer)
 // regardless of how many games are in the library, so a collection of a few thousand games
 // costs the same DOM size as one of a few dozen.
-function VirtualGameGrid<T>({ items, getKey, renderItem, estimateRowHeight }: VirtualGameGridProps<T>) {
-  const columns = useResponsiveColumns();
+function VirtualGameGrid<T>({
+  items,
+  getKey,
+  renderItem,
+  estimateRowHeight,
+  minItemWidth,
+  scrollPaddingStart = 0,
+  handleRef,
+}: VirtualGameGridProps<T>) {
+  const breakpointColumns = useResponsiveColumns();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (minItemWidth === undefined || !containerRef.current) return;
+    const node = containerRef.current;
+    const update = () => setContainerWidth(node.getBoundingClientRect().width);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [minItemWidth]);
+  const columns =
+    minItemWidth !== undefined && containerWidth ? columnsForWidth(containerWidth, minItemWidth) : breakpointColumns;
   // null (not 0) while not yet measured — 0 is a legitimate real value (a grid with nothing
   // above it), so the POP-restore effect below needs to tell "not measured yet" apart from
   // "measured, and it happens to be zero" before it can safely call scrollToIndex.
@@ -96,11 +144,16 @@ function VirtualGameGrid<T>({ items, getKey, renderItem, estimateRowHeight }: Vi
   const virtualizer = useWindowVirtualizer({
     count: items.length,
     estimateSize: () =>
-      calibratedHeight ?? estimateRowHeight?.(columns) ?? ESTIMATED_ROW_HEIGHT_BY_COLUMNS[columns] ?? 260,
+      calibratedHeight ??
+      estimateRowHeight?.(columns) ??
+      ESTIMATED_ROW_HEIGHT_BY_COLUMNS[columns] ??
+      // A size-driven grid can land on any column count: a 3:4 cover plus the text below it.
+      (containerWidth ? (containerWidth / columns) * (4 / 3) + 90 : 260),
     lanes: columns,
     gap: GRID_GAP_PX,
     overscan: 4,
     scrollMargin: scrollMargin ?? 0,
+    scrollPaddingStart,
     getItemKey: (index) => getKey(items[index]),
   });
 
@@ -127,6 +180,12 @@ function VirtualGameGrid<T>({ items, getKey, renderItem, estimateRowHeight }: Vi
       }
     },
     [virtualizer, calibratedHeight]
+  );
+
+  useImperativeHandle(
+    handleRef,
+    () => ({ scrollToIndex: (index: number) => virtualizer.scrollToIndex(index, { align: "start" }) }),
+    [virtualizer]
   );
 
   // Restores scroll on a POP navigation by resolving the saved item key to its current index

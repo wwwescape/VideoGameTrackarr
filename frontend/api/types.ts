@@ -71,6 +71,11 @@ export interface GameSummary {
   nintendoStoreUrl: string | null;
   epicGamesStoreUrl: string | null;
   gogStoreUrl: string | null;
+  // Only filled by the Games list (GET /api/games): short names of the platforms the game has
+  // copies on, and whether an owned copy has a ROM the in-browser emulator can run. Empty and
+  // false from every other endpoint.
+  libraryPlatforms: string[];
+  playable: boolean;
 }
 
 export interface GameProgress {

@@ -1,8 +1,35 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
+import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
+import ClearIcon from "@mui/icons-material/Clear";
+import CloseIcon from "@mui/icons-material/Close";
+import CancelIcon from "@mui/icons-material/Cancel";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import DeselectIcon from "@mui/icons-material/Deselect";
+import EditIcon from "@mui/icons-material/Edit";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
+import GridViewIcon from "@mui/icons-material/GridView";
+import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import SearchIcon from "@mui/icons-material/Search";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
+import SortIcon from "@mui/icons-material/Sort";
+import TableRowsIcon from "@mui/icons-material/TableRows";
+import TuneIcon from "@mui/icons-material/Tune";
+import ViewAgendaIcon from "@mui/icons-material/ViewAgenda";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
+import Slider from "@mui/material/Slider";
+import TextField from "@mui/material/TextField";
 import { useTranslation } from "react-i18next";
 import type { MatchAllFilters } from "../api/games";
 import type {
@@ -16,19 +43,40 @@ import type {
 import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDeleteGame, useGames } from "../hooks/useGames";
+import { useLibraryItems } from "../hooks/useLibrary";
+import { useLocalPreference } from "../hooks/useLocalPreference";
 import { usePlatforms } from "../hooks/usePlatforms";
 import { useStorefronts } from "../hooks/useStorefronts";
 import { useTags } from "../hooks/useTags";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { gameIdentifier } from "../utils/identifiers";
 import { matchesOwnership } from "../utils/ownershipFilter";
+import { GAME_SORT_OPTIONS } from "../utils/gameSortOptions";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import { showUndoToast } from "./UndoToast";
-import GameCard from "./GameCard";
-import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
-import Page, { STICKY_TOP, ToolbarButton } from "./Page";
+import GameCard, { GameCardHoverAction } from "./GameCard";
+import GameFilterDialog, {
+  countActiveFilters,
+  FORMAT_OPTIONS,
+  GAME_TYPE_OPTIONS,
+  OWNERSHIP_OPTIONS,
+  PLAY_STATUS_OPTIONS,
+  platformOptionLabel,
+  SOURCE_OPTIONS,
+  type OwnershipStatus,
+} from "./GameFilterDialog";
+import {
+  CARD_SIZE_DEFAULT,
+  CARD_SIZE_MAX,
+  CARD_SIZE_MIN,
+  GameCoverGrid,
+  GameOverviewRows,
+  GameTable,
+  type GameListView,
+} from "./GameListViews";
+import PlayGameDialog from "./PlayGameDialog";
+import Page, { ToolbarButton } from "./Page";
 import ManageTagsDialog from "./ManageTagsDialog";
-import VirtualGameGrid from "./VirtualGameGrid";
 import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
 import { useSearchHandoff } from "../navigation/GlobalSearch";
 
@@ -65,6 +113,12 @@ const GameList = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
   const [manageTagsOpen, setManageTagsOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [menu, setMenu] = useState<{ name: "options" | "view" | "sort"; anchor: HTMLElement } | null>(null);
+  const [playGame, setPlayGame] = useState<GameSummary | null>(null);
+  // Display preferences, kept in this browser across visits (not just the session).
+  const [view, setView] = useLocalPreference<GameListView>("games.view", "covers");
+  const [cardSize, setCardSize] = useLocalPreference("games.cardSize", CARD_SIZE_DEFAULT);
   const navigate = useNavigate();
 
   const trimmedKeyword = searchKeyword.trim();
@@ -225,145 +279,366 @@ const GameList = () => {
     );
   };
 
+  // Remove-one-value handlers for the filter chips under the breadcrumbs. An Exclude flag on a
+  // field shows on its chips ("Not PS5") and is reset once the field's last value goes.
+  const activeFilterCount = countActiveFilters({
+    ownershipStatuses,
+    platformIds,
+    tagIds,
+    collectionIds,
+    franchiseIds,
+    gameTypes,
+    formats,
+    storefronts,
+    playStatuses,
+    sources,
+    steelbookOnly,
+  });
+
+  const filterChips: { key: string; label: string; onRemove: () => void }[] = [];
+  const addChips = <V,>(
+    field: string,
+    values: V[],
+    exclude: boolean,
+    labelOf: (value: V) => string | undefined,
+    setValues: (next: V[]) => void,
+    setExclude?: (next: boolean) => void
+  ) => {
+    values.forEach((value) => {
+      const label = labelOf(value) ?? String(value);
+      filterChips.push({
+        key: `${field}-${String(value)}`,
+        label: exclude ? t("games.listView.excludedChip", { label }) : label,
+        onRemove: () => {
+          const next = values.filter((other) => other !== value);
+          setValues(next);
+          if (next.length === 0) setExclude?.(false);
+        },
+      });
+    });
+  };
+  addChips("ownership", ownershipStatuses, ownershipExclude, (value) => t(OWNERSHIP_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), setOwnershipStatuses, setOwnershipExclude);
+  addChips("playStatus", playStatuses, playStatusExclude, (value) => t(PLAY_STATUS_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), setPlayStatuses, setPlayStatusExclude);
+  addChips("platform", platformIds, platformExclude, (id) => platforms.find((p) => p.id === id) && platformOptionLabel(platforms.find((p) => p.id === id)!), setPlatformIds, setPlatformExclude);
+  addChips("tag", tagIds, tagExclude, (id) => tags.find((tag) => tag.id === id)?.name, setTagIds, setTagExclude);
+  addChips("collection", collectionIds, collectionExclude, (id) => collections.find((c) => c.id === id)?.name, setCollectionIds, setCollectionExclude);
+  addChips("series", franchiseIds, franchiseExclude, (id) => franchises.find((f) => f.id === id)?.name, setFranchiseIds, setFranchiseExclude);
+  addChips("type", gameTypes, gameTypeExclude, (value) => GAME_TYPE_OPTIONS.find((o) => o.value === value)?.label, setGameTypes, setGameTypeExclude);
+  addChips("format", formats, formatExclude, (value) => FORMAT_OPTIONS.find((o) => o.value === value)?.label, setFormats, setFormatExclude);
+  addChips("storefront", storefronts, storefrontExclude, (value) => value, setStorefronts, setStorefrontExclude);
+  addChips("source", sources, sourceExclude, (value) => t(SOURCE_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), setSources, setSourceExclude);
+  if (steelbookOnly) {
+    filterChips.push({ key: "steelbook", label: t("games.listToolbar.steelbookOnlyLabel"), onRemove: () => setSteelbookOnly(false) });
+  }
+
+  const filterFields = {
+    ownershipStatuses,
+    onOwnershipStatusesChange: setOwnershipStatuses,
+    ownershipExclude,
+    onOwnershipExcludeChange: setOwnershipExclude,
+    platformOptions: platforms,
+    platformIds,
+    onPlatformIdsChange: setPlatformIds,
+    platformExclude,
+    onPlatformExcludeChange: setPlatformExclude,
+    tagOptions: tags,
+    tagIds,
+    onTagIdsChange: setTagIds,
+    tagExclude,
+    onTagExcludeChange: setTagExclude,
+    collectionOptions: collections,
+    collectionIds,
+    onCollectionIdsChange: setCollectionIds,
+    collectionExclude,
+    onCollectionExcludeChange: setCollectionExclude,
+    franchiseOptions: franchises,
+    franchiseIds,
+    onFranchiseIdsChange: setFranchiseIds,
+    franchiseExclude,
+    onFranchiseExcludeChange: setFranchiseExclude,
+    gameTypes,
+    onGameTypesChange: setGameTypes,
+    gameTypeExclude,
+    onGameTypeExcludeChange: setGameTypeExclude,
+    formats,
+    onFormatsChange: setFormats,
+    formatExclude,
+    onFormatExcludeChange: setFormatExclude,
+    storefrontOptions,
+    storefronts,
+    onStorefrontsChange: setStorefronts,
+    storefrontExclude,
+    onStorefrontExcludeChange: setStorefrontExclude,
+    steelbookOnly,
+    onSteelbookOnlyChange: setSteelbookOnly,
+    sources,
+    onSourcesChange: setSources,
+    sourceExclude,
+    onSourceExcludeChange: setSourceExclude,
+    playStatuses,
+    onPlayStatusesChange: setPlayStatuses,
+    playStatusExclude,
+    onPlayStatusExcludeChange: setPlayStatusExclude,
+    matchAll,
+    onMatchAllChange: setMatchAll,
+    sort,
+    onSortChange: setSort,
+  };
+
+  const hoverActionsFor = (game: GameSummary) => {
+    const actions = [];
+    // Same conditions as the game page's own buttons: Edit is for custom games (IGDB games
+    // are resynced, not edited), Play needs an owned copy with a ROM the emulator can run.
+    if (game.igdbId === null) {
+      actions.push(
+        <GameCardHoverAction
+          key="edit"
+          icon={<EditIcon />}
+          label={t("games.listView.edit")}
+          onClick={() => navigate(`/game/${gameIdentifier(game)}/edit`)}
+        />
+      );
+    }
+    if (game.playable) {
+      actions.push(
+        <GameCardHoverAction key="play" icon={<PlayArrowIcon />} label={t("games.listView.play")} onClick={() => setPlayGame(game)} />
+      );
+    }
+    return actions.length ? actions : undefined;
+  };
+
+  const viewIcons: Record<GameListView, ReactNode> = {
+    covers: <GridViewIcon />,
+    table: <TableRowsIcon />,
+    overview: <ViewAgendaIcon />,
+  };
+
+  const normalToolbar = (
+    <>
+      <ToolbarButton primary icon={<AddIcon />} label={t("games.list.addGameButton")} onClick={() => navigate("/games/add")} />
+      <ToolbarButton
+        icon={<CheckBoxOutlinedIcon />}
+        label={t("games.listView.select")}
+        onClick={handleEnterSelectionMode}
+        disabled={visibleGames.length === 0}
+      />
+    </>
+  );
+  const normalToolbarEnd = (
+    <>
+      <ToolbarButton
+        icon={<TuneIcon />}
+        label={t("games.listView.options")}
+        onClick={(event) => setMenu({ name: "options", anchor: event.currentTarget })}
+        aria-haspopup="menu"
+      />
+      <ToolbarButton
+        icon={viewIcons[view]}
+        label={t("games.listView.view")}
+        onClick={(event) => setMenu({ name: "view", anchor: event.currentTarget })}
+        aria-haspopup="menu"
+      />
+      <ToolbarButton
+        icon={<SortIcon />}
+        label={t("games.listView.sort")}
+        onClick={(event) => setMenu({ name: "sort", anchor: event.currentTarget })}
+        aria-haspopup="menu"
+      />
+      <ToolbarButton
+        icon={<FilterAltOutlinedIcon />}
+        label={t("games.listView.filter")}
+        count={activeFilterCount}
+        active={activeFilterCount > 0}
+        onClick={() => setFiltersOpen(true)}
+      />
+    </>
+  );
+  const selectionToolbar = (
+    <>
+      <ToolbarButton icon={<CloseIcon />} label={t("games.listView.done")} onClick={handleExitSelectionMode} />
+      <Box component="span" sx={{ px: 1, fontWeight: 600, color: "text.secondary", whiteSpace: "nowrap" }}>
+        {t("games.listToolbar.selectedCount", { count: selectedIds.size })}
+      </Box>
+      <ToolbarButton
+        icon={allVisibleSelected ? <DeselectIcon /> : <SelectAllIcon />}
+        label={allVisibleSelected ? t("games.listToolbar.deselectAllTooltip") : t("games.listToolbar.selectAllTooltip")}
+        onClick={handleToggleSelectAll}
+        disabled={visibleGames.length === 0}
+      />
+    </>
+  );
+  const selectionToolbarEnd = (
+    <>
+      <ToolbarButton
+        icon={<LabelOutlinedIcon />}
+        label={t("games.listToolbar.manageTagsButton")}
+        onClick={() => setManageTagsOpen(true)}
+        disabled={selectedIds.size === 0}
+      />
+      <ToolbarButton
+        danger
+        icon={<DeleteOutlineIcon />}
+        label={t("common.remove")}
+        onClick={handleBulkDelete}
+        disabled={selectedIds.size === 0}
+      />
+    </>
+  );
+
+  const menuItem = (key: string, label: ReactNode, selected: boolean, onSelect: () => void, icon?: ReactNode) => (
+    <MenuItem
+      key={key}
+      selected={selected}
+      onClick={() => {
+        onSelect();
+        setMenu(null);
+      }}
+    >
+      {icon ? <ListItemIcon>{icon}</ListItemIcon> : null}
+      <ListItemText>{label}</ListItemText>
+      {selected ? <CheckIcon fontSize="small" color="primary" sx={{ ml: 2 }} /> : null}
+    </MenuItem>
+  );
+
+  const hasActiveFilters = activeFilterCount > 0;
+  const emptyMessage = isSearchActive
+    ? t("games.list.noGamesFound")
+    : hasActiveFilters
+      ? t("games.list.noGamesMatchFilter")
+      : t("games.list.pleaseAddGames");
+
   return (
     <Page
-      toolbar={
-        <ToolbarButton
-          primary
-          icon={<AddIcon />}
-          label={t("games.list.addGameButton")}
-          onClick={() => navigate("/games/add")}
+      meta={games ? t("games.listView.gameCount", { count: visibleGames.length }) : undefined}
+      toolbar={selectionMode ? selectionToolbar : normalToolbar}
+      toolbarEnd={selectionMode ? selectionToolbarEnd : normalToolbarEnd}
+      actions={
+        <TextField
+          value={searchKeyword}
+          onChange={(event) => setSearchKeyword(event.target.value)}
+          placeholder={t("games.listToolbar.searchPlaceholder")}
+          sx={{ width: { xs: "100%", sm: 280 } }}
+          slotProps={{
+            htmlInput: { "aria-label": t("games.listToolbar.searchLabel") },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" sx={{ color: "vgt.text3" }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchKeyword ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" edge="end" onClick={() => setSearchKeyword("")} aria-label={t("games.listView.clearSearch")}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
+            },
+          }}
         />
       }
     >
-      <Box
-        sx={{
-          position: "sticky",
-          top: STICKY_TOP,
-          zIndex: 1,
-          bgcolor: "background.default",
-          pb: 2.5,
-          // Once scrolled content locks under this sticky header, the bottom edge needs to
-          // read as an intentional floating panel rather than content abruptly disappearing.
-          boxShadow: "0 4px 8px -4px rgba(0, 0, 0, 0.2)",
-        }}
-      >
-        <GameListToolbar
-          searchKeyword={searchKeyword}
-          onSearchKeywordChange={setSearchKeyword}
-          ownershipStatuses={ownershipStatuses}
-          onOwnershipStatusesChange={setOwnershipStatuses}
-          ownershipExclude={ownershipExclude}
-          onOwnershipExcludeChange={setOwnershipExclude}
-          selectionMode={selectionMode}
-          selectedCount={selectedIds.size}
-          visibleCount={visibleGames.length}
-          onEnterSelectionMode={handleEnterSelectionMode}
-          onExitSelectionMode={handleExitSelectionMode}
-          allVisibleSelected={allVisibleSelected}
-          onToggleSelectAll={handleToggleSelectAll}
-          onManageTagsClick={() => setManageTagsOpen(true)}
-          onBulkDelete={handleBulkDelete}
-          platformOptions={platforms}
-          platformIds={platformIds}
-          onPlatformIdsChange={setPlatformIds}
-          platformExclude={platformExclude}
-          onPlatformExcludeChange={setPlatformExclude}
-          tagOptions={tags}
-          tagIds={tagIds}
-          onTagIdsChange={setTagIds}
-          tagExclude={tagExclude}
-          onTagExcludeChange={setTagExclude}
-          collectionOptions={collections}
-          collectionIds={collectionIds}
-          onCollectionIdsChange={setCollectionIds}
-          collectionExclude={collectionExclude}
-          onCollectionExcludeChange={setCollectionExclude}
-          franchiseOptions={franchises}
-          franchiseIds={franchiseIds}
-          onFranchiseIdsChange={setFranchiseIds}
-          franchiseExclude={franchiseExclude}
-          onFranchiseExcludeChange={setFranchiseExclude}
-          gameTypes={gameTypes}
-          onGameTypesChange={setGameTypes}
-          gameTypeExclude={gameTypeExclude}
-          onGameTypeExcludeChange={setGameTypeExclude}
-          formats={formats}
-          onFormatsChange={setFormats}
-          formatExclude={formatExclude}
-          onFormatExcludeChange={setFormatExclude}
-          storefrontOptions={storefrontOptions}
-          storefronts={storefronts}
-          onStorefrontsChange={setStorefronts}
-          storefrontExclude={storefrontExclude}
-          onStorefrontExcludeChange={setStorefrontExclude}
-          steelbookOnly={steelbookOnly}
-          onSteelbookOnlyChange={setSteelbookOnly}
-          sources={sources}
-          onSourcesChange={setSources}
-          sourceExclude={sourceExclude}
-          onSourceExcludeChange={setSourceExclude}
-          sort={sort}
-          onSortChange={setSort}
-          playStatuses={playStatuses}
-          onPlayStatusesChange={setPlayStatuses}
-          playStatusExclude={playStatusExclude}
-          onPlayStatusExcludeChange={setPlayStatusExclude}
-          matchAll={matchAll}
-          onMatchAllChange={setMatchAll}
+      {filterChips.length ? (
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: -0.5, mb: 1.75 }}>
+          {filterChips.map((chip) => (
+            <Chip
+              key={chip.key}
+              size="small"
+              label={chip.label}
+              onDelete={chip.onRemove}
+              deleteIcon={<CancelIcon aria-label={t("games.listView.removeFilter", { label: chip.label })} />}
+            />
+          ))}
+        </Box>
+      ) : null}
+
+      {isLoading ? (
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
+      ) : isSearching ? (
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.list.searching")}</Paper>
+      ) : visibleGames.length === 0 ? (
+        <Paper sx={{ p: 3, textAlign: "center" }}>{emptyMessage}</Paper>
+      ) : view === "table" ? (
+        <GameTable
+          games={visibleGames}
+          onOpen={handleGameClick}
+          selecting={selectionMode}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelected}
         />
-      </Box>
-      {/* Contains z-index in here to its own stacking context — otherwise MUI's
-          shrunk-label z-index (1, same as the sticky header above) ties with the sticky
-          box's and falls back to DOM order, letting a floating label paint on top of the
-          sticky header instead of staying hidden behind it. */}
-      <Box sx={{ isolation: "isolate" }}>
-        {isLoading ? (
-          <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
-        ) : isSearching ? (
-          <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.list.searching")}</Paper>
-        ) : visibleGames.length === 0 ? (
-          <Paper sx={{ p: 3, textAlign: "center" }}>
-            {isSearchActive
-              ? t("games.list.noGamesFound")
-              : ownershipStatuses.length > 0 ||
-                  platformIds.length > 0 ||
-                  tagIds.length > 0 ||
-                  collectionIds.length > 0 ||
-                  franchiseIds.length > 0 ||
-                  gameTypes.length > 0 ||
-                  formats.length > 0 ||
-                  storefronts.length > 0 ||
-                  playStatuses.length > 0 ||
-                  sources.length > 0 ||
-                  steelbookOnly
-                ? t("games.list.noGamesMatchFilter")
-                : t("games.list.pleaseAddGames")}
-          </Paper>
-        ) : (
-          <VirtualGameGrid
-            items={visibleGames}
-            getKey={(game) => game.id}
-            renderItem={(game) => (
-              <GameCard
-                game={game}
-                context="list"
-                contextFunction={() => handleGameClick(game)}
-                selectable={selectionMode}
-                selected={selectedIds.has(game.id)}
-                onToggleSelect={() => toggleSelected(game.id)}
-              />
-            )}
+      ) : view === "overview" ? (
+        <GameOverviewRows
+          games={visibleGames}
+          onOpen={handleGameClick}
+          selecting={selectionMode}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelected}
+        />
+      ) : (
+        <GameCoverGrid
+          games={visibleGames}
+          cardSize={cardSize}
+          showRail={sort === "name_asc"}
+          renderCard={(game) => (
+            <GameCard
+              game={game}
+              context="list"
+              contextFunction={() => handleGameClick(game)}
+              selectable={selectionMode}
+              selected={selectedIds.has(game.id)}
+              onToggleSelect={() => toggleSelected(game.id)}
+              hoverActions={hoverActionsFor(game)}
+            />
+          )}
+        />
+      )}
+
+      <Menu anchorEl={menu?.anchor} open={menu?.name === "options"} onClose={() => setMenu(null)}>
+        <Box sx={{ px: 2, pt: 1, pb: 1.5, width: 260 }}>
+          <Box id="card-size-label" sx={{ typography: "overline", color: "vgt.text3" }}>
+            {t("games.listView.cardSize")}
+          </Box>
+          <Slider
+            value={cardSize}
+            min={CARD_SIZE_MIN}
+            max={CARD_SIZE_MAX}
+            step={10}
+            onChange={(_event, value) => setCardSize(value as number)}
+            aria-labelledby="card-size-label"
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value}px`}
+            disabled={view !== "covers"}
           />
+        </Box>
+      </Menu>
+      <Menu anchorEl={menu?.anchor} open={menu?.name === "view"} onClose={() => setMenu(null)}>
+        {(["covers", "table", "overview"] as GameListView[]).map((option) =>
+          menuItem(option, t(`games.listView.view_${option}`), view === option, () => setView(option), viewIcons[option])
         )}
-      </Box>
+      </Menu>
+      <Menu anchorEl={menu?.anchor} open={menu?.name === "sort"} onClose={() => setMenu(null)}>
+        {GAME_SORT_OPTIONS.map((option) =>
+          menuItem(option.value, t(option.labelKey), sort === option.value, () => setSort(option.value))
+        )}
+      </Menu>
+
+      <GameFilterDialog {...filterFields} open={filtersOpen} onClose={() => setFiltersOpen(false)} hideMoreTab />
       <ManageTagsDialog
         open={manageTagsOpen}
         gameIds={Array.from(selectedIds)}
         onClose={() => setManageTagsOpen(false)}
       />
+      {playGame ? <QuickPlay game={playGame} onClose={() => setPlayGame(null)} /> : null}
     </Page>
   );
+};
+
+// The hover Play shortcut opens the game page's own Play dialog; that needs the game's
+// library copies (and their ROMs), fetched only when asked for.
+const QuickPlay = ({ game, onClose }: { game: GameSummary; onClose: () => void }) => {
+  const { data: libraryItems } = useLibraryItems(game.id);
+  if (!libraryItems) return null;
+  return <PlayGameDialog open gameName={game.name} libraryItems={libraryItems} onClose={onClose} />;
 };
 
 export default GameList;
