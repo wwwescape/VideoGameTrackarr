@@ -1,9 +1,9 @@
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.models.catalog import Game
+from app.models.catalog import Game, Platform
 from app.models.library import LibraryItem, LibraryStatus, RomFile
 
 
@@ -93,3 +93,34 @@ def update_library_item(db: Session, item: LibraryItem, **fields: Any) -> Librar
 def delete_library_item(db: Session, item: LibraryItem) -> None:
     db.delete(item)
     db.flush()
+
+
+def list_copy_platforms(db: Session, game_ids: list[int]) -> list[tuple[int, str]]:
+    """(game_id, platform label) for every library copy (owned or wishlisted) of these games,
+    the label being the platform's abbreviation or else its name — what the Games list's
+    Table and Overview views show as each game's platforms."""
+    if not game_ids:
+        return []
+    label = func.coalesce(Platform.abbreviation, Platform.name)
+    stmt = (
+        select(LibraryItem.game_id, label)
+        .join(Platform, Platform.id == LibraryItem.platform_id)
+        .where(LibraryItem.game_id.in_(game_ids))
+        .distinct()
+        .order_by(LibraryItem.game_id, label)
+    )
+    return [(game_id, name) for game_id, name in db.execute(stmt)]
+
+
+def list_owned_roms(db: Session, game_ids: list[int]) -> list[tuple[int, str | None, RomFile]]:
+    """(game_id, platform slug, rom) for every ROM on an owned copy of these games — the same
+    copies the game page's Play button considers (see frontend utils/roms.ts)."""
+    if not game_ids:
+        return []
+    stmt = (
+        select(LibraryItem.game_id, Platform.slug, RomFile)
+        .join(LibraryItem, LibraryItem.id == RomFile.library_item_id)
+        .outerjoin(Platform, Platform.id == LibraryItem.platform_id)
+        .where(LibraryItem.game_id.in_(game_ids), LibraryItem.status == LibraryStatus.OWNED)
+    )
+    return [(game_id, slug, rom) for game_id, slug, rom in db.execute(stmt)]

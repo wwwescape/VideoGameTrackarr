@@ -798,6 +798,33 @@
       "notInLibrary": "Pas encore dans votre bibliothèque",
       "backToSearch": "Retour à la recherche",
       "addedToast": "{{name}} ajouté à votre bibliothèque"
+    },
+    "listView": {
+      "select": "Sélectionner",
+      "options": "Options",
+      "view": "Affichage",
+      "sort": "Trier",
+      "filter": "Filtrer",
+      "done": "Terminé",
+      "cardSize": "Taille des cartes",
+      "view_covers": "Jaquettes",
+      "view_table": "Tableau",
+      "view_overview": "Aperçu",
+      "gameCount_one": "{{count}} jeu",
+      "gameCount_other": "{{count}} jeux",
+      "jumpTo": "Aller à la lettre",
+      "jumpToLetter": "Aller à {{letter}}",
+      "columnName": "Nom",
+      "columnType": "Type",
+      "columnYear": "Année",
+      "columnPlatforms": "Plateformes",
+      "columnRating": "Note",
+      "edit": "Modifier",
+      "play": "Jouer",
+      "clearSearch": "Effacer la recherche",
+      "removeFilter": "Retirer le filtre {{label}}",
+      "excludedChip": "Sauf {{label}}",
+      "filterTitle": "Filtres"
     }
   },
   "events": {

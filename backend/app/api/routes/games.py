@@ -19,6 +19,7 @@ from app.schemas.game import (
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
 from app.services import (
     bulk_import_job,
+    game_card_service,
     game_service,
     insight_service,
     manual_game_service,
@@ -70,7 +71,8 @@ def list_games(
         required_platform_storefront=required_platform_storefront,
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
-    return [game_summary_from_orm(game, on_sale_game_ids) for game in games]
+    extras = game_card_service.get_card_extras(db, [game.game.id for game in games])
+    return [game_summary_from_orm(game, on_sale_game_ids, extras[game.game.id]) for game in games]
 
 
 def _to_bulk_import_response(state: bulk_import_job.BulkImportJobState) -> BulkImportStatusResponse:

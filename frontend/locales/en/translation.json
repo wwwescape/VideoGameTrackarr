@@ -798,6 +798,33 @@
       "notInLibrary": "Not in your library yet",
       "backToSearch": "Back to search",
       "addedToast": "{{name}} added to your library"
+    },
+    "listView": {
+      "select": "Select",
+      "options": "Options",
+      "view": "View",
+      "sort": "Sort",
+      "filter": "Filter",
+      "done": "Done",
+      "cardSize": "Card size",
+      "view_covers": "Covers",
+      "view_table": "Table",
+      "view_overview": "Overview",
+      "gameCount_one": "{{count}} game",
+      "gameCount_other": "{{count}} games",
+      "jumpTo": "Jump to letter",
+      "jumpToLetter": "Jump to {{letter}}",
+      "columnName": "Name",
+      "columnType": "Type",
+      "columnYear": "Year",
+      "columnPlatforms": "Platforms",
+      "columnRating": "Rating",
+      "edit": "Edit",
+      "play": "Play",
+      "clearSearch": "Clear search",
+      "removeFilter": "Remove filter {{label}}",
+      "excludedChip": "Not {{label}}",
+      "filterTitle": "Filters"
     }
   },
   "events": {

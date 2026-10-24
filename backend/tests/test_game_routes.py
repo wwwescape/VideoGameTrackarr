@@ -12,6 +12,7 @@ from app.models.library import (
     Note,
     PlaySession,
     PlayStatus,
+    RomFile,
     Tag,
 )
 from app.services import game_service
@@ -1028,3 +1029,68 @@ def test_acknowledge_bulk_import_status_resets_a_completed_run(auth_client, db_s
     ack_response = auth_client.post("/api/games/bulk-import/status/acknowledge")
     assert ack_response.status_code == 204
     assert auth_client.get("/api/games/bulk-import/status").json()["status"] == "idle"
+
+
+def _copy(db_session, game, platform, status=LibraryStatus.OWNED, rom_extension=None):
+    item = LibraryItem(game_id=game.id, platform_id=platform.id, status=status, format=MediaFormat.ROM)
+    db_session.add(item)
+    db_session.commit()
+    if rom_extension:
+        db_session.add(
+            RomFile(
+                library_item_id=item.id,
+                original_filename=f"game.{rom_extension}",
+                stored_filename=f"stored-{item.id}",
+                size_bytes=1024,
+                extension=rom_extension,
+            )
+        )
+        db_session.commit()
+    return item
+
+
+def _listed(auth_client, name):
+    return next(g for g in auth_client.get("/api/games").json() if g["name"] == name)
+
+
+def test_list_games_exposes_each_games_copy_platforms_once_each(auth_client, db_session, seed_game, seed_platform):
+    nes = Platform(name="Nintendo Entertainment System", slug="nes", abbreviation="NES")
+    db_session.add(nes)
+    db_session.commit()
+    _copy(db_session, seed_game, seed_platform)
+    _copy(db_session, seed_game, seed_platform)
+    _copy(db_session, seed_game, nes, status=LibraryStatus.WISHLIST)
+
+    # Abbreviation when there is one, else the name; wishlisted copies count too.
+    assert _listed(auth_client, "Test Game")["libraryPlatforms"] == ["NES", "PlayStation 5"]
+
+
+def test_list_games_platforms_is_empty_without_copies(auth_client, seed_game):
+    assert _listed(auth_client, "Test Game")["libraryPlatforms"] == []
+
+
+def test_list_games_playable_needs_an_owned_copy_with_a_runnable_rom(auth_client, db_session, seed_game):
+    nes = Platform(name="Nintendo Entertainment System", slug="nes")
+    ps2 = Platform(name="Sony PlayStation 2", slug="ps2")
+    wishlisted = Game(igdb_id=3001, name="Wishlisted NES Game", category=GameCategory.MAIN_GAME)
+    unsupported = Game(igdb_id=3002, name="PS2 Game", category=GameCategory.MAIN_GAME)
+    db_session.add_all([nes, ps2, wishlisted, unsupported])
+    db_session.commit()
+    _copy(db_session, seed_game, nes, rom_extension="nes")
+    _copy(db_session, wishlisted, nes, status=LibraryStatus.WISHLIST, rom_extension="nes")
+    _copy(db_session, unsupported, ps2, rom_extension="iso")
+
+    assert _listed(auth_client, "Test Game")["playable"] is True
+    assert _listed(auth_client, "Wishlisted NES Game")["playable"] is False
+    assert _listed(auth_client, "PS2 Game")["playable"] is False
+
+
+def test_other_summary_endpoints_leave_platforms_and_playable_empty(auth_client, db_session, seed_game, seed_platform):
+    addon = Game(igdb_id=2003, name="Test Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
+    db_session.add(addon)
+    db_session.commit()
+    _copy(db_session, addon, seed_platform)
+
+    [listed_addon] = auth_client.get(f"/api/games/{seed_game.id}/addons").json()
+    assert listed_addon["libraryPlatforms"] == []
+    assert listed_addon["playable"] is False
