@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
@@ -9,7 +8,7 @@ import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import AccessoryList from "./AccessoryList";
 import DeviceList from "./DeviceList";
 import HardwareSearchBar from "./HardwareSearchBar";
-import HardwareSubNav from "./HardwareSubNav";
+import Page, { STICKY_TOP, ToolbarButton } from "./Page";
 import type { HardwareStatusFilter } from "./HardwareListToolbar";
 import { useSessionState } from "../hooks/useSessionState";
 
@@ -22,11 +21,28 @@ const HardwarePage = () => {
   const debouncedKeyword = useDebouncedValue(searchKeyword.trim(), 500);
 
   return (
-    <>
+    <Page
+      toolbar={
+        <>
+          <ToolbarButton
+            primary
+            icon={<AddIcon />}
+            label={t("hardware.page.addDeviceButton")}
+            onClick={() => navigate("/hardware/device/add")}
+          />
+          <ToolbarButton
+            primary
+            icon={<AddIcon />}
+            label={t("hardware.page.addAccessoryButton")}
+            onClick={() => navigate("/hardware/accessory/add")}
+          />
+        </>
+      }
+    >
       <Box
         sx={{
           position: "sticky",
-          top: (theme) => theme.mixins.toolbar.minHeight,
+          top: STICKY_TOP,
           zIndex: 1,
           bgcolor: "background.default",
           pb: 2.5,
@@ -37,27 +53,6 @@ const HardwarePage = () => {
           boxShadow: "0 4px 8px -4px rgba(0, 0, 0, 0.2)",
         }}
       >
-        <HardwareSubNav />
-
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 3 }}>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {t("hardware.page.title")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t("hardware.page.subtitle")}
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/hardware/device/add")}>
-              {t("hardware.page.addDeviceButton")}
-            </Button>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/hardware/accessory/add")}>
-              {t("hardware.page.addAccessoryButton")}
-            </Button>
-          </Stack>
-        </Box>
-
         <HardwareSearchBar
           searchKeyword={searchKeyword}
           onSearchKeywordChange={setSearchKeyword}
@@ -92,7 +87,7 @@ const HardwarePage = () => {
           <AccessoryList searchKeyword={debouncedKeyword} status={status} />
         </Box>
       </Stack>
-    </>
+    </Page>
   );
 };
 

@@ -13,6 +13,7 @@ import { Trans, useTranslation } from "react-i18next";
 import igdbLogo from "../assets/igdb-logo.png";
 import { useEmulationConfig } from "../hooks/useLibrary";
 import { useVersion } from "../hooks/useVersion";
+import Page from "./Page";
 
 const REPO_URL = "https://github.com/wwwescape/VideoGameTrackarr";
 const BMC_URL = "https://buymeacoffee.com/wwwescape";
@@ -28,10 +29,7 @@ const About = () => {
   const [hasCheckedManually, setHasCheckedManually] = useState(false);
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        {t("about.title")}
-      </Typography>
+    <Page>
       <Card sx={{ maxWidth: 640 }}>
         <CardContent>
           <Typography variant="subtitle1" gutterBottom>
@@ -156,7 +154,7 @@ const About = () => {
           </Link>
         </CardContent>
       </Card>
-    </Box>
+    </Page>
   );
 };
 

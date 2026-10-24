@@ -13,7 +13,6 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -26,7 +25,7 @@ import {
 } from "../hooks/useSalesTracking";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
 
 const PROVIDER_LABEL_KEY: Record<SalesProvider, string> = {
   itad: "insights.salesIgnored.provider.itad",
@@ -66,16 +65,7 @@ const SalesIgnoredListPage = () => {
   };
 
   return (
-    <>
-      <SettingsSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("insights.salesIgnored.heading")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t("insights.salesIgnored.description")}
-        </Typography>
-      </Box>
+    <SettingsFrame description={t("insights.salesIgnored.description")}>
 
       <Paper sx={{ width: "100%", overflow: "hidden", borderRadius: 2 }}>
         {rows.length === 0 ? (
@@ -154,7 +144,7 @@ const SalesIgnoredListPage = () => {
           rowsPerPageOptions={[10, 25, 50]}
         />
       </Paper>
-    </>
+    </SettingsFrame>
   );
 };
 

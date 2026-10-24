@@ -26,7 +26,6 @@ const SeriesDetailPage = () => {
     <CatalogBrowseGrid
       kind="series"
       kindLabel={t("games.seriesDetailPage.kindLabel")}
-      name={data?.name}
       entityId={data?.id}
       isLoading={isLoading}
       slug={seriesSlug}

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { DetailQueryOptions } from "./detailQueryOptions";
 import { getIgdbGamePreview, searchIgdb } from "../api/igdb";
 
 export function useIgdbSearch(query: string, categoryScope: "game" | "addon" = "game") {
@@ -10,7 +11,7 @@ export function useIgdbSearch(query: string, categoryScope: "game" | "addon" = "
   });
 }
 
-export function useIgdbGamePreview(igdbId: number) {
+export function useIgdbGamePreview(igdbId: number, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["igdb-preview", igdbId],
     queryFn: () => getIgdbGamePreview(igdbId),
@@ -18,5 +19,6 @@ export function useIgdbGamePreview(igdbId: number) {
     // IGDB data for a game barely changes within a session; don't refetch on every visit.
     staleTime: 10 * 60_000,
     retry: false,
+    ...options,
   });
 }

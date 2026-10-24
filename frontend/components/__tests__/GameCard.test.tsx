@@ -2,7 +2,7 @@ import { render, screen, type RenderResult } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { describe, expect, it, vi } from "vitest";
-import { createM3Theme } from "../../theme/createM3Theme";
+import { createVgtTheme } from "../../theme/createVgtTheme";
 import GameCard, { type GameCardGame } from "../GameCard";
 
 const baseGame: GameCardGame = {
@@ -12,11 +12,10 @@ const baseGame: GameCardGame = {
   category: "main_game",
 };
 
-// GameCard reads M3-specific theme roles (theme.palette.m3, theme.m3Shape) that only
-// exist once wrapped in the app's real createM3Theme — the default MUI theme used by
-// render() otherwise doesn't have them, which is what every production render goes
-// through (see ColorModeProvider.tsx).
-const theme = createM3Theme("light", "normal");
+// GameCard's badges read app-specific theme tokens (theme.palette.vgt) that only exist once
+// wrapped in the app's real createVgtTheme — the default MUI theme used by render()
+// otherwise doesn't have them (see ColorModeProvider.tsx).
+const theme = createVgtTheme("light", "normal", "#7c4dff");
 function renderWithTheme(ui: React.ReactElement): RenderResult {
   return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
 }

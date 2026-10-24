@@ -58,7 +58,8 @@ import { useSessionState } from "../hooks/useSessionState";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import RelinkSteamEntryDialog, { type RelinkTarget } from "./RelinkSteamEntryDialog";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
+import { ToolbarButton } from "./Page";
 
 const STEAM_IMPORT_JOB_ID = "steam_import";
 
@@ -576,28 +577,18 @@ const SteamSyncPage = () => {
   };
 
   return (
-    <>
-      <SettingsSubNav />
-      <Box sx={{ mb: 3, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            {t("insights.steamSync.heading")}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t("insights.steamSync.description")}
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<PlayArrowIcon />}
+    <SettingsFrame
+      description={t("insights.steamSync.description")}
+      toolbarEnd={
+        <ToolbarButton
+          primary
+          icon={<PlayArrowIcon />}
+          label={isImporting ? t("insights.steamSync.importRunning") : t("insights.steamSync.runImportButton")}
           onClick={() => void handleRunImport()}
           disabled={isImporting}
-          sx={{ flexShrink: 0 }}
-        >
-          {isImporting ? t("insights.steamSync.importRunning") : t("insights.steamSync.runImportButton")}
-        </Button>
-      </Box>
+        />
+      }
+    >
 
       <Paper sx={{ width: "100%", overflow: "hidden", borderRadius: 2 }}>
         <Toolbar
@@ -968,7 +959,7 @@ const SteamSyncPage = () => {
         onClose={() => setUnlinkTarget(null)}
         onConfirm={() => void handleConfirmUnlink()}
       />
-    </>
+    </SettingsFrame>
   );
 };
 

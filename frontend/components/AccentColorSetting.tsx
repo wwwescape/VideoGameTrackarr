@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useColorMode } from "../theme/ColorModeProvider";
-import { SEED_COLOR_HEX } from "../theme/m3Colors";
+import { DEFAULT_ACCENT_HEX } from "../theme/colors";
 
 // The default purple first. Every preset is a seed for the whole M3 scheme (SchemeVibrant),
 // which picks contrast-safe tones from it in light, dark and high-contrast mode, so the
@@ -17,7 +17,7 @@ import { SEED_COLOR_HEX } from "../theme/m3Colors";
 // left out: the vibrant scheme turns them rust-orange and petrol blue, duplicating Orange
 // and Teal.
 export const ACCENT_PRESETS: { hex: string; nameKey: string }[] = [
-  { hex: SEED_COLOR_HEX.toLowerCase(), nameKey: "settings.display.accentColors.purple" },
+  { hex: DEFAULT_ACCENT_HEX.toLowerCase(), nameKey: "settings.display.accentColors.purple" },
   { hex: "#3949ab", nameKey: "settings.display.accentColors.indigo" },
   { hex: "#039be5", nameKey: "settings.display.accentColors.lightBlue" },
   { hex: "#00897b", nameKey: "settings.display.accentColors.teal" },
@@ -113,7 +113,7 @@ const AccentColorSetting = () => {
       <Typography variant="caption" color="text.secondary" component="div">
         {t("settings.display.accentColorHelp")}
       </Typography>
-      {accentColor !== SEED_COLOR_HEX.toLowerCase() ? (
+      {accentColor !== DEFAULT_ACCENT_HEX.toLowerCase() ? (
         <Button
           size="small"
           onClick={() => {

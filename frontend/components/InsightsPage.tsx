@@ -3,14 +3,13 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import GameStatsSection from "./GameStatsSection";
 import HardwareStatsSection from "./HardwareStatsSection";
-import InsightsSubNav from "./InsightsSubNav";
+import Page from "./Page";
 
 const InsightsPage = () => {
   const { t } = useTranslation();
 
   return (
-    <>
-      <InsightsSubNav />
+    <Page>
 
       <Typography variant="h5" component="h2" gutterBottom>
         {t("insights.page.gamesHeading")}
@@ -23,7 +22,7 @@ const InsightsPage = () => {
         {t("insights.page.hardwareHeading")}
       </Typography>
       <HardwareStatsSection />
-    </>
+    </Page>
   );
 };
 

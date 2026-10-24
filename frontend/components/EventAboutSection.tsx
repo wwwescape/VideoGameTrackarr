@@ -30,7 +30,7 @@ const EventAboutSection = ({ event }: EventAboutSectionProps) => {
             {t("events.about.lastUpdatedLabel", { date: lastUpdated })}
           </Typography>
         ) : null}
-        <Typography variant="h4" component="h1" sx={{ lineHeight: 1.15 }}>
+        <Typography variant="h4" component="h2" sx={{ lineHeight: 1.15 }}>
           {event.name}
         </Typography>
         {dateRange ? (

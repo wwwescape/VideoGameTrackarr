@@ -21,7 +21,7 @@ import { useBiosSystems, useDeleteBios, useUploadBios } from "../hooks/useLibrar
 import { formatFileSize } from "../utils/roms";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
-import SettingsSubNav from "./SettingsSubNav";
+import SettingsFrame from "./SettingsFrame";
 
 interface BiosCardProps {
   system: BiosSystem;
@@ -172,16 +172,7 @@ const EmulationPage = () => {
   const sorted = [...(systems ?? [])].sort((a, b) => a.label.localeCompare(b.label));
 
   return (
-    <>
-      <SettingsSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("nav.emulation")}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {t("settings.emulation.description")}
-        </Typography>
-      </Box>
+    <SettingsFrame description={t("settings.emulation.description")}>
       <Alert severity="info" sx={{ mb: 3 }}>
         {t("settings.emulation.legalNote")}
       </Alert>
@@ -219,7 +210,7 @@ const EmulationPage = () => {
           });
         }}
       />
-    </>
+    </SettingsFrame>
   );
 };
 

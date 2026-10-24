@@ -1,6 +1,5 @@
 import { useSearchParams } from "react-router-dom";
 import Avatar from "@mui/material/Avatar";
-import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -13,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import type { GameDetail } from "../api/types";
 import { useGamesByIds } from "../hooks/useGames";
 import { getReleaseYear } from "../utils/utils";
+import Page from "./Page";
 
 function companiesFor(game: GameDetail, role: string): string {
   const names = game.companies.filter((company) => company.role === role).map((company) => company.name);
@@ -44,26 +44,24 @@ const ComparePage = () => {
 
   if (ids.length < 2) {
     return (
-      <Typography variant="body2" color="text.secondary">
-        {t("games.compare.selectPrompt")}
-      </Typography>
+      <Page>
+        <Typography variant="body2" color="text.secondary">
+          {t("games.compare.selectPrompt")}
+        </Typography>
+      </Page>
     );
   }
 
   if (isLoading) {
-    return <Typography color="text.secondary">{t("games.compare.loading")}</Typography>;
+    return (
+      <Page>
+        <Typography color="text.secondary">{t("games.compare.loading")}</Typography>
+      </Page>
+    );
   }
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("games.compare.title")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t("games.compare.subtitle", { count: loadedGames.length })}
-        </Typography>
-      </Box>
+    <Page meta={t("games.compare.subtitle", { count: loadedGames.length })}>
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -176,7 +174,7 @@ const ComparePage = () => {
           </TableBody>
         </Table>
       </TableContainer>
-    </>
+    </Page>
   );
 };
 

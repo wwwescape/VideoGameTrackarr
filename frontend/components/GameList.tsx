@@ -2,9 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { MatchAllFilters } from "../api/games";
 import type {
@@ -28,16 +26,19 @@ import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import { showUndoToast } from "./UndoToast";
 import GameCard from "./GameCard";
 import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
-import GamesSubNav from "./GamesSubNav";
+import Page, { STICKY_TOP, ToolbarButton } from "./Page";
 import ManageTagsDialog from "./ManageTagsDialog";
 import VirtualGameGrid from "./VirtualGameGrid";
 import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
+import { useSearchHandoff } from "../navigation/GlobalSearch";
 
 const MIN_SEARCH_LENGTH = 3;
 
 const GameList = () => {
   const { t } = useTranslation();
   const [searchKeyword, setSearchKeyword] = useSessionState("games.searchKeyword", "");
+  // Enter in the header search lands here with its text.
+  useSearchHandoff("search", setSearchKeyword);
   const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>("games.ownershipStatuses", []);
   const [ownershipExclude, setOwnershipExclude] = useSessionState("games.ownershipExclude", false);
   const [platformIds, setPlatformIds] = useSessionState<number[]>("games.platformIds", []);
@@ -225,11 +226,20 @@ const GameList = () => {
   };
 
   return (
-    <>
+    <Page
+      toolbar={
+        <ToolbarButton
+          primary
+          icon={<AddIcon />}
+          label={t("games.list.addGameButton")}
+          onClick={() => navigate("/games/add")}
+        />
+      }
+    >
       <Box
         sx={{
           position: "sticky",
-          top: (theme) => theme.mixins.toolbar.minHeight,
+          top: STICKY_TOP,
           zIndex: 1,
           bgcolor: "background.default",
           pb: 2.5,
@@ -238,33 +248,6 @@ const GameList = () => {
           boxShadow: "0 4px 8px -4px rgba(0, 0, 0, 0.2)",
         }}
       >
-        <GamesSubNav />
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {t("games.list.pageTitle")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t("games.list.pageSubtitle")}
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate("/games/add")}
-            sx={{ flexShrink: 0 }}
-          >
-            {t("games.list.addGameButton")}
-          </Button>
-        </Box>
         <GameListToolbar
           searchKeyword={searchKeyword}
           onSearchKeywordChange={setSearchKeyword}
@@ -379,7 +362,7 @@ const GameList = () => {
         gameIds={Array.from(selectedIds)}
         onClose={() => setManageTagsOpen(false)}
       />
-    </>
+    </Page>
   );
 };
 

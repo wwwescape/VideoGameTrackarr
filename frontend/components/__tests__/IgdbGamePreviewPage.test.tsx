@@ -5,7 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IgdbGamePreview } from "../../api/types";
-import { createM3Theme } from "../../theme/createM3Theme";
+import { createVgtTheme } from "../../theme/createVgtTheme";
 import IgdbGamePreviewPage from "../IgdbGamePreviewPage";
 
 vi.mock("react-toastify", () => ({
@@ -70,7 +70,7 @@ const preview: IgdbGamePreview = {
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <ThemeProvider theme={createM3Theme("light", "normal")}>
+    <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
       <QueryClientProvider client={client}>
         <MemoryRouter initialEntries={["/games/add/igdb/7346"]}>
           <Routes>

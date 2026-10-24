@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { DetailQueryOptions } from "./detailQueryOptions";
 import { createDevice, deleteDevice, getDevice, listDevices, updateDevice, type DeviceListParams } from "../api/device";
 import type { DeviceInput } from "../api/types";
 
@@ -9,11 +10,12 @@ export function useDeviceList(params: DeviceListParams = {}) {
   });
 }
 
-export function useDeviceItem(identifier: string | undefined) {
+export function useDeviceItem(identifier: string | undefined, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["devices", identifier],
     queryFn: () => getDevice(identifier!),
     enabled: !!identifier,
+    ...options,
   });
 }
 

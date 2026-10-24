@@ -1,7 +1,7 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlatform } from "../hooks/usePlatforms";
-import { parsePlatformScope, platformDisplayName } from "../utils/platformScope";
+import { parsePlatformScope } from "../utils/platformScope";
 import CatalogBrowseGrid from "./CatalogBrowseGrid";
 import NotFoundPage from "./NotFoundPage";
 
@@ -28,7 +28,6 @@ const PlatformDetailPage = () => {
     <CatalogBrowseGrid
       kind="platform"
       kindLabel={t("games.platformDetailPage.kindLabel")}
-      name={data ? platformDisplayName(data, scope, t) : undefined}
       entityId={data?.id}
       isLoading={isLoading}
       slug={platformSlug}

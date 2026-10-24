@@ -28,6 +28,7 @@ import GameCard from "./GameCard";
 import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
 import VirtualGameGrid from "./VirtualGameGrid";
 import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
+import Page from "./Page";
 
 const MIN_SEARCH_LENGTH = 3;
 
@@ -55,7 +56,6 @@ export type CatalogBrowseKind = "collection" | "series" | "platform";
 interface CatalogBrowseGridProps {
   kind: CatalogBrowseKind;
   kindLabel: string;
-  name: string | undefined;
   entityId: number | undefined;
   isLoading: boolean;
   slug: string | undefined;
@@ -74,7 +74,6 @@ interface CatalogBrowseGridProps {
 const CatalogBrowseGrid = ({
   kind,
   kindLabel,
-  name,
   entityId,
   isLoading,
   slug,
@@ -240,23 +239,18 @@ const CatalogBrowseGrid = ({
   const handleGameClick = (game: GameSummary) => navigate(`/game/${gameIdentifier(game)}`);
 
   return (
-    <>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 3 }}>
-        <Box>
-          <Typography variant="overline" color="text.secondary">
-            {kindLabel}
-          </Typography>
-          <Typography variant="h4" component="h1" gutterBottom>
-            {name ?? t("common.loading")}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {isPlatform ? t("catalog.browseGrid.platformNotice") : t("catalog.browseGrid.importedOnlyNotice")}
-          </Typography>
-        </Box>
-        {slug && resyncLabel && !isPlatform ? (
+    <Page
+      // Right of the breadcrumbs rather than in the toolbar: it carries its own progress bar
+      // and result alerts under the button.
+      actions={
+        slug && resyncLabel && !isPlatform ? (
           <CatalogResyncButton kind={isCollection ? "collection" : "franchise"} slug={slug} label={resyncLabel} />
-        ) : null}
-      </Box>
+        ) : undefined
+      }
+    >
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {isPlatform ? t("catalog.browseGrid.platformNotice") : t("catalog.browseGrid.importedOnlyNotice")}
+      </Typography>
       {entityId ? (
         <Box sx={{ mb: 3 }}>
           <GameListToolbar
@@ -374,7 +368,7 @@ const CatalogBrowseGrid = ({
           )}
         />
       )}
-    </>
+    </Page>
   );
 };
 

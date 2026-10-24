@@ -37,11 +37,12 @@ import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import BulkAddDialog from "./BulkAddDialog";
 import GameCard from "./GameCard";
-import GamesSubNav from "./GamesSubNav";
 import ManualGameForm from "./ManualGameForm";
 import SimpleTabPanel from "./SimpleTabPanel";
 import VirtualGameGrid from "./VirtualGameGrid";
 import { useSessionState } from "../hooks/useSessionState";
+import { useSearchHandoff } from "../navigation/GlobalSearch";
+import Page from "./Page";
 
 const MIN_SEARCH_LENGTH = 3;
 
@@ -87,6 +88,11 @@ const AddGame = () => {
   // Keyword and tab are remembered for the session (see hooks/useSessionState.ts).
   const [searchKeyword, setSearchKeyword] = useSessionState("addGame.searchKeyword", "");
   const [rememberedMode, setMode] = useSessionState<AddMode>("addGame.mode", "igdb");
+  // The header search's "Search IGDB for …" lands here with its text, on the IGDB tab.
+  useSearchHandoff("igdbSearch", (text) => {
+    setSearchKeyword(text);
+    setMode("igdb");
+  });
   // Landing here from Settings → Steam Sync's "Add as custom game" (see SteamSyncPage.tsx)
   // skips straight to the manual form, pre-filled — there's no IGDB entry to search for —
   // whatever tab was remembered, until the user switches tabs themselves.
@@ -215,21 +221,12 @@ const AddGame = () => {
     !isAddableCategory(searchResults[0].category);
 
   return (
-    <>
+    <Page>
       {importGameMutation.isPending && (
         <Backdrop sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.modal + 1 }} open>
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      <GamesSubNav />
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("games.add.pageTitle")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t("games.add.pageSubtitle")}
-        </Typography>
-      </Box>
       <Box sx={{ width: "100%", typography: "body1" }}>
         <RadioGroup
           row
@@ -390,7 +387,7 @@ const AddGame = () => {
         igdbIds={Array.from(selectedIgdbIds)}
         onClose={() => setBulkAddDialogOpen(false)}
       />
-    </>
+    </Page>
   );
 };
 

@@ -90,7 +90,7 @@ const GameAboutSection = ({ game, preview = false, publicToken }: GameAboutSecti
           spacing={1.5}
           sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}
         >
-          <Typography variant="h4" component="h1" sx={{ lineHeight: 1.15 }}>
+          <Typography variant="h4" component="h2" sx={{ lineHeight: 1.15 }}>
             {game.name}{" "}
             <Typography variant="subtitle2" color="text.secondary" component="span">
               ({getReleaseYear(game.firstReleaseDate) ?? t("common.unknown")})

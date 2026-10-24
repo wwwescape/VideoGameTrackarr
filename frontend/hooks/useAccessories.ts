@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { DetailQueryOptions } from "./detailQueryOptions";
 import {
   createAccessory,
   deleteAccessory,
@@ -16,11 +17,12 @@ export function useAccessoryList(params: AccessoryListParams = {}) {
   });
 }
 
-export function useAccessoryItem(identifier: string | undefined) {
+export function useAccessoryItem(identifier: string | undefined, options?: DetailQueryOptions) {
   return useQuery({
     queryKey: ["accessories", identifier],
     queryFn: () => getAccessory(identifier!),
     enabled: !!identifier,
+    ...options,
   });
 }
 

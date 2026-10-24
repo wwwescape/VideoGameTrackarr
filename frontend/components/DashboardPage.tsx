@@ -9,6 +9,7 @@ import { useOnSale } from "../hooks/useInsights";
 import EventsTeaserSection from "./EventsTeaserSection";
 import OnSaleTeaserSection from "./OnSaleTeaserSection";
 import ReleaseCalendarSection from "./ReleaseCalendarSection";
+import Page from "./Page";
 
 interface DashboardSection {
   key: string;
@@ -22,7 +23,11 @@ const DashboardPage = () => {
   const { data: events, isLoading: eventsLoading } = useEvents();
 
   if (releasesLoading || onSaleLoading || eventsLoading) {
-    return <Typography color="text.secondary">{t("common.loading")}</Typography>;
+    return (
+      <Page>
+        <Typography color="text.secondary">{t("common.loading")}</Typography>
+      </Page>
+    );
   }
 
   const hasGameReleases = (releases ?? []).some((item) => item.kind === "game");
@@ -55,26 +60,28 @@ const DashboardPage = () => {
 
   if (sections.length === 0) {
     return (
-      <Typography
-        variant="h5"
-        component="h2"
-        color="text.secondary"
-        sx={{ textAlign: "center", mt: 6 }}
-      >
-        {t("insights.dashboard.welcomeMessage")}
-      </Typography>
+      <Page>
+        <Typography
+          variant="h5"
+          component="h2"
+          color="text.secondary"
+          sx={{ textAlign: "center", mt: 6 }}
+        >
+          {t("insights.dashboard.welcomeMessage")}
+        </Typography>
+      </Page>
     );
   }
 
   return (
-    <>
+    <Page>
       {sections.map((section, index) => (
         <Box key={section.key}>
           {index > 0 && <Divider sx={{ my: 3 }} />}
           {section.node}
         </Box>
       ))}
-    </>
+    </Page>
   );
 };
 

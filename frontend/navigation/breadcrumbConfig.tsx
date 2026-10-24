@@ -4,6 +4,7 @@ import type { Params } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccessoryItem } from "../hooks/useAccessories";
+import { DISPLAY_ONLY } from "../hooks/detailQueryOptions";
 import { useCollection, useFranchise } from "../hooks/useCatalogBrowse";
 import { useEvent } from "../hooks/useEvents";
 import { useGame } from "../hooks/useGames";
@@ -29,13 +30,13 @@ export interface RouteHandle {
 // as the page body's own isError handling in GameDetails.tsx etc., just visible here too).
 const GameCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: game, isError } = useGame(identifier);
+  const { data: game, isError } = useGame(identifier, DISPLAY_ONLY);
   return <>{isError ? t("errors.gameNotFoundTitle") : (game?.name ?? t("common.loading"))}</>;
 };
 
 const FranchiseCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: franchise, isError } = useFranchise(slug);
+  const { data: franchise, isError } = useFranchise(slug, DISPLAY_ONLY);
   return (
     <>{isError ? t("errors.seriesNotFoundTitle") : (franchise?.name ?? t("common.loading"))}</>
   );
@@ -43,7 +44,7 @@ const FranchiseCrumbLabel = ({ slug }: { slug: string | undefined }) => {
 
 const CollectionCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: collection, isError } = useCollection(slug);
+  const { data: collection, isError } = useCollection(slug, DISPLAY_ONLY);
   return (
     <>{isError ? t("errors.collectionNotFoundTitle") : (collection?.name ?? t("common.loading"))}</>
   );
@@ -52,14 +53,14 @@ const CollectionCrumbLabel = ({ slug }: { slug: string | undefined }) => {
 const PlatformCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const { data: platform, isError } = usePlatform(slug);
+  const { data: platform, isError } = usePlatform(slug, DISPLAY_ONLY);
   if (isError) return <>{t("errors.platformNotFoundTitle")}</>;
   return <>{platform ? platformDisplayName(platform, parsePlatformScope(searchParams), t) : t("common.loading")}</>;
 };
 
 const DeviceCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: device, isError } = useDeviceItem(identifier);
+  const { data: device, isError } = useDeviceItem(identifier, DISPLAY_ONLY);
   return (
     <>{isError ? t("errors.deviceNotFoundTitle") : (device?.officialName ?? t("common.loading"))}</>
   );
@@ -67,7 +68,7 @@ const DeviceCrumbLabel = ({ identifier }: { identifier: string | undefined }) =>
 
 const AccessoryCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: accessory, isError } = useAccessoryItem(identifier);
+  const { data: accessory, isError } = useAccessoryItem(identifier, DISPLAY_ONLY);
   return (
     <>
       {isError
@@ -79,7 +80,7 @@ const AccessoryCrumbLabel = ({ identifier }: { identifier: string | undefined })
 
 const EventCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: event, isError } = useEvent(identifier);
+  const { data: event, isError } = useEvent(identifier, DISPLAY_ONLY);
   return <>{isError ? t("errors.eventNotFoundTitle") : (event?.name ?? t("common.loading"))}</>;
 };
 
@@ -94,7 +95,7 @@ export const addGameCrumbs: CrumbsFn = (_params, t) => [
 
 const IgdbPreviewCrumbLabel = ({ igdbId }: { igdbId: string | undefined }) => {
   const { t } = useTranslation();
-  const { data: preview, isError } = useIgdbGamePreview(Number(igdbId));
+  const { data: preview, isError } = useIgdbGamePreview(Number(igdbId), DISPLAY_ONLY);
   return <>{isError ? t("games.preview.notFoundTitle") : (preview?.name ?? t("common.loading"))}</>;
 };
 
@@ -207,7 +208,7 @@ export const onSaleCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.onSale") },
 ];
 
-export const dashboardCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.dashboard") }];
+export const dashboardCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.overview") }];
 
 export const eventsCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.events") }];
 

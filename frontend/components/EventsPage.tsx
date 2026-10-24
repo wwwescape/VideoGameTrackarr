@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { EventSummary } from "../api/types";
 import { useEvents } from "../hooks/useEvents";
 import EventCard from "./EventCard";
+import Page from "./Page";
 
 const EventGrid = ({ events }: { events: EventSummary[] }) => (
   <Grid container spacing={{ xs: 1.5, sm: 2 }}>
@@ -32,15 +33,7 @@ const EventsPage = () => {
   );
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("nav.events")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t("events.page.description")}
-        </Typography>
-      </Box>
+    <Page>
       {isLoading ? (
         <Typography color="text.secondary">{t("common.loading")}</Typography>
       ) : (
@@ -67,7 +60,7 @@ const EventsPage = () => {
           </Box>
         </>
       )}
-    </>
+    </Page>
   );
 };
 

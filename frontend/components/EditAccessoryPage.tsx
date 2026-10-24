@@ -13,7 +13,6 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import { toast } from "react-toastify";
 import { resolveAssetUrl } from "../api/client";
 import type { AccessoryDetail, HardwareCondition, LibraryStatus, RatingBoard, UserAccessory } from "../api/types";
@@ -30,6 +29,7 @@ import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
 import FreeSoloLookupField from "./FreeSoloLookupField";
+import Page from "./Page";
 
 interface StatusOption {
   value: LibraryStatus;
@@ -491,20 +491,19 @@ const EditAccessoryPage = () => {
   const { data: ownershipRows, isLoading: isOwnershipLoading } = useUserAccessoryList(accessory?.id ?? NaN);
 
   if (isAccessoryLoading || isOwnershipLoading || !accessory) {
-    return <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>;
+    return (
+      <Page>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
+      </Page>
+    );
   }
 
   const primaryOwnership = ownershipRows?.find((row) => row.status === "owned") ?? ownershipRows?.[0] ?? null;
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("hardware.editAccessory.title")}
-        </Typography>
-      </Box>
+    <Page>
       <EditAccessoryForm accessory={accessory} primaryOwnership={primaryOwnership} />
-    </>
+    </Page>
   );
 };
 
