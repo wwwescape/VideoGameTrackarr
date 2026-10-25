@@ -1,4 +1,4 @@
-import { useMemo, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type KeyboardEvent, type ReactNode } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Box from "@mui/material/Box";
@@ -26,6 +26,8 @@ export const CARD_SIZE_MAX = 300;
 export const CARD_SIZE_DEFAULT = 170;
 
 const LETTERS = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+// Space between the A–Z rail and the sticky toolbar above it, and the window's bottom edge.
+const RAIL_GAP = 14;
 
 const letterOf = (name: string) => {
   const first = name.trim().charAt(0).toUpperCase();
@@ -60,6 +62,25 @@ interface CoverGridProps {
 export function GameCoverGrid({ games, cardSize, showRail, renderCard }: CoverGridProps) {
   const { t } = useTranslation();
   const gridRef = useRef<VirtualGridHandle>(null);
+  const railRef = useRef<HTMLElement>(null);
+
+  // The rail fills the window from where it sits down to just above the bottom edge: lower at
+  // the top of the page (below the breadcrumbs), then stuck under the toolbar once scrolled.
+  const fitRail = () => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.style.height = `${window.innerHeight - rail.getBoundingClientRect().top - RAIL_GAP}px`;
+  };
+  // Every render too, since chips or a notice above the grid can move it.
+  useLayoutEffect(fitRail);
+  useEffect(() => {
+    window.addEventListener("scroll", fitRail, { passive: true });
+    window.addEventListener("resize", fitRail);
+    return () => {
+      window.removeEventListener("scroll", fitRail);
+      window.removeEventListener("resize", fitRail);
+    };
+  }, []);
   const firstIndex = useMemo(() => {
     const map = new Map<string, number>();
     if (!showRail) return map;
@@ -85,17 +106,20 @@ export function GameCoverGrid({ games, cardSize, showRail, renderCard }: CoverGr
       {showRail ? (
         <Box
           component="nav"
+          ref={railRef}
           aria-label={t("games.listView.jumpTo")}
           sx={{
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             alignItems: "center",
-            gap: "1px",
             position: "sticky",
-            top: STICKY_TOP.sm + 14,
+            top: STICKY_TOP.sm + RAIL_GAP,
             alignSelf: "flex-start",
             width: 22,
             flexShrink: 0,
+            // Letters spread evenly down the height fitRail sets; on a short window it keeps a
+            // readable minimum instead of squashing them together.
+            minHeight: LETTERS.length * 15,
           }}
         >
           {LETTERS.map((letter) => {
@@ -107,6 +131,9 @@ export function GameCoverGrid({ games, cardSize, showRail, renderCard }: CoverGr
                 onClick={() => index !== undefined && gridRef.current?.scrollToIndex(index)}
                 aria-label={t("games.listView.jumpToLetter", { letter })}
                 sx={{
+                  flex: "1 1 0",
+                  minHeight: 0,
+                  width: "100%",
                   fontSize: 11,
                   fontWeight: 600,
                   px: 0.5,
