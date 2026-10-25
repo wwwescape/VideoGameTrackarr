@@ -6,9 +6,9 @@ import { OnSaleTile } from "./OnSaleSection";
 const TEASER_LIMIT = 15;
 
 // Shows nothing at all (heading included) when there's nothing on sale — an always-empty
-// "0 games on sale" block would just be noise on a dashboard. DashboardPage itself also
-// gates whether this even mounts and owns divider placement between sections, so this
-// early return is mostly a defensive fallback if ever reused standalone.
+// "0 games on sale" block would just be noise on the Overview. OverviewPage itself also
+// gates whether this even mounts, so this early return is mostly a defensive fallback if
+// ever reused standalone.
 const OnSaleTeaserSection = () => {
   const { t } = useTranslation();
   const { data: items } = useOnSale();

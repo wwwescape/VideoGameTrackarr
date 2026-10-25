@@ -41,6 +41,9 @@ interface HardwareListSectionProps {
   detailLabel: string;
   view: HardwareListView;
   cardSize: number;
+  // Rows with no type/platform or quantity to show (Orphaned accessories): those table columns
+  // are left out.
+  compact?: boolean;
 }
 
 // The Devices or Accessories section of the Hardware page: its count, then cards or a table.
@@ -53,6 +56,7 @@ export function HardwareListSection({
   detailLabel,
   view,
   cardSize,
+  compact = false,
 }: HardwareListSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -72,8 +76,12 @@ export function HardwareListSection({
             <TableCell>{t("games.listView.columnName")}</TableCell>
             <TableCell sx={{ width: 56 }} />
             <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{t("hardware.listToolbar.manufacturerLabel")}</TableCell>
-            <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{detailLabel}</TableCell>
-            <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{t("hardware.filter.columnQuantity")}</TableCell>
+            {!compact ? (
+              <>
+                <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{detailLabel}</TableCell>
+                <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{t("hardware.filter.columnQuantity")}</TableCell>
+              </>
+            ) : null}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -125,10 +133,14 @@ export function HardwareListSection({
                 </Box>
               </TableCell>
               <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, color: "text.secondary" }}>{row.manufacturer}</TableCell>
-              <TableCell sx={{ display: { xs: "none", md: "table-cell" }, color: "text.secondary" }}>{row.detail ?? "—"}</TableCell>
-              <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, color: "text.secondary" }}>
-                {row.owned ? row.ownedQuantity : "—"}
-              </TableCell>
+              {!compact ? (
+                <>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" }, color: "text.secondary" }}>{row.detail ?? "—"}</TableCell>
+                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, color: "text.secondary" }}>
+                    {row.owned ? row.ownedQuantity : "—"}
+                  </TableCell>
+                </>
+              ) : null}
             </TableRow>
           ))}
         </TableBody>

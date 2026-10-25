@@ -8,7 +8,7 @@ import IgdbGamePreviewPage from "./components/IgdbGamePreviewPage";
 import CollectionPage from "./components/CollectionPage";
 import CollectionsPage from "./components/CollectionsPage";
 import ComparePage from "./components/ComparePage";
-import DashboardPage from "./components/DashboardPage";
+import OverviewPage from "./components/OverviewPage";
 import DeviceDetails from "./components/DeviceDetails";
 import DuplicatesPage from "./components/DuplicatesPage";
 import EditAccessoryPage from "./components/EditAccessoryPage";
@@ -122,7 +122,7 @@ const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: "/", element: <DashboardPage />, handle: { crumbs: dashboardCrumbs } },
+          { path: "/", element: <OverviewPage />, handle: { crumbs: dashboardCrumbs } },
           { path: "/events", element: <EventsPage />, handle: { crumbs: eventsCrumbs } },
           {
             path: "/events/:identifier",

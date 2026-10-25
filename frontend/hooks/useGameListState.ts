@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { MatchAllFilters } from "../api/games";
 import type { GameCategory, GameSortOption, GameSource, MediaFormat, PlayStatus } from "../api/types";
 import type { OwnershipStatus } from "../components/GameFilterDialog";
+import { writeSessionValue } from "../utils/sessionViewState";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import { useCollections, useFranchises } from "./useCatalogBrowse";
 import { useDebouncedValue } from "./useDebouncedValue";
@@ -20,6 +21,44 @@ export interface GameListStateOptions {
   steelbook?: boolean;
   // Games only: IGDB vs custom.
   sources?: boolean;
+}
+
+// Every filter a game list remembers, at its cleared value (the sort is left as it is).
+const CLEARED_FILTERS = {
+  searchKeyword: "",
+  ownershipStatuses: [] as OwnershipStatus[],
+  ownershipExclude: false,
+  platformIds: [] as number[],
+  platformExclude: false,
+  tagIds: [] as number[],
+  tagExclude: false,
+  collectionIds: [] as number[],
+  collectionExclude: false,
+  franchiseIds: [] as number[],
+  franchiseExclude: false,
+  gameTypes: [] as GameCategory[],
+  gameTypeExclude: false,
+  formats: [] as MediaFormat[],
+  formatExclude: false,
+  storefronts: [] as string[],
+  storefrontExclude: false,
+  playStatuses: [] as PlayStatus[],
+  playStatusExclude: false,
+  matchAll: {} as MatchAllFilters,
+  steelbookOnly: false,
+  sources: [] as GameSource[],
+  sourceExclude: false,
+};
+
+export type GameListPreset = Partial<typeof CLEARED_FILTERS>;
+
+// Replaces a game list's remembered filters with just `preset`, before opening it (Overview's
+// "Now playing" or "Custom games", an Insights breakdown row) — the same as setting that one
+// filter by hand on a cleared list.
+export function presetGameListFilters(prefix: string, preset: GameListPreset): void {
+  for (const [name, cleared] of Object.entries(CLEARED_FILTERS)) {
+    writeSessionValue(`${prefix}.${name}`, (preset as Record<string, unknown>)[name] ?? cleared);
+  }
 }
 
 // The search, filters and sort a game list remembers for the browser session, under its own

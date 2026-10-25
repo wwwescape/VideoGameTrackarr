@@ -745,7 +745,6 @@
       "playStatusPlaying": "Playing",
       "playStatusCompleted": "Completed",
       "playStatusAbandoned": "Abandoned",
-      "loading": "Loading stats...",
       "ownedLabel": "Owned",
       "wishlistedLabel": "Wishlisted",
       "totalTrackedLabel": "Total tracked",
@@ -756,8 +755,7 @@
       "playtimeHoursMinutesShort": "{{hours}}h {{minutes}}m",
       "byPlayStatusTitle": "By Play Status",
       "byPlatformTitle": "By Platform",
-      "byGenreTitle": "By Genre",
-      "breakdownCountLabel": "{{name}}: {{count}}"
+      "byGenreTitle": "By Genre"
     },
     "play": {
       "dialogTitle": "Play {{name}}",
@@ -878,7 +876,10 @@
     },
     "page": {
       "gamesHeading": "Games",
-      "hardwareHeading": "Hardware"
+      "hardwareHeading": "Hardware",
+      "noData": "Nothing to show yet.",
+      "other": "Other",
+      "moreHeading": "More insights"
     },
     "duplicates": {
       "statusOwned": "Owned",
@@ -887,7 +888,8 @@
       "removedToast": "Duplicate entry removed",
       "anyPlatform": "Any platform",
       "anyRegion": "Any region",
-      "removeEntryTooltip": "Remove this entry"
+      "removeEntryTooltip": "Remove this entry",
+      "description": "Copies entered twice: the same game, status, platform, region, format and edition. Remove the extra one."
     },
     "missingAddons": {
       "noneFound": "No missing addons found — you have everything that's been imported for the games you own.",
@@ -1025,6 +1027,9 @@
       "currentPriceLabel": "{{price}} at {{shop}} (-{{cut}}%)",
       "historicalLowLabel": "Historical low: {{price}}",
       "targetPriceLabel": "Target: {{price}}"
+    },
+    "orphans": {
+      "description": "Accessories you own where none of their devices are owned."
     }
   },
   "catalog": {
@@ -1435,5 +1440,29 @@
   "detail": {
     "back": "Back",
     "detailsTitle": "Details"
+  },
+  "overview": {
+    "tiles": {
+      "gamesOwned": "Games owned",
+      "tracked_one": "{{count}} tracked",
+      "tracked_other": "{{count}} tracked",
+      "wishlist": "Wishlist",
+      "hardwareOwned": "Hardware owned",
+      "hardwareHint": "{{devices}} devices · {{accessories}} accessories"
+    },
+    "quickAdd": "Quick add",
+    "nowPlaying": "Now playing",
+    "backlogLink_one": "Backlog · {{count}}",
+    "backlogLink_other": "Backlog · {{count}}",
+    "nothingPlaying": "Nothing marked Playing yet.",
+    "recentlyPlayed": "Recently played",
+    "recentlyAddedGames": "Recently added games",
+    "recentlyAddedHardware": "Recently added hardware",
+    "needsAttention": "Needs attention",
+    "attention": {
+      "custom": "Custom games",
+      "duplicates": "Duplicate copies",
+      "orphans": "Accessories without hardware"
+    }
   }
 }

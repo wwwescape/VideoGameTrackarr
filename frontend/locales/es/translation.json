@@ -745,7 +745,6 @@
       "playStatusPlaying": "Jugando",
       "playStatusCompleted": "Completado",
       "playStatusAbandoned": "Abandonado",
-      "loading": "Cargando estadísticas...",
       "ownedLabel": "En propiedad",
       "wishlistedLabel": "En la lista de deseos",
       "totalTrackedLabel": "Total registrado",
@@ -756,8 +755,7 @@
       "playtimeHoursMinutesShort": "{{hours}}h {{minutes}}m",
       "byPlayStatusTitle": "Por estado de juego",
       "byPlatformTitle": "Por plataforma",
-      "byGenreTitle": "Por género",
-      "breakdownCountLabel": "{{name}}: {{count}}"
+      "byGenreTitle": "Por género"
     },
     "play": {
       "dialogTitle": "Jugar a {{name}}",
@@ -878,7 +876,10 @@
     },
     "page": {
       "gamesHeading": "Juegos",
-      "hardwareHeading": "Hardware"
+      "hardwareHeading": "Hardware",
+      "noData": "Nada que mostrar todavía.",
+      "other": "Otros",
+      "moreHeading": "Más estadísticas"
     },
     "duplicates": {
       "statusOwned": "En propiedad",
@@ -887,7 +888,8 @@
       "removedToast": "Entrada duplicada eliminada",
       "anyPlatform": "Cualquier plataforma",
       "anyRegion": "Cualquier región",
-      "removeEntryTooltip": "Eliminar esta entrada"
+      "removeEntryTooltip": "Eliminar esta entrada",
+      "description": "Copias introducidas dos veces: mismo juego, estado, plataforma, región, formato y edición. Elimina la sobrante."
     },
     "missingAddons": {
       "noneFound": "No se encontraron complementos faltantes — tienes todo lo importado para los juegos que posees.",
@@ -1025,6 +1027,9 @@
       "currentPriceLabel": "{{price}} en {{shop}} (-{{cut}}%)",
       "historicalLowLabel": "Mínimo histórico: {{price}}",
       "targetPriceLabel": "Objetivo: {{price}}"
+    },
+    "orphans": {
+      "description": "Accesorios que tienes sin ninguno de sus dispositivos."
     }
   },
   "catalog": {
@@ -1435,5 +1440,29 @@
   "detail": {
     "back": "Atrás",
     "detailsTitle": "Detalles"
+  },
+  "overview": {
+    "tiles": {
+      "gamesOwned": "Juegos en propiedad",
+      "tracked_one": "{{count}} registrado",
+      "tracked_other": "{{count}} registrados",
+      "wishlist": "Lista de deseos",
+      "hardwareOwned": "Hardware en propiedad",
+      "hardwareHint": "{{devices}} dispositivos · {{accessories}} accesorios"
+    },
+    "quickAdd": "Añadir rápido",
+    "nowPlaying": "Jugando ahora",
+    "backlogLink_one": "Pendientes · {{count}}",
+    "backlogLink_other": "Pendientes · {{count}}",
+    "nothingPlaying": "Nada marcado como Jugando todavía.",
+    "recentlyPlayed": "Jugados recientemente",
+    "recentlyAddedGames": "Juegos añadidos recientemente",
+    "recentlyAddedHardware": "Hardware añadido recientemente",
+    "needsAttention": "Requiere atención",
+    "attention": {
+      "custom": "Juegos personalizados",
+      "duplicates": "Copias duplicadas",
+      "orphans": "Accesorios sin hardware"
+    }
   }
 }
