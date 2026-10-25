@@ -537,9 +537,7 @@
       "matchModeAriaLabel": "Corresponder a qualquer um ou a todos os valores selecionados",
       "matchModeTooltip": "Corresponder a qualquer: o jogo precisa de pelo menos um dos valores selecionados. Corresponder a todos: precisa de todos. Selecione dois ou mais valores para alternar.",
       "allOption": "Todos",
-      "filtersButtonLabel": "Filtros e mais",
       "filterTabLabel": "Filtro",
-      "moreTabLabel": "Mais",
       "sortByLabel": "Ordenar por",
       "sortNameAsc": "Nome (ASC)",
       "sortNameDesc": "Nome (DESC)",
@@ -549,7 +547,6 @@
       "showMissingLabel": "Mostrar o que me falta?",
       "steelbookOnlyLabel": "Somente Steelbooks",
       "clearFiltersButton": "Limpar filtros",
-      "noFiltersAvailable": "Sem filtros disponíveis",
       "noSearchMatches": "Nenhum resultado encontrado."
     },
     "card": {
@@ -602,7 +599,9 @@
     "collectionsPage": {
       "emptyMessage": "Ainda não há coleções — aparecem aqui assim que importar um jogo que pertença a uma.",
       "searchLabel": "Pesquisar coleções",
-      "searchPlaceholder": "Introduza o nome da coleção"
+      "searchPlaceholder": "Introduza o nome da coleção",
+      "count_one": "{{count}} coleção",
+      "count_other": "{{count}} coleções"
     },
     "seriesDetailPage": {
       "kindLabel": "Série",
@@ -611,7 +610,9 @@
     "seriesPage": {
       "emptyMessage": "Ainda não há séries — aparecem aqui assim que importar um jogo que pertença a uma.",
       "searchLabel": "Pesquisar séries",
-      "searchPlaceholder": "Introduza o nome da série"
+      "searchPlaceholder": "Introduza o nome da série",
+      "count_one": "{{count}} série",
+      "count_other": "{{count}} séries"
     },
     "platformDetailPage": {
       "kindLabel": "Plataforma"
@@ -623,7 +624,11 @@
       "ownedCount_one": "{{count}} na coleção",
       "ownedCount_other": "{{count}} na coleção",
       "wishlistedCount_one": "{{count}} na lista de desejos",
-      "wishlistedCount_other": "{{count}} na lista de desejos"
+      "wishlistedCount_other": "{{count}} na lista de desejos",
+      "columnOwned": "Possuídos",
+      "columnWishlisted": "Na lista de desejos",
+      "count_one": "{{count}} plataforma",
+      "count_other": "{{count}} plataformas"
     },
     "about": {
       "companyRoleDeveloper": "Desenvolvido por",
@@ -824,7 +829,8 @@
       "clearSearch": "Limpar pesquisa",
       "removeFilter": "Remover filtro {{label}}",
       "excludedChip": "Exceto {{label}}",
-      "filterTitle": "Filtros"
+      "filterTitle": "Filtros",
+      "columnGames": "Jogos"
     },
     "detail": {
       "aboutTitle": "Sobre",
@@ -837,7 +843,9 @@
     "page": {
       "emptyState": "Sem eventos próximos por agora.",
       "ongoingHeading": "A decorrer",
-      "upcomingHeading": "Próximos"
+      "upcomingHeading": "Próximos",
+      "eventCount_one": "{{count}} evento",
+      "eventCount_other": "{{count}} eventos"
     },
     "about": {
       "lastUpdatedLabel": "Última atualização: {{date}}",
@@ -882,7 +890,10 @@
       "removeEntryTooltip": "Remover esta entrada"
     },
     "missingAddons": {
-      "noneFound": "Nenhum complemento em falta — tem tudo o que foi importado para os jogos que possui."
+      "noneFound": "Nenhum complemento em falta — tem tudo o que foi importado para os jogos que possui.",
+      "gameCount_one": "{{count}} jogo",
+      "gameCount_other": "{{count}} jogos",
+      "openGame": "Abrir jogo"
     },
     "steamSync": {
       "description": "Todos os jogos que a Steam diz que possui ou tem na lista de desejos, comparados com o seu catálogo VGT. Nada muda aqui até sincronizar uma linha explicitamente — Importar apenas obtém e associa dados, nunca escreve na sua biblioteca por si só.",
@@ -1028,6 +1039,9 @@
     "refCard": {
       "gameCountSingular": "{{count}} jogo",
       "gameCountPlural": "{{count}} jogos"
+    },
+    "index": {
+      "viewCards": "Cartões"
     }
   },
   "hardware": {
@@ -1171,7 +1185,9 @@
       "empty": "Nenhum acessório encontrado — todos os acessórios possuídos estão associados a hardware que possui."
     },
     "card": {
-      "noImage": "Sem imagem"
+      "noImage": "Sem imagem",
+      "quantity_one": "{{count}} possuído",
+      "quantity_other": "{{count}} possuídos"
     },
     "coverCard": {
       "noImageAvailable": "Imagem Não Disponível"
@@ -1209,6 +1225,11 @@
     "deviceList": {
       "typeLabel": "Tipo de dispositivo",
       "emptyState": "Nenhum dispositivo encontrado."
+    },
+    "filter": {
+      "statusLabel": "Status",
+      "kindChip": "{{kind}}: {{label}}",
+      "columnQuantity": "Qtd."
     }
   },
   "notes": {

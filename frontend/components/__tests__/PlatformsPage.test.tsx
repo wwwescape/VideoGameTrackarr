@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation, useParams } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryPlatform } from "../../api/types";
 import { createLogoLookup } from "../../utils/platformLogos";
 import PlatformsPage from "../PlatformsPage";
@@ -175,6 +176,69 @@ describe("PlatformsPage PC storefront cards", () => {
     fireEvent.click(screen.getByTitle("PC · Steam"));
 
     expect(screen.getByText("Platform page win ?format=digital&storefront=Steam")).toBeInTheDocument();
+  });
+});
+
+// No usable localStorage in this test environment; the page keeps its view and card size there.
+function memoryStorage(): Storage {
+  const items = new Map<string, string>();
+  return {
+    get length() {
+      return items.size;
+    },
+    clear: () => items.clear(),
+    getItem: (key) => items.get(key) ?? null,
+    key: (index) => Array.from(items.keys())[index] ?? null,
+    removeItem: (key) => void items.delete(key),
+    setItem: (key, value) => void items.set(key, String(value)),
+  };
+}
+
+describe("PlatformsPage toolbar", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    vi.stubGlobal("localStorage", memoryStorage());
+    platforms = [platform(1, "PlayStation 5", "ps5", 2, 1), platform(2, "Nintendo Switch", "switch", 5)];
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("has Options, View and Sort, search beside the breadcrumbs and a count", () => {
+    renderPage();
+
+    const toolbar = screen.getByRole("toolbar");
+    for (const name of ["Options", "View", "Sort"]) {
+      expect(within(toolbar).getByRole("button", { name })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("textbox", { name: "Search platforms" })).toBeInTheDocument();
+    expect(screen.getByText("2 platforms")).toBeInTheDocument();
+  });
+
+  it("switches to the Table view with owned and wishlisted counts, and remembers it", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "View" }));
+    await user.click(screen.getByRole("menuitem", { name: /Table/ }));
+
+    const row = screen.getByRole("row", { name: "PlayStation 5" });
+    expect(within(row).getByText("2")).toBeInTheDocument();
+    expect(within(row).getByText("1")).toBeInTheDocument();
+    expect(screen.queryAllByTestId("grid-item")).toHaveLength(0);
+    expect(localStorage.getItem("vgt.pref.platforms.view")).toBe(JSON.stringify("table"));
+
+    await user.click(row);
+    expect(screen.getByText("Platform page ps5")).toBeInTheDocument();
+  });
+
+  it("sorts from the Sort menu and remembers it for the session", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: /Most games/ }));
+
+    expect(cardNames()).toEqual(["Nintendo Switch", "PlayStation 5"]);
+    expect(window.sessionStorage.getItem("vgt.view.platforms.sort")).toBe(JSON.stringify("count_desc"));
   });
 });
 

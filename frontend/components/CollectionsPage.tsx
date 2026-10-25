@@ -10,6 +10,7 @@ const CollectionsPage = () => {
     <CatalogIndexGrid
       stateKey="collections"
       emptyMessage={t("games.collectionsPage.emptyMessage")}
+      countKey="games.collectionsPage.count"
       searchLabel={t("games.collectionsPage.searchLabel")}
       searchPlaceholder={t("games.collectionsPage.searchPlaceholder")}
       entries={collections}

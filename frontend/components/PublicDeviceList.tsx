@@ -9,8 +9,8 @@ interface PublicDeviceListProps {
   search: string;
 }
 
-// Deliberately not DeviceList.tsx reused — that component renders the full
-// HardwareListToolbar, whose filter dropdowns are backed by authenticated lookup
+// Deliberately not DeviceList.tsx reused — that one fetches through the authenticated
+// device list endpoint, and the Hardware page's filters are backed by authenticated lookup
 // endpoints that would 401 for an anonymous public-page visitor.
 const PublicDeviceList = ({ token, search }: PublicDeviceListProps) => {
   const { t } = useTranslation();

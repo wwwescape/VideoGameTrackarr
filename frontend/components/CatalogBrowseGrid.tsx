@@ -1,36 +1,25 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { MatchAllFilters } from "../api/games";
-import type {
-  GameCategory,
-  GameSortOption,
-  GameSummary,
-  MediaFormat,
-  PlayStatus,
-} from "../api/types";
-import { useCollectionAddons, useCollections, useFranchiseAddons, useFranchises } from "../hooks/useCatalogBrowse";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import type { GameSummary } from "../api/types";
+import { useCollectionAddons, useFranchiseAddons } from "../hooks/useCatalogBrowse";
+import { useGameListState } from "../hooks/useGameListState";
 import { useGames } from "../hooks/useGames";
-import { usePlatformAddons, usePlatforms } from "../hooks/usePlatforms";
-import { useStorefronts } from "../hooks/useStorefronts";
-import { useTags } from "../hooks/useTags";
+import { useLocalPreference } from "../hooks/useLocalPreference";
+import { usePlatformAddons } from "../hooks/usePlatforms";
+import { useSessionState } from "../hooks/useSessionState";
 import { gameIdentifier } from "../utils/identifiers";
-import type { PlatformScope } from "../utils/platformScope";
 import { matchesOwnership } from "../utils/ownershipFilter";
-import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
-import CatalogResyncButton from "./CatalogResyncButton";
+import type { PlatformScope } from "../utils/platformScope";
+import { useCatalogResync } from "./CatalogResync";
+import { Section } from "./Detail";
 import GameCard from "./GameCard";
-import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
-import VirtualGameGrid from "./VirtualGameGrid";
-import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
+import type { OwnershipStatus } from "./GameFilterDialog";
+import { useGameListControls, type ListToggle } from "./GameListControls";
+import { CARD_SIZE_DEFAULT, GameCoverGrid, GameOverviewRows, GameTable, type GameListView } from "./GameListViews";
 import Page from "./Page";
-
-const MIN_SEARCH_LENGTH = 3;
 
 function filterByOwnershipAndMissing(
   list: GameSummary[] | undefined,
@@ -41,9 +30,7 @@ function filterByOwnershipAndMissing(
 ): GameSummary[] {
   let result = list ?? [];
   if (ownershipStatuses.length > 0) {
-    result = result.filter((game) =>
-      matchesOwnership(game, ownershipStatuses, ownershipExclude, ownershipMatchAll)
-    );
+    result = result.filter((game) => matchesOwnership(game, ownershipStatuses, ownershipExclude, ownershipMatchAll));
   }
   if (!showMissing) {
     result = result.filter((game) => game.owned || game.wishlisted);
@@ -66,11 +53,13 @@ interface CatalogBrowseGridProps {
   platformScope?: PlatformScope;
 }
 
-// A sibling of GameList.tsx — same filter-state shape, same GameListToolbar, reused as-is —
-// but scoped to one Collection/Series/Platform (via requiredCollectionId/requiredFranchiseId/
-// requiredPlatformId on the Games fetch, and the dedicated .../addons endpoints for the Addons
-// section) instead of the whole library, and with no bulk-selection support (this page has no
-// bulk actions).
+const NO_SELECTION: ReadonlySet<number> = new Set();
+
+// A sibling of GameList.tsx — same filters, toolbar and views (see GameListControls) — but scoped
+// to one Collection/Series/Platform (via requiredCollectionId/requiredFranchiseId/
+// requiredPlatformId on the Games fetch, and the dedicated .../addons endpoints for the Add-ons
+// section) instead of the whole library, and with no bulk selection (this page has no bulk
+// actions).
 const CatalogBrowseGrid = ({
   kind,
   kindLabel,
@@ -89,101 +78,38 @@ const CatalogBrowseGrid = ({
   // carry over to another (see hooks/useSessionState.ts).
   const scopeKey = platformScope?.format ? `.${platformScope.format}.${platformScope.storefront ?? ""}` : "";
   const stateKey = `${kind}.${slug ?? ""}${scopeKey}`;
-
-  const [searchKeyword, setSearchKeyword] = useSessionState(`${stateKey}.searchKeyword`, "");
-  const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>(`${stateKey}.ownershipStatuses`, []);
-  const [ownershipExclude, setOwnershipExclude] = useSessionState(`${stateKey}.ownershipExclude`, false);
-  const [platformIds, setPlatformIds] = useSessionState<number[]>(`${stateKey}.platformIds`, []);
-  const [platformExclude, setPlatformExclude] = useSessionState(`${stateKey}.platformExclude`, false);
-  const [tagIds, setTagIds] = useSessionState<number[]>(`${stateKey}.tagIds`, []);
-  const [tagExclude, setTagExclude] = useSessionState(`${stateKey}.tagExclude`, false);
-  const [collectionIds, setCollectionIds] = useSessionState<number[]>(`${stateKey}.collectionIds`, []);
-  const [collectionExclude, setCollectionExclude] = useSessionState(`${stateKey}.collectionExclude`, false);
-  const [franchiseIds, setFranchiseIds] = useSessionState<number[]>(`${stateKey}.franchiseIds`, []);
-  const [franchiseExclude, setFranchiseExclude] = useSessionState(`${stateKey}.franchiseExclude`, false);
-  const [gameTypes, setGameTypes] = useSessionState<GameCategory[]>(`${stateKey}.gameTypes`, []);
-  const [gameTypeExclude, setGameTypeExclude] = useSessionState(`${stateKey}.gameTypeExclude`, false);
-  const [formats, setFormats] = useSessionState<MediaFormat[]>(`${stateKey}.formats`, []);
-  const [formatExclude, setFormatExclude] = useSessionState(`${stateKey}.formatExclude`, false);
-  const [storefronts, setStorefronts] = useSessionState<string[]>(`${stateKey}.storefronts`, []);
-  const [storefrontExclude, setStorefrontExclude] = useSessionState(`${stateKey}.storefrontExclude`, false);
-  const [playStatuses, setPlayStatuses] = useSessionState<PlayStatus[]>(`${stateKey}.playStatuses`, []);
-  const [playStatusExclude, setPlayStatusExclude] = useSessionState(`${stateKey}.playStatusExclude`, false);
-  const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>(`${stateKey}.matchAll`, {});
-  const [steelbookOnly, setSteelbookOnly] = useSessionState(`${stateKey}.steelbookOnly`, false);
-  const [sort, setSort] = useSessionState<GameSortOption>(`${stateKey}.sort`, "name_asc");
+  const state = useGameListState(stateKey);
   // Off by default (unlike the Games page's default-on) — preserves the pre-existing "only
-  // games I've added" view; a Resync (see CatalogResyncButton) is what starts populating
-  // games that are neither owned nor wishlisted here at all.
+  // games I've added" view; a Resync is what starts populating games that are neither owned
+  // nor wishlisted here at all.
   const [showMissing, setShowMissing] = useSessionState(`${stateKey}.showMissing`, false);
   const [includeAddons, setIncludeAddons] = useSessionState(`${stateKey}.includeAddons`, false);
+  const [view, setView] = useLocalPreference<GameListView>("catalog.view", "covers");
+  const [cardSize, setCardSize] = useLocalPreference("catalog.cardSize", CARD_SIZE_DEFAULT);
 
-  const trimmedKeyword = searchKeyword.trim();
-  const debouncedKeyword = useDebouncedValue(trimmedKeyword, 500);
-  const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
+  const toggles: ListToggle[] = [
+    ...(!isPlatform
+      ? [{ key: "missing", label: t("games.listToolbar.showMissingLabel"), checked: showMissing, onChange: setShowMissing }]
+      : []),
+    { key: "addons", label: t("catalog.browseGrid.includeAddonsLabel"), checked: includeAddons, onChange: setIncludeAddons },
+  ];
+  const controls = useGameListControls(state, {
+    view,
+    setView,
+    cardSize,
+    setCardSize,
+    hidePlatformsField: isPlatform,
+    hideCollectionsField: isCollection,
+    hideFranchisesField: isSeries,
+    toggles,
+  });
+  const resync = useCatalogResync({
+    kind: isCollection ? "collection" : "franchise",
+    slug: resyncLabel && !isPlatform ? slug : undefined,
+    label: resyncLabel ?? "",
+  });
 
-  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
-  const { data: tags = [], isSuccess: tagsLoaded } = useTags();
-  const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
-  const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
-  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
-  usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
-  usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
-  usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
-  const { data: realStorefronts = [] } = useStorefronts();
-  const storefrontOptions = useMemo(
-    () => Array.from(new Set([...ALL_KNOWN_STOREFRONTS, ...realStorefronts])).sort(),
-    [realStorefronts]
-  );
-
-  const sharedFilters = useMemo(
-    () => ({
-      search: isSearchActive ? debouncedKeyword : undefined,
-      platformIds: platformIds.length > 0 ? platformIds : undefined,
-      platformExclude,
-      tagIds: tagIds.length > 0 ? tagIds : undefined,
-      tagExclude,
-      collectionIds: collectionIds.length > 0 ? collectionIds : undefined,
-      collectionExclude,
-      franchiseIds: franchiseIds.length > 0 ? franchiseIds : undefined,
-      franchiseExclude,
-      categories: gameTypes.length > 0 ? gameTypes : undefined,
-      categoryExclude: gameTypeExclude,
-      formats: formats.length > 0 ? formats : undefined,
-      formatExclude,
-      storefronts: storefronts.length > 0 ? storefronts : undefined,
-      storefrontExclude,
-      playStatuses: playStatuses.length > 0 ? playStatuses : undefined,
-      playStatusExclude,
-      matchAll,
-      steelbookOnly,
-      sort,
-    }),
-    [
-      isSearchActive,
-      debouncedKeyword,
-      platformIds,
-      platformExclude,
-      tagIds,
-      tagExclude,
-      collectionIds,
-      collectionExclude,
-      franchiseIds,
-      franchiseExclude,
-      gameTypes,
-      gameTypeExclude,
-      formats,
-      formatExclude,
-      storefronts,
-      storefrontExclude,
-      playStatuses,
-      playStatusExclude,
-      matchAll,
-      steelbookOnly,
-      sort,
-    ]
-  );
-
+  const sharedFilters = state.apiFilters;
   const gamesFilters = useMemo(
     () => ({
       ...sharedFilters,
@@ -221,153 +147,69 @@ const CatalogBrowseGrid = ({
     includeAddons && isPlatform
   );
   const addons = isCollection ? collectionAddons : isSeries ? franchiseAddons : platformAddons;
-  const isAddonsLoading = isCollection
-    ? isCollectionAddonsLoading
-    : isSeries
-      ? isFranchiseAddonsLoading
-      : isPlatformAddonsLoading;
+  const isAddonsLoading = isCollection ? isCollectionAddonsLoading : isSeries ? isFranchiseAddonsLoading : isPlatformAddonsLoading;
 
+  const { statuses, exclude, matchAll } = state.ownership;
   const visibleGames = useMemo(
-    () => filterByOwnershipAndMissing(games, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing),
-    [games, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing]
+    () => filterByOwnershipAndMissing(games, statuses, exclude, matchAll, showMissing),
+    [games, statuses, exclude, matchAll, showMissing]
   );
   const visibleAddons = useMemo(
-    () => filterByOwnershipAndMissing(addons, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing),
-    [addons, ownershipStatuses, ownershipExclude, matchAll.ownership, showMissing]
+    () => filterByOwnershipAndMissing(addons, statuses, exclude, matchAll, showMissing),
+    [addons, statuses, exclude, matchAll, showMissing]
   );
 
   const handleGameClick = (game: GameSummary) => navigate(`/game/${gameIdentifier(game)}`);
 
+  const empty = (message: string) => <Paper sx={{ p: 3, textAlign: "center" }}>{message}</Paper>;
+  const renderList = (list: GameSummary[], context: "list" | "addon") => {
+    const rows = { games: list, onOpen: handleGameClick, selecting: false, selectedIds: NO_SELECTION, onToggleSelect: () => {} };
+    if (view === "table") return <GameTable {...rows} />;
+    if (view === "overview") return <GameOverviewRows {...rows} />;
+    return (
+      <GameCoverGrid
+        games={list}
+        cardSize={cardSize}
+        showRail={context === "list" && state.sort === "name_asc"}
+        renderCard={(game) => <GameCard game={game} context={context} contextFunction={() => handleGameClick(game)} />}
+      />
+    );
+  };
+  const gamesEmpty = t("catalog.browseGrid.emptyMessage", { kind: kindLabel.toLowerCase() });
+
   return (
     <Page
-      // Right of the breadcrumbs rather than in the toolbar: it carries its own progress bar
-      // and result alerts under the button.
-      actions={
-        slug && resyncLabel && !isPlatform ? (
-          <CatalogResyncButton kind={isCollection ? "collection" : "franchise"} slug={slug} label={resyncLabel} />
-        ) : undefined
-      }
+      meta={games ? t("games.listView.gameCount", { count: visibleGames.length }) : undefined}
+      toolbar={resync.button ?? undefined}
+      toolbarEnd={controls.toolbarEnd}
+      actions={controls.searchField}
     >
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {isPlatform ? t("catalog.browseGrid.platformNotice") : t("catalog.browseGrid.importedOnlyNotice")}
       </Typography>
-      {entityId ? (
-        <Box sx={{ mb: 3 }}>
-          <GameListToolbar
-            searchKeyword={searchKeyword}
-            onSearchKeywordChange={setSearchKeyword}
-            ownershipStatuses={ownershipStatuses}
-            onOwnershipStatusesChange={setOwnershipStatuses}
-            ownershipExclude={ownershipExclude}
-            onOwnershipExcludeChange={setOwnershipExclude}
-            platformOptions={platforms}
-            hidePlatformsField={isPlatform}
-            platformIds={platformIds}
-            onPlatformIdsChange={setPlatformIds}
-            platformExclude={platformExclude}
-            onPlatformExcludeChange={setPlatformExclude}
-            tagOptions={tags}
-            tagIds={tagIds}
-            onTagIdsChange={setTagIds}
-            tagExclude={tagExclude}
-            onTagExcludeChange={setTagExclude}
-            collectionOptions={collections}
-            collectionIds={collectionIds}
-            onCollectionIdsChange={setCollectionIds}
-            collectionExclude={collectionExclude}
-            onCollectionExcludeChange={setCollectionExclude}
-            hideCollectionsField={isCollection}
-            franchiseOptions={franchises}
-            franchiseIds={franchiseIds}
-            onFranchiseIdsChange={setFranchiseIds}
-            franchiseExclude={franchiseExclude}
-            onFranchiseExcludeChange={setFranchiseExclude}
-            hideFranchisesField={isSeries}
-            gameTypes={gameTypes}
-            onGameTypesChange={setGameTypes}
-            gameTypeExclude={gameTypeExclude}
-            onGameTypeExcludeChange={setGameTypeExclude}
-            formats={formats}
-            onFormatsChange={setFormats}
-            formatExclude={formatExclude}
-            onFormatExcludeChange={setFormatExclude}
-            storefrontOptions={storefrontOptions}
-            storefronts={storefronts}
-            onStorefrontsChange={setStorefronts}
-            storefrontExclude={storefrontExclude}
-            onStorefrontExcludeChange={setStorefrontExclude}
-            steelbookOnly={steelbookOnly}
-            onSteelbookOnlyChange={setSteelbookOnly}
-            sort={sort}
-            onSortChange={setSort}
-            playStatuses={playStatuses}
-            onPlayStatusesChange={setPlayStatuses}
-            playStatusExclude={playStatusExclude}
-            onPlayStatusExcludeChange={setPlayStatusExclude}
-            matchAll={matchAll}
-            onMatchAllChange={setMatchAll}
-            // Every game on a Platform page is already one of your copies.
-            showMissing={isPlatform ? undefined : showMissing}
-            onShowMissingChange={isPlatform ? undefined : setShowMissing}
-            includeAddons={includeAddons}
-            onIncludeAddonsChange={setIncludeAddons}
-          />
-        </Box>
-      ) : null}
+      {resync.status}
+      {controls.chipRow}
       {isLoading || isGamesLoading ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
+        empty(t("common.loading"))
       ) : includeAddons ? (
-        <Stack spacing={4}>
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              {t("catalog.browseGrid.gamesSectionTitle")}
-            </Typography>
-            {visibleGames.length === 0 ? (
-              <Paper sx={{ p: 3, textAlign: "center" }}>
-                {t("catalog.browseGrid.emptyMessage", { kind: kindLabel.toLowerCase() })}
-              </Paper>
-            ) : (
-              <VirtualGameGrid
-                items={visibleGames}
-                getKey={(game) => game.id}
-                renderItem={(game) => (
-                  <GameCard game={game} context="list" contextFunction={() => handleGameClick(game)} />
-                )}
-              />
-            )}
-          </Box>
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              {t("catalog.browseGrid.addonsSectionTitle")}
-            </Typography>
-            {isAddonsLoading ? (
-              <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
-            ) : visibleAddons.length === 0 ? (
-              <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.listToolbar.noSearchMatches")}</Paper>
-            ) : (
-              <VirtualGameGrid
-                items={visibleAddons}
-                getKey={(addon) => addon.id}
-                renderItem={(addon) => (
-                  <GameCard game={addon} context="addon" contextFunction={() => handleGameClick(addon)} />
-                )}
-              />
-            )}
-          </Box>
-        </Stack>
+        <>
+          <Section id="games" title={t("catalog.browseGrid.gamesSectionTitle")}>
+            {visibleGames.length === 0 ? empty(gamesEmpty) : renderList(visibleGames, "list")}
+          </Section>
+          <Section id="addons" title={t("catalog.browseGrid.addonsSectionTitle")}>
+            {isAddonsLoading
+              ? empty(t("common.loading"))
+              : visibleAddons.length === 0
+                ? empty(t("games.listToolbar.noSearchMatches"))
+                : renderList(visibleAddons, "addon")}
+          </Section>
+        </>
       ) : visibleGames.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>
-          {t("catalog.browseGrid.emptyMessage", { kind: kindLabel.toLowerCase() })}
-        </Paper>
+        empty(gamesEmpty)
       ) : (
-        <VirtualGameGrid
-          items={visibleGames}
-          getKey={(game) => game.id}
-          renderItem={(game) => (
-            <GameCard game={game} context="list" contextFunction={() => handleGameClick(game)} />
-          )}
-        />
+        renderList(visibleGames, "list")
       )}
+      {controls.dialogs}
     </Page>
   );
 };

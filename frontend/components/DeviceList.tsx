@@ -1,87 +1,65 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDeviceList } from "../hooks/useDevice";
-import { useDeviceTypes, useHardwarePlatforms, useManufacturers } from "../hooks/useHardwareLookups";
+import type { HardwareKindFilters, HardwareStatusFilter } from "../hooks/useHardwareListState";
 import { hardwareIdentifier } from "../utils/identifiers";
-import HardwareCard from "./HardwareCard";
-import HardwareListToolbar, { type HardwareSort, type HardwareStatusFilter } from "./HardwareListToolbar";
-import VirtualGameGrid from "./VirtualGameGrid";
+import { HardwareListSection, type HardwareListView, type HardwareRow } from "./HardwareListViews";
 
 interface DeviceListProps {
   searchKeyword: string;
   status: HardwareStatusFilter;
+  filters: HardwareKindFilters;
+  view: HardwareListView;
+  cardSize: number;
 }
 
-const DeviceList = ({ searchKeyword, status }: DeviceListProps) => {
+const DeviceList = ({ searchKeyword, status, filters, view, cardSize }: DeviceListProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [sort, setSort] = useState<HardwareSort>("name");
-  const [manufacturerIds, setManufacturerIds] = useState<number[]>([]);
-  const [deviceTypeIds, setDeviceTypeIds] = useState<number[]>([]);
-  const [hardwarePlatformIds, setHardwarePlatformIds] = useState<number[]>([]);
-
-  const { data: manufacturers } = useManufacturers();
-  const { data: deviceTypes } = useDeviceTypes();
-  const { data: hardwarePlatforms } = useHardwarePlatforms();
+  const { manufacturerIds, typeIds, platformIds } = filters;
 
   const { data: devices, isLoading } = useDeviceList({
     search: searchKeyword || undefined,
     manufacturerIds: manufacturerIds.length > 0 ? manufacturerIds : undefined,
-    deviceTypeIds: deviceTypeIds.length > 0 ? deviceTypeIds : undefined,
-    hardwarePlatformIds: hardwarePlatformIds.length > 0 ? hardwarePlatformIds : undefined,
+    deviceTypeIds: typeIds.length > 0 ? typeIds : undefined,
+    hardwarePlatformIds: platformIds.length > 0 ? platformIds : undefined,
     status: status === "all" ? undefined : status,
   });
 
   // Devices have no release-date field of their own to sort by (it lives on the linked
-  // HardwareReferenceEntry instead) — "Release date" in the shared toolbar is a no-op here.
-  const sortedDevices = useMemo(() => {
-    if (!devices) return [];
-    const items = [...devices];
-    items.sort((a, b) => a.officialName.localeCompare(b.officialName));
-    return items;
-  }, [devices]);
+  // HardwareReferenceEntry instead) — the page's "Release date" sort is a no-op here.
+  const rows = useMemo(
+    () =>
+      devices
+        ? [...devices]
+            .sort((a, b) => a.officialName.localeCompare(b.officialName))
+            .map(
+              (item): HardwareRow => ({
+                id: item.id,
+                name: item.officialName,
+                manufacturer: item.manufacturerName,
+                detail: item.hardwarePlatformName,
+                imageUrl: item.imageUrl,
+                owned: item.owned,
+                wishlisted: item.wishlisted,
+                ownedQuantity: item.ownedQuantity,
+                href: `/hardware/device/${hardwareIdentifier(item.officialName, item.uuid)}`,
+              })
+            )
+        : undefined,
+    [devices]
+  );
 
   return (
-    <Stack spacing={2}>
-      <HardwareListToolbar
-        sort={sort}
-        onSortChange={setSort}
-        manufacturerOptions={manufacturers ?? []}
-        manufacturerIds={manufacturerIds}
-        onManufacturerIdsChange={setManufacturerIds}
-        typeLabel={t("hardware.deviceList.typeLabel")}
-        typeOptions={deviceTypes ?? []}
-        typeIds={deviceTypeIds}
-        onTypeIdsChange={setDeviceTypeIds}
-        platformOptions={hardwarePlatforms ?? []}
-        platformIds={hardwarePlatformIds}
-        onPlatformIdsChange={setHardwarePlatformIds}
-      />
-      {isLoading ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
-      ) : sortedDevices.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>{t("hardware.deviceList.emptyState")}</Paper>
-      ) : (
-        <VirtualGameGrid
-          items={sortedDevices}
-          getKey={(item) => item.id}
-          renderItem={(item) => (
-            <HardwareCard
-              name={item.officialName}
-              subtitle={[item.manufacturerName, item.hardwarePlatformName].filter(Boolean).join(" · ")}
-              imageUrl={item.imageUrl}
-              owned={item.owned}
-              wishlisted={item.wishlisted}
-              ownedQuantity={item.ownedQuantity}
-              onClick={() => navigate(`/hardware/device/${hardwareIdentifier(item.officialName, item.uuid)}`)}
-            />
-          )}
-        />
-      )}
-    </Stack>
+    <HardwareListSection
+      id="devices"
+      title={t("hardware.page.devicesHeading")}
+      rows={rows}
+      isLoading={isLoading}
+      emptyMessage={t("hardware.deviceList.emptyState")}
+      detailLabel={t("hardware.listToolbar.platformLabel")}
+      view={view}
+      cardSize={cardSize}
+    />
   );
 };
 
