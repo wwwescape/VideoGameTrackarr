@@ -29,7 +29,7 @@ import { CONDITION_LABELS, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import { useCanonicalAddress, useDetailBack, editFromDetail } from "../utils/navState";
-import { DetailColumns, Facts, Panel, Pill, Section } from "./Detail";
+import { DetailColumns, Facts, Pill, Section } from "./Detail";
 import { HardwareHero, LinkedHardware } from "./HardwareDetailParts";
 import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
@@ -135,7 +135,7 @@ const AccessoryDetails = () => {
                   {t("hardware.detailsShared.statusOwned")}
                 </Pill>
               ) : null}
-              {accessory.wishlisted ? <Pill icon={<FavoriteIcon />}>{t("hardware.detailsShared.statusWishlist")}</Pill> : null}
+              {accessory.wishlisted ? <Pill tone="wishlist" icon={<FavoriteIcon />}>{t("hardware.detailsShared.statusWishlist")}</Pill> : null}
               {primaryOwnership?.condition ? <Pill>{CONDITION_LABELS[primaryOwnership.condition]}</Pill> : null}
               {accessory.ratingBoard ? <Pill>{RATING_BOARD_LABELS[accessory.ratingBoard]}</Pill> : null}
               {isCustom ? (
@@ -218,30 +218,18 @@ const AccessoryDetails = () => {
         }
         side={
           <>
-            <Section id="tags" title={t("tags.title")}>
-              <Panel>
-                <TagsSection
-                  tags={accessory.tags}
-                  onAttach={(tagId) => attachTag.mutateAsync(tagId)}
-                  onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-                  subheader={t("hardware.detailsShared.tagsSubheader")}
-                  inSection
-                />
-              </Panel>
-            </Section>
-            <Section id="notes" title={t("notes.title")}>
-              <Panel>
-                <NotesSection
-                  notes={accessoryNotes}
-                  isCreating={createNote.isPending}
-                  subheader={t("hardware.detailsShared.notesSubheader")}
-                  onCreate={(body) => createNote.mutateAsync(body)}
-                  onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-                  onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-                  inSection
-                />
-              </Panel>
-            </Section>
+            <TagsSection
+              tags={accessory.tags}
+              onAttach={(tagId) => attachTag.mutateAsync(tagId)}
+              onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+            />
+            <NotesSection
+              notes={accessoryNotes}
+              isCreating={createNote.isPending}
+              onCreate={(body) => createNote.mutateAsync(body)}
+              onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+              onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+            />
           </>
         }
       />

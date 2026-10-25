@@ -1,27 +1,28 @@
-import Autocomplete, { type AutocompleteChangeDetails, type AutocompleteChangeReason } from "@mui/material/Autocomplete";
-import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import Autocomplete, {
+  type AutocompleteChangeDetails,
+  type AutocompleteChangeReason,
+} from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { Tag } from "../api/types";
 import { useCreateTag, useTags } from "../hooks/useTags";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { Section, SectionAction } from "./Detail";
 import TagChip from "./TagChip";
-import { SectionNote } from "./Detail";
 
 interface TagsSectionProps {
   tags: Tag[];
   onAttach: (tagId: number) => Promise<unknown>;
   onDetach: (tagId: number) => Promise<unknown>;
-  subheader?: string;
-  // Inside a detail page's Section, which titles it: only the explanation line is shown.
-  inSection?: boolean;
 }
 
+// A detail page's Tags section: the item's tags as chips in one field that also adds them
+// (pick one, or type a new name to create it), with Manage opening the Tag Manager.
 // Entity-agnostic — the parent owns how attach/detach are scoped (to a game, a device, ...).
 // Tag creation isn't entity-specific, so this still calls useCreateTag() directly.
-const TagsSection = ({ tags, onAttach, onDetach, subheader, inSection = false }: TagsSectionProps) => {
+const TagsSection = ({ tags, onAttach, onDetach }: TagsSectionProps) => {
   const { t } = useTranslation();
   const { data: allTags } = useTags();
   const createTag = useCreateTag();
@@ -78,41 +79,40 @@ const TagsSection = ({ tags, onAttach, onDetach, subheader, inSection = false }:
   };
 
   return (
-    <>
-      {inSection ? (
-        <SectionNote>{subheader ?? t("tags.defaultSubheader")}</SectionNote>
-      ) : (
-        <CardHeader title={t("tags.title")} subheader={subheader ?? t("tags.defaultSubheader")} />
-      )}
-      <CardContent>
-        <Autocomplete
-          multiple
-          freeSolo
-          disableClearable
-          disabled={createTag.isPending}
-          options={options}
-          value={tags}
-          getOptionLabel={(option) => (typeof option === "string" ? option : option.name)}
-          isOptionEqualToValue={(option, value) => option.id === (value as Tag).id}
-          onChange={handleChange}
-          renderValue={(value, getItemProps) =>
-            value.map((option, index) => {
-              if (typeof option === "string") return null;
-              const { key, ...itemProps } = getItemProps({ index });
-              return <TagChip key={key} tag={option} {...itemProps} />;
-            })
-          }
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={t("tags.addLabel")}
-              placeholder={tags.length ? undefined : t("tags.searchPlaceholder")}
-            />
-          )}
-          sx={{ maxWidth: 480 }}
-        />
-      </CardContent>
-    </>
+    <Section
+      id="tags"
+      title={t("tags.title")}
+      action={
+        <SectionAction icon={<EditOutlinedIcon />} label={t("tags.manage")} to="/settings/tags" />
+      }
+    >
+      <Autocomplete
+        multiple
+        freeSolo
+        disableClearable
+        size="small"
+        disabled={createTag.isPending}
+        options={options}
+        value={tags}
+        getOptionLabel={(option) => (typeof option === "string" ? option : option.name)}
+        isOptionEqualToValue={(option, value) => option.id === (value as Tag).id}
+        onChange={handleChange}
+        renderValue={(value, getItemProps) =>
+          value.map((option, index) => {
+            if (typeof option === "string") return null;
+            const { key, ...itemProps } = getItemProps({ index });
+            return <TagChip key={key} tag={option} {...itemProps} />;
+          })
+        }
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder={tags.length ? t("tags.addMorePlaceholder") : t("tags.searchPlaceholder")}
+            slotProps={{ ...params.slotProps, htmlInput: { ...params.slotProps.htmlInput, "aria-label": t("tags.addLabel") } }}
+          />
+        )}
+      />
+    </Section>
   );
 };
 

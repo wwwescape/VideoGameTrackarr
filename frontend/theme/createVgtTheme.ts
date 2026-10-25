@@ -140,6 +140,9 @@ export function createVgtTheme(mode: ColorMode, contrast: ContrastLevel, accent:
     components: {
       MuiCssBaseline: {
         styleOverrides: {
+          // Native scrollbars, form controls and the like follow the mode, as in the mockups,
+          // instead of staying light on dark pages.
+          html: { colorScheme: mode },
           body: { backgroundColor: tokens.background },
           // One consistent, visible focus ring for keyboard users. :focus-visible (not
           // :focus) so it only shows for keyboard/assistive-tech navigation.

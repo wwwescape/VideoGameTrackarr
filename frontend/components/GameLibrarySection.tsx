@@ -1,14 +1,17 @@
 import { useState } from "react";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
-import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -35,29 +38,9 @@ import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
-import EnhancedTable, { type HeadCell } from "./EnhancedTable";
 import LibraryItemDialog, { type LibraryItemFormValues, type RomChanges } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
-import { SectionNote } from "./Detail";
-
-// Shared across the Owned and Wishlist tables below so their Platform/Format & Storefront/
-// Edition/Steelbook/action columns line up pixel-for-pixel — the two tables are now fully
-// identical in column set/widths, not just "mostly." There's deliberately no separate On
-// Sale column any more: it used to be a whole extra fixed-width column just for Wishlist,
-// which made Wishlist wider than Owned and was the direct cause of a real overflow bug (a
-// minWidth wide enough for Wishlist's extra column exceeded the real card width). Folding
-// the on-sale chip into the Platform cell itself (see renderPlatformCell below) removes that
-// asymmetry entirely instead of just budgeting tighter around it.
-//
-// platformName deliberately does NOT use the shared PLATFORM_COLUMN_WIDTH constant (unlike
-// every other EnhancedTable-based game table) — this column now also has to make room for
-// the on-sale chip overlay, which no other table needs.
-const COLUMN_WIDTHS = {
-  platformName: 200,
-  formatStorefront: 170,
-  edition: 110,
-  steelbook: 80,
-} as const;
+import { EmptyLine, ListRow, Panel, Pill, PlatformBadge, RowAction, Section, SectionAction } from "./Detail";
 
 interface GameLibrarySectionProps {
   gameId: number;
@@ -65,8 +48,6 @@ interface GameLibrarySectionProps {
   platforms: PlatformResponse[] | undefined;
   regions: RegionResponse[] | undefined;
   gameCategory?: GameCategory | null;
-  // Inside a detail page's Section, which titles it: only the explanation line is shown.
-  inSection?: boolean;
 }
 
 const GameLibrarySection = ({
@@ -75,7 +56,6 @@ const GameLibrarySection = ({
   platforms,
   regions,
   gameCategory,
-  inSection = false,
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
   const addLibraryItem = useAddLibraryItem(gameId);
@@ -94,6 +74,7 @@ const GameLibrarySection = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogItem, setDialogItem] = useState<LibraryItem | null>(null);
   const [dialogStatus, setDialogStatus] = useState<LibraryStatus>("owned");
+  const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
 
   const formatLabels: Record<MediaFormat, string> = {
     physical: t("games.library.formatPhysical"),
@@ -104,110 +85,32 @@ const GameLibrarySection = ({
     other: t("games.library.formatOther"),
   };
 
-  const commonHeadCells: HeadCell[] = [
-    {
-      id: "platformName",
-      numeric: false,
-      disablePadding: false,
-      label: t("games.library.platformColumn"),
-      disableHeader: false,
-      width: COLUMN_WIDTHS.platformName,
-    },
-    {
-      id: "formatStorefront",
-      numeric: false,
-      disablePadding: false,
-      label: t("games.library.formatStorefrontColumn"),
-      disableHeader: false,
-      width: COLUMN_WIDTHS.formatStorefront,
-    },
-    {
-      id: "edition",
-      numeric: false,
-      disablePadding: false,
-      label: t("games.library.editionColumn"),
-      disableHeader: false,
-      width: COLUMN_WIDTHS.edition,
-    },
-    {
-      id: "steelbook",
-      numeric: false,
-      disablePadding: false,
-      label: t("games.library.steelbookColumn"),
-      disableHeader: false,
-      width: COLUMN_WIDTHS.steelbook,
-    },
-  ];
-
-  // One combined column for Move/Edit/Delete rather than three separate ones — always the
-  // last column, so it's the one EnhancedTable.tsx leaves unwidthed to soak up the table's
-  // remaining space and land flush against the toolbar's Add button; keeping the icons
-  // inside a single cell (spaced via a Stack) is what keeps them clustered neatly together
-  // as that cell grows, instead of each icon staying pinned to its own fixed-width slot.
-  const actionsHeadCell: HeadCell = {
-    id: "actions",
-    numeric: false,
-    disablePadding: true,
-    label: t("common.actions"),
-    disableHeader: true,
-  };
-
-  // Owned and Wishlist now share the exact same column set — see the COLUMN_WIDTHS comment
-  // above for why the on-sale chip no longer gets its own dedicated column.
-  const headCells: HeadCell[] = [...commonHeadCells, actionsHeadCell];
-
   // "collection"/"wishlist" phrases used inside toast/dialog sentences below.
   const statusPhrase: Record<LibraryStatus, string> = {
     owned: t("games.library.collectionPhrase"),
     wishlist: t("games.library.wishlistPhrase"),
   };
 
-  const renderSaleChip = (item: LibraryItem) => {
-    if (!item.isOnSale) return null;
+  // A wishlisted copy that's on sale: its own green line under the copy's details, with the
+  // price, shop and discount spelled out rather than hidden in a tooltip.
+  const renderSaleLine = (item: LibraryItem) => {
+    if (item.status !== "wishlist" || !item.isOnSale) return null;
     return (
-      <Tooltip
-        title={t("insights.onSale.currentPriceLabel", {
+      <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "vgt.owned", fontWeight: 600 }}>
+        <SellOutlinedIcon sx={{ fontSize: 15 }} />
+        {t("games.library.onSaleLine", {
           price: formatCurrency(item.salePriceAmount ?? 0, item.salePriceCurrency ?? "USD"),
           shop: item.saleShopName ?? t("common.unknown"),
           cut: item.saleCut ?? 0,
         })}
-      >
-        <Chip size="small" color="success" label={t("games.card.onSaleLabel")} />
-      </Tooltip>
-    );
-  };
-
-  // Wishlist-only (an owned copy has no use for an "on sale" indicator — see renderSaleChip)
-  // — right-aligned over the Platform cell rather than its own column, so a discounted row
-  // doesn't need any more width than every other row. The platform name stays in place at
-  // reduced opacity behind the chip instead of disappearing, so the platform is still
-  // readable at a glance even when the chip visually overlaps it.
-  const renderPlatformCell = (item: LibraryItem) => {
-    const platformLabel = item.platformName ?? "-";
-    const chip = item.status === "wishlist" ? renderSaleChip(item) : null;
-    if (!chip) return platformLabel;
-    return (
-      <Box sx={{ position: "relative", display: "flex", alignItems: "center", minHeight: 24 }}>
-        <Box
-          component="span"
-          sx={{ opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-        >
-          {platformLabel}
-        </Box>
-        <Box sx={{ position: "absolute", right: 0, display: "flex", alignItems: "center" }}>
-          {chip}
-        </Box>
       </Box>
     );
   };
 
-  // One combined "Physical" / "Digital: Steam" / "ISO" column rather than two — a storefront
-  // only ever exists alongside a Digital format (see LibraryItemDialog.tsx), so a separate
-  // Storefront column left every non-Digital row's cell blank; folding it into Format via
-  // "Format: Storefront" carries the same information without a mostly-empty column of its
-  // own.
-  const formatStorefrontLabel = (item: LibraryItem): string => {
-    if (!item.format) return "-";
+  // "Physical" / "Digital: Steam" / "ISO" — a storefront only ever exists alongside a Digital
+  // format (see LibraryItemDialog.tsx).
+  const formatStorefrontLabel = (item: LibraryItem): string | null => {
+    if (!item.format) return null;
     const label = formatLabels[item.format];
     return item.format === "digital" && item.digitalStorefront
       ? `${label}: ${item.digitalStorefront}`
@@ -217,39 +120,27 @@ const GameLibrarySection = ({
   const romNames = (item: LibraryItem) =>
     item.roms.map((rom) => (rom.label ? `${rom.label} (${rom.originalFilename})` : rom.originalFilename)).join(", ");
 
-  const renderFormatStorefrontCell = (item: LibraryItem) => {
-    const label = formatStorefrontLabel(item);
-    if (item.roms.length === 0) return label;
+  const renderRomIcon = (item: LibraryItem) => {
+    if (item.roms.length === 0) return null;
     const tooltip = t("games.library.romAttachedTooltip", { count: item.roms.length, name: romNames(item) });
     return (
-      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
-        {label}
-        <Tooltip title={tooltip}>
-          <Box component="span" aria-label={tooltip} sx={{ display: "inline-flex", alignItems: "center" }}>
-            <SportsEsportsIcon fontSize="small" color={item.roms.some((rom) => rom.playable) ? "success" : "disabled"} />
-            {/* Inline rather than a Badge, which the table row would clip. */}
-            {item.roms.length > 1 ? (
-              <Box component="span" sx={{ fontSize: 12, fontWeight: 500, ml: 0.25 }}>
-                ×{item.roms.length}
-              </Box>
-            ) : null}
-          </Box>
-        </Tooltip>
-      </Box>
+      <Tooltip title={tooltip}>
+        <Box component="span" aria-label={tooltip} sx={{ display: "inline-flex", alignItems: "center" }}>
+          <SportsEsportsIcon fontSize="small" color={item.roms.some((rom) => rom.playable) ? "success" : "disabled"} />
+          {item.roms.length > 1 ? (
+            <Box component="span" sx={{ fontSize: 12, fontWeight: 500, ml: 0.25 }}>
+              ×{item.roms.length}
+            </Box>
+          ) : null}
+        </Box>
+      </Tooltip>
     );
   };
 
-  const toTableRow = (item: LibraryItem) => ({
-    id: item.id,
-    platformName: renderPlatformCell(item),
-    formatStorefront: renderFormatStorefrontCell(item),
-    edition: item.edition ?? "-",
-    steelbook: item.steelbook ? (
-      <Tooltip title={t("games.library.steelbookColumn")}>
-        <CheckIcon fontSize="small" color="success" aria-label={t("games.library.steelbookColumn")} />
-      </Tooltip>
-    ) : null,
-  });
+  const platformBadge = (item: LibraryItem) => {
+    const platform = platforms?.find((candidate) => candidate.id === item.platformId);
+    return platform?.abbreviation || item.platformName?.split(" ")[0] || "?";
+  };
 
   const { schedule: scheduleItemRemoval, isPending: isItemPending } =
     useUndoableAction<LibraryItem>({
@@ -259,12 +150,10 @@ const GameLibrarySection = ({
       },
     });
 
-  const owned = (libraryItems ?? [])
-    .filter((item) => item.status === "owned" && !isItemPending(item.id))
-    .map(toTableRow);
-  const wishlisted = (libraryItems ?? [])
-    .filter((item) => item.status === "wishlist" && !isItemPending(item.id))
-    .map(toTableRow);
+  // Owned copies first, then the wishlist, as the two tables used to be.
+  const visibleItems = (libraryItems ?? [])
+    .filter((item) => !isItemPending(item.id))
+    .sort((a, b) => (a.status === b.status ? 0 : a.status === "owned" ? -1 : 1));
 
   const handleAddClick = (status: LibraryStatus) => {
     setDialogStatus(status);
@@ -280,16 +169,9 @@ const GameLibrarySection = ({
     setDialogOpen(true);
   };
 
-  const handleDeleteClick = (selectedIds: number[], status: LibraryStatus) => {
-    const itemsToRemove = (libraryItems ?? []).filter((item) => selectedIds.includes(item.id));
-    if (itemsToRemove.length === 0) return;
-    const { undo } = scheduleItemRemoval(itemsToRemove);
-    const phrase = statusPhrase[status];
-    showUndoToast(
-      t("games.library.removedFromToast", { count: itemsToRemove.length, phrase }),
-      undo,
-      5000
-    );
+  const handleRemove = (item: LibraryItem) => {
+    const { undo } = scheduleItemRemoval([item]);
+    showUndoToast(t("games.library.removedFromToast", { count: 1, phrase: statusPhrase[item.status] }), undo, 5000);
   };
 
   const handleMoveClick = async (rowId: number, currentStatus: LibraryStatus, confirmed = false) => {
@@ -403,34 +285,99 @@ const GameLibrarySection = ({
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      {inSection ? (
-        <SectionNote>{t("games.library.subheader")}</SectionNote>
-      ) : (
-        <CardHeader title={t("games.library.title")} subheader={t("games.library.subheader")} />
-      )}
-      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-        <EnhancedTable
-          rows={owned}
-          headCells={headCells}
-          tableName={t("games.library.collectionTableName")}
-          tableIcon={<CheckCircleIcon color="secondary" />}
-          onAddClick={() => handleAddClick("owned")}
-          onDeleteClick={(ids) => handleDeleteClick(ids, "owned")}
-          onMoveClick={(rowId) => handleMoveClick(rowId, "owned")}
-          moveDirection="down"
-          onEditClick={handleEditClick}
-        />
-        <EnhancedTable
-          rows={wishlisted}
-          headCells={headCells}
-          tableName={t("games.library.wishlistTableName")}
-          tableIcon={<FavoriteIcon color="secondary" />}
-          onAddClick={() => handleAddClick("wishlist")}
-          onDeleteClick={(ids) => handleDeleteClick(ids, "wishlist")}
-          onMoveClick={(rowId) => handleMoveClick(rowId, "wishlist")}
-          moveDirection="up"
-          onEditClick={handleEditClick}
-        />
+      <Section
+        id="library"
+        title={t("games.library.title")}
+        action={
+          <SectionAction
+            icon={<AddIcon />}
+            label={t("games.library.addCopy")}
+            onClick={(event) => setAddMenuAnchor(event.currentTarget)}
+            aria-haspopup="menu"
+          />
+        }
+      >
+        <Menu anchorEl={addMenuAnchor} open={addMenuAnchor !== null} onClose={() => setAddMenuAnchor(null)}>
+          <MenuItem
+            onClick={() => {
+              setAddMenuAnchor(null);
+              handleAddClick("owned");
+            }}
+          >
+            <ListItemIcon>
+              <CheckIcon fontSize="small" />
+            </ListItemIcon>
+            {t("games.library.addToCollection")}
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setAddMenuAnchor(null);
+              handleAddClick("wishlist");
+            }}
+          >
+            <ListItemIcon>
+              <FavoriteIcon fontSize="small" />
+            </ListItemIcon>
+            {t("games.library.addToWishlist")}
+          </MenuItem>
+        </Menu>
+        {visibleItems.length === 0 ? (
+          <EmptyLine>{t("games.library.empty")}</EmptyLine>
+        ) : (
+          <Panel>
+            {visibleItems.map((item) => {
+              const owned = item.status === "owned";
+              // Format, with Steelbook only for a physical copy marked as one.
+              const formatLine = [
+                formatStorefrontLabel(item),
+                item.format === "physical" && item.steelbook ? t("games.library.steelbookColumn") : null,
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <ListRow
+                  key={item.id}
+                  label={item.platformName ?? t("games.about.unknownPlatform")}
+                  onClick={() => handleEditClick(item.id)}
+                  leading={<PlatformBadge>{platformBadge(item)}</PlatformBadge>}
+                  title={item.platformName ?? t("games.about.unknownPlatform")}
+                  subtitle={
+                    <>
+                      {formatLine || item.roms.length ? (
+                        <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                          {formatLine}
+                          {renderRomIcon(item)}
+                        </Box>
+                      ) : null}
+                      {item.edition ? <Box component="span" sx={{ display: "block" }}>{item.edition}</Box> : null}
+                      {renderSaleLine(item)}
+                    </>
+                  }
+                  trailing={
+                    <Pill small tone={owned ? "owned" : "wishlist"} icon={owned ? <CheckIcon /> : <FavoriteIcon />}>
+                      {owned ? t("games.library.ownedChip") : t("games.library.wishlistChip")}
+                    </Pill>
+                  }
+                  actions={
+                    <>
+                      <RowAction
+                        title={owned ? t("table.moveToWishlist") : t("table.moveToCollection")}
+                        icon={owned ? <FavoriteBorderIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
+                        onClick={() => void handleMoveClick(item.id, item.status)}
+                      />
+                      <RowAction
+                        title={t("common.remove")}
+                        icon={<DeleteOutlineOutlinedIcon fontSize="small" />}
+                        onClick={() => handleRemove(item)}
+                      />
+                    </>
+                  }
+                />
+              );
+            })}
+          </Panel>
+        )}
+      </Section>
 
         <LibraryItemDialog
           open={dialogOpen}
@@ -490,7 +437,6 @@ const GameLibrarySection = ({
             if (item) void handleMoveClick(item.id, item.status, true);
           }}
         />
-      </CardContent>
     </>
   );
 };

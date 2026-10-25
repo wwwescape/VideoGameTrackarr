@@ -5,7 +5,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameAboutData } from "../../api/types";
 import { createVgtTheme } from "../../theme/createVgtTheme";
 import { StoreRegionProvider } from "../../theme/StoreRegionProvider";
-import { GameStoreLinks } from "../GameStoreLinks";
+import { useGameStoreLinks } from "../GameStoreLinks";
+
+// The hero renders these as chips; a plain list of links is enough to check the URLs.
+const Links = ({ game }: { game: GameAboutData }) => (
+  <>
+    {useGameStoreLinks(game).map((link) => (
+      <a key={link.key} href={link.href} title={link.title}>
+        {link.label}
+      </a>
+    ))}
+  </>
+);
 
 const game: GameAboutData = {
   name: "Indiana Jones and the Great Circle",
@@ -49,14 +60,14 @@ function renderSection() {
     <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
       <MemoryRouter>
         <StoreRegionProvider>
-          <GameStoreLinks game={game} />
+          <Links game={game} />
         </StoreRegionProvider>
       </MemoryRouter>
     </ThemeProvider>
   );
 }
 
-const linkHref = (alt: string) => screen.getByAltText(alt).closest("a")?.getAttribute("href");
+const linkHref = (title: string) => screen.getByTitle(title).getAttribute("href");
 
 // This test environment (Node 26 + jsdom) has no usable localStorage, so give the provider
 // a small in-memory one.
@@ -92,6 +103,17 @@ describe("GameStoreLinks", () => {
       "https://www.xbox.com/en-IN/games/store/indiana-jones-and-the-great-circle/9N8FQ28Z6QX3"
     );
     expect(linkHref("View on Steam")).toBe("https://store.steampowered.com/app/2677660");
+  });
+
+  it("lists only the links the game has, IGDB first", () => {
+    window.localStorage.setItem("vgt.storeRegion", "off");
+    render(
+      <StoreRegionProvider>
+        <Links game={{ ...game, igdbUrl: "https://www.igdb.com/games/x", xboxStoreUrl: null }} />
+      </StoreRegionProvider>
+    );
+
+    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["IGDB", "Steam", "PlayStation"]);
   });
 
   it("keeps IGDB's links when store links are set not to change", () => {

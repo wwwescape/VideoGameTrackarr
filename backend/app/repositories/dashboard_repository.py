@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Game, GameGenre, Genre, Platform
@@ -118,7 +118,13 @@ def get_stats(db: Session) -> DashboardStatsData:
             _play_status_subquery(Game.id),
             _rating_subquery(Game.id),
         )
-        .where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
+        .where(
+            Game.parent_game_id.is_(None),
+            _is_browsable_game(Game.category),
+            # Not a "Missing" game: one a collection/series resync discovered that isn't in
+            # your library — it was added to the catalog, not by you.
+            or_(~Game.auto_discovered, _owned_exists(Game.id), _wishlisted_exists(Game.id)),
+        )
         .order_by(Game.created_at.desc())
         .limit(RECENT_LIMIT)
     )

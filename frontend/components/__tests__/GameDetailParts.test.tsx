@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import type { GameAboutData } from "../../api/types";
 import { createVgtTheme } from "../../theme/createVgtTheme";
-import { gameBackdrop, GameHero } from "../GameDetailParts";
+import { GameAboutBlock, gameBackdrop, GameHero } from "../GameDetailParts";
 
 const about = (overrides: Partial<GameAboutData> = {}): GameAboutData =>
   ({
@@ -92,5 +92,75 @@ describe("game hero", () => {
     expect(screen.getByText("Custom")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Series: Celeste/ })).not.toBeInTheDocument();
     expect(screen.getByText("Series: Celeste")).toBeInTheDocument();
+  });
+});
+
+describe("game hero links", () => {
+  it("shows IGDB and the store pages as chips on their own row, opening in a new tab", () => {
+    render(
+      <ThemeProvider theme={createVgtTheme("dark", "normal", "#7c4dff")}>
+        <MemoryRouter>
+          <GameHero
+            game={about({ igdbUrl: "https://www.igdb.com/games/celeste", steamStoreUrl: "https://store.steampowered.com/app/504230" })}
+            status={{ coverUrl: null }}
+            crumbs={[]}
+          />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+
+    const igdb = screen.getByRole("link", { name: "IGDB" });
+    expect(igdb).toHaveAttribute("href", "https://www.igdb.com/games/celeste");
+    expect(igdb).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("link", { name: "Steam" })).toHaveAttribute("title", "View on Steam");
+    expect(screen.queryByRole("img", { name: /View on/ })).toBeNull();
+  });
+});
+
+describe("game About", () => {
+  const renderAbout = (game: GameAboutData) =>
+    render(
+      <ThemeProvider theme={createVgtTheme("dark", "normal", "#7c4dff")}>
+        <MemoryRouter>
+          <GameAboutBlock game={game} />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+
+  it("shows the platforms and release dates as cards, without the old facts", () => {
+    renderAbout(
+      about({
+        summary: "Climb the mountain.",
+        companies: [
+          { id: 1, name: "Maddy Makes Games", slug: null, role: "developer", logoUrl: null },
+          { id: 2, name: "Porting Co", slug: null, role: "porting", logoUrl: null },
+        ],
+        platforms: [
+          { id: 6, name: "PC (Microsoft Windows)" },
+          { id: 130, name: "Nintendo Switch" },
+        ] as GameAboutData["platforms"],
+        releaseDates: [
+          { id: 1, platformName: "PC (Microsoft Windows)", human: "Jan 25, 2018", releaseRegion: "worldwide" },
+          { id: 2, platformName: "Nintendo Switch", human: "Jan 25, 2018", releaseRegion: "europe" },
+        ] as GameAboutData["releaseDates"],
+      })
+    );
+
+    expect(screen.getByText("Climb the mountain.")).toBeInTheDocument();
+    const platforms = screen.getByRole("heading", { name: "Platforms" }).parentElement as HTMLElement;
+    expect(platforms).toHaveTextContent("PC (Microsoft Windows)");
+    expect(platforms).toHaveTextContent("Nintendo Switch");
+    const releases = screen.getByRole("heading", { name: "Release dates" }).parentElement as HTMLElement;
+    expect(releases.querySelectorAll("li")).toHaveLength(2);
+    expect(releases).toHaveTextContent("Europe");
+    expect(screen.queryByText("Porting Co")).toBeNull();
+    expect(screen.queryByText("Developed by")).toBeNull();
+  });
+
+  it("leaves out the release dates card when there's only the one the hero shows", () => {
+    renderAbout(about({ releaseDates: [{ id: 1, platformName: "PC", human: "2018", releaseRegion: null }] as GameAboutData["releaseDates"] }));
+
+    expect(screen.queryByRole("heading", { name: "Release dates" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Platforms" })).toBeNull();
   });
 });
