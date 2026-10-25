@@ -239,14 +239,14 @@
         "red": "Rouge",
         "pink": "Rose",
         "violet": "Violet"
-      }
+      },
+      "darkModeHelp": "Enregistré dans ce navigateur.",
+      "highContrastHelp": "Bordures et texte plus marqués pour une meilleure lisibilité. Enregistré dans ce navigateur."
     },
     "language": {
-      "heading": "Langue",
       "label": "Langue"
     },
     "currency": {
-      "heading": "Devise",
       "description": "Utilisée pour afficher le PDSF, le prix d'achat et la valeur de la collection — cela change uniquement la façon dont les montants sont affichés, pas un taux de change ou une conversion en temps réel.",
       "label": "Devise"
     },
@@ -334,7 +334,9 @@
           "name": "Synchroniser les événements",
           "description": "Récupère les événements de l'industrie du jeu vidéo actuellement à venir depuis IGDB et supprime tout événement précédemment synchronisé qui est terminé — alimente la page Événements et la Vue d'ensemble."
         }
-      }
+      },
+      "runHeading": "Exécuter",
+      "runHelp": "Le lancer maintenant, en dehors de sa planification."
     },
     "tagManager": {
       "description": "Supprime une étiquette de façon permanente. Cela la retire de tous les jeux, appareils et accessoires qui la portent — pas seulement d'un seul élément. Pour retirer une étiquette d'un seul élément, utilisez le champ Étiquettes sur la page de cet élément.",
@@ -416,6 +418,9 @@
       "deleteTitle": "Supprimer le fichier BIOS ?",
       "deleteDescription": "{{name}} sera supprimé du serveur. Les jeux qui en ont besoin ne démarreront plus tant que vous ne l'aurez pas renvoyé.",
       "deleteErrorToast": "Impossible de supprimer le fichier BIOS. Veuillez réessayer."
+    },
+    "regional": {
+      "heading": "Régional"
     }
   },
   "auth": {
@@ -537,8 +542,6 @@
       "matchModeAriaLabel": "Correspondre à au moins une ou à toutes les valeurs sélectionnées",
       "matchModeTooltip": "Correspondre à un : un jeu doit avoir au moins une des valeurs sélectionnées. Correspondre à tous : il doit les avoir toutes. Sélectionnez au moins deux valeurs pour changer.",
       "allOption": "Tous",
-      "filterTabLabel": "Filtre",
-      "sortByLabel": "Trier par",
       "sortNameAsc": "Nom (ASC)",
       "sortNameDesc": "Nom (DESC)",
       "sortMostGames": "Plus de jeux",
@@ -1405,15 +1408,13 @@
   "public": {
     "nav": {
       "games": "Jeux",
-      "hardware": "Matériel"
+      "hardware": "Matériel",
+      "label": "Collection partagée"
     },
     "games": {
       "title": "Jeux",
       "searchLabel": "Rechercher des jeux",
       "emptyState": "Aucun jeu trouvé.",
-      "filtersButtonLabel": "Filtrer et trier",
-      "sortTabLabel": "Trier",
-      "noFiltersAvailable": "Aucun filtre n'est encore disponible.",
       "loadError": "Impossible de charger ce jeu. Veuillez réessayer."
     },
     "hardware": {

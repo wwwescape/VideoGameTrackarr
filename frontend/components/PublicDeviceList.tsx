@@ -2,6 +2,7 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { usePublicDevices } from "../hooks/usePublic";
 import HardwareCard from "./HardwareCard";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import VirtualGameGrid from "./VirtualGameGrid";
 
 interface PublicDeviceListProps {
@@ -25,6 +26,7 @@ const PublicDeviceList = ({ token, search }: PublicDeviceListProps) => {
 
   return (
     <VirtualGameGrid
+      minItemWidth={CARD_SIZE_DEFAULT}
       items={devices}
       getKey={(device) => device.id}
       renderItem={(device) => (

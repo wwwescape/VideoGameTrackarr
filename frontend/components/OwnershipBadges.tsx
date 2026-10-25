@@ -29,7 +29,7 @@ const badgeSx = {
   justifyContent: "center",
 } as const;
 
-// Floating badges shared by GameCoverCard and HardwareCard: a heart (wishlisted, top-left)
+// Floating badges shared by GameCard and HardwareCard: a heart (wishlisted, top-left)
 // and a check (owned, top-right). They sit on cover art and product shots, so both use the
 // theme's dark glass in light and dark mode and are told apart by icon and its color.
 const OwnershipBadges = ({ owned, wishlisted }: OwnershipBadgesProps) => {

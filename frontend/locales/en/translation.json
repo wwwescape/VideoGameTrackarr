@@ -239,14 +239,14 @@
         "red": "Red",
         "pink": "Pink",
         "violet": "Violet"
-      }
+      },
+      "darkModeHelp": "Saved in this browser.",
+      "highContrastHelp": "Stronger borders and text for readability. Saved in this browser."
     },
     "language": {
-      "heading": "Language",
       "label": "Language"
     },
     "currency": {
-      "heading": "Currency",
       "description": "Used to label MSRP, purchase price, and collection value — this changes how amounts are displayed, not a live exchange rate or conversion.",
       "label": "Currency"
     },
@@ -334,7 +334,9 @@
           "name": "Sync Events",
           "description": "Fetches currently-upcoming gaming-industry events from IGDB and drops any previously-synced event that has since ended — powers the Events page and Overview teaser."
         }
-      }
+      },
+      "runHeading": "Run",
+      "runHelp": "Start it now, outside its schedule."
     },
     "tagManager": {
       "description": "Permanently delete a tag. This removes it from every game, device, and accessory that has it — not just one item. To remove a tag from a single item instead, use the Tags field on that item's own page.",
@@ -416,6 +418,9 @@
       "deleteTitle": "Delete BIOS file?",
       "deleteDescription": "{{name}} will be deleted from the server. Games that need it won't start until you upload it again.",
       "deleteErrorToast": "Couldn't delete the BIOS file. Please try again."
+    },
+    "regional": {
+      "heading": "Regional"
     }
   },
   "auth": {
@@ -537,8 +542,6 @@
       "matchModeAriaLabel": "Match any or all of the selected values",
       "matchModeTooltip": "Match any: a game needs at least one of the selected values. Match all: it needs every one. Select two or more values to switch.",
       "allOption": "All",
-      "filterTabLabel": "Filter",
-      "sortByLabel": "Sort By",
       "sortNameAsc": "Name (ASC)",
       "sortNameDesc": "Name (DESC)",
       "sortMostGames": "Most games",
@@ -1405,15 +1408,13 @@
   "public": {
     "nav": {
       "games": "Games",
-      "hardware": "Hardware"
+      "hardware": "Hardware",
+      "label": "Shared collection"
     },
     "games": {
       "title": "Games",
       "searchLabel": "Search games",
       "emptyState": "No games found.",
-      "filtersButtonLabel": "Filter & Sort",
-      "sortTabLabel": "Sort",
-      "noFiltersAvailable": "No filters are available yet.",
       "loadError": "Couldn't load this game. Please try again."
     },
     "hardware": {

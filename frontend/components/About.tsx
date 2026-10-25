@@ -32,9 +32,10 @@ const About = () => {
     <Page>
       <Card sx={{ maxWidth: 640 }}>
         <CardContent>
-          <Typography variant="subtitle1" gutterBottom>
-            {t("about.appName")}
-          </Typography>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1 }}>
+            <Box component="img" src="/icon-master.svg" alt="" sx={{ width: 48, height: 48 }} />
+            <Typography variant="subtitle1">{t("about.appName")}</Typography>
+          </Stack>
           {version && (
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary">

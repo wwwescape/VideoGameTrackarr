@@ -34,7 +34,8 @@
   and addons (DLC, expansions, and packs) all come along.
 - **Personal tracking** — progress and play sessions per platform you own a game on, a 0–10
   rating with review, notes, and colored tags (with a Tag Manager and bulk tagging).
-- **Filters & sort** — filter by platform, format, storefront, tag, ownership, game type,
+- **Views, filters & sort** — Covers, Table, or Overview views with an adjustable card size;
+  filter by platform, format, storefront, tag, ownership, play status, game type, source,
   steelbook, collection, or series (each with an Exclude option), and sort by name or release
   date. Pages remember your search, filters, and sort.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega
@@ -49,8 +50,10 @@
   browser, with a self-hosted emulator and saves kept on your server. See
   [docs/emulation.md](docs/emulation.md).
 - **Media viewer** — a lightbox for screenshots and artwork, and a video player for trailers.
-- **Dashboard & insights** — collection stats, game and hardware release calendars, duplicate
-  detection, missing addons, orphaned accessories, and side-by-side game comparison.
+- **Overview & insights** — headline numbers, what you're playing, recent additions, and gaps
+  worth filling on the Overview; breakdowns by play status, platform, genre, and hardware on
+  Insights; plus release calendars, duplicate detection, missing addons, orphaned accessories,
+  and side-by-side game comparison.
 - **Share links** — unlisted, read-only links to your Games or Hardware collection.
 - **Jobs** — scheduled catalog resyncs, Steam import, sale refreshes, and event syncs, with live
   progress.
@@ -58,8 +61,9 @@
   and BIOS files) with an automatic safety snapshot before every restore.
 - **PWA** — installable, works offline for anything you've already viewed, and syncs offline
   edits when you reconnect.
-- **Material 3 design** — light and dark mode, responsive navigation, and virtualized lists for
-  large collections.
+- **Design** — light, dark, and high-contrast modes with your choice of accent color (Material 3
+  color schemes), a sidebar that becomes a drawer on phones, and virtualized lists for large
+  collections.
 - **Languages** — English, Spanish, French, and Portuguese.
 - **Single admin, self-hosted** — no public registration, no multi-tenancy.
 

@@ -1,10 +1,9 @@
-import { Link, useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "./Page";
 
-// Mirrors GamesSubNav.tsx's chip-row pattern — just 2 destinations here, so no need for
-// the full responsive nav rail/drawer/bottom-bar the authenticated app uses.
+// Games and Hardware on the share-link pages, as header tabs.
 const PublicSubNav = () => {
   const { token } = useParams<{ token: string }>();
   const location = useLocation();
@@ -16,20 +15,19 @@ const PublicSubNav = () => {
   ] as const;
 
   return (
-    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
+    <Box component="nav" aria-label={t("public.nav.label")} sx={{ display: "flex", gap: 0.5 }}>
       {items.map((item) => {
         // Prefix match too, so Games stays selected on a game's own page.
-        const isSelected =
-          location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+        const isSelected = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
         return (
-          <Chip
+          <ToolbarButton
             key={item.to}
-            component={Link}
-            to={item.to}
+            icon={null}
             label={t(item.labelKey)}
-            clickable
-            color={isSelected ? "primary" : "default"}
-            variant={isSelected ? "filled" : "outlined"}
+            to={item.to}
+            active={isSelected}
+            aria-current={isSelected ? "page" : undefined}
+            sx={{ height: 34, flexDirection: "row", fontSize: 13 }}
           />
         );
       })}
