@@ -634,10 +634,6 @@
       "count_other": "{{count}} plataformas"
     },
     "about": {
-      "companyRoleDeveloper": "Desarrollado por",
-      "companyRolePublisher": "Publicado por",
-      "companyRolePorting": "Portado por",
-      "companyRoleSupporting": "Trabajo adicional de",
       "regionEurope": "Europa",
       "regionNorthAmerica": "Norteamérica",
       "regionAustralia": "Australia",
@@ -710,11 +706,7 @@
       "formatRom": "ROM",
       "formatAbandonware": "Abandonware",
       "formatOther": "Otro",
-      "platformColumn": "Plataforma",
-      "formatStorefrontColumn": "Formato y tienda",
-      "editionColumn": "Edición",
       "steelbookColumn": "Steelbook",
-      "moveColumn": "Mover",
       "collectionPhrase": "colección",
       "wishlistPhrase": "lista de deseos",
       "removedFromToast_one": "Entrada eliminada de tu {{phrase}}",
@@ -725,9 +717,6 @@
       "addSuccessToast": "¡Juego añadido a tu {{phrase}} correctamente!",
       "saveErrorToast": "Error al guardar el juego en tu {{phrase}}. Inténtalo de nuevo.",
       "title": "Tu biblioteca",
-      "subheader": "Entradas de colección y lista de deseos por plataformas y regiones",
-      "collectionTableName": "Colección",
-      "wishlistTableName": "Lista de deseos",
       "updateDialogTitle": "Actualizar juego en tu {{phrase}}",
       "addDialogTitle": "Añadir juego a tu {{phrase}}",
       "updateLabel": "Actualizar",
@@ -740,7 +729,14 @@
       "moveWithRomDescription_one": "Esta copia tiene una ROM ({{name}}). Las copias de la lista de deseos no pueden tener ROM, así que se eliminará.",
       "moveWithRomDescription_other": "Esta copia tiene {{count}} ROM ({{name}}). Las copias de la lista de deseos no pueden tener ROM, así que se eliminarán.",
       "moveWithRomAndSavesDescription_one": "Esta copia tiene una ROM ({{name}}), con sus estados guardados y/o partida guardada. Las copias de la lista de deseos no pueden tener ROM, así que se eliminarán la ROM y todas sus partidas.",
-      "moveWithRomAndSavesDescription_other": "Esta copia tiene {{count}} ROM ({{name}}), con estados guardados y/o partidas guardadas. Las copias de la lista de deseos no pueden tener ROM, así que se eliminarán las ROM y todas sus partidas."
+      "moveWithRomAndSavesDescription_other": "Esta copia tiene {{count}} ROM ({{name}}), con estados guardados y/o partidas guardadas. Las copias de la lista de deseos no pueden tener ROM, así que se eliminarán las ROM y todas sus partidas.",
+      "addCopy": "Añadir copia",
+      "addToCollection": "A tu colección",
+      "addToWishlist": "A tu lista de deseos",
+      "empty": "Aún no está en tu biblioteca.",
+      "ownedChip": "En propiedad",
+      "wishlistChip": "Deseado",
+      "onSaleLine": "En oferta: {{price}} en {{shop}} (-{{cut}}%)"
     },
     "stats": {
       "playStatusNotStarted": "No iniciado",
@@ -836,7 +832,6 @@
     "detail": {
       "aboutTitle": "Acerca de",
       "platformsLabel": "Plataformas",
-      "genresLabel": "Géneros",
       "releaseDatesTitle": "Fechas de lanzamiento"
     }
   },
@@ -1110,8 +1105,6 @@
       "ratingsBoardLabel": "Junta de clasificación",
       "priceTitle": "Precio",
       "priceNotSet": "No establecido",
-      "tagsSubheader": "Organiza a tu manera — modificado, en venta, consola de proyecto, lo que encaje",
-      "notesSubheader": "Historial de mantenimiento, dónde lo compraste, cualquier cosa que valga la pena recordar",
       "inventoryTitle": "Tu inventario",
       "statusLabel": "Estado",
       "statusOwned": "En propiedad",
@@ -1242,12 +1235,12 @@
   },
   "notes": {
     "title": "Notas",
-    "defaultSubheader": "Consejos sin spoilers, dónde lo dejaste, cualquier cosa que valga la pena recordar",
     "addPlaceholder": "Añadir una nota...",
     "empty": "Aún no hay notas.",
     "addError": "Error al añadir la nota. Inténtalo de nuevo.",
     "updateError": "Error al actualizar la nota. Inténtalo de nuevo.",
-    "deleteError": "Error al eliminar la nota. Inténtalo de nuevo."
+    "deleteError": "Error al eliminar la nota. Inténtalo de nuevo.",
+    "addAction": "Añadir nota"
   },
   "igdb": {
     "dialogTitle": "Vincular a IGDB",
@@ -1333,21 +1326,16 @@
   },
   "tags": {
     "title": "Etiquetas",
-    "defaultSubheader": "Organiza a tu manera — cooperativo, speedrun, prioridad pendiente, lo que encaje",
     "addLabel": "Añadir una etiqueta",
     "searchPlaceholder": "Escribe para buscar o crear",
     "attachError": "Error al asignar la etiqueta. Inténtalo de nuevo.",
     "createError": "Error al crear la etiqueta. Inténtalo de nuevo.",
-    "detachError": "Error al quitar la etiqueta. Inténtalo de nuevo."
+    "detachError": "Error al quitar la etiqueta. Inténtalo de nuevo.",
+    "manage": "Gestionar",
+    "addMorePlaceholder": "Añadir una etiqueta"
   },
   "playSessions": {
     "title": "Sesiones de juego",
-    "subheader": "Registra sesiones individuales por plataforma si quieres un historial más detallado",
-    "tableName": "Sesiones de juego",
-    "platformColumn": "Plataforma",
-    "startedColumn": "Inicio",
-    "endedColumn": "Fin",
-    "durationColumn": "Duración",
     "addDialogTitle": "Registrar sesión de juego",
     "updateDialogTitle": "Actualizar sesión de juego",
     "platformLabel": "Plataforma",
@@ -1363,14 +1351,13 @@
     "updateErrorToast": "Error al actualizar la sesión de juego. Inténtalo de nuevo.",
     "deleteErrorToast": "Error al eliminar la sesión de juego. Inténtalo de nuevo.",
     "removedToast_one": "Sesión de juego eliminada",
-    "removedToast_other": "Sesiones de juego eliminadas"
+    "removedToast_other": "Sesiones de juego eliminadas",
+    "addAction": "Registrar sesión",
+    "empty": "Aún no hay sesiones registradas.",
+    "endedAt": "terminó el {{date}}"
   },
   "progress": {
     "title": "Progreso",
-    "subheader": "Estado y tiempo de juego, registrados por separado en cada plataforma poseída",
-    "tableName": "Progreso",
-    "platformColumn": "Plataforma",
-    "statusColumn": "Estado",
     "playtimeColumn": "Tiempo de juego",
     "ratingColumn": "Valoración",
     "lastPlayedColumn": "Última vez jugado",
@@ -1403,7 +1390,10 @@
       "playing": "Jugando",
       "completed": "Completado",
       "abandoned": "Abandonado"
-    }
+    },
+    "addAction": "Añadir",
+    "notSet": "Sin definir",
+    "lastPlayedOn": "jugado por última vez el {{date}}"
   },
   "public": {
     "nav": {

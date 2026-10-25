@@ -1,14 +1,20 @@
 import { useState } from "react";
-import HistoryIcon from "@mui/icons-material/History";
-import TimelineIcon from "@mui/icons-material/Timeline";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import Backdrop from "@mui/material/Backdrop";
-import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import type { GameProgress, LibraryItem, PlatformResponse, PlaySession } from "../api/types";
+import type {
+  GameProgress,
+  LibraryItem,
+  PlatformResponse,
+  PlaySession,
+  PlayStatus,
+} from "../api/types";
 import {
   useCreateGameProgress,
   useDeleteGameProgress,
@@ -22,52 +28,54 @@ import {
   useUpdatePlaySession,
 } from "../hooks/usePlaySessions";
 import { useUndoableAction } from "../hooks/useUndoableAction";
-import { PLATFORM_COLUMN_WIDTH } from "../utils/tableColumnWidths";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import EnhancedTable, { type HeadCell } from "./EnhancedTable";
+import {
+  EmptyLine,
+  Facts,
+  ListRow,
+  Panel,
+  PlatformBadge,
+  RowAction,
+  Section,
+  SectionAction,
+} from "./Detail";
 import PlaySessionDialog, { type PlaySessionFormValues } from "./PlaySessionDialog";
 import ProgressDialog, { type ProgressFormValues } from "./ProgressDialog";
 import { showUndoToast } from "./UndoToast";
-import { SectionNote } from "./Detail";
 
 interface GameProgressSectionProps {
   gameId: number;
   libraryItems: LibraryItem[] | undefined;
   platforms: PlatformResponse[] | undefined;
-  // Inside a detail page's Section, which titles it: only the explanation line is shown.
-  inSection?: boolean;
+  // The game's overall play status (its most advanced platform's), for the summary.
+  playStatus: PlayStatus | null;
 }
 
-// Fixed widths (not just the shared Platform one) so both tables get table-layout: fixed
-// in EnhancedTable.tsx — cell content ellipsis-truncates rather than wrapping/growing the
-// column, same rule as GameLibrarySection's Owned/Wishlist tables. lastPlayedLabel is wide
-// enough that its header ("Last Played") never has to wrap to a second line. Edit/Delete
-// live in one combined "actions" column (below), not separate widthed ones — see that
-// headCell's own comment for why.
-const PROGRESS_COLUMN_WIDTHS = {
-  platformName: PLATFORM_COLUMN_WIDTH,
-  statusLabel: 110,
-  playtimeLabel: 100,
-  ratingLabel: 90,
-  lastPlayedLabel: 130,
-} as const;
-
-const SESSION_COLUMN_WIDTHS = {
-  platformName: PLATFORM_COLUMN_WIDTH,
-  startedLabel: 160,
-  endedLabel: 160,
-  durationLabel: 100,
-} as const;
-
 function formatDuration(minutes: number | null): string {
-  if (minutes === null) return "-";
+  if (minutes === null) return "—";
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
   return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
 }
 
-const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = false }: GameProgressSectionProps) => {
-  const { t } = useTranslation();
+const PLAY_STATUS_CHIP: Record<PlayStatus, "default" | "info" | "success" | "error"> = {
+  none: "default",
+  backlog: "default",
+  playing: "info",
+  completed: "success",
+  abandoned: "error",
+};
+
+// A game's Progress (a summary, then one row per platform you track) and Play sessions
+// sections. Rows open their dialog; Remove on a row has an Undo.
+const GameProgressSection = ({
+  gameId,
+  libraryItems,
+  platforms,
+  playStatus,
+}: GameProgressSectionProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
 
   const { data: progressRows } = useGameProgressList(gameId);
   const createProgress = useCreateGameProgress(gameId);
@@ -96,127 +104,34 @@ const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = fals
   const eligibleProgressPlatforms = ownedPlatforms.filter(
     (platform) => !trackedProgressPlatformIds.has(platform.id)
   );
+  const badgeFor = (platformId: number | null, platformName: string | null) =>
+    platforms?.find((platform) => platform.id === platformId)?.abbreviation ||
+    platformName?.split(" ")[0] ||
+    "?";
 
-  const progressHeadCells: HeadCell[] = [
-    {
-      id: "platformName",
-      numeric: false,
-      disablePadding: false,
-      label: t("progress.platformColumn"),
-      disableHeader: false,
-      width: PROGRESS_COLUMN_WIDTHS.platformName,
-    },
-    {
-      id: "statusLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("progress.statusColumn"),
-      disableHeader: false,
-      width: PROGRESS_COLUMN_WIDTHS.statusLabel,
-    },
-    {
-      id: "playtimeLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("progress.playtimeColumn"),
-      disableHeader: false,
-      width: PROGRESS_COLUMN_WIDTHS.playtimeLabel,
-    },
-    {
-      id: "ratingLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("progress.ratingColumn"),
-      disableHeader: false,
-      width: PROGRESS_COLUMN_WIDTHS.ratingLabel,
-    },
-    {
-      id: "lastPlayedLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("progress.lastPlayedColumn"),
-      disableHeader: false,
-      width: PROGRESS_COLUMN_WIDTHS.lastPlayedLabel,
-    },
-    {
-      // One combined column for Edit/Delete rather than two separate ones — see
-      // GameLibrarySection.tsx's actionsHeadCell for why (always the last column, left
-      // unwidthed so it soaks up the table's remaining space and keeps the icons grouped
-      // together at the true right edge instead of pinned to individual fixed slots).
-      id: "actions",
-      numeric: false,
-      disablePadding: true,
-      label: t("common.actions"),
-      disableHeader: true,
-    },
-  ];
-
-  const sessionHeadCells: HeadCell[] = [
-    {
-      id: "platformName",
-      numeric: false,
-      disablePadding: false,
-      label: t("playSessions.platformColumn"),
-      disableHeader: false,
-      width: SESSION_COLUMN_WIDTHS.platformName,
-    },
-    {
-      id: "startedLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("playSessions.startedColumn"),
-      disableHeader: false,
-      width: SESSION_COLUMN_WIDTHS.startedLabel,
-    },
-    {
-      id: "endedLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("playSessions.endedColumn"),
-      disableHeader: false,
-      width: SESSION_COLUMN_WIDTHS.endedLabel,
-    },
-    {
-      id: "durationLabel",
-      numeric: false,
-      disablePadding: false,
-      label: t("playSessions.durationColumn"),
-      disableHeader: false,
-      width: SESSION_COLUMN_WIDTHS.durationLabel,
-    },
-    {
-      id: "actions",
-      numeric: false,
-      disablePadding: true,
-      label: t("common.actions"),
-      disableHeader: true,
-    },
-  ];
-
-  const statusLabels: Record<GameProgress["playStatus"], string> = {
+  const statusLabels: Record<PlayStatus, string> = {
     none: t("progress.statusOptions.none"),
     backlog: t("progress.statusOptions.backlog"),
     playing: t("progress.statusOptions.playing"),
     completed: t("progress.statusOptions.completed"),
     abandoned: t("progress.statusOptions.abandoned"),
   };
-
-  const progressRow = (row: GameProgress) => ({
-    id: row.id!,
-    platformName: row.platformName ?? "-",
-    statusLabel: statusLabels[row.playStatus],
-    playtimeLabel: formatDuration(row.playtimeMinutes),
-    ratingLabel: row.rating !== null ? t("progress.ratingValue", { rating: row.rating }) : "-",
-    lastPlayedLabel: row.lastPlayedAt ?? "-",
-  });
-
-  const sessionRow = (session: PlaySession) => ({
-    id: session.id,
-    platformName: session.platformName ?? "-",
-    startedLabel: new Date(session.startedAt).toLocaleString(),
-    endedLabel: session.endedAt ? new Date(session.endedAt).toLocaleString() : "-",
-    durationLabel: formatDuration(session.durationMinutes),
-  });
+  const formatDay = (date: string | null) =>
+    date
+      ? new Date(`${date}T00:00:00`).toLocaleDateString(language, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : null;
+  const formatMoment = (date: string) =>
+    new Date(date).toLocaleString(language, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
 
   const { schedule: scheduleProgressRemoval, isPending: isProgressPending } =
     useUndoableAction<GameProgress>({
@@ -234,30 +149,36 @@ const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = fals
       },
     });
 
-  const progressTableRows = (progressRows ?? [])
-    .filter((row) => !isProgressPending(row.id!))
-    .map(progressRow);
-  const sessionTableRows = (sessions ?? [])
-    .filter((session) => !isSessionPending(session.id))
-    .map(sessionRow);
+  const visibleProgress = (progressRows ?? []).filter((row) => !isProgressPending(row.id!));
+  const visibleSessions = (sessions ?? []).filter((session) => !isSessionPending(session.id));
+
+  // The summary across every tracked platform.
+  const totalMinutes = visibleProgress.reduce((total, row) => total + row.playtimeMinutes, 0);
+  const ratings = visibleProgress
+    .map((row) => row.rating)
+    .filter((rating): rating is number => rating !== null);
+  const averageRating = ratings.length
+    ? ratings.reduce((total, rating) => total + rating, 0) / ratings.length
+    : null;
+  const lastPlayed = visibleProgress
+    .map((row) => row.lastPlayedAt)
+    .filter((date): date is string => date !== null)
+    .sort()
+    .at(-1);
 
   const handleAddProgressClick = () => {
     setEditingProgress(null);
     setProgressDialogOpen(true);
   };
 
-  const handleEditProgressClick = (rowId: number) => {
-    const row = progressRows?.find((candidate) => candidate.id === rowId);
-    if (!row) return;
+  const handleEditProgressClick = (row: GameProgress) => {
     setEditingProgress(row);
     setProgressDialogOpen(true);
   };
 
-  const handleDeleteProgressClick = (selectedIds: number[]) => {
-    const rowsToRemove = (progressRows ?? []).filter((row) => selectedIds.includes(row.id!));
-    if (rowsToRemove.length === 0) return;
-    const { undo } = scheduleProgressRemoval(rowsToRemove);
-    showUndoToast(t("progress.removedToast", { count: rowsToRemove.length }), undo, 5000);
+  const handleRemoveProgress = (row: GameProgress) => {
+    const { undo } = scheduleProgressRemoval([row]);
+    showUndoToast(t("progress.removedToast", { count: 1 }), undo, 5000);
   };
 
   const handleProgressSubmit = async (values: ProgressFormValues) => {
@@ -284,18 +205,14 @@ const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = fals
     setSessionDialogOpen(true);
   };
 
-  const handleEditSessionClick = (rowId: number) => {
-    const session = sessions?.find((candidate) => candidate.id === rowId);
-    if (!session) return;
+  const handleEditSessionClick = (session: PlaySession) => {
     setEditingSession(session);
     setSessionDialogOpen(true);
   };
 
-  const handleDeleteSessionClick = (selectedIds: number[]) => {
-    const itemsToRemove = (sessions ?? []).filter((session) => selectedIds.includes(session.id));
-    if (itemsToRemove.length === 0) return;
-    const { undo } = scheduleSessionRemoval(itemsToRemove);
-    showUndoToast(t("playSessions.removedToast", { count: itemsToRemove.length }), undo, 5000);
+  const handleRemoveSession = (session: PlaySession) => {
+    const { undo } = scheduleSessionRemoval([session]);
+    showUndoToast(t("playSessions.removedToast", { count: 1 }), undo, 5000);
   };
 
   const handleSessionSubmit = async (values: PlaySessionFormValues) => {
@@ -325,6 +242,14 @@ const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = fals
     updateSession.isPending ||
     deleteSession.isPending;
 
+  const removeAction = (onClick: () => void) => (
+    <RowAction
+      title={t("common.remove")}
+      icon={<DeleteOutlineOutlinedIcon fontSize="small" />}
+      onClick={onClick}
+    />
+  );
+
   return (
     <>
       {isMutating && (
@@ -335,50 +260,148 @@ const GameProgressSection = ({ gameId, libraryItems, platforms, inSection = fals
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
-      {inSection ? (
-        <SectionNote>{t("progress.subheader")}</SectionNote>
-      ) : (
-        <CardHeader title={t("progress.title")} subheader={t("progress.subheader")} />
-      )}
-      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-        <EnhancedTable
-          rows={progressTableRows}
-          headCells={progressHeadCells}
-          tableName={t("progress.tableName")}
-          tableIcon={<TimelineIcon color="secondary" />}
-          onAddClick={handleAddProgressClick}
-          onDeleteClick={handleDeleteProgressClick}
-          onEditClick={handleEditProgressClick}
-          moveDirection="up"
-        />
-        <EnhancedTable
-          rows={sessionTableRows}
-          headCells={sessionHeadCells}
-          tableName={t("playSessions.tableName")}
-          tableIcon={<HistoryIcon color="secondary" />}
-          onAddClick={handleAddSessionClick}
-          onDeleteClick={handleDeleteSessionClick}
-          onEditClick={handleEditSessionClick}
-          moveDirection="up"
-        />
 
-        <ProgressDialog
-          open={progressDialogOpen}
-          editing={editingProgress}
-          eligiblePlatforms={eligibleProgressPlatforms}
-          onClose={() => setProgressDialogOpen(false)}
-          onSubmit={handleProgressSubmit}
-          isSubmitting={createProgress.isPending || updateProgress.isPending}
+      <Section
+        id="progress"
+        title={t("progress.title")}
+        action={
+          <SectionAction
+            icon={<AddIcon />}
+            label={t("progress.addAction")}
+            onClick={handleAddProgressClick}
+          />
+        }
+      >
+        <Facts
+          facts={[
+            [
+              t("progress.statusLabel"),
+              playStatus && playStatus !== "none" ? statusLabels[playStatus] : t("progress.notSet"),
+            ],
+            [t("progress.playtimeColumn"), totalMinutes ? formatDuration(totalMinutes) : "—"],
+            [
+              t("progress.ratingColumn"),
+              averageRating !== null
+                ? t("progress.ratingValue", { rating: Math.round(averageRating * 10) / 10 })
+                : "—",
+            ],
+            [t("progress.lastPlayedColumn"), formatDay(lastPlayed ?? null) ?? "—"],
+          ]}
         />
-        <PlaySessionDialog
-          open={sessionDialogOpen}
-          editing={editingSession}
-          ownedPlatforms={ownedPlatforms}
-          onClose={() => setSessionDialogOpen(false)}
-          onSubmit={handleSessionSubmit}
-          isSubmitting={createSession.isPending || updateSession.isPending}
-        />
-      </CardContent>
+        {visibleProgress.length ? (
+          <Box sx={{ mt: 1.25 }}>
+            <Panel>
+              {visibleProgress.map((row) => (
+                <ListRow
+                  key={row.id}
+                  label={row.platformName ?? t("games.about.unknownPlatform")}
+                  onClick={() => handleEditProgressClick(row)}
+                  leading={
+                    <PlatformBadge>{badgeFor(row.platformId, row.platformName)}</PlatformBadge>
+                  }
+                  title={row.platformName ?? t("games.about.unknownPlatform")}
+                  subtitle={
+                    [
+                      row.playtimeMinutes ? formatDuration(row.playtimeMinutes) : null,
+                      row.rating !== null
+                        ? t("progress.ratingValue", { rating: row.rating })
+                        : null,
+                      row.lastPlayedAt
+                        ? t("progress.lastPlayedOn", { date: formatDay(row.lastPlayedAt) })
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || undefined
+                  }
+                  trailing={
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={PLAY_STATUS_CHIP[row.playStatus]}
+                      label={statusLabels[row.playStatus]}
+                    />
+                  }
+                  actions={removeAction(() => handleRemoveProgress(row))}
+                />
+              ))}
+            </Panel>
+          </Box>
+        ) : null}
+      </Section>
+
+      <Section
+        id="play-sessions"
+        title={t("playSessions.title")}
+        action={
+          <SectionAction
+            icon={<AddIcon />}
+            label={t("playSessions.addAction")}
+            onClick={handleAddSessionClick}
+          />
+        }
+      >
+        {visibleSessions.length === 0 ? (
+          <EmptyLine>{t("playSessions.empty")}</EmptyLine>
+        ) : (
+          <Panel>
+            {visibleSessions.map((session) => (
+              <ListRow
+                key={session.id}
+                label={`${session.platformName ?? ""} ${formatMoment(session.startedAt)}`.trim()}
+                onClick={() => handleEditSessionClick(session)}
+                leading={
+                  <PlatformBadge>
+                    {badgeFor(session.platformId, session.platformName)}
+                  </PlatformBadge>
+                }
+                title={formatMoment(session.startedAt)}
+                subtitle={
+                  [
+                    session.endedAt
+                      ? t("playSessions.endedAt", { date: formatMoment(session.endedAt) })
+                      : null,
+                    session.notes,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || undefined
+                }
+                trailing={
+                  session.durationMinutes !== null ? (
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: 13,
+                        color: "text.secondary",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {formatDuration(session.durationMinutes)}
+                    </Box>
+                  ) : null
+                }
+                actions={removeAction(() => handleRemoveSession(session))}
+              />
+            ))}
+          </Panel>
+        )}
+      </Section>
+
+      <ProgressDialog
+        open={progressDialogOpen}
+        editing={editingProgress}
+        eligiblePlatforms={eligibleProgressPlatforms}
+        onClose={() => setProgressDialogOpen(false)}
+        onSubmit={handleProgressSubmit}
+        isSubmitting={createProgress.isPending || updateProgress.isPending}
+      />
+      <PlaySessionDialog
+        open={sessionDialogOpen}
+        editing={editingSession}
+        ownedPlatforms={ownedPlatforms}
+        onClose={() => setSessionDialogOpen(false)}
+        onSubmit={handleSessionSubmit}
+        isSubmitting={createSession.isPending || updateSession.isPending}
+      />
     </>
   );
 };

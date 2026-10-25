@@ -634,10 +634,6 @@
       "count_other": "{{count}} platforms"
     },
     "about": {
-      "companyRoleDeveloper": "Developed by",
-      "companyRolePublisher": "Published by",
-      "companyRolePorting": "Ported by",
-      "companyRoleSupporting": "Additional work by",
       "regionEurope": "Europe",
       "regionNorthAmerica": "North America",
       "regionAustralia": "Australia",
@@ -710,11 +706,7 @@
       "formatRom": "ROM",
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
-      "platformColumn": "Platform",
-      "formatStorefrontColumn": "Format & Storefront",
-      "editionColumn": "Edition",
       "steelbookColumn": "Steelbook",
-      "moveColumn": "Move",
       "collectionPhrase": "collection",
       "wishlistPhrase": "wishlist",
       "removedFromToast_one": "Entry removed from your {{phrase}}",
@@ -725,9 +717,6 @@
       "addSuccessToast": "Game added to your {{phrase}} successfully!",
       "saveErrorToast": "Error saving game in your {{phrase}}. Please try again.",
       "title": "Your Library",
-      "subheader": "Collection and wishlist entries across platforms and regions",
-      "collectionTableName": "Collection",
-      "wishlistTableName": "Wishlist",
       "updateDialogTitle": "Update game in your {{phrase}}",
       "addDialogTitle": "Add game to your {{phrase}}",
       "updateLabel": "Update",
@@ -740,7 +729,14 @@
       "moveWithRomDescription_one": "This copy has a ROM attached ({{name}}). Wishlist copies can't hold a ROM, so it will be deleted.",
       "moveWithRomDescription_other": "This copy has {{count}} ROMs attached ({{name}}). Wishlist copies can't hold ROMs, so they will be deleted.",
       "moveWithRomAndSavesDescription_one": "This copy has a ROM attached ({{name}}), along with its save states and/or in-game save. Wishlist copies can't hold a ROM, so the ROM and all of its saves will be deleted.",
-      "moveWithRomAndSavesDescription_other": "This copy has {{count}} ROMs attached ({{name}}), with save states and/or in-game saves. Wishlist copies can't hold ROMs, so the ROMs and all of their saves will be deleted."
+      "moveWithRomAndSavesDescription_other": "This copy has {{count}} ROMs attached ({{name}}), with save states and/or in-game saves. Wishlist copies can't hold ROMs, so the ROMs and all of their saves will be deleted.",
+      "addCopy": "Add copy",
+      "addToCollection": "To your collection",
+      "addToWishlist": "To your wishlist",
+      "empty": "Not in your library yet.",
+      "ownedChip": "Owned",
+      "wishlistChip": "Wishlist",
+      "onSaleLine": "On sale: {{price}} at {{shop}} (-{{cut}}%)"
     },
     "stats": {
       "playStatusNotStarted": "Not started",
@@ -836,7 +832,6 @@
     "detail": {
       "aboutTitle": "About",
       "platformsLabel": "Platforms",
-      "genresLabel": "Genres",
       "releaseDatesTitle": "Release dates"
     }
   },
@@ -1110,8 +1105,6 @@
       "ratingsBoardLabel": "Ratings Board",
       "priceTitle": "Price",
       "priceNotSet": "Not set",
-      "tagsSubheader": "Organize your own way — modded, for sale, project console, whatever fits",
-      "notesSubheader": "Maintenance history, where you bought it, anything worth remembering",
       "inventoryTitle": "Your Inventory",
       "statusLabel": "Status",
       "statusOwned": "Owned",
@@ -1242,12 +1235,12 @@
   },
   "notes": {
     "title": "Notes",
-    "defaultSubheader": "Spoiler-free tips, where you left off, anything worth remembering",
     "addPlaceholder": "Add a note...",
     "empty": "No notes yet.",
     "addError": "Error adding note. Please try again.",
     "updateError": "Error updating note. Please try again.",
-    "deleteError": "Error deleting note. Please try again."
+    "deleteError": "Error deleting note. Please try again.",
+    "addAction": "Add note"
   },
   "igdb": {
     "dialogTitle": "Link to IGDB",
@@ -1333,21 +1326,16 @@
   },
   "tags": {
     "title": "Tags",
-    "defaultSubheader": "Organize your own way — co-op, speedrun, backlog priority, whatever fits",
     "addLabel": "Add a tag",
     "searchPlaceholder": "Type to search or create",
     "attachError": "Error attaching tag. Please try again.",
     "createError": "Error creating tag. Please try again.",
-    "detachError": "Error removing tag. Please try again."
+    "detachError": "Error removing tag. Please try again.",
+    "manage": "Manage",
+    "addMorePlaceholder": "Add a tag"
   },
   "playSessions": {
     "title": "Play Sessions",
-    "subheader": "Log individual sessions per platform if you want a finer-grained history",
-    "tableName": "Play Sessions",
-    "platformColumn": "Platform",
-    "startedColumn": "Started",
-    "endedColumn": "Ended",
-    "durationColumn": "Duration",
     "addDialogTitle": "Log Play Session",
     "updateDialogTitle": "Update Play Session",
     "platformLabel": "Platform",
@@ -1363,14 +1351,13 @@
     "updateErrorToast": "Error updating play session. Please try again.",
     "deleteErrorToast": "Error deleting play session. Please try again.",
     "removedToast_one": "Play session removed",
-    "removedToast_other": "Play sessions removed"
+    "removedToast_other": "Play sessions removed",
+    "addAction": "Log session",
+    "empty": "No sessions logged yet.",
+    "endedAt": "ended {{date}}"
   },
   "progress": {
     "title": "Progress",
-    "subheader": "Play status and playtime, tracked separately per owned platform",
-    "tableName": "Progress",
-    "platformColumn": "Platform",
-    "statusColumn": "Status",
     "playtimeColumn": "Playtime",
     "ratingColumn": "Rating",
     "lastPlayedColumn": "Last Played",
@@ -1403,7 +1390,10 @@
       "playing": "Playing",
       "completed": "Completed",
       "abandoned": "Abandoned"
-    }
+    },
+    "addAction": "Add",
+    "notSet": "Not set",
+    "lastPlayedOn": "last played {{date}}"
   },
   "public": {
     "nav": {

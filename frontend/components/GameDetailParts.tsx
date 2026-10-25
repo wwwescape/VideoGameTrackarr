@@ -5,11 +5,12 @@ import CollectionsBookmarkIcon from "@mui/icons-material/CollectionsBookmark";
 import ExtensionIcon from "@mui/icons-material/ExtensionOutlined";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ImageNotSupportedOutlinedIcon from "@mui/icons-material/ImageNotSupportedOutlined";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SellIcon from "@mui/icons-material/SellOutlined";
 import StarIcon from "@mui/icons-material/StarBorder";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAssetOutlined";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
+
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
@@ -17,9 +18,9 @@ import type { GameAboutData, GameCompany, GameSummary, IgdbReleaseRegion, PlaySt
 import type { Crumb } from "../navigation/breadcrumbConfig";
 import { gameIdentifier } from "../utils/identifiers";
 import { getAddonType, isAddon } from "../utils/utils";
-import { DetailHero, Facts, Pill, Section } from "./Detail";
+import { DetailHero, Pill, Section } from "./Detail";
 import ExpandableText from "./ExpandableText";
-import { GameStoreLinks } from "./GameStoreLinks";
+import { useGameStoreLinks } from "./GameStoreLinks";
 import OwnershipBadges from "./OwnershipBadges";
 import ScreenshotGallery from "./ScreenshotGallery";
 import VideoGallery from "./VideoGallery";
@@ -139,12 +140,13 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken }:
     </Box>
   );
 
+  const storeLinks = useGameStoreLinks(game);
   const pills: ReactNode[] = [];
   if (!preview && status.owned) {
     pills.push(<Pill key="owned" tone="owned" icon={<CheckIcon />}>{t("ownershipBadges.ownedTooltip")}</Pill>);
   }
   if (!preview && status.wishlisted) {
-    pills.push(<Pill key="wish" icon={<FavoriteIcon />}>{t("ownershipBadges.wishlistTooltip")}</Pill>);
+    pills.push(<Pill key="wish" tone="wishlist" icon={<FavoriteIcon />}>{t("ownershipBadges.wishlistTooltip")}</Pill>);
   }
   if (playStatus) {
     pills.push(<Pill key="play" tone="accent">{t(PLAY_STATUS_KEYS[playStatus])}</Pill>);
@@ -207,21 +209,36 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken }:
         game.genres.slice(0, 3).map((genre) => genre.name).join(", "),
       ]}
       pills={pills}
+      links={
+        storeLinks.length ? (
+          <>
+            {storeLinks.map((link) => (
+              <Pill key={link.key} href={link.href} title={link.title} icon={<OpenInNewIcon />}>
+                {link.label}
+              </Pill>
+            ))}
+          </>
+        ) : undefined
+      }
     />
   );
 };
 
-// About: summary and storyline, the catalog facts (companies by role, platforms, genres),
-// release dates by region, and the store links.
+// A small titled card under About (Platforms, Release dates).
+const AboutCard = ({ title, children }: { title: string; children: ReactNode }) => (
+  <Box sx={{ bgcolor: "background.paper", border: 1, borderColor: "divider", borderRadius: 2, px: 1.75, py: 1.5, minWidth: 0 }}>
+    <Typography component="h3" sx={{ fontSize: 11.5, color: "vgt.text3", mb: 1 }}>
+      {title}
+    </Typography>
+    {children}
+  </Box>
+);
+
+// About: summary and storyline, then the platforms IGDB lists and, when there's more than the
+// one the hero shows, the release dates. Developer, publisher and genres are in the hero, and
+// the store links are chips there too.
 export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
   const { t } = useTranslation();
-  const roles = companiesByRole(game.companies);
-  const roleLabel: Record<string, string> = {
-    developer: t("games.about.companyRoleDeveloper"),
-    publisher: t("games.about.companyRolePublisher"),
-    porting: t("games.about.companyRolePorting"),
-    supporting: t("games.about.companyRoleSupporting"),
-  };
   const regionLabel: Record<IgdbReleaseRegion, string> = {
     europe: t("games.about.regionEurope"),
     north_america: t("games.about.regionNorthAmerica"),
@@ -233,6 +250,7 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
     worldwide: t("games.about.regionWorldwide"),
   };
   const hasStoryline = game.storyline && game.storyline !== game.summary;
+  const showReleaseDates = game.releaseDates.length > 1;
 
   return (
     <Section id="about" title={t("games.detail.aboutTitle")}>
@@ -251,37 +269,60 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
           </Box>
         </Box>
       ) : null}
-      <Box sx={{ mt: 2 }}>
-        <Facts
-          facts={[
-            ...Object.entries(roles).map(([role, names]): [string, ReactNode] => [roleLabel[role] ?? role, names.join(", ")]),
-            [t("games.detail.platformsLabel"), game.platforms.map((platform) => platform.name).join(", ")],
-            [t("games.detail.genresLabel"), game.genres.map((genre) => genre.name).join(", ")],
-          ]}
-        />
-      </Box>
-      {game.releaseDates.length > 1 ? (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            {t("games.detail.releaseDatesTitle")}
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {game.releaseDates.map((releaseDate) => (
-              <Chip
-                key={releaseDate.id}
-                size="small"
-                variant="outlined"
-                label={`${releaseDate.platformName ?? t("games.about.unknownPlatform")}: ${releaseDate.human ?? t("games.about.tbd")}${
-                  releaseDate.releaseRegion ? ` (${regionLabel[releaseDate.releaseRegion]})` : ""
-                }`}
-              />
-            ))}
-          </Box>
+      {game.platforms.length || showReleaseDates ? (
+        <Box
+          sx={{
+            mt: 2,
+            display: "grid",
+            gap: 1.25,
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
+            alignItems: "start",
+          }}
+        >
+          {game.platforms.length ? (
+            <AboutCard title={t("games.detail.platformsLabel")}>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                {game.platforms.map((platform) => (
+                  <Pill key={platform.id}>{platform.name}</Pill>
+                ))}
+              </Box>
+            </AboutCard>
+          ) : null}
+          {showReleaseDates ? (
+            <AboutCard title={t("games.detail.releaseDatesTitle")}>
+              <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+                {game.releaseDates.map((releaseDate, index) => (
+                  <Box
+                    component="li"
+                    key={releaseDate.id}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "minmax(0, 1fr) auto",
+                      columnGap: 1.5,
+                      py: 0.75,
+                      borderTop: index ? 1 : 0,
+                      borderColor: "divider",
+                      fontSize: 13.5,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {releaseDate.platformName ?? t("games.about.unknownPlatform")}
+                    </Box>
+                    <Box sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                      {releaseDate.human ?? t("games.about.tbd")}
+                      {releaseDate.releaseRegion ? (
+                        <Box component="span" sx={{ color: "vgt.text3", ml: 0.75 }}>
+                          {regionLabel[releaseDate.releaseRegion]}
+                        </Box>
+                      ) : null}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </AboutCard>
+          ) : null}
         </Box>
       ) : null}
-      <Box sx={{ mt: 2 }}>
-        <GameStoreLinks game={game} />
-      </Box>
     </Section>
   );
 };

@@ -12,7 +12,7 @@ import { useRegions } from "../hooks/useRegions";
 import { useAttachTag, useDetachTag } from "../hooks/useTags";
 import { gameIdentifier } from "../utils/identifiers";
 import { useCanonicalAddress, useDetailBack } from "../utils/navState";
-import { DetailColumns, Panel, Section, Strip } from "./Detail";
+import { DetailColumns, Section, Strip } from "./Detail";
 import GameActionButtons from "./GameActionButtons";
 import GameCard from "./GameCard";
 import { ADDON_DISPLAY_CATEGORIES, GameAboutBlock, GameHero, GameMediaSections } from "./GameDetailParts";
@@ -168,47 +168,33 @@ const GameDetails = () => {
         side={
           !isAutoDiscovered ? (
             <>
-              <Section id="library" title={t("games.library.title")}>
-                <Panel>
-                  <GameLibrarySection
-                    gameId={gameId}
-                    libraryItems={libraryItems}
-                    platforms={platforms}
-                    regions={regions}
-                    gameCategory={game.category}
-                    inSection
-                  />
-                </Panel>
-              </Section>
+              <GameLibrarySection
+                gameId={gameId}
+                libraryItems={libraryItems}
+                platforms={platforms}
+                regions={regions}
+                gameCategory={game.category}
+              />
               {!hasParentGame ? (
-                <Section id="progress" title={t("progress.title")}>
-                  <Panel>
-                    <GameProgressSection gameId={gameId} libraryItems={libraryItems} platforms={platforms} inSection />
-                  </Panel>
-                </Section>
+                <GameProgressSection
+                  gameId={gameId}
+                  libraryItems={libraryItems}
+                  platforms={platforms}
+                  playStatus={game.playStatus}
+                />
               ) : null}
-              <Section id="tags" title={t("tags.title")}>
-                <Panel>
-                  <TagsSection
-                    tags={game.tags}
-                    onAttach={(tagId) => attachTag.mutateAsync(tagId)}
-                    onDetach={(tagId) => detachTag.mutateAsync(tagId)}
-                    inSection
-                  />
-                </Panel>
-              </Section>
-              <Section id="notes" title={t("notes.title")}>
-                <Panel>
-                  <NotesSection
-                    notes={notes}
-                    isCreating={createNote.isPending}
-                    onCreate={(body) => createNote.mutateAsync(body)}
-                    onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
-                    onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
-                    inSection
-                  />
-                </Panel>
-              </Section>
+              <TagsSection
+                tags={game.tags}
+                onAttach={(tagId) => attachTag.mutateAsync(tagId)}
+                onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+              />
+              <NotesSection
+                notes={notes}
+                isCreating={createNote.isPending}
+                onCreate={(body) => createNote.mutateAsync(body)}
+                onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
+                onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
+              />
             </>
           ) : null
         }

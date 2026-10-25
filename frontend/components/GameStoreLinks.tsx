@@ -1,120 +1,56 @@
-import { useTheme } from "@mui/material/styles";
-import Stack from "@mui/material/Stack";
-import Tooltip from "@mui/material/Tooltip";
 import { useTranslation } from "react-i18next";
-import epicGamesLogo from "../assets/epic-games-logo.png";
-import gogLogo from "../assets/gog.com-logo.png";
-import igdbLogo from "../assets/igdb-logo.png";
-import nintendoLogo from "../assets/nintendo-logo.png";
-import playstationLogo from "../assets/playstation-logo.png";
-import steamLogo from "../assets/steam-logo.png";
-import xboxLogo from "../assets/xbox-logo.png";
 import type { GameAboutData } from "../api/types";
 import { useStoreRegion } from "../theme/StoreRegionProvider";
 import { localiseStoreUrl } from "../utils/storeRegion";
 
-// The IGDB and store-page logo links (Steam, Xbox, PlayStation in your store region, Nintendo,
-// Epic, GOG) — shared by the in-app game page and the public share page.
-export const GameStoreLinks = ({
-  game,
-}: {
-  game: Pick<GameAboutData, "igdbUrl" | "steamStoreUrl" | "xboxStoreUrl" | "playstationStoreUrl" | "nintendoStoreUrl" | "epicGamesStoreUrl" | "gogStoreUrl">;
-}) => {
+export interface StoreLink {
+  key: string;
+  // The site's own name, not translated.
+  label: string;
+  // "View on Steam", for the link's tooltip.
+  title: string;
+  href: string;
+}
+
+type StoreLinkGame = Pick<
+  GameAboutData,
+  "igdbUrl" | "steamStoreUrl" | "xboxStoreUrl" | "playstationStoreUrl" | "nintendoStoreUrl" | "epicGamesStoreUrl" | "gogStoreUrl"
+>;
+
+// The IGDB and store-page links (Steam, Xbox, PlayStation in your store region, Nintendo, Epic,
+// GOG) the game has, in that order — the hero shows them as chips, on the in-app game page and
+// the public share page.
+export function useGameStoreLinks(game: StoreLinkGame): StoreLink[] {
   const { t, i18n } = useTranslation();
-  const theme = useTheme();
   const { region: storeRegion } = useStoreRegion();
-  // From i18next rather than LanguageProvider, so this section doesn't pull in i18n setup.
+  // From i18next rather than LanguageProvider, so this doesn't pull in i18n setup.
   const language = i18n.resolvedLanguage ?? i18n.language;
-  return (
-  <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-    {game.igdbUrl && (
-      <Tooltip title={t("games.about.viewOnIgdb")}>
-        <a
-          href={game.igdbUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img src={igdbLogo} alt={t("games.about.viewOnIgdb")} style={{ width: "64px" }} />
-        </a>
-      </Tooltip>
-    )}
-    {game.steamStoreUrl && (
-      <Tooltip title={t("games.about.viewOnSteam")}>
-        <a
-          href={game.steamStoreUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img src={steamLogo} alt={t("games.about.viewOnSteam")} style={{ width: "64px" }} />
-        </a>
-      </Tooltip>
-    )}
-    {game.xboxStoreUrl && (
-      <Tooltip title={t("games.about.viewOnXbox")}>
-        <a
-          href={localiseStoreUrl(game.xboxStoreUrl, "xbox", storeRegion, language)}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img src={xboxLogo} alt={t("games.about.viewOnXbox")} style={{ width: "64px" }} />
-        </a>
-      </Tooltip>
-    )}
-    {game.playstationStoreUrl && (
-      <Tooltip title={t("games.about.viewOnPlaystation")}>
-        <a
-          href={localiseStoreUrl(game.playstationStoreUrl, "playstation", storeRegion, language)}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img
-            src={playstationLogo}
-            alt={t("games.about.viewOnPlaystation")}
-            style={{ width: "64px" }}
-          />
-        </a>
-      </Tooltip>
-    )}
-    {game.nintendoStoreUrl && (
-      <Tooltip title={t("games.about.viewOnNintendo")}>
-        <a
-          href={game.nintendoStoreUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img src={nintendoLogo} alt={t("games.about.viewOnNintendo")} style={{ width: "64px" }} />
-        </a>
-      </Tooltip>
-    )}
-    {game.epicGamesStoreUrl && (
-      <Tooltip title={t("games.about.viewOnEpicGames")}>
-        <a
-          href={game.epicGamesStoreUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img src={epicGamesLogo} alt={t("games.about.viewOnEpicGames")} style={{ width: "64px" }} />
-        </a>
-      </Tooltip>
-    )}
-    {game.gogStoreUrl && (
-      <Tooltip title={t("games.about.viewOnGog")}>
-        <a
-          href={game.gogStoreUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: theme.palette.text.primary }}
-        >
-          <img src={gogLogo} alt={t("games.about.viewOnGog")} style={{ width: "64px" }} />
-        </a>
-      </Tooltip>
-    )}
-  </Stack>
-  );
-};
+  const links: (StoreLink | null)[] = [
+    game.igdbUrl ? { key: "igdb", label: "IGDB", title: t("games.about.viewOnIgdb"), href: game.igdbUrl } : null,
+    game.steamStoreUrl ? { key: "steam", label: "Steam", title: t("games.about.viewOnSteam"), href: game.steamStoreUrl } : null,
+    game.xboxStoreUrl
+      ? {
+          key: "xbox",
+          label: "Xbox",
+          title: t("games.about.viewOnXbox"),
+          href: localiseStoreUrl(game.xboxStoreUrl, "xbox", storeRegion, language),
+        }
+      : null,
+    game.playstationStoreUrl
+      ? {
+          key: "playstation",
+          label: "PlayStation",
+          title: t("games.about.viewOnPlaystation"),
+          href: localiseStoreUrl(game.playstationStoreUrl, "playstation", storeRegion, language),
+        }
+      : null,
+    game.nintendoStoreUrl
+      ? { key: "nintendo", label: "Nintendo", title: t("games.about.viewOnNintendo"), href: game.nintendoStoreUrl }
+      : null,
+    game.epicGamesStoreUrl
+      ? { key: "epic", label: "Epic Games", title: t("games.about.viewOnEpicGames"), href: game.epicGamesStoreUrl }
+      : null,
+    game.gogStoreUrl ? { key: "gog", label: "GOG", title: t("games.about.viewOnGog"), href: game.gogStoreUrl } : null,
+  ];
+  return links.filter((link): link is StoreLink => link !== null);
+}

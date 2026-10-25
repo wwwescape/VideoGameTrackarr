@@ -95,6 +95,26 @@ def test_stats_recently_added_and_recently_played(auth_client, db_session, seed_
     assert [g["id"] for g in body["recentlyPlayed"]] == [seed_game.id]
 
 
+def test_stats_recently_added_leaves_out_missing_games(auth_client, db_session, seed_game, seed_platform):
+    # Discovered by a resync and never added: shown as "Missing", not something you added.
+    missing = Game(
+        igdb_id=2002, name="Discovered Game", slug="discovered", category=GameCategory.MAIN_GAME, auto_discovered=True
+    )
+    # Discovered, then wishlisted: it's yours now.
+    claimed = Game(
+        igdb_id=2003, name="Claimed Game", slug="claimed", category=GameCategory.MAIN_GAME, auto_discovered=True
+    )
+    db_session.add_all([missing, claimed])
+    db_session.flush()
+    db_session.add(LibraryItem(game_id=claimed.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.commit()
+
+    response = auth_client.get("/api/dashboard/stats")
+
+    ids = {g["id"] for g in response.json()["recentlyAdded"]}
+    assert ids == {seed_game.id, claimed.id}
+
+
 def test_release_calendar_requires_auth(client):
     response = client.get("/api/dashboard/release-calendar")
 
