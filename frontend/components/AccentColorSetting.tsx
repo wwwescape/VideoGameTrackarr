@@ -31,6 +31,16 @@ export const ACCENT_PRESETS: { hex: string; nameKey: string }[] = [
 
 const SWATCH_SIZE = 36;
 
+const VISUALLY_HIDDEN = {
+  position: "absolute",
+  // Strings: in sx a bare 1 means 100%.
+  width: "1px",
+  height: "1px",
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+} as const;
+
 const swatchSx = {
   width: SWATCH_SIZE,
   height: SWATCH_SIZE,
@@ -42,8 +52,9 @@ const swatchSx = {
 } as const;
 
 // Settings → Display → Accent color (idea and first version by @minifluff, PR #32). Saved
-// per browser by ColorModeProvider, like dark mode and contrast.
-const AccentColorSetting = () => {
+// per browser by ColorModeProvider, like dark mode and contrast. In a settings row
+// (`inRow`), the row shows the name and help text, so the label stays for screen readers only.
+const AccentColorSetting = ({ inRow = false }: { inRow?: boolean }) => {
   const { t } = useTranslation();
   const { accentColor, setAccentColor, resetAccentColor } = useColorMode();
   const isPreset = ACCENT_PRESETS.some((preset) => preset.hex === accentColor);
@@ -58,8 +69,8 @@ const AccentColorSetting = () => {
   }, [debouncedDraft]);
 
   return (
-    <Box sx={{ mt: 1 }}>
-      <Typography variant="body1" id="accent-color-label">
+    <Box sx={{ mt: inRow ? 0 : 1 }}>
+      <Typography variant="body1" id="accent-color-label" sx={inRow ? VISUALLY_HIDDEN : undefined}>
         {t("settings.display.accentColor")}
       </Typography>
       <Box
@@ -110,9 +121,11 @@ const AccentColorSetting = () => {
           </Box>
         </Tooltip>
       </Box>
-      <Typography variant="caption" color="text.secondary" component="div">
-        {t("settings.display.accentColorHelp")}
-      </Typography>
+      {!inRow ? (
+        <Typography variant="caption" color="text.secondary" component="div">
+          {t("settings.display.accentColorHelp")}
+        </Typography>
+      ) : null}
       {accentColor !== DEFAULT_ACCENT_HEX.toLowerCase() ? (
         <Button
           size="small"

@@ -87,10 +87,14 @@ const Login = () => {
         minHeight: "100vh",
         alignItems: "center",
         justifyContent: "center",
+        flexDirection: "column",
+        gap: 2.5,
         p: 2,
+        bgcolor: "background.default",
       }}
     >
-      <Paper sx={{ p: 4, width: "100%", maxWidth: 400, borderRadius: 2 }}>
+      <Box component="img" src="/icon-master.svg" alt="" sx={{ width: 64, height: 64 }} />
+      <Paper sx={{ p: { xs: 3, sm: 4 }, width: "100%", maxWidth: 400, borderRadius: 3 }}>
         {setupStatus.isLoading ? (
           // Avoid flashing the wrong form (sign-in vs create-admin) while we don't yet know
           // whether an admin account exists.

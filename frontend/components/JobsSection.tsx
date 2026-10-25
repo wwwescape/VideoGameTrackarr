@@ -7,7 +7,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
-import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -25,6 +24,7 @@ import {
   useRunJob,
   useUpdateJobSchedule,
 } from "../hooks/useJobs";
+import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
 // Registering a future job means adding one entry here — job ids on their own aren't good
@@ -121,151 +121,130 @@ function JobCard({ job }: { job: JobSummary }) {
     }
   };
 
+  const hasRunStatus = isRunning || Boolean(result) || job.run.status === "failed";
+
   return (
-    <Box>
-      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-        <Typography variant="subtitle2">{displayKeys ? t(displayKeys.nameKey) : job.id}</Typography>
-        <Chip
-          size="small"
-          color={STATUS_CHIP_COLOR[job.run.status]}
-          label={t(`settings.jobs.status.${job.run.status}`)}
-        />
-      </Stack>
-      {displayKeys && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {t(displayKeys.descriptionKey)}
-        </Typography>
-      )}
-
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<PlayArrowIcon />}
-        sx={{ mt: 1.5 }}
-        disabled={isRunning}
-        onClick={handleRun}
-      >
-        {t("settings.jobs.runNow")}
-      </Button>
-
-      {isRunning && (
-        <Box sx={{ mt: 1.5 }}>
-          <LinearProgress
-            variant={job.run.progress ? "determinate" : "indeterminate"}
-            value={
-              job.run.progress && job.run.progress.total > 0
-                ? (job.run.progress.current / job.run.progress.total) * 100
-                : undefined
-            }
-          />
-          {job.run.progress && (
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-              {t("settings.jobs.progress", {
-                current: job.run.progress.current,
-                total: job.run.progress.total,
-              })}
-            </Typography>
-          )}
-        </Box>
-      )}
-
-      {result && (
-        <Box sx={{ mt: 1.5 }}>
-          <Alert
-            severity={
-              job.run.status === "failed" ? "error" : result.failed > 0 ? "warning" : "success"
-            }
-            action={
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                {result.failed > 0 && (
-                  <IconButton size="small" onClick={() => setShowFailures((prev) => !prev)}>
-                    {showFailures ? (
-                      <ExpandLessIcon fontSize="small" />
-                    ) : (
-                      <ExpandMoreIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                )}
-                <Button size="small" onClick={handleDismiss}>
-                  {t("settings.jobs.dismiss")}
-                </Button>
-              </Stack>
-            }
-          >
-            {t("settings.jobs.resultSummary", {
-              succeeded: result.succeeded,
-              failed: result.failed,
-              total: result.total,
-            })}
-          </Alert>
-          <Collapse in={showFailures}>
-            <Stack spacing={0.5} sx={{ mt: 1, pl: 2 }}>
-              {result.failures.map((failure) => (
-                <Typography key={failure.gameId} variant="body2" color="text.secondary">
-                  {failure.gameName}: {failure.error}
-                </Typography>
-              ))}
-            </Stack>
-          </Collapse>
-        </Box>
-      )}
-      {job.run.status === "failed" && !result && (
-        <Alert
-          severity="error"
-          sx={{ mt: 1.5 }}
-          action={
-            <Button size="small" onClick={handleDismiss}>
-              {t("settings.jobs.dismiss")}
-            </Button>
-          }
-        >
-          {job.run.error}
-        </Alert>
-      )}
-
-      <Divider sx={{ my: 2 }} />
-
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        {t("settings.jobs.scheduleHeading")}
-      </Typography>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={scheduleEnabled}
-            onChange={(event) => setScheduleEnabled(event.target.checked)}
-          />
-        }
-        label={t("settings.jobs.scheduleEnabledLabel")}
-      />
-      <Stack
-        direction="row"
-        spacing={1.5}
-        sx={{ alignItems: "flex-start", flexWrap: "wrap", mt: 1 }}
-      >
-        <TextField
-          size="small"
-          label={t("settings.jobs.cronExpressionLabel")}
-          helperText={t("settings.jobs.cronExpressionHelp")}
-          value={cronExpression}
-          disabled={!scheduleEnabled}
-          onChange={(event) => setCronExpression(event.target.value)}
-          sx={{ minWidth: 220 }}
-        />
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={handleSaveSchedule}
-          disabled={updateSchedule.isPending}
-        >
-          {t("settings.jobs.saveSchedule")}
+    <SettingsGroup
+      title={displayKeys ? t(displayKeys.nameKey) : job.id}
+      lead={displayKeys ? t(displayKeys.descriptionKey) : undefined}
+      aside={<Chip size="small" color={STATUS_CHIP_COLOR[job.run.status]} label={t(`settings.jobs.status.${job.run.status}`)} />}
+    >
+      <SettingRow name={t("settings.jobs.runHeading")} description={t("settings.jobs.runHelp")}>
+        <Button variant="outlined" startIcon={<PlayArrowIcon />} disabled={isRunning} onClick={handleRun}>
+          {t("settings.jobs.runNow")}
         </Button>
-      </Stack>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-        {job.schedule.nextRunAt
-          ? t("settings.jobs.nextRun", { date: new Date(job.schedule.nextRunAt).toLocaleString() })
-          : t("settings.jobs.neverScheduled")}
-      </Typography>
-    </Box>
+      </SettingRow>
+      {hasRunStatus ? (
+        <SettingRow stacked>
+          <Box sx={{ "& > :first-of-type": { mt: 0 } }}>
+            {isRunning && (
+              <Box sx={{ mt: 1.5 }}>
+                <LinearProgress
+                  variant={job.run.progress ? "determinate" : "indeterminate"}
+                  value={
+                    job.run.progress && job.run.progress.total > 0
+                      ? (job.run.progress.current / job.run.progress.total) * 100
+                      : undefined
+                  }
+                />
+                {job.run.progress && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                    {t("settings.jobs.progress", {
+                      current: job.run.progress.current,
+                      total: job.run.progress.total,
+                    })}
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {result && (
+              <Box sx={{ mt: 1.5 }}>
+                <Alert
+                  severity={
+                    job.run.status === "failed" ? "error" : result.failed > 0 ? "warning" : "success"
+                  }
+                  action={
+                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                      {result.failed > 0 && (
+                        <IconButton size="small" onClick={() => setShowFailures((prev) => !prev)}>
+                          {showFailures ? (
+                            <ExpandLessIcon fontSize="small" />
+                          ) : (
+                            <ExpandMoreIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      )}
+                      <Button size="small" onClick={handleDismiss}>
+                        {t("settings.jobs.dismiss")}
+                      </Button>
+                    </Stack>
+                  }
+                >
+                  {t("settings.jobs.resultSummary", {
+                    succeeded: result.succeeded,
+                    failed: result.failed,
+                    total: result.total,
+                  })}
+                </Alert>
+                <Collapse in={showFailures}>
+                  <Stack spacing={0.5} sx={{ mt: 1, pl: 2 }}>
+                    {result.failures.map((failure) => (
+                      <Typography key={failure.gameId} variant="body2" color="text.secondary">
+                        {failure.gameName}: {failure.error}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Collapse>
+              </Box>
+            )}
+            {job.run.status === "failed" && !result && (
+              <Alert
+                severity="error"
+                sx={{ mt: 1.5 }}
+                action={
+                  <Button size="small" onClick={handleDismiss}>
+                    {t("settings.jobs.dismiss")}
+                  </Button>
+                }
+              >
+                {job.run.error}
+              </Alert>
+            )}
+          </Box>
+        </SettingRow>
+      ) : null}
+      <SettingRow
+        name={t("settings.jobs.scheduleHeading")}
+        description={
+          job.schedule.nextRunAt
+            ? t("settings.jobs.nextRun", { date: new Date(job.schedule.nextRunAt).toLocaleString() })
+            : t("settings.jobs.neverScheduled")
+        }
+      >
+        <Stack spacing={1.5} sx={{ alignItems: { xs: "flex-start", md: "flex-end" } }}>
+          <FormControlLabel
+            control={<Switch checked={scheduleEnabled} onChange={(event) => setScheduleEnabled(event.target.checked)} />}
+            label={t("settings.jobs.scheduleEnabledLabel")}
+            sx={{ mr: 0 }}
+          />
+          <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+            <TextField
+              size="small"
+              label={t("settings.jobs.cronExpressionLabel")}
+              helperText={t("settings.jobs.cronExpressionHelp")}
+              value={cronExpression}
+              disabled={!scheduleEnabled}
+              onChange={(event) => setCronExpression(event.target.value)}
+              sx={{ width: { xs: 200, sm: 260 } }}
+            />
+            <Button variant="outlined" onClick={handleSaveSchedule} disabled={updateSchedule.isPending} sx={{ mt: 0.25 }}>
+              {t("settings.jobs.saveSchedule")}
+            </Button>
+          </Stack>
+        </Stack>
+      </SettingRow>
+    </SettingsGroup>
   );
 }
 
@@ -275,14 +254,11 @@ const JobsSection = () => {
   if (!jobs || jobs.length === 0) return null;
 
   return (
-    <Stack spacing={3}>
-      {jobs.map((job, index) => (
-        <Box key={job.id}>
-          {index > 0 && <Divider sx={{ mb: 3 }} />}
-          <JobCard job={job} />
-        </Box>
+    <SettingsColumn>
+      {jobs.map((job) => (
+        <JobCard key={job.id} job={job} />
       ))}
-    </Stack>
+    </SettingsColumn>
   );
 };
 

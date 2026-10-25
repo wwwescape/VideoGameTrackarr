@@ -239,14 +239,14 @@
         "red": "Vermelho",
         "pink": "Rosa",
         "violet": "Violeta"
-      }
+      },
+      "darkModeHelp": "Salvo neste navegador.",
+      "highContrastHelp": "Bordas e texto mais fortes para facilitar a leitura. Salvo neste navegador."
     },
     "language": {
-      "heading": "Idioma",
       "label": "Idioma"
     },
     "currency": {
-      "heading": "Moeda",
       "description": "Utilizada para apresentar o PVP, o preço de compra e o valor da coleção — isto altera a forma como os valores são apresentados, não é uma taxa de câmbio ou conversão em tempo real.",
       "label": "Moeda"
     },
@@ -334,7 +334,9 @@
           "name": "Sincronizar eventos",
           "description": "Obtém os eventos da indústria de jogos atualmente próximos a partir do IGDB e remove qualquer evento previamente sincronizado que já tenha terminado — alimenta a página Eventos e a Visão geral."
         }
-      }
+      },
+      "runHeading": "Executar",
+      "runHelp": "Iniciar agora, fora do agendamento."
     },
     "tagManager": {
       "description": "Elimina uma etiqueta de forma permanente. Isto remove-a de todos os jogos, dispositivos e acessórios que a tenham — não apenas de um. Para remover uma etiqueta de um único item, utilize o campo Etiquetas na página desse item.",
@@ -416,6 +418,9 @@
       "deleteTitle": "Excluir arquivo de BIOS?",
       "deleteDescription": "{{name}} será excluído do servidor. Os jogos que precisam dele não iniciarão até você enviá-lo novamente.",
       "deleteErrorToast": "Não foi possível excluir o arquivo de BIOS. Tente novamente."
+    },
+    "regional": {
+      "heading": "Regional"
     }
   },
   "auth": {
@@ -537,8 +542,6 @@
       "matchModeAriaLabel": "Corresponder a qualquer um ou a todos os valores selecionados",
       "matchModeTooltip": "Corresponder a qualquer: o jogo precisa de pelo menos um dos valores selecionados. Corresponder a todos: precisa de todos. Selecione dois ou mais valores para alternar.",
       "allOption": "Todos",
-      "filterTabLabel": "Filtro",
-      "sortByLabel": "Ordenar por",
       "sortNameAsc": "Nome (ASC)",
       "sortNameDesc": "Nome (DESC)",
       "sortMostGames": "Mais jogos",
@@ -1405,15 +1408,13 @@
   "public": {
     "nav": {
       "games": "Jogos",
-      "hardware": "Hardware"
+      "hardware": "Hardware",
+      "label": "Coleção compartilhada"
     },
     "games": {
       "title": "Jogos",
       "searchLabel": "Pesquisar jogos",
       "emptyState": "Nenhum jogo encontrado.",
-      "filtersButtonLabel": "Filtrar e ordenar",
-      "sortTabLabel": "Ordenar",
-      "noFiltersAvailable": "Ainda não há filtros disponíveis.",
       "loadError": "Não foi possível carregar este jogo. Tente novamente."
     },
     "hardware": {

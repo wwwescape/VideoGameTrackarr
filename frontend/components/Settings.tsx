@@ -1,11 +1,6 @@
 import LogoutIcon from "@mui/icons-material/Logout";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
-import Typography from "@mui/material/Typography";
 import { Trans, useTranslation } from "react-i18next";
 import { useCurrentUser, useLogout } from "../hooks/useAuth";
 import { useColorMode } from "../theme/ColorModeProvider";
@@ -19,6 +14,7 @@ import AccentColorSetting from "./AccentColorSetting";
 import AutocompleteSelect from "./AutocompleteSelect";
 import DataManagementSection from "./DataManagementSection";
 import SettingsFrame from "./SettingsFrame";
+import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 import ShareSection from "./ShareSection";
 
 const Settings = () => {
@@ -50,113 +46,94 @@ const Settings = () => {
 
   return (
     <SettingsFrame>
-      <Card sx={{ maxWidth: 640 }}>
-        <CardContent>
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.account.heading")}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            <Trans
-              i18nKey="settings.account.signedInAs"
-              values={{ username: currentUser?.username ?? "..." }}
-              components={{ 1: <strong /> }}
+      <SettingsColumn>
+        <SettingsGroup title={t("settings.display.heading")}>
+          <SettingRow name={t("settings.display.darkMode")} description={t("settings.display.darkModeHelp")}>
+            <Switch
+              checked={mode === "dark"}
+              onChange={toggleColorMode}
+              slotProps={{ input: { "aria-label": t("settings.display.darkMode") } }}
             />
-          </Typography>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutIcon />}
-            sx={{ mt: 2 }}
-            onClick={() => logoutMutation.mutate()}
+          </SettingRow>
+          <SettingRow name={t("settings.display.highContrast")} description={t("settings.display.highContrastHelp")}>
+            <Switch
+              checked={contrast === "high"}
+              onChange={toggleContrast}
+              slotProps={{ input: { "aria-label": t("settings.display.highContrast") } }}
+            />
+          </SettingRow>
+          <SettingRow name={t("settings.display.accentColor")} description={t("settings.display.accentColorHelp")}>
+            <AccentColorSetting inRow />
+          </SettingRow>
+        </SettingsGroup>
+
+        <SettingsGroup title={t("settings.regional.heading")}>
+          <SettingRow name={t("settings.language.label")}>
+            <AutocompleteSelect<LanguageOption>
+              label={t("settings.language.label")}
+              options={SUPPORTED_LANGUAGES}
+              value={SUPPORTED_LANGUAGES.find((option) => option.code === language) ?? null}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, val) => option.code === val.code}
+              disableClearable
+              onChange={(newValue) => setLanguage(newValue!.code)}
+              sx={{ width: { xs: "100%", md: 300 } }}
+            />
+          </SettingRow>
+          <SettingRow name={t("settings.currency.label")} description={t("settings.currency.description")}>
+            <AutocompleteSelect<CurrencyOption>
+              label={t("settings.currency.label")}
+              options={SUPPORTED_CURRENCIES}
+              value={SUPPORTED_CURRENCIES.find((option) => option.code === currency) ?? null}
+              getOptionLabel={(option) => `${option.name} (${getCurrencySymbol(option.code)})`}
+              isOptionEqualToValue={(option, val) => option.code === val.code}
+              disableClearable
+              onChange={(newValue) => setCurrency(newValue!.code)}
+              sx={{ width: { xs: "100%", md: 300 } }}
+            />
+          </SettingRow>
+          <SettingRow name={t("settings.storeRegion.heading")} description={t("settings.storeRegion.description")}>
+            <AutocompleteSelect<string>
+              label={t("settings.storeRegion.label")}
+              options={storeRegionOptions}
+              value={storeRegion}
+              getOptionLabel={storeRegionLabel}
+              isOptionEqualToValue={(option, val) => option === val}
+              disableClearable
+              onChange={(newValue) => setStoreRegion(newValue!)}
+              sx={{ width: { xs: "100%", md: 300 } }}
+            />
+          </SettingRow>
+        </SettingsGroup>
+
+        <SettingsGroup title={t("settings.data.heading")}>
+          <SettingRow stacked>
+            <DataManagementSection />
+          </SettingRow>
+        </SettingsGroup>
+
+        <SettingsGroup title={t("settings.share.heading")}>
+          <SettingRow stacked>
+            <ShareSection />
+          </SettingRow>
+        </SettingsGroup>
+
+        <SettingsGroup title={t("settings.account.heading")}>
+          <SettingRow
+            name={
+              <Trans
+                i18nKey="settings.account.signedInAs"
+                values={{ username: currentUser?.username ?? "..." }}
+                components={{ 1: <strong /> }}
+              />
+            }
           >
-            {t("common.logOut")}
-          </Button>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.display.heading")}
-          </Typography>
-          <FormControlLabel
-            control={<Switch checked={mode === "dark"} onChange={toggleColorMode} />}
-            label={t("settings.display.darkMode")}
-          />
-          <FormControlLabel
-            control={<Switch checked={contrast === "high"} onChange={toggleContrast} />}
-            label={t("settings.display.highContrast")}
-            sx={{ display: "block" }}
-          />
-          <AccentColorSetting />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.language.heading")}
-          </Typography>
-          <AutocompleteSelect<LanguageOption>
-            label={t("settings.language.label")}
-            options={SUPPORTED_LANGUAGES}
-            value={SUPPORTED_LANGUAGES.find((option) => option.code === language) ?? null}
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, val) => option.code === val.code}
-            disableClearable
-            onChange={(newValue) => setLanguage(newValue!.code)}
-            sx={{ minWidth: 280 }}
-          />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.currency.heading")}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            {t("settings.currency.description")}
-          </Typography>
-          <AutocompleteSelect<CurrencyOption>
-            label={t("settings.currency.label")}
-            options={SUPPORTED_CURRENCIES}
-            value={SUPPORTED_CURRENCIES.find((option) => option.code === currency) ?? null}
-            getOptionLabel={(option) => `${option.name} (${getCurrencySymbol(option.code)})`}
-            isOptionEqualToValue={(option, val) => option.code === val.code}
-            disableClearable
-            onChange={(newValue) => setCurrency(newValue!.code)}
-            sx={{ minWidth: 280 }}
-          />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.storeRegion.heading")}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            {t("settings.storeRegion.description")}
-          </Typography>
-          <AutocompleteSelect<string>
-            label={t("settings.storeRegion.label")}
-            options={storeRegionOptions}
-            value={storeRegion}
-            getOptionLabel={storeRegionLabel}
-            isOptionEqualToValue={(option, val) => option === val}
-            disableClearable
-            onChange={(newValue) => setStoreRegion(newValue!)}
-            sx={{ minWidth: 280 }}
-          />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.data.heading")}
-          </Typography>
-          <DataManagementSection />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle1" gutterBottom>
-            {t("settings.share.heading")}
-          </Typography>
-          <ShareSection />
-        </CardContent>
-      </Card>
+            <Button variant="outlined" color="error" startIcon={<LogoutIcon />} onClick={() => logoutMutation.mutate()}>
+              {t("common.logOut")}
+            </Button>
+          </SettingRow>
+        </SettingsGroup>
+      </SettingsColumn>
     </SettingsFrame>
   );
 };

@@ -19,7 +19,7 @@ import { gameIdentifier } from "../utils/identifiers";
 import { getAddonType, isAddon } from "../utils/utils";
 import { DetailHero, Facts, Pill, Section } from "./Detail";
 import ExpandableText from "./ExpandableText";
-import { GameStoreLinks } from "./GameAboutSection";
+import { GameStoreLinks } from "./GameStoreLinks";
 import OwnershipBadges from "./OwnershipBadges";
 import ScreenshotGallery from "./ScreenshotGallery";
 import VideoGallery from "./VideoGallery";
@@ -68,9 +68,12 @@ interface GameHeroProps {
   // An IGDB preview: its series/collection pages may not exist locally, so those pills
   // aren't links.
   preview?: boolean;
+  // A share-link page: the parent game links to its share page, and series/collection pills
+  // aren't links (those pages need a login).
+  publicToken?: string;
 }
 
-export const GameHero = ({ game, status, crumbs, preview = false }: GameHeroProps) => {
+export const GameHero = ({ game, status, crumbs, preview = false, publicToken }: GameHeroProps) => {
   const { t, i18n } = useTranslation();
   const greyscale = !preview && !status.owned && !status.wishlisted;
   const missing = greyscale && status.autoDiscovered;
@@ -83,13 +86,16 @@ export const GameHero = ({ game, status, crumbs, preview = false }: GameHeroProp
       })
     : t("common.unknown");
 
+  const linksCatalogPages = !preview && publicToken === undefined;
+  const gameLink = (id: number, slug: string | null, uuid: string, name: string) =>
+    publicToken !== undefined ? `/public/${publicToken}/games/${id}` : `/game/${gameIdentifier({ slug, uuid, name })}`;
   const parentLink =
     game.parentGameId !== null
-      ? { name: game.parentGameName, to: `/game/${gameIdentifier({ slug: game.parentGameSlug, uuid: game.parentGameUuid!, name: game.parentGameName! })}` }
+      ? { name: game.parentGameName, to: gameLink(game.parentGameId, game.parentGameSlug, game.parentGameUuid!, game.parentGameName!) }
       : game.displayParentGameId !== null
         ? {
             name: game.displayParentGameName,
-            to: `/game/${gameIdentifier({ slug: game.displayParentGameSlug, uuid: game.displayParentGameUuid!, name: game.displayParentGameName! })}`,
+            to: gameLink(game.displayParentGameId, game.displayParentGameSlug, game.displayParentGameUuid!, game.displayParentGameName!),
           }
         : game.externalParentName
           ? { name: game.externalParentName, href: game.externalParentIgdbUrl ?? undefined }
@@ -169,7 +175,7 @@ export const GameHero = ({ game, status, crumbs, preview = false }: GameHeroProp
   }
   game.franchises.forEach((franchise) =>
     pills.push(
-      <Pill key={`series-${franchise.id}`} icon={<AccountTreeIcon />} to={!preview ? `/games/series/${franchise.slug ?? ""}` : undefined}>
+      <Pill key={`series-${franchise.id}`} icon={<AccountTreeIcon />} to={linksCatalogPages ? `/games/series/${franchise.slug ?? ""}` : undefined}>
         {t("games.about.seriesLabel", { name: franchise.name })}
       </Pill>
     )
@@ -179,7 +185,7 @@ export const GameHero = ({ game, status, crumbs, preview = false }: GameHeroProp
       <Pill
         key={`collection-${collection.id}`}
         icon={<CollectionsBookmarkIcon />}
-        to={!preview ? `/games/collections/${collection.slug ?? ""}` : undefined}
+        to={linksCatalogPages ? `/games/collections/${collection.slug ?? ""}` : undefined}
       >
         {t("games.about.collectionLabel", { name: collection.name })}
       </Pill>

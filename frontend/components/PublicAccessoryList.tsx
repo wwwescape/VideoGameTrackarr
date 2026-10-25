@@ -2,6 +2,7 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { usePublicAccessories } from "../hooks/usePublic";
 import HardwareCard from "./HardwareCard";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import VirtualGameGrid from "./VirtualGameGrid";
 
 interface PublicAccessoryListProps {
@@ -23,6 +24,7 @@ const PublicAccessoryList = ({ token, search }: PublicAccessoryListProps) => {
 
   return (
     <VirtualGameGrid
+      minItemWidth={CARD_SIZE_DEFAULT}
       items={accessories}
       getKey={(accessory) => accessory.id}
       renderItem={(accessory) => (

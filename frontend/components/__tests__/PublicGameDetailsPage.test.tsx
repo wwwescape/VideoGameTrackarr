@@ -90,17 +90,17 @@ describe("PublicGameDetailsPage", () => {
     expect(screen.queryByRole("link", { name: /Series:/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Collection:/ })).not.toBeInTheDocument();
     // The display parent links to its public page, not the private /game/... route.
-    expect(screen.getByRole("link", { name: "Zelda Original" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /for Zelda Original/ })).toHaveAttribute(
       "href",
       "/public/tok/games/7"
     );
   });
 
-  it("goes back to the public games list", async () => {
+  it("goes back to the public games list from the breadcrumb", async () => {
     getPublicGame.mockResolvedValue(game);
     renderPage();
 
-    await userEvent.click(await screen.findByRole("link", { name: "Back to Games" }));
+    await userEvent.click(await screen.findByRole("link", { name: "Games" }));
 
     expect(await screen.findByText("Public games list")).toBeInTheDocument();
   });

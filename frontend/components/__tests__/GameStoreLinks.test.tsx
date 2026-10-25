@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameAboutData } from "../../api/types";
 import { createVgtTheme } from "../../theme/createVgtTheme";
 import { StoreRegionProvider } from "../../theme/StoreRegionProvider";
-import GameAboutSection from "../GameAboutSection";
+import { GameStoreLinks } from "../GameStoreLinks";
 
 const game: GameAboutData = {
   name: "Indiana Jones and the Great Circle",
@@ -49,7 +49,7 @@ function renderSection() {
     <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
       <MemoryRouter>
         <StoreRegionProvider>
-          <GameAboutSection game={game} />
+          <GameStoreLinks game={game} />
         </StoreRegionProvider>
       </MemoryRouter>
     </ThemeProvider>
@@ -74,7 +74,7 @@ function memoryStorage(): Storage {
   };
 }
 
-describe("GameAboutSection store links", () => {
+describe("GameStoreLinks", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", memoryStorage());
   });

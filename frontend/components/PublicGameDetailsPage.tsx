@@ -1,21 +1,14 @@
-import { Link, useParams } from "react-router-dom";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
 import CircularProgress from "@mui/material/CircularProgress";
-import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
+import { useParams } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { usePublicGame } from "../hooks/usePublic";
-import GameAboutSection from "./GameAboutSection";
-import GameCoverCard from "./GameCoverCard";
+import { GameAboutBlock, GameHero, GameMediaSections } from "./GameDetailParts";
 import NotFoundPage from "./NotFoundPage";
 
-const sectionCardSx = { borderRadius: 2, overflow: "hidden" } as const;
-
-// The share page's read-only take on GameDetails: the cover and About section only. Tags,
+// The share page's read-only take on GameDetails: the hero, About and media only. Tags,
 // Your Library, Addons, Progress and Notes are left out on purpose — the backend doesn't
 // send that data here (see PublicGameDetailResponse).
 const PublicGameDetailsPage = () => {
@@ -52,29 +45,18 @@ const PublicGameDetailsPage = () => {
     );
   }
 
+  // Sale tracking and Missing are the owner's own data, so the hero leaves them out.
   return (
-    <Grid container spacing={{ xs: 2, md: 3 }} sx={{ alignItems: "flex-start" }}>
-      <Grid size={{ xs: 12, md: 3 }}>
-        <Stack spacing={2}>
-          {/* Sale tracking is the owner's own data, and the public list never shows "Missing". */}
-          <GameCoverCard game={{ ...game, isOnSale: false, autoDiscovered: false }} />
-          <Button
-            component={Link}
-            to={gamesPath}
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            fullWidth
-          >
-            {t("errors.backTo", { page: t("public.nav.games") })}
-          </Button>
-        </Stack>
-      </Grid>
-      <Grid size={{ xs: 12, md: 9 }}>
-        <Card sx={sectionCardSx}>
-          <GameAboutSection game={game} publicToken={token} />
-        </Card>
-      </Grid>
-    </Grid>
+    <>
+      <GameHero
+        game={game}
+        status={{ coverUrl: game.coverUrl, owned: game.owned, wishlisted: game.wishlisted }}
+        crumbs={[{ label: t("public.nav.games"), to: gamesPath }]}
+        publicToken={token}
+      />
+      <GameAboutBlock game={game} />
+      <GameMediaSections game={game} />
+    </>
   );
 };
 

@@ -4,12 +4,8 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
-import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -22,6 +18,7 @@ import { formatFileSize } from "../utils/roms";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import SettingsFrame from "./SettingsFrame";
+import { SettingsGroup } from "./SettingsLayout";
 
 interface BiosCardProps {
   system: BiosSystem;
@@ -62,7 +59,7 @@ const BiosCard = ({ system, onDelete }: BiosCardProps) => {
     const file = uploaded.get(accepted.filename);
     const busy = upload.isPending && target === accepted.filename;
     return (
-      <Box key={accepted.filename} data-testid={`bios-file-${accepted.filename}`} sx={{ py: 1 }}>
+      <Box key={accepted.filename} data-testid={`bios-file-${accepted.filename}`} sx={{ px: { xs: 2, sm: 2.5 }, py: 1.5 }}>
         <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: "center", flexWrap: "wrap" }}>
           <Typography variant="body2" sx={{ fontFamily: "monospace", wordBreak: "break-all" }}>
             {accepted.filename}
@@ -128,35 +125,37 @@ const BiosCard = ({ system, onDelete }: BiosCardProps) => {
   };
 
   return (
-    <Card variant="outlined" data-testid={`bios-system-${system.key}`}>
-      <CardHeader
+    <Box data-testid={`bios-system-${system.key}`}>
+      <SettingsGroup
         title={system.label}
-        subheader={t("settings.emulation.usedFor", { systems: system.systems.join(", ") })}
-        action={<Box sx={{ pt: 1, pr: 1 }}>{statusChip}</Box>}
-      />
-      <CardContent sx={{ pt: 0 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {system.required
-            ? system.acceptedFiles.filter((file) => file.satisfies).length > 1
-              ? t("settings.emulation.requiredAnyHint")
-              : t("settings.emulation.requiredHint")
-            : t("settings.emulation.optionalHint")}
-        </Typography>
-        <Divider />
+        aside={statusChip}
+        lead={
+          <>
+            {t("settings.emulation.usedFor", { systems: system.systems.join(", ") })}
+            <Box component="span" sx={{ display: "block", color: "vgt.text3" }}>
+              {system.required
+                ? system.acceptedFiles.filter((file) => file.satisfies).length > 1
+                  ? t("settings.emulation.requiredAnyHint")
+                  : t("settings.emulation.requiredHint")
+                : t("settings.emulation.optionalHint")}
+            </Box>
+          </>
+        }
+      >
         {system.acceptedFiles.map(fileRow)}
-        <input
-          ref={inputRef}
-          type="file"
-          hidden
-          data-testid={`bios-input-${system.key}`}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (file && target) void handleFile(file, target);
-          }}
-        />
-      </CardContent>
-    </Card>
+      </SettingsGroup>
+      <input
+        ref={inputRef}
+        type="file"
+        hidden
+        data-testid={`bios-input-${system.key}`}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file && target) void handleFile(file, target);
+        }}
+      />
+    </Box>
   );
 };
 
@@ -173,7 +172,7 @@ const EmulationPage = () => {
 
   return (
     <SettingsFrame description={t("settings.emulation.description")}>
-      <Alert severity="info" sx={{ mb: 3 }}>
+      <Alert severity="info" sx={{ mb: 2.5 }}>
         {t("settings.emulation.legalNote")}
       </Alert>
       {isLoading ? (
@@ -184,8 +183,8 @@ const EmulationPage = () => {
         <Box
           sx={{
             display: "grid",
-            gap: 2,
-            gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+            columnGap: 2.5,
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "repeat(2, minmax(0, 1fr))" },
             alignItems: "start",
           }}
         >
