@@ -4,17 +4,17 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { Tag } from "../../api/types";
 import { buildGameFilterParams } from "../../api/games";
-import GameListToolbar from "../GameListToolbar";
+import GameFilterDialog from "../GameFilterDialog";
 
 const tags: Tag[] = [
   { id: 1, name: "Roguelike", color: null, textColor: null },
   { id: 2, name: "Metroidvania", color: null, textColor: null },
 ];
 
-function renderToolbar(overrides: Partial<ComponentProps<typeof GameListToolbar>> = {}) {
-  const props: ComponentProps<typeof GameListToolbar> = {
-    searchKeyword: "",
-    onSearchKeywordChange: vi.fn(),
+function renderToolbar(overrides: Partial<ComponentProps<typeof GameFilterDialog>> = {}) {
+  const props: ComponentProps<typeof GameFilterDialog> = {
+    open: true,
+    onClose: vi.fn(),
     ownershipStatuses: [],
     onOwnershipStatusesChange: vi.fn(),
     ownershipExclude: false,
@@ -58,17 +58,15 @@ function renderToolbar(overrides: Partial<ComponentProps<typeof GameListToolbar>
     onPlayStatusExcludeChange: vi.fn(),
     matchAll: {},
     onMatchAllChange: vi.fn(),
-    sort: "name_asc",
-    onSortChange: vi.fn(),
     ...overrides,
   };
-  render(<GameListToolbar {...props} />);
+  render(<GameFilterDialog {...props} />);
   return props;
 }
 
+// The dialog renders open; the page's Filter button is what opens it (see GameListControls).
 async function openFilters() {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Filters & More" }));
   return { user, dialog: await screen.findByRole("dialog") };
 }
 
@@ -76,7 +74,7 @@ async function openFilters() {
 // so the Tags field's toggle is the first one.
 const TAGS_GROUP = 0;
 
-describe("GameListToolbar match mode", () => {
+describe("GameFilterDialog match mode", () => {
   it("keeps the toggle disabled until two values are picked", async () => {
     renderToolbar({ tagIds: [1] });
     const { dialog } = await openFilters();
@@ -144,7 +142,7 @@ describe("buildGameFilterParams", () => {
   });
 });
 
-describe("GameListToolbar on a Platform page", () => {
+describe("GameFilterDialog on a Platform page", () => {
   it("hides the Platforms field when hidePlatformsField is set", async () => {
     renderToolbar({ hidePlatformsField: true });
     const { dialog } = await openFilters();
@@ -161,7 +159,7 @@ describe("GameListToolbar on a Platform page", () => {
   });
 });
 
-describe("GameListToolbar Source filter", () => {
+describe("GameFilterDialog Source filter", () => {
   it("is hidden unless the page wires it up", async () => {
     renderToolbar();
     const { dialog } = await openFilters();

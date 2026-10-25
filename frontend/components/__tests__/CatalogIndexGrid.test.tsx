@@ -9,6 +9,7 @@ function renderGrid(stateKey: string) {
       <CatalogIndexGrid
         stateKey={stateKey}
         emptyMessage="None"
+        countKey="games.collectionsPage.count"
         searchLabel="Search collections"
         searchPlaceholder="Enter collection name"
         entries={[]}

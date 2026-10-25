@@ -1,190 +1,64 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import type { MatchAllFilters } from "../api/games";
-import type { GameSortOption, MediaFormat, PlayStatus } from "../api/types";
-import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useGameListState } from "../hooks/useGameListState";
 import { useMissingAddons } from "../hooks/useInsights";
-import { usePlatforms } from "../hooks/usePlatforms";
-import { useStorefronts } from "../hooks/useStorefronts";
-import { useTags } from "../hooks/useTags";
+import { useLocalPreference } from "../hooks/useLocalPreference";
 import { gameIdentifier } from "../utils/identifiers";
 import { matchesOwnership } from "../utils/ownershipFilter";
-import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
+import { Section } from "./Detail";
 import GameCard from "./GameCard";
-import GameListToolbar, { type OwnershipStatus } from "./GameListToolbar";
+import { useGameListControls } from "./GameListControls";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
+import Page from "./Page";
 import VirtualList from "./VirtualList";
-import { usePruneStaleIds, useSessionState } from "../hooks/useSessionState";
 
-const MIN_SEARCH_LENGTH = 3;
-
+// Insights → Missing add-ons: for each owned game, the DLC/expansions/packs you don't have.
+// Same filters and toolbar as the Games list (see GameListControls); the filters apply to the
+// owned parent game (its platforms, copies, tags, progress), ownership to the add-ons.
 const MissingAddonsSection = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // No Game Types (everything here is an add-on) and no Steelbook (an add-on you don't own has
+  // no copy to check).
+  const state = useGameListState("missingAddons", { gameTypes: false, steelbook: false });
+  const [cardSize, setCardSize] = useLocalPreference("missingAddons.cardSize", CARD_SIZE_DEFAULT);
+  const controls = useGameListControls(state, {
+    view: "covers",
+    setView: () => {},
+    cardSize,
+    setCardSize,
+    showViewMenu: false,
+  });
 
-  const [searchKeyword, setSearchKeyword] = useSessionState("missingAddons.searchKeyword", "");
-  const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>("missingAddons.ownershipStatuses", []);
-  const [ownershipExclude, setOwnershipExclude] = useSessionState("missingAddons.ownershipExclude", false);
-  const [platformIds, setPlatformIds] = useSessionState<number[]>("missingAddons.platformIds", []);
-  const [platformExclude, setPlatformExclude] = useSessionState("missingAddons.platformExclude", false);
-  const [tagIds, setTagIds] = useSessionState<number[]>("missingAddons.tagIds", []);
-  const [tagExclude, setTagExclude] = useSessionState("missingAddons.tagExclude", false);
-  const [collectionIds, setCollectionIds] = useSessionState<number[]>("missingAddons.collectionIds", []);
-  const [collectionExclude, setCollectionExclude] = useSessionState("missingAddons.collectionExclude", false);
-  const [franchiseIds, setFranchiseIds] = useSessionState<number[]>("missingAddons.franchiseIds", []);
-  const [franchiseExclude, setFranchiseExclude] = useSessionState("missingAddons.franchiseExclude", false);
-  const [formats, setFormats] = useSessionState<MediaFormat[]>("missingAddons.formats", []);
-  const [formatExclude, setFormatExclude] = useSessionState("missingAddons.formatExclude", false);
-  const [storefronts, setStorefronts] = useSessionState<string[]>("missingAddons.storefronts", []);
-  const [storefrontExclude, setStorefrontExclude] = useSessionState("missingAddons.storefrontExclude", false);
-  const [playStatuses, setPlayStatuses] = useSessionState<PlayStatus[]>("missingAddons.playStatuses", []);
-  const [playStatusExclude, setPlayStatusExclude] = useSessionState("missingAddons.playStatusExclude", false);
-  const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>("missingAddons.matchAll", {});
-  const [sort, setSort] = useSessionState<GameSortOption>("missingAddons.sort", "name_asc");
-
-  const trimmedKeyword = searchKeyword.trim();
-  const debouncedKeyword = useDebouncedValue(trimmedKeyword, 500);
-  const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
-
-  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
-  const { data: tags = [], isSuccess: tagsLoaded } = useTags();
-  const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
-  const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
-  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
-  usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
-  usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
-  usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
-  const { data: realStorefronts = [] } = useStorefronts();
-  const storefrontOptions = useMemo(
-    () => Array.from(new Set([...ALL_KNOWN_STOREFRONTS, ...realStorefronts])).sort(),
-    [realStorefronts]
-  );
-
-  const filters = useMemo(
-    () => ({
-      search: isSearchActive ? debouncedKeyword : undefined,
-      platformIds: platformIds.length > 0 ? platformIds : undefined,
-      platformExclude,
-      tagIds: tagIds.length > 0 ? tagIds : undefined,
-      tagExclude,
-      collectionIds: collectionIds.length > 0 ? collectionIds : undefined,
-      collectionExclude,
-      franchiseIds: franchiseIds.length > 0 ? franchiseIds : undefined,
-      franchiseExclude,
-      // No categories/categoryExclude here — this page has no Game Types filter at all
-      // (see hideGameTypesField below): everything shown is inherently an addon, so
-      // filtering by main_game/bundle/etc would never match anything.
-      formats: formats.length > 0 ? formats : undefined,
-      formatExclude,
-      storefronts: storefronts.length > 0 ? storefronts : undefined,
-      storefrontExclude,
-      // Filters on the owned parent game's progress, like formats/storefronts above filter
-      // on its copies (see insight_repository.find_missing_addons).
-      playStatuses: playStatuses.length > 0 ? playStatuses : undefined,
-      playStatusExclude,
-      matchAll,
-      sort,
-    }),
-    [
-      isSearchActive,
-      debouncedKeyword,
-      platformIds,
-      platformExclude,
-      tagIds,
-      tagExclude,
-      collectionIds,
-      collectionExclude,
-      franchiseIds,
-      franchiseExclude,
-      formats,
-      formatExclude,
-      storefronts,
-      storefrontExclude,
-      playStatuses,
-      playStatusExclude,
-      matchAll,
-      sort,
-    ]
-  );
-
-  const { data: entries } = useMissingAddons(filters);
+  const { data: entries } = useMissingAddons(state.apiFilters);
 
   // Ownership is never sent server-side (see GameList.tsx/CatalogBrowseGrid.tsx's identical
   // client-side treatment) — here it narrows each entry's addons rather than a flat list, so
   // a group whose addons are all filtered out drops out entirely instead of showing an empty
   // addon grid under its game's name.
+  const { statuses, exclude, matchAll } = state.ownership;
   const visibleEntries = useMemo(() => {
     if (!entries) return [];
-    if (ownershipStatuses.length === 0) return entries;
+    if (statuses.length === 0) return entries;
     return entries
       .map((entry) => ({
         ...entry,
-        missingAddons: entry.missingAddons.filter((addon) =>
-          matchesOwnership(addon, ownershipStatuses, ownershipExclude, matchAll.ownership)
-        ),
+        missingAddons: entry.missingAddons.filter((addon) => matchesOwnership(addon, statuses, exclude, matchAll)),
       }))
       .filter((entry) => entry.missingAddons.length > 0);
-  }, [entries, ownershipStatuses, ownershipExclude, matchAll.ownership]);
+  }, [entries, statuses, exclude, matchAll]);
 
   return (
-    <>
-      <Box sx={{ mb: 3 }}>
-        <GameListToolbar
-          searchKeyword={searchKeyword}
-          onSearchKeywordChange={setSearchKeyword}
-          ownershipStatuses={ownershipStatuses}
-          onOwnershipStatusesChange={setOwnershipStatuses}
-          ownershipExclude={ownershipExclude}
-          onOwnershipExcludeChange={setOwnershipExclude}
-          platformOptions={platforms}
-          platformIds={platformIds}
-          onPlatformIdsChange={setPlatformIds}
-          platformExclude={platformExclude}
-          onPlatformExcludeChange={setPlatformExclude}
-          tagOptions={tags}
-          tagIds={tagIds}
-          onTagIdsChange={setTagIds}
-          tagExclude={tagExclude}
-          onTagExcludeChange={setTagExclude}
-          collectionOptions={collections}
-          collectionIds={collectionIds}
-          onCollectionIdsChange={setCollectionIds}
-          collectionExclude={collectionExclude}
-          onCollectionExcludeChange={setCollectionExclude}
-          franchiseOptions={franchises}
-          franchiseIds={franchiseIds}
-          onFranchiseIdsChange={setFranchiseIds}
-          franchiseExclude={franchiseExclude}
-          onFranchiseExcludeChange={setFranchiseExclude}
-          gameTypes={[]}
-          onGameTypesChange={() => {}}
-          gameTypeExclude={false}
-          onGameTypeExcludeChange={() => {}}
-          hideGameTypesField
-          formats={formats}
-          onFormatsChange={setFormats}
-          formatExclude={formatExclude}
-          onFormatExcludeChange={setFormatExclude}
-          storefrontOptions={storefrontOptions}
-          storefronts={storefronts}
-          onStorefrontsChange={setStorefronts}
-          storefrontExclude={storefrontExclude}
-          onStorefrontExcludeChange={setStorefrontExclude}
-          sort={sort}
-          onSortChange={setSort}
-          playStatuses={playStatuses}
-          onPlayStatusesChange={setPlayStatuses}
-          playStatusExclude={playStatusExclude}
-          onPlayStatusExcludeChange={setPlayStatusExclude}
-          matchAll={matchAll}
-          onMatchAllChange={setMatchAll}
-        />
-      </Box>
+    <Page
+      meta={entries ? t("insights.missingAddons.gameCount", { count: visibleEntries.length }) : undefined}
+      toolbarEnd={controls.toolbarEnd}
+      actions={controls.searchField}
+    >
+      {controls.chipRow}
       {!entries || entries.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
           {t("insights.missingAddons.noneFound")}
@@ -195,32 +69,46 @@ const MissingAddonsSection = () => {
         <VirtualList
           items={visibleEntries}
           getKey={(entry) => entry.game.id}
-          estimateSize={() => 280}
-          gap={24}
+          estimateSize={() => cardSize * (4 / 3) + 160}
+          gap={8}
           renderItem={(entry) => (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                {entry.game.name}
-              </Typography>
-              {/* Fixed 16px gap at every breakpoint, matching VirtualGameGrid/CardCarousel's own
-                  GRID_GAP_PX — keeps this grid's card width consistent with every other GameCard
-                  surface, not just its own column counts. */}
-              <Grid container spacing={2}>
+            <Section
+              title={entry.game.name}
+              action={
+                <Box
+                  component={Link}
+                  to={`/game/${gameIdentifier(entry.game)}`}
+                  sx={{ fontSize: 12.5, fontWeight: 600, color: "primary.main", textDecoration: "none", whiteSpace: "nowrap" }}
+                >
+                  {t("insights.missingAddons.openGame")}
+                </Box>
+              }
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(2, minmax(0, 1fr))",
+                    sm: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
+                  },
+                  gap: "18px 14px",
+                }}
+              >
                 {entry.missingAddons.map((addon) => (
-                  <Grid key={addon.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                    <GameCard
-                      game={addon}
-                      context="addon"
-                      contextFunction={() => navigate(`/addon/${gameIdentifier(addon)}`)}
-                    />
-                  </Grid>
+                  <GameCard
+                    key={addon.id}
+                    game={addon}
+                    context="addon"
+                    contextFunction={() => navigate(`/addon/${gameIdentifier(addon)}`)}
+                  />
                 ))}
-              </Grid>
-            </Box>
+              </Box>
+            </Section>
           )}
         />
       )}
-    </>
+      {controls.dialogs}
+    </Page>
   );
 };
 

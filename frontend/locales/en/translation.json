@@ -537,9 +537,7 @@
       "matchModeAriaLabel": "Match any or all of the selected values",
       "matchModeTooltip": "Match any: a game needs at least one of the selected values. Match all: it needs every one. Select two or more values to switch.",
       "allOption": "All",
-      "filtersButtonLabel": "Filters & More",
       "filterTabLabel": "Filter",
-      "moreTabLabel": "More",
       "sortByLabel": "Sort By",
       "sortNameAsc": "Name (ASC)",
       "sortNameDesc": "Name (DESC)",
@@ -549,7 +547,6 @@
       "showMissingLabel": "Show what I am missing?",
       "steelbookOnlyLabel": "Steelbooks only",
       "clearFiltersButton": "Clear filters",
-      "noFiltersAvailable": "No filters available",
       "noSearchMatches": "No matches found."
     },
     "card": {
@@ -602,7 +599,9 @@
     "collectionsPage": {
       "emptyMessage": "No collections yet — they show up here once you've imported a game that belongs to one.",
       "searchLabel": "Search collections",
-      "searchPlaceholder": "Enter collection name"
+      "searchPlaceholder": "Enter collection name",
+      "count_one": "{{count}} collection",
+      "count_other": "{{count}} collections"
     },
     "seriesDetailPage": {
       "kindLabel": "Series",
@@ -611,7 +610,9 @@
     "seriesPage": {
       "emptyMessage": "No series yet — they show up here once you've imported a game that belongs to one.",
       "searchLabel": "Search series",
-      "searchPlaceholder": "Enter series name"
+      "searchPlaceholder": "Enter series name",
+      "count_one": "{{count}} series",
+      "count_other": "{{count}} series"
     },
     "platformDetailPage": {
       "kindLabel": "Platform"
@@ -623,7 +624,11 @@
       "ownedCount_one": "{{count}} owned",
       "ownedCount_other": "{{count}} owned",
       "wishlistedCount_one": "{{count}} wishlisted",
-      "wishlistedCount_other": "{{count}} wishlisted"
+      "wishlistedCount_other": "{{count}} wishlisted",
+      "columnOwned": "Owned",
+      "columnWishlisted": "Wishlisted",
+      "count_one": "{{count}} platform",
+      "count_other": "{{count}} platforms"
     },
     "about": {
       "companyRoleDeveloper": "Developed by",
@@ -824,7 +829,8 @@
       "clearSearch": "Clear search",
       "removeFilter": "Remove filter {{label}}",
       "excludedChip": "Not {{label}}",
-      "filterTitle": "Filters"
+      "filterTitle": "Filters",
+      "columnGames": "Games"
     },
     "detail": {
       "aboutTitle": "About",
@@ -837,7 +843,9 @@
     "page": {
       "emptyState": "No upcoming events right now.",
       "ongoingHeading": "Ongoing",
-      "upcomingHeading": "Upcoming"
+      "upcomingHeading": "Upcoming",
+      "eventCount_one": "{{count}} event",
+      "eventCount_other": "{{count}} events"
     },
     "about": {
       "lastUpdatedLabel": "Last updated: {{date}}",
@@ -882,7 +890,10 @@
       "removeEntryTooltip": "Remove this entry"
     },
     "missingAddons": {
-      "noneFound": "No missing addons found — you have everything that's been imported for the games you own."
+      "noneFound": "No missing addons found — you have everything that's been imported for the games you own.",
+      "gameCount_one": "{{count}} game",
+      "gameCount_other": "{{count}} games",
+      "openGame": "Open game"
     },
     "steamSync": {
       "description": "Every game Steam knows you own or have wishlisted, matched against your VGT catalog. Nothing changes here until you explicitly Sync a row — Import only fetches and matches, it never writes to your library on its own.",
@@ -1028,6 +1039,9 @@
     "refCard": {
       "gameCountSingular": "{{count}} game",
       "gameCountPlural": "{{count}} games"
+    },
+    "index": {
+      "viewCards": "Cards"
     }
   },
   "hardware": {
@@ -1171,7 +1185,9 @@
       "empty": "No accessories found — every owned accessory is linked to hardware you own."
     },
     "card": {
-      "noImage": "No image"
+      "noImage": "No image",
+      "quantity_one": "{{count}} owned",
+      "quantity_other": "{{count}} owned"
     },
     "coverCard": {
       "noImageAvailable": "No Image Available"
@@ -1209,6 +1225,11 @@
     "deviceList": {
       "typeLabel": "Device type",
       "emptyState": "No devices found."
+    },
+    "filter": {
+      "statusLabel": "Status",
+      "kindChip": "{{kind}}: {{label}}",
+      "columnQuantity": "Qty"
     }
   },
   "notes": {

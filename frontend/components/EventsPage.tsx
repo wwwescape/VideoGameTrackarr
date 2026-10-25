@@ -1,20 +1,24 @@
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import type { EventSummary } from "../api/types";
 import { useEvents } from "../hooks/useEvents";
+import { Section } from "./Detail";
 import EventCard from "./EventCard";
 import Page from "./Page";
 
 const EventGrid = ({ events }: { events: EventSummary[] }) => (
-  <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+  <Box
+    sx={{
+      display: "grid",
+      gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(auto-fill, minmax(260px, 1fr))" },
+      gap: "18px 14px",
+    }}
+  >
     {events.map((event) => (
-      <Grid key={event.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-        <EventCard event={event} />
-      </Grid>
+      <EventCard key={event.id} event={event} />
     ))}
-  </Grid>
+  </Box>
 );
 
 const EventsPage = () => {
@@ -33,31 +37,23 @@ const EventsPage = () => {
   );
 
   return (
-    <Page>
+    <Page meta={events ? t("events.page.eventCount", { count: events.length }) : undefined}>
       {isLoading ? (
-        <Typography color="text.secondary">{t("common.loading")}</Typography>
+        <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
       ) : (
         <>
           {ongoing.length > 0 ? (
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h5" component="h2" gutterBottom>
-                {t("events.page.ongoingHeading")}
-              </Typography>
+            <Section id="ongoing" title={t("events.page.ongoingHeading")}>
               <EventGrid events={ongoing} />
-            </Box>
+            </Section>
           ) : null}
-          <Box>
-            <Typography variant="h5" component="h2" gutterBottom>
-              {t("events.page.upcomingHeading")}
-            </Typography>
+          <Section id="upcoming" title={t("events.page.upcomingHeading")}>
             {upcoming.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                {t("events.page.emptyState")}
-              </Typography>
+              <Paper sx={{ p: 3, textAlign: "center" }}>{t("events.page.emptyState")}</Paper>
             ) : (
               <EventGrid events={upcoming} />
             )}
-          </Box>
+          </Section>
         </>
       )}
     </Page>

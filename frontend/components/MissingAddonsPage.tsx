@@ -1,13 +1,6 @@
 import MissingAddonsSection from "./MissingAddonsSection";
-import Page from "./Page";
 
-const MissingAddonsPage = () => {
-
-  return (
-    <Page>
-      <MissingAddonsSection />
-    </Page>
-  );
-};
+// The section renders its own page frame: its toolbar holds the list's controls.
+const MissingAddonsPage = () => <MissingAddonsSection />;
 
 export default MissingAddonsPage;

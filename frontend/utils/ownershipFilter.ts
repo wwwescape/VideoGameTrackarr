@@ -1,4 +1,4 @@
-import type { OwnershipStatus } from "../components/GameListToolbar";
+import type { OwnershipStatus } from "../components/GameFilterDialog";
 
 // The Ownership filter is the one filter applied client-side (owned/wishlisted already
 // arrive on every GameSummary), so its Any/All and Exclude rules live here rather than in
