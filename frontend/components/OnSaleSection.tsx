@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
@@ -11,6 +10,7 @@ import { formatCurrency } from "../utils/currency";
 import { gameIdentifier } from "../utils/identifiers";
 import { isAddon } from "../utils/utils";
 import GameCard from "./GameCard";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
 
 interface OnSaleSectionProps {
   limit?: number;
@@ -78,16 +78,18 @@ const OnSaleSection = ({ limit }: OnSaleSectionProps) => {
   }
 
   return (
-    // Fixed 16px gap at every breakpoint, matching VirtualGameGrid/CardCarousel's own
-    // GRID_GAP_PX — keeps this grid's card width consistent with every other GameCard surface,
-    // not just its own column counts.
-    <Grid container spacing={2}>
+    // Two columns on phones, then as many cards of the Games list's default size as fit.
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: `repeat(auto-fill, minmax(${CARD_SIZE_DEFAULT}px, 1fr))` },
+        gap: "18px 14px",
+      }}
+    >
       {visibleItems.map((item) => (
-        <Grid key={item.libraryItemId} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-          <OnSaleTile item={item} />
-        </Grid>
+        <OnSaleTile key={item.libraryItemId} item={item} />
       ))}
-    </Grid>
+    </Box>
   );
 };
 

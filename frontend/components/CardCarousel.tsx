@@ -5,9 +5,9 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useResponsiveColumns } from "../hooks/useResponsiveColumns";
+import { Section } from "./Detail";
 
 // Same breakpoint -> column-count mapping the Games/Hardware grid uses (useResponsiveColumns,
 // via VirtualGameGrid) — cards are sized as an even percentage-of-row-width share, not a fixed
@@ -25,8 +25,10 @@ interface CardCarouselProps<T> {
   getItemKey: (item: T) => string | number;
   title: string;
   // Omit when there's no dedicated full-page destination for this section (e.g. Release
-  // Calendar) — the chevron-link next to the title only renders when this is set.
+  // Calendar) — the "View all" link beside the title only renders when this is set.
   viewAllHref?: string;
+  // In-page anchor for the section.
+  id?: string;
 }
 
 function CardCarousel<T>({
@@ -35,6 +37,7 @@ function CardCarousel<T>({
   getItemKey,
   title,
   viewAllHref,
+  id,
 }: CardCarouselProps<T>) {
   const { t } = useTranslation();
   const columns = useResponsiveColumns();
@@ -68,40 +71,29 @@ function CardCarousel<T>({
   if (items.length === 0) return null;
 
   return (
-    <Box>
-      <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", mb: 1.5 }}>
-        <Typography variant="h5" component="h2">
-          {title}
-        </Typography>
-        {viewAllHref ? (
-          <IconButton
-            component={Link}
-            to={viewAllHref}
-            size="small"
-            aria-label={t("common.viewAll")}
-            sx={{ color: "text.secondary" }}
-          >
+    <Section
+      id={id}
+      title={title}
+      action={
+        <Stack direction="row" spacing={0.25} sx={{ alignItems: "center" }}>
+          {viewAllHref ? (
+            <Box
+              component={Link}
+              to={viewAllHref}
+              sx={{ fontSize: 12.5, fontWeight: 600, color: "primary.main", textDecoration: "none", whiteSpace: "nowrap", mr: 0.5 }}
+            >
+              {t("common.viewAll")}
+            </Box>
+          ) : null}
+          <IconButton size="small" onClick={() => scrollByPage(-1)} disabled={atStart} aria-label={t("common.scrollPrevious")}>
+            <ChevronLeftIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={() => scrollByPage(1)} disabled={atEnd} aria-label={t("common.scrollNext")}>
             <ChevronRightIcon fontSize="small" />
           </IconButton>
-        ) : null}
-        <Box sx={{ flexGrow: 1 }} />
-        <IconButton
-          size="small"
-          onClick={() => scrollByPage(-1)}
-          disabled={atStart}
-          aria-label={t("common.scrollPrevious")}
-        >
-          <ChevronLeftIcon />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={() => scrollByPage(1)}
-          disabled={atEnd}
-          aria-label={t("common.scrollNext")}
-        >
-          <ChevronRightIcon />
-        </IconButton>
-      </Stack>
+        </Stack>
+      }
+    >
       <Box
         ref={scrollRef}
         onScroll={updateScrollState}
@@ -134,7 +126,7 @@ function CardCarousel<T>({
           </Box>
         ))}
       </Box>
-    </Box>
+    </Section>
   );
 }
 
