@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -21,6 +21,22 @@ class User(TimestampMixin, Base):
     )
     steam_id_64: Mapped[str | None] = mapped_column(
         String(32), comment="Steam profile SteamID64, used for Steam Web API sync"
+    )
+    export_smb_path: Mapped[str | None] = mapped_column(
+        String(1024), comment="SMB/network path to the folder where scheduled exports are written"
+    )
+    export_smb_username: Mapped[str | None] = mapped_column(
+        String(255), comment="Username for SMB authentication to the export share"
+    )
+    export_smb_password: Mapped[str | None] = mapped_column(
+        String(255), comment="Password for SMB authentication to the export share"
+    )
+    export_retention_count: Mapped[int | None] = mapped_column(
+        Integer, comment="How many scheduled exports to keep on the share (oldest deleted first)"
+    )
+    export_include_files: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="0",
+        comment="Whether scheduled exports are full backups (JSON + ROMs/saves/BIOS)",
     )
 
 
