@@ -1,4 +1,12 @@
-from app.services import event_sync_jobs, itad_jobs, job_registry, platprices_jobs, resync_jobs, steam_jobs
+from app.services import (
+    event_sync_jobs,
+    export_backup_job,
+    itad_jobs,
+    job_registry,
+    platprices_jobs,
+    resync_jobs,
+    steam_jobs,
+)
 
 
 def register_builtin_jobs() -> None:
@@ -15,3 +23,4 @@ def register_builtin_jobs() -> None:
     job_registry.register(steam_jobs.DEFINITION_STEAM_IMPORT)
     job_registry.register(itad_jobs.DEFINITION_ITAD_REFRESH)
     job_registry.register(platprices_jobs.DEFINITION_PLATPRICES_REFRESH)
+    job_registry.register(export_backup_job.DEFINITION_EXPORT_BACKUP)
