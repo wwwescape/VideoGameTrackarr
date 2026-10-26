@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # default that would inevitably end up reused in production (a real, recurring CVE
     # pattern in other frameworks).
     jwt_secret_key: str | None = None
+    # First-run setup code. Optional: when unset, the server makes one up and prints it to its
+    # log at startup while no account exists (see auth_service.get_setup_code), so only
+    # someone with access to the server can create the first account.
+    setup_code: str | None = None
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30

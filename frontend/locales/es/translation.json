@@ -219,7 +219,18 @@
   "settings": {
     "account": {
       "heading": "Cuenta",
-      "signedInAs": "Sesión iniciada como <1>{{username}}</1>."
+      "signedInAs": "Sesión iniciada como <1>{{username}}</1>.",
+      "password": "Contraseña",
+      "passwordHelp": "Cambia la contraseña con la que inicias sesión. Se cerrará la sesión en otros navegadores y dispositivos; en este seguirás conectado.",
+      "changePassword": "Cambiar contraseña",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Contraseña nueva",
+      "confirmPassword": "Confirma la contraseña nueva",
+      "passwordsDontMatch": "Las contraseñas no coinciden.",
+      "wrongPassword": "La contraseña actual no es correcta.",
+      "changePasswordError": "No se pudo cambiar la contraseña. Inténtalo de nuevo.",
+      "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en otros dispositivos.",
+      "changing": "Cambiando..."
     },
     "display": {
       "heading": "Pantalla",
@@ -368,7 +379,16 @@
       "regenerateConfirmTitle": "¿Regenerar los enlaces para compartir?",
       "regenerateConfirmDescription": "Esto rompe ambos enlaces anteriores de inmediato — cualquiera que use los enlaces antiguos perderá el acceso. Los nuevos enlaces los sustituyen al momento.",
       "regenerateSuccess": "Enlaces para compartir regenerados.",
-      "regenerateError": "No se pudieron regenerar los enlaces. Inténtalo de nuevo."
+      "regenerateError": "No se pudieron regenerar los enlaces. Inténtalo de nuevo.",
+      "offDescription": "Compartir está desactivado: no hay enlaces para compartir y las páginas públicas responden «no encontrado».",
+      "enableButton": "Activar compartir",
+      "enableSuccess": "Compartir activado.",
+      "enableError": "No se pudo activar compartir. Inténtalo de nuevo.",
+      "disableButton": "Desactivar compartir",
+      "disableConfirmTitle": "¿Desactivar compartir?",
+      "disableConfirmDescription": "Ambos enlaces anteriores dejan de funcionar de inmediato. Si vuelves a activar compartir más adelante, se crean enlaces nuevos; estos no volverán a funcionar.",
+      "disableSuccess": "Compartir desactivado.",
+      "disableError": "No se pudo desactivar compartir. Inténtalo de nuevo."
     },
     "integrations": {
       "igdbHeading": "Credenciales de IGDB",
@@ -443,8 +463,12 @@
       "confirmPassword": "Confirmar contraseña",
       "passwordsMismatch": "Las contraseñas no coinciden",
       "creatingAccount": "Creando cuenta...",
-      "createAccount": "Crear cuenta de administrador"
-    }
+      "createAccount": "Crear cuenta de administrador",
+      "setupCode": "Código de configuración",
+      "setupCodeHelper": "Aparece en el registro del servidor al arrancar (docker compose logs), o es el SETUP_CODE que configuraste.",
+      "wrongSetupCode": "Ese código de configuración no es correcto. Consulta el actual en el registro del servidor."
+    },
+    "tooManyAttempts": "Demasiados intentos. Espera unos minutos y vuelve a intentarlo."
   },
   "games": {
     "gameForm": {

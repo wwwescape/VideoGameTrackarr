@@ -98,7 +98,10 @@ docker compose up -d
 ```
 
 Open `http://localhost:8000`. The first visit shows a create-admin form — fill it in once and
-you're signed in. If you ever get locked out,
+you're signed in. It asks for a one-time setup code, so nobody else who reaches the page first
+can claim your instance: find it with `docker compose logs app` (or set your own with
+`SETUP_CODE` in `.env`). Change your password later under **Settings → General → Account**. If
+you ever get locked out,
 `docker compose exec app python -m scripts.create_admin --username admin` resets the password.
 
 Migrations run automatically on startup, and your database and uploads live in the named
@@ -140,7 +143,9 @@ Optional integrations — add a key to `.env`, then run `docker compose up -d` (
 | PlatPrices     | `PLATPRICES_API_KEY` | [platprices.com/api-request](https://platprices.com/api-request) | PlayStation prices. The free tier tracks any 2 PS Store regions, chosen on your PlatPrices dashboard. `PLATPRICES_REGION` (two-letter code such as `GB` or `IN`, default `US`) must be one of them. |
 
 Other options: `ROM_MAX_UPLOAD_MB` (default `2048`) caps ROM uploads — raise your reverse
-proxy's upload limit to match. `DATABASE_URL` (SQLite by default), `REDIS_URL`, and
+proxy's upload limit to match. Behind a reverse proxy, set `FORWARDED_ALLOW_IPS` to the proxy's
+address (or its Docker network, such as `172.16.0.0/12`) so login rate limits count each visitor
+rather than the proxy. `DATABASE_URL` (SQLite by default), `REDIS_URL`, and
 `CORS_ORIGINS` are optional.
 
 ## Development

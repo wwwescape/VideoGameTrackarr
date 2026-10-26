@@ -104,3 +104,34 @@ def test_upload_accessory_image_rejects_non_image_file(auth_client):
     )
 
     assert response.status_code == 400
+
+
+def test_upload_cover_refuses_formats_outside_the_allow_list(auth_client):
+    # TIFF is a perfectly valid image, but not one of the formats uploads are decoded as.
+    response = auth_client.post(
+        "/api/uploads/covers",
+        files={"file": ("cover.tiff", io.BytesIO(_image_bytes(image_format="TIFF")), "image/tiff")},
+    )
+
+    assert response.status_code == 400
+    assert "JPEG, PNG, WebP or GIF" in response.json()["detail"]
+
+
+def test_upload_cover_accepts_webp(auth_client):
+    response = auth_client.post(
+        "/api/uploads/covers",
+        files={"file": ("cover.webp", io.BytesIO(_image_bytes(image_format="WEBP")), "image/webp")},
+    )
+
+    assert response.status_code == 201
+
+
+def test_upload_cover_refuses_an_oversized_file(auth_client, monkeypatch):
+    from app.services import upload_service
+
+    monkeypatch.setattr(upload_service, "MAX_IMAGE_UPLOAD_BYTES", 100)
+    response = auth_client.post(
+        "/api/uploads/covers", files={"file": ("cover.png", io.BytesIO(_image_bytes()), "image/png")}
+    )
+
+    assert response.status_code == 413

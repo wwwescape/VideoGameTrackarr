@@ -2,7 +2,7 @@ from app.models.catalog import Game, GameCategory
 
 
 def _get_token(auth_client):
-    return auth_client.get("/api/share-link").json()["token"]
+    return auth_client.post("/api/share-link").json()["token"]
 
 
 def test_public_games_with_valid_token(auth_client, client, seed_game):

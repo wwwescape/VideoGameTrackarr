@@ -5,6 +5,7 @@ import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from app.core.config import get_settings
+from app.services.http_errors import raise_for_status_redacted
 
 ITAD_API_BASE = "https://api.isthereanydeal.com"
 
@@ -57,7 +58,7 @@ class ItadClient:
     @_retryable
     async def _request(self, method: str, url: str, **kwargs: object) -> httpx.Response:
         response = await self._http.request(method, url, **kwargs)
-        response.raise_for_status()
+        raise_for_status_redacted(response)
         return response
 
     def _require_key(self) -> str:

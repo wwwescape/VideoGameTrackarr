@@ -1,3 +1,4 @@
+import { clearOfflineCache } from "../offline/queryPersistence";
 import { clearSessionViewState } from "../utils/sessionViewState";
 
 const ACCESS_TOKEN_KEY = "vgt.accessToken";
@@ -20,7 +21,9 @@ export const tokenStorage = {
   clear(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
-    // A logout (or an expired session) also forgets remembered search/filter/sort state.
+    // A logout (or an expired session) also forgets remembered search/filter/sort state and
+    // the library cached for offline use.
     clearSessionViewState();
+    clearOfflineCache();
   },
 };

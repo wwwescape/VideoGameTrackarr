@@ -19,6 +19,10 @@ router = APIRouter(tags=["import-export"], dependencies=[Depends(get_current_use
 # Reached by a plain browser navigation with a signed token in the path (no auth header).
 download_router = APIRouter(tags=["import-export"])
 
+# A .json backup is only the library's rows (files go in the full .zip backup), so even a very
+# large library is a few MB; this cap only stops an oversized upload being held in memory.
+MAX_JSON_BACKUP_BYTES = 256 * 1024 * 1024
+
 
 def _to_response(state: restore_job.RestoreJobState) -> RestoreStatusResponse:
     return RestoreStatusResponse(
@@ -96,7 +100,11 @@ async def restore_backup(
     if head.startswith(b"PK") or (file.filename or "").lower().endswith(".zip"):
         return _to_response(await _start_full_restore(file, session_factory))
 
-    raw = await file.read()
+    raw = await file.read(MAX_JSON_BACKUP_BYTES + 1)
+    if len(raw) > MAX_JSON_BACKUP_BYTES:
+        raise HTTPException(
+            status_code=413, detail="Backup file is too large for a .json backup; use a full .zip backup"
+        )
     try:
         payload = backup_service.parse_backup_payload(raw.decode("utf-8"))
     except (UnicodeDecodeError, ValidationError, ValueError) as exc:
@@ -106,9 +114,7 @@ async def restore_backup(
     return _to_response(state)
 
 
-async def _start_full_restore(
-    file: UploadFile, session_factory: Callable[[], Session]
-) -> restore_job.RestoreJobState:
+async def _start_full_restore(file: UploadFile, session_factory: Callable[[], Session]) -> restore_job.RestoreJobState:
     """A full-backup .zip can be many GB, so it's streamed to a temp file rather than read
     into memory; the restore job deletes it when it finishes."""
     handle, name = tempfile.mkstemp(prefix="vgt-restore-", suffix=".zip")

@@ -8,6 +8,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from app.core.config import get_settings
 from app.services.cache import CacheBackend, get_cache
+from app.services.http_errors import raise_for_status_redacted
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +166,8 @@ class IGDBClient:
     @_retryable
     async def _request(self, method: str, url: str, **kwargs: object) -> httpx.Response:
         response = await self._http.request(method, url, **kwargs)
-        response.raise_for_status()
+        # The Twitch token request carries the client secret in its query string.
+        raise_for_status_redacted(response)
         return response
 
     async def _get_access_token(self) -> str:

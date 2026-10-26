@@ -22,6 +22,9 @@ class User(TimestampMixin, Base):
     steam_id_64: Mapped[str | None] = mapped_column(
         String(32), comment="Steam profile SteamID64, used for Steam Web API sync"
     )
+    currency: Mapped[str | None] = mapped_column(
+        String(3), comment="Display currency (ISO 4217 code), shared by every browser"
+    )
 
 
 class RefreshToken(Base):
@@ -36,6 +39,9 @@ class RefreshToken(Base):
     jti: Mapped[str] = mapped_column(String(36), nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    replaced_by_jti: Mapped[str | None] = mapped_column(
+        String(36), comment="jti of the token this one was rotated into"
+    )
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), server_default=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship()
