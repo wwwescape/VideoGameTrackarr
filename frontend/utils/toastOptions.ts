@@ -1,5 +1,5 @@
 export const TOAST_OPTIONS = {
-  position: "top-right" as const,
+  position: "bottom-right" as const,
   autoClose: 3000,
   hideProgressBar: false,
   closeOnClick: true,

@@ -124,6 +124,7 @@ const TagManagerPage = () => {
         confirmColor="error"
         onClose={() => setSelectedPendingDelete([])}
         onConfirm={handleDelete}
+        busy={deleteTag.isPending}
       />
     </SettingsFrame>
   );

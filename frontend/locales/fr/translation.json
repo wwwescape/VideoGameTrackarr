@@ -22,7 +22,8 @@
     "actions": "Actions",
     "viewAll": "Tout afficher",
     "scrollPrevious": "Défiler vers la gauche",
-    "scrollNext": "Défiler vers la droite"
+    "scrollNext": "Défiler vers la droite",
+    "working": "En cours…"
   },
   "errors": {
     "pageNotFoundTitle": "Page introuvable",

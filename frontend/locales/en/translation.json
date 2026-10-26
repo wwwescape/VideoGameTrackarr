@@ -22,7 +22,8 @@
     "actions": "Actions",
     "viewAll": "View all",
     "scrollPrevious": "Scroll previous",
-    "scrollNext": "Scroll next"
+    "scrollNext": "Scroll next",
+    "working": "Working…"
   },
   "errors": {
     "pageNotFoundTitle": "Page not found",

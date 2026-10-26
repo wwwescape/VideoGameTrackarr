@@ -150,6 +150,7 @@ const DataManagementSection = () => {
         description={t("settings.dataManagement.restoreConfirmDescription", { fileName: pendingFile?.name })}
         confirmLabel={t("settings.dataManagement.restoreConfirmButton")}
         confirmColor="error"
+        busy={restoreBackup.isPending}
         confirmDisabled={restoreInProgress}
         onClose={() => {
           setPendingFile(null);

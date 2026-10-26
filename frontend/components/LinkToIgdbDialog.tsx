@@ -282,6 +282,7 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
         confirmLabel={t("igdb.proceedButton")}
         onClose={() => setParentNeeded(null)}
         onConfirm={() => void handleProceedWithParent()}
+        busy={linkViaParent.isPending}
       />
       <ConfirmDialog
         open={duplicateFound !== null}
@@ -290,6 +291,7 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
         confirmLabel={t("igdb.mergeButton")}
         onClose={() => setDuplicateFound(null)}
         onConfirm={() => void handleConfirmMerge()}
+        busy={mergeIntoIgdb.isPending}
       />
       <MessageDialog
         open={cannotBeAddedOpen}

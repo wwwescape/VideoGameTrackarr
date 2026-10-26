@@ -7,9 +7,7 @@ import LinkIcon from "@mui/icons-material/Link";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
-import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameCategory, LibraryItem } from "../api/types";
@@ -119,11 +117,6 @@ const GameActionButtons = ({
 
   return (
     <>
-      {resyncGameMutation.isPending && (
-        <Backdrop sx={{ color: "#fff", zIndex: (t) => t.zIndex.modal + 1 }} open={resyncGameMutation.isPending}>
-          <CircularProgress color="inherit" />
-        </Backdrop>
-      )}
       {hasPlayableRom(libraryItems) ? (
         <>
           <ToolbarButton
@@ -166,6 +159,7 @@ const GameActionButtons = ({
             confirmLabel={t("games.actions.resyncConfirmLabel")}
             onClose={() => setResyncGameDialogOpen(false)}
             onConfirm={handleResyncGame}
+            busy={resyncGameMutation.isPending}
           />
         </>
       ) : (
@@ -207,6 +201,7 @@ const GameActionButtons = ({
             confirmColor="error"
             onClose={() => setRemoveGameDialogOpen(false)}
             onConfirm={() => void handleRemoveGame()}
+            busy={deleteGameMutation.isPending}
           />
         </>
       ) : null}

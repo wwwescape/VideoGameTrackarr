@@ -14,6 +14,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ToastStyles from "./components/ToastStyles";
 import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
 import RestoreGuard from "./components/RestoreGuard";
 import UpdateAvailableChip from "./components/UpdateAvailableChip";
@@ -152,7 +153,10 @@ const AppShell = () => {
         </Box>
       </Box>
 
-      <ToastContainer theme="colored" />
+      {/* Bottom right, as in DieCastCollectionTracker, out of the way of the header's buttons;
+          styled by ToastStyles. */}
+      <ToastStyles />
+      <ToastContainer theme={mode === "dark" ? "dark" : "light"} position="bottom-right" />
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import ConfirmDialog from "../ConfirmDialog";
@@ -70,5 +70,32 @@ describe("ConfirmDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("while busy, spins the confirm button and can't be confirmed, cancelled or closed", async () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ConfirmDialog
+        open
+        busy
+        title="Confirm resync"
+        description="Fetch the latest from IGDB?"
+        confirmLabel="Resync"
+        onClose={onClose}
+        onConfirm={onConfirm}
+      />
+    );
+
+    const confirm = screen.getByRole("button", { name: /Resync/ });
+    expect(confirm).toBeDisabled();
+    expect(within(confirm).getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+
+    await user.keyboard("{Escape}");
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
