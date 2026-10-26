@@ -328,7 +328,35 @@
         "eventsSync": {
           "name": "Sincronizar eventos",
           "description": "Obtiene los eventos de la industria de los videojuegos actualmente próximos desde IGDB y elimina cualquier evento sincronizado previamente que ya haya terminado — alimenta la página de Eventos y el resumen del panel."
+        },
+        "exportBackup": {
+          "name": "Scheduled backup export",
+          "description": "Writes the data export to a network folder on a schedule and deletes old exports beyond the number you keep."
         }
+      },
+      "exportBackup": {
+        "configured": "Configured",
+        "notConfiguredLabel": "Not configured",
+        "notConfigured": "Set the network folder first, then run the export.",
+        "destinationHeading": "Destination",
+        "pathLabel": "Network folder location",
+        "pathPlaceholder": "\\\\SERVER\\Share\\Backups",
+        "pathHelper": "Network path to the folder where exports are written (e.g. \\\\SERVER\\Share\\Backups)",
+        "usernameLabel": "Username",
+        "usernameHelper": "SMB username (leave blank for guest access)",
+        "passwordLabel": "Password",
+        "passwordHelper": "SMB password",
+        "passwordSet": "Password is set (leave blank to keep it)",
+        "retentionLabel": "Exports to keep",
+        "retentionHelper": "Oldest exports beyond this number are deleted",
+        "retentionError": "Enter a number of 1 or more.",
+        "includeFilesLabel": "Full backup (include ROMs, saves and BIOS files)",
+        "includeFilesHelper": "When off, exports are JSON-only and much smaller.",
+        "testButton": "Test connection",
+        "testError": "Could not test the connection.",
+        "saved": "Export settings saved.",
+        "saveError": "Could not save export settings.",
+        "resultSummary": "Exported {filename} — deleted {deleted} old export(s)."
       }
     },
     "tagManager": {
