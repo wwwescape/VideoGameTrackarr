@@ -5,7 +5,9 @@ from app.api.deps import get_current_user, get_db
 from app.core.limiter import limiter
 from app.models.system import User
 from app.schemas.auth import (
+    ChangePasswordRequest,
     LoginRequest,
+    PreferencesRequest,
     RefreshRequest,
     SetupRequest,
     SetupStatusResponse,
@@ -13,7 +15,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services import auth_service
-from app.services.auth_service import AuthError
+from app.services.auth_service import AuthError, SetupCodeError, WrongPasswordError
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -43,7 +45,10 @@ def setup(request: Request, body: SetupRequest, db: Session = Depends(get_db)) -
     general-purpose register endpoint — create_initial_admin rejects this once any user
     already exists (see app/services/auth_service.py), and that rejection surfaces as a 409
     via the app-wide ConflictError handler in app/main.py."""
-    user = auth_service.create_initial_admin(db, body.username, body.password)
+    try:
+        user = auth_service.create_initial_admin(db, body.username, body.password, body.setup_code)
+    except SetupCodeError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     access_token, refresh_token = auth_service.issue_tokens(db, user)
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
@@ -66,4 +71,34 @@ def logout(body: RefreshRequest, db: Session = Depends(get_db)) -> None:
 
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)) -> UserResponse:
-    return UserResponse(id=current_user.id, username=current_user.username)
+    return UserResponse(id=current_user.id, username=current_user.username, currency=current_user.currency)
+
+
+@router.put("/me/preferences", response_model=UserResponse)
+def update_preferences(
+    body: PreferencesRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> UserResponse:
+    """Display preferences kept on the server, so every browser shows the same (today the
+    currency; colour mode and language stay per browser)."""
+    user = auth_service.set_preferences(db, current_user, body.currency)
+    return UserResponse(id=user.id, username=user.username, currency=user.currency)
+
+
+@router.post("/change-password", response_model=TokenResponse)
+@limiter.limit("5/minute")
+def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TokenResponse:
+    """Changes the signed-in user's password. Every existing session is signed out (their
+    refresh tokens revoked); this one gets fresh tokens so it stays signed in. Rate limited
+    like login, so a stolen session can't guess the current password either."""
+    try:
+        auth_service.change_password(db, current_user, body.current_password, body.new_password)
+    except WrongPasswordError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    access_token, refresh_token = auth_service.issue_tokens(db, current_user)
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)

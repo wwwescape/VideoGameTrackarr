@@ -219,7 +219,18 @@
   "settings": {
     "account": {
       "heading": "Conta",
-      "signedInAs": "Sessão iniciada como <1>{{username}}</1>."
+      "signedInAs": "Sessão iniciada como <1>{{username}}</1>.",
+      "password": "Palavra-passe",
+      "passwordHelp": "Altere a palavra-passe com que inicia sessão. Os outros navegadores e dispositivos terminam a sessão; este continua com sessão iniciada.",
+      "changePassword": "Alterar palavra-passe",
+      "currentPassword": "Palavra-passe atual",
+      "newPassword": "Nova palavra-passe",
+      "confirmPassword": "Confirmar a nova palavra-passe",
+      "passwordsDontMatch": "As palavras-passe não coincidem.",
+      "wrongPassword": "A palavra-passe atual está incorreta.",
+      "changePasswordError": "Não foi possível alterar a palavra-passe. Tente novamente.",
+      "passwordChanged": "Palavra-passe alterada. Os outros dispositivos terminaram a sessão.",
+      "changing": "A alterar..."
     },
     "display": {
       "heading": "Visualização",
@@ -368,7 +379,16 @@
       "regenerateConfirmTitle": "Regenerar as ligações de partilha?",
       "regenerateConfirmDescription": "Isto quebra imediatamente ambas as ligações acima — quem estiver a usar as ligações antigas perde o acesso. Novas ligações substituem-nas de imediato.",
       "regenerateSuccess": "Ligações de partilha regeneradas.",
-      "regenerateError": "Não foi possível regenerar as ligações. Tente novamente."
+      "regenerateError": "Não foi possível regenerar as ligações. Tente novamente.",
+      "offDescription": "A partilha está desativada: não há ligações de partilha e as páginas públicas respondem «não encontrado».",
+      "enableButton": "Ativar partilha",
+      "enableSuccess": "Partilha ativada.",
+      "enableError": "Não foi possível ativar a partilha. Tente novamente.",
+      "disableButton": "Desativar partilha",
+      "disableConfirmTitle": "Desativar a partilha?",
+      "disableConfirmDescription": "Ambas as ligações acima deixam de funcionar de imediato. Voltar a ativar a partilha mais tarde cria novas ligações; estas nunca mais voltam a funcionar.",
+      "disableSuccess": "Partilha desativada.",
+      "disableError": "Não foi possível desativar a partilha. Tente novamente."
     },
     "integrations": {
       "igdbHeading": "Credenciais IGDB",
@@ -443,8 +463,12 @@
       "confirmPassword": "Confirmar palavra-passe",
       "passwordsMismatch": "As palavras-passe não coincidem",
       "creatingAccount": "A criar conta...",
-      "createAccount": "Criar conta de administrador"
-    }
+      "createAccount": "Criar conta de administrador",
+      "setupCode": "Código de configuração",
+      "setupCodeHelper": "Aparece no registo do servidor ao arrancar (docker compose logs), ou é o SETUP_CODE que definiu.",
+      "wrongSetupCode": "Esse código de configuração não está correto. Consulte o código atual no registo do servidor."
+    },
+    "tooManyAttempts": "Demasiadas tentativas. Aguarde alguns minutos e tente novamente."
   },
   "games": {
     "gameForm": {

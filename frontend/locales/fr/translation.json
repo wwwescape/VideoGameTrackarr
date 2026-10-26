@@ -219,7 +219,18 @@
   "settings": {
     "account": {
       "heading": "Compte",
-      "signedInAs": "Connecté en tant que <1>{{username}}</1>."
+      "signedInAs": "Connecté en tant que <1>{{username}}</1>.",
+      "password": "Mot de passe",
+      "passwordHelp": "Modifiez le mot de passe de connexion. Les autres navigateurs et appareils sont déconnectés ; celui-ci reste connecté.",
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "passwordsDontMatch": "Les mots de passe ne correspondent pas.",
+      "wrongPassword": "Le mot de passe actuel est incorrect.",
+      "changePasswordError": "Impossible de changer le mot de passe. Réessayez.",
+      "passwordChanged": "Mot de passe changé. Les autres appareils ont été déconnectés.",
+      "changing": "Modification..."
     },
     "display": {
       "heading": "Affichage",
@@ -368,7 +379,16 @@
       "regenerateConfirmTitle": "Régénérer les liens de partage ?",
       "regenerateConfirmDescription": "Cela casse immédiatement les deux liens ci-dessus — toute personne utilisant les anciens liens perd l'accès. De nouveaux liens les remplacent aussitôt.",
       "regenerateSuccess": "Liens de partage régénérés.",
-      "regenerateError": "Impossible de régénérer les liens. Veuillez réessayer."
+      "regenerateError": "Impossible de régénérer les liens. Veuillez réessayer.",
+      "offDescription": "Le partage est désactivé : il n'y a aucun lien de partage, et les pages publiques répondent « introuvable ».",
+      "enableButton": "Activer le partage",
+      "enableSuccess": "Partage activé.",
+      "enableError": "Impossible d'activer le partage. Veuillez réessayer.",
+      "disableButton": "Désactiver le partage",
+      "disableConfirmTitle": "Désactiver le partage ?",
+      "disableConfirmDescription": "Les deux liens ci-dessus cessent immédiatement de fonctionner. Réactiver le partage plus tard crée de nouveaux liens ; ceux-ci ne fonctionneront plus jamais.",
+      "disableSuccess": "Partage désactivé.",
+      "disableError": "Impossible de désactiver le partage. Veuillez réessayer."
     },
     "integrations": {
       "igdbHeading": "Identifiants IGDB",
@@ -443,8 +463,12 @@
       "confirmPassword": "Confirmer le mot de passe",
       "passwordsMismatch": "Les mots de passe ne correspondent pas",
       "creatingAccount": "Création du compte...",
-      "createAccount": "Créer le compte administrateur"
-    }
+      "createAccount": "Créer le compte administrateur",
+      "setupCode": "Code de configuration",
+      "setupCodeHelper": "Affiché dans le journal du serveur au démarrage (docker compose logs), ou le SETUP_CODE que vous avez défini.",
+      "wrongSetupCode": "Ce code de configuration est incorrect. Consultez le code actuel dans le journal du serveur."
+    },
+    "tooManyAttempts": "Trop de tentatives. Patientez quelques minutes puis réessayez."
   },
   "games": {
     "gameForm": {

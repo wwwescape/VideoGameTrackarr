@@ -1,3 +1,5 @@
+import { useState } from "react";
+import KeyIcon from "@mui/icons-material/KeyOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Button from "@mui/material/Button";
 import Switch from "@mui/material/Switch";
@@ -12,6 +14,7 @@ import { SUPPORTED_LANGUAGES, type LanguageOption } from "../utils/language";
 import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/storeRegion";
 import AccentColorSetting from "./AccentColorSetting";
 import AutocompleteSelect from "./AutocompleteSelect";
+import ChangePasswordDialog from "./ChangePasswordDialog";
 import DataManagementSection from "./DataManagementSection";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -19,6 +22,7 @@ import ShareSection from "./ShareSection";
 
 const Settings = () => {
   const { t } = useTranslation();
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const logoutMutation = useLogout();
   const { mode, contrast, toggleColorMode, toggleContrast } = useColorMode();
@@ -132,7 +136,13 @@ const Settings = () => {
               {t("common.logOut")}
             </Button>
           </SettingRow>
+          <SettingRow name={t("settings.account.password")} description={t("settings.account.passwordHelp")}>
+            <Button variant="outlined" startIcon={<KeyIcon />} onClick={() => setPasswordOpen(true)}>
+              {t("settings.account.changePassword")}
+            </Button>
+          </SettingRow>
         </SettingsGroup>
+        <ChangePasswordDialog open={passwordOpen} onClose={() => setPasswordOpen(false)} />
       </SettingsColumn>
     </SettingsFrame>
   );

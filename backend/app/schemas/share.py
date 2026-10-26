@@ -2,4 +2,5 @@ from app.schemas.base import CamelModel
 
 
 class ShareLinkResponse(CamelModel):
-    token: str
+    # None while sharing is off.
+    token: str | None

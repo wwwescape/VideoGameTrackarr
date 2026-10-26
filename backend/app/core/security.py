@@ -28,6 +28,22 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
+# A shorter secret can be brute-forced offline from any token it signed.
+MIN_SECRET_LENGTH = 32
+
+
+def weak_secret_warning() -> str | None:
+    """A warning to log at startup when JWT_SECRET_KEY is set but short. Not refused: an
+    existing install with a short secret would otherwise be locked out by an upgrade."""
+    secret = get_settings().jwt_secret_key
+    if secret and len(secret) < MIN_SECRET_LENGTH:
+        return (
+            f"JWT_SECRET_KEY is only {len(secret)} characters; use at least {MIN_SECRET_LENGTH} "
+            '(e.g. `python -c "import secrets; print(secrets.token_hex(32))"`). Changing it signs everyone out.'
+        )
+    return None
+
+
 def _require_secret() -> str:
     secret = get_settings().jwt_secret_key
     if not secret:

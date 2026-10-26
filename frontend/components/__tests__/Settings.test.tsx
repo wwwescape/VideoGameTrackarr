@@ -24,10 +24,12 @@ vi.hoisted(() => {
 const toggleColorMode = vi.fn();
 const toggleContrast = vi.fn();
 const logout = vi.fn();
+const changePassword = vi.fn(async () => undefined);
 
 vi.mock("../../hooks/useAuth", () => ({
   useCurrentUser: () => ({ data: { username: "admin" } }),
   useLogout: () => ({ mutate: logout }),
+  useChangePassword: () => ({ mutateAsync: changePassword, isPending: false, reset: vi.fn() }),
 }));
 vi.mock("../../theme/ColorModeProvider", () => ({
   useColorMode: () => ({
@@ -93,5 +95,31 @@ describe("Settings → General", () => {
     expect(within(group("Account")).getByText("admin")).toBeInTheDocument();
     await user.click(within(group("Account")).getByRole("button", { name: "Log out" }));
     expect(logout).toHaveBeenCalled();
+  });
+
+  it("changes the password from Account", async () => {
+    const user = renderPage();
+
+    await user.click(within(group("Account")).getByRole("button", { name: "Change password" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/Current password/), "old-password");
+    await user.type(within(dialog).getByLabelText(/^New password/), "a-brand-new-password");
+    await user.type(within(dialog).getByLabelText(/Confirm new password/), "a-brand-new-password");
+    await user.click(within(dialog).getByRole("button", { name: "Change password" }));
+
+    expect(changePassword).toHaveBeenCalledWith({ currentPassword: "old-password", newPassword: "a-brand-new-password" });
+  });
+
+  it("won't change the password while the new ones don't match", async () => {
+    const user = renderPage();
+
+    await user.click(within(group("Account")).getByRole("button", { name: "Change password" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByLabelText(/Current password/), "old-password");
+    await user.type(within(dialog).getByLabelText(/^New password/), "a-brand-new-password");
+    await user.type(within(dialog).getByLabelText(/Confirm new password/), "something-else");
+
+    expect(within(dialog).getByText("The passwords don't match.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Change password" })).toBeDisabled();
   });
 });

@@ -13,10 +13,23 @@ const idbAsyncStorage = {
   removeItem: (key: string) => del(key, idbStore),
 };
 
+const OFFLINE_CACHE_KEY = "vgt-offline-cache";
+
 const persister = createAsyncStoragePersister({
   storage: idbAsyncStorage,
-  key: "vgt-offline-cache",
+  key: OFFLINE_CACHE_KEY,
 });
+
+// Deletes the cached library from IndexedDB when a session ends (logout or expiry), so the
+// next person on a shared computer can't read it. Best-effort: there may be no IndexedDB
+// (tests, some private windows).
+export function clearOfflineCache(): void {
+  try {
+    void del(OFFLINE_CACHE_KEY, idbStore).catch(() => undefined);
+  } catch {
+    // No IndexedDB here, so nothing was cached either.
+  }
+}
 
 export const offlinePersistOptions: Omit<PersistQueryClientOptions, "queryClient"> = {
   persister,

@@ -30,6 +30,12 @@
 
   // Only ever load ROMs from this app's own signed-URL route, and only a plain core id —
   // this page is reachable directly, so don't let a crafted link point it anywhere else.
+  // The route must be on this app's own origin too (the same path on another site doesn't
+  // count); in dev that's also the API on :8000, as in api/client.ts.
+  var apiOrigins = [window.location.origin];
+  if (window.location.hostname === "localhost" && window.location.port === "3000") {
+    apiOrigins.push("http://localhost:8000");
+  }
   var parsedRom;
   try {
     parsedRom = romUrl ? new URL(romUrl, window.location.href) : null;
@@ -38,6 +44,7 @@
   }
   if (
     !parsedRom ||
+    apiOrigins.indexOf(parsedRom.origin) === -1 ||
     !/^\/api\/roms\/\d+\/content\//.test(parsedRom.pathname) ||
     !core ||
     !/^[a-z0-9_]+$/.test(core)
@@ -64,6 +71,7 @@
       file.href = parsed.href;
       return (
         /^[A-Za-z0-9][A-Za-z0-9._ ()-]*$/.test(file.filename) &&
+        apiOrigins.indexOf(parsed.origin) !== -1 &&
         /^\/api\/emulation\/bios\/content\/\d+\//.test(parsed.pathname)
       );
     });

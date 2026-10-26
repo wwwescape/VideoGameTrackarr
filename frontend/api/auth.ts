@@ -19,10 +19,11 @@ export async function fetchSetupStatus(): Promise<SetupStatus> {
   return response.data;
 }
 
-export async function setupAdmin(username: string, password: string): Promise<void> {
+export async function setupAdmin(username: string, password: string, setupCode: string): Promise<void> {
   const response = await axios.post<AuthTokens>(`${API_BASE_URL}/api/auth/setup`, {
     username,
     password,
+    setupCode,
   });
   tokenStorage.setTokens(response.data.accessToken, response.data.refreshToken);
 }
@@ -35,6 +36,20 @@ export async function logout(): Promise<void> {
       // Best-effort — tokens are already cleared client-side either way.
     });
   }
+}
+
+// Other sessions are signed out; this one gets fresh tokens and stays signed in.
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const response = await apiClient.post<AuthTokens>("/api/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+  tokenStorage.setTokens(response.data.accessToken, response.data.refreshToken);
+}
+
+export async function updatePreferences(preferences: { currency: string }): Promise<CurrentUser> {
+  const response = await apiClient.put<CurrentUser>("/api/auth/me/preferences", preferences);
+  return response.data;
 }
 
 export async function fetchCurrentUser(): Promise<CurrentUser> {

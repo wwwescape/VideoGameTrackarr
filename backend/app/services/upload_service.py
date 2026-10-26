@@ -16,6 +16,13 @@ COVER_TARGET_SIZE = (540, 720)
 # Matches the curated hardware reference product shots (backend/static/hardware-reference).
 ACCESSORY_TARGET_SIZE = (400, 400)
 JPEG_QUALITY = 85
+# Only the formats people actually upload covers and product photos in. Pillow can decode many
+# more (TIFF, PSD, PPM, ...), and its rarer decoders are where its memory-safety bugs tend to be,
+# so nothing else is ever handed to them.
+ALLOWED_IMAGE_FORMATS = ["JPEG", "PNG", "WEBP", "GIF"]
+# Far above any real cover or product shot; checked while the upload is read (see
+# app/api/routes/uploads.py), so an oversized one is refused before it's held in memory.
+MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
 
 
 def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str, target_size: tuple[int, int]) -> str:
@@ -23,10 +30,12 @@ def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str, target_s
     smaller) and re-encodes it as JPEG, saving it under `directory` and returning the URL it's
     served at."""
     try:
-        image = Image.open(BytesIO(raw))
+        image = Image.open(BytesIO(raw), formats=ALLOWED_IMAGE_FORMATS)
         image.load()
     except UnidentifiedImageError as exc:
-        raise ValueError("Not a valid image file") from exc
+        raise ValueError("Not a supported image (use JPEG, PNG, WebP or GIF)") from exc
+    except Image.DecompressionBombError as exc:
+        raise ValueError("Image dimensions are too large") from exc
 
     image = image.convert("RGB")
     image = ImageOps.fit(image, target_size, method=Image.Resampling.LANCZOS)

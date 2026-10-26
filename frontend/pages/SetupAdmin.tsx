@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSetupAdmin } from "../hooks/useAuth";
 
@@ -16,6 +17,7 @@ interface SetupAdminProps {
 // a normal login would, so onDone just redirects like a successful sign-in does.
 const SetupAdmin = ({ onDone }: SetupAdminProps) => {
   const { t } = useTranslation();
+  const [setupCode, setSetupCode] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,7 +29,7 @@ const SetupAdmin = ({ onDone }: SetupAdminProps) => {
     event.preventDefault();
     if (passwordsMismatch) return;
     try {
-      await setupMutation.mutateAsync({ username, password });
+      await setupMutation.mutateAsync({ username, password, setupCode: setupCode.trim() });
       onDone();
     } catch {
       // surfaced via setupMutation.isError below
@@ -44,17 +46,31 @@ const SetupAdmin = ({ onDone }: SetupAdminProps) => {
       </Typography>
       {setupMutation.isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {t("auth.setupAdmin.createFailed")}
+          {isAxiosError(setupMutation.error) && setupMutation.error.response?.status === 403
+            ? t("auth.setupAdmin.wrongSetupCode")
+            : isAxiosError(setupMutation.error) && setupMutation.error.response?.status === 429
+              ? t("auth.tooManyAttempts")
+              : t("auth.setupAdmin.createFailed")}
         </Alert>
       )}
       <Box component="form" onSubmit={handleSubmit}>
+        <TextField
+          label={t("auth.setupAdmin.setupCode")}
+          fullWidth
+          margin="normal"
+          value={setupCode}
+          onChange={(event) => setSetupCode(event.target.value)}
+          autoFocus
+          required
+          autoComplete="off"
+          helperText={t("auth.setupAdmin.setupCodeHelper")}
+        />
         <TextField
           label={t("auth.setupAdmin.username")}
           fullWidth
           margin="normal"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
-          autoFocus
           required
           slotProps={{ htmlInput: { minLength: 3 } }}
         />

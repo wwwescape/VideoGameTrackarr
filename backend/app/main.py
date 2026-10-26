@@ -48,8 +48,9 @@ from app.api.routes import (
 from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DIR, get_settings
 from app.core.limiter import limiter
 from app.core.logging import configure_logging
+from app.core.security import weak_secret_warning
 from app.db.session import SessionLocal
-from app.services import job_definitions, job_scheduler, platprices_service, rom_service
+from app.services import auth_service, job_definitions, job_scheduler, platprices_service, rom_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, IGDBCredentialsError
 
@@ -98,6 +99,70 @@ CROSS_ORIGIN_ISOLATION_HEADERS = {
 }
 
 
+# Sent on every response (as in DieCastCollectionTracker). The app's CSP fits the built
+# frontend: scripts and styles from this origin only (MUI injects <style> tags, hence
+# 'unsafe-inline' for styles; no script is inline), images also from https: (IGDB covers,
+# YouTube and Steam artwork), YouTube's no-cookie player and this app's own emulator page as
+# the only frames, and the service worker may fetch IGDB images to cache them. No other site
+# may frame the app.
+APP_CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: https:",
+        "media-src 'self' blob:",
+        "font-src 'self' data:",
+        "connect-src 'self' https://images.igdb.com",
+        "frame-src 'self' https://www.youtube-nocookie.com",
+        "worker-src 'self'",
+        "manifest-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'self'",
+    ]
+)
+# The self-hosted EmulatorJS player (frontend/public/emulatorjs/) compiles WebAssembly and
+# loads its cores and workers from blob: URLs, which the app's policy rightly refuses; it
+# still only loads from this origin and can only be framed by the app itself.
+EMULATOR_CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self' blob: 'unsafe-eval' 'wasm-unsafe-eval'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob:",
+        "media-src 'self' blob: data:",
+        "font-src 'self' data:",
+        "connect-src 'self' blob: data:",
+        "worker-src 'self' blob:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'self'",
+    ]
+)
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    # The app frames its own emulator page, so SAMEORIGIN rather than DENY.
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+}
+# Unlisted share links carry their token in the path; don't hand it to the sites the
+# shared pages link to.
+PUBLIC_REFERRER_POLICY = "no-referrer"
+
+
+def security_headers_for(path: str) -> dict[str, str]:
+    headers = dict(SECURITY_HEADERS)
+    headers["Content-Security-Policy"] = (
+        EMULATOR_CONTENT_SECURITY_POLICY if path.startswith("/emulatorjs/") else APP_CONTENT_SECURITY_POLICY
+    )
+    if path.startswith("/public/") or path.startswith("/api/public/"):
+        headers["Referrer-Policy"] = PUBLIC_REFERRER_POLICY
+    return headers
+
+
 def isolation_headers_for(requested_path: str, threads: str | None) -> dict[str, str]:
     if requested_path == "player-isolated.html" or (requested_path == "emulatorjs/player.html" and threads == "1"):
         return dict(CROSS_ORIGIN_ISOLATION_HEADERS)
@@ -116,6 +181,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     job_definitions.register_builtin_jobs()
     db = SessionLocal()
     try:
+        auth_service.announce_setup_code(db)
+        if warning := weak_secret_warning():
+            logger.warning(warning)
         job_scheduler.start(db, SessionLocal)
         try:
             cleared = platprices_service.clear_prices_from_other_regions(db)
@@ -143,6 +211,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for name, value in security_headers_for(request.url.path).items():
+        response.headers.setdefault(name, value)
+    return response
+
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -161,6 +238,7 @@ async def conflict_handler(request: Request, exc: ConflictError) -> JSONResponse
 @app.exception_handler(IGDBCredentialsError)
 async def igdb_credentials_handler(request: Request, exc: IGDBCredentialsError) -> JSONResponse:
     return JSONResponse(status_code=503, content={"detail": str(exc)})
+
 
 app.include_router(health.router)
 app.include_router(auth.router)

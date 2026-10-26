@@ -304,3 +304,13 @@ def test_acknowledge_restore_status_resets_a_completed_job(auth_client):
     assert ack_response.status_code == 204
 
     assert auth_client.get("/api/import/backup/status").json()["status"] == "idle"
+
+
+def test_restore_backup_refuses_an_oversized_json_backup(auth_client, monkeypatch):
+    from app.api.routes import import_export
+
+    monkeypatch.setattr(import_export, "MAX_JSON_BACKUP_BYTES", 10)
+
+    response = _upload_backup(auth_client, {"version": 1, "exportedAt": "now", "games": []})
+
+    assert response.status_code == 413

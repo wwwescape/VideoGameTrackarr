@@ -219,7 +219,18 @@
   "settings": {
     "account": {
       "heading": "Account",
-      "signedInAs": "Signed in as <1>{{username}}</1>."
+      "signedInAs": "Signed in as <1>{{username}}</1>.",
+      "password": "Password",
+      "passwordHelp": "Change the password you sign in with. Other browsers and devices are signed out; this one stays signed in.",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "passwordsDontMatch": "The passwords don't match.",
+      "wrongPassword": "The current password is incorrect.",
+      "changePasswordError": "Couldn't change the password. Please try again.",
+      "passwordChanged": "Password changed. Other devices have been signed out.",
+      "changing": "Changing..."
     },
     "display": {
       "heading": "Display",
@@ -368,7 +379,16 @@
       "regenerateConfirmTitle": "Regenerate share links?",
       "regenerateConfirmDescription": "This immediately breaks both links above — anyone using the old links loses access. New links replace them right away.",
       "regenerateSuccess": "Share links regenerated.",
-      "regenerateError": "Could not regenerate the links. Please try again."
+      "regenerateError": "Could not regenerate the links. Please try again.",
+      "offDescription": "Sharing is off: there are no share links, and the public pages answer \"not found\".",
+      "enableButton": "Turn on sharing",
+      "enableSuccess": "Sharing turned on.",
+      "enableError": "Could not turn sharing on. Please try again.",
+      "disableButton": "Turn off sharing",
+      "disableConfirmTitle": "Turn off sharing?",
+      "disableConfirmDescription": "Both links above stop working immediately. Turning sharing back on later makes new links; these ones never work again.",
+      "disableSuccess": "Sharing turned off.",
+      "disableError": "Could not turn sharing off. Please try again."
     },
     "integrations": {
       "igdbHeading": "IGDB Credentials",
@@ -443,8 +463,12 @@
       "confirmPassword": "Confirm password",
       "passwordsMismatch": "Passwords don't match",
       "creatingAccount": "Creating account...",
-      "createAccount": "Create admin account"
-    }
+      "createAccount": "Create admin account",
+      "setupCode": "Setup code",
+      "setupCodeHelper": "Shown in the server's log when it starts (docker compose logs), or the SETUP_CODE you set.",
+      "wrongSetupCode": "That setup code isn't right. Check the server's log for the current one."
+    },
+    "tooManyAttempts": "Too many attempts. Wait a few minutes and try again."
   },
   "games": {
     "gameForm": {
