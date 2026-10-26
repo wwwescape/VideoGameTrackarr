@@ -241,6 +241,7 @@ const AccessoryDetails = () => {
         confirmColor="error"
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDelete}
+        busy={deleteAccessory.isPending}
       />
     </Page>
   );

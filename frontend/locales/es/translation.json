@@ -22,7 +22,8 @@
     "actions": "Acciones",
     "viewAll": "Ver todo",
     "scrollPrevious": "Desplazar atrás",
-    "scrollNext": "Desplazar adelante"
+    "scrollNext": "Desplazar adelante",
+    "working": "Procesando…"
   },
   "errors": {
     "pageNotFoundTitle": "Página no encontrada",

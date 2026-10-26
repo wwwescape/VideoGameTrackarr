@@ -95,7 +95,7 @@ const ShareSection = () => {
         description={t("settings.share.regenerateConfirmDescription")}
         confirmLabel={t("settings.share.regenerateButton")}
         confirmColor="error"
-        confirmDisabled={regenerate.isPending}
+        busy={regenerate.isPending}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleRegenerate}
       />

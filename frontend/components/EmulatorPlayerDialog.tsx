@@ -73,8 +73,8 @@ const EmulatorPlayerDialog = ({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [closing, setClosing] = useState(false);
 
-  // Toasts render above MUI dialogs in the top-right corner — exactly where this dialog's
-  // close button sits — so clear any lingering ones (e.g. "copy saved") as the player opens.
+  // Toasts render above MUI dialogs, in the bottom-right corner over the player's own menu
+  // bar, so clear any lingering ones (e.g. "copy saved") as the player opens.
   useEffect(() => {
     if (open) {
       toast.dismiss();
