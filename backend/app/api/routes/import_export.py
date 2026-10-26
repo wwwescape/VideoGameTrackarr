@@ -13,7 +13,9 @@ from app.api.deps import get_current_user, get_db, get_session_factory
 from app.core.security import TokenError, TokenType, create_backup_download_token, decode_token
 from app.models.system import User
 from app.schemas.backup import FullBackupLinkResponse, RestoreStatusResponse
-from app.services import backup_service, csv_service, hardware_csv_service, restore_job
+from app.schemas.base import CamelModel
+from app.services import backup_service, csv_service, export_backup_job, hardware_csv_service, restore_job
+from app.services.export_backup_job import ExportBackupError
 
 router = APIRouter(tags=["import-export"], dependencies=[Depends(get_current_user)])
 # Reached by a plain browser navigation with a signed token in the path (no auth header).
@@ -145,3 +147,77 @@ def export_hardware_csv(db: Session = Depends(get_db)) -> Response:
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="videogametrackarr-hardware.csv"'},
     )
+
+
+class ExportJobConfigRequest(CamelModel):
+    # All optional — None clears the stored value. An empty password string also clears
+    # it; None leaves the existing password untouched.
+    smb_path: str | None = None
+    smb_username: str | None = None
+    smb_password: str | None = None
+    retention_count: int | None = None
+    include_files: bool = False
+
+
+class ExportJobConfigResponse(CamelModel):
+    smb_path: str | None
+    smb_username: str | None
+    # Never expose the actual password — only whether one is stored.
+    has_password: bool
+    retention_count: int | None
+    include_files: bool
+
+
+class ExportJobTestRequest(CamelModel):
+    smb_path: str | None = None
+    smb_username: str | None = None
+    smb_password: str | None = None
+
+
+class ExportJobTestResponse(CamelModel):
+    ok: bool
+    message: str
+
+
+@router.get("/api/export/job-config", response_model=ExportJobConfigResponse)
+def get_export_job_config(current_user: User = Depends(get_current_user)) -> ExportJobConfigResponse:
+    return ExportJobConfigResponse(**export_backup_job.get_config(current_user))
+
+
+@router.put("/api/export/job-config", response_model=ExportJobConfigResponse)
+def update_export_job_config(
+    payload: ExportJobConfigRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ExportJobConfigResponse:
+    try:
+        export_backup_job.set_config(
+            db,
+            current_user,
+            smb_path=payload.smb_path,
+            smb_username=payload.smb_username,
+            smb_password=payload.smb_password,
+            retention_count=payload.retention_count,
+            include_files=payload.include_files,
+        )
+    except ExportBackupError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return ExportJobConfigResponse(**export_backup_job.get_config(current_user))
+
+
+@router.post("/api/export/job-config/test", response_model=ExportJobTestResponse)
+def test_export_job_connection(
+    payload: ExportJobTestRequest,
+    current_user: User = Depends(get_current_user),
+) -> ExportJobTestResponse:
+    # Blank fields fall back to the saved config, so testing works without retyping
+    # the password every time.
+    saved = export_backup_job.get_config(current_user)
+    smb_path = payload.smb_path or saved.get("smb_path")
+    smb_username = payload.smb_username if payload.smb_username is not None else saved.get("smb_username")
+    smb_password = payload.smb_password or current_user.export_smb_password
+    try:
+        export_backup_job.test_connection(smb_path or "", smb_username, smb_password)
+    except ExportBackupError as exc:
+        return ExportJobTestResponse(ok=False, message=str(exc))
+    return ExportJobTestResponse(ok=True, message="Connection successful.")
