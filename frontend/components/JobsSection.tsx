@@ -26,6 +26,7 @@ import {
   useUpdateJobSchedule,
 } from "../hooks/useJobs";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import ExportBackupJobCard from "./ExportBackupJobCard";
 
 // Registering a future job means adding one entry here — job ids on their own aren't good
 // UI copy, so a small static display-name lookup is the one manual step the "reusable
@@ -62,6 +63,10 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
   events_sync: {
     nameKey: "settings.jobs.jobs.eventsSync.name",
     descriptionKey: "settings.jobs.jobs.eventsSync.description",
+  },
+  export_backup: {
+    nameKey: "settings.jobs.jobs.exportBackup.name",
+    descriptionKey: "settings.jobs.jobs.exportBackup.description",
   },
 };
 
@@ -269,19 +274,30 @@ function JobCard({ job }: { job: JobSummary }) {
   );
 }
 
+const EXPORT_BACKUP_JOB_ID = "export_backup";
+
 const JobsSection = () => {
   const { data: jobs } = useJobsList();
 
   if (!jobs || jobs.length === 0) return null;
 
+  const regularJobs = jobs.filter((job) => job.id !== EXPORT_BACKUP_JOB_ID);
+  const exportJob = jobs.find((job) => job.id === EXPORT_BACKUP_JOB_ID);
+
   return (
     <Stack spacing={3}>
-      {jobs.map((job, index) => (
+      {regularJobs.map((job, index) => (
         <Box key={job.id}>
           {index > 0 && <Divider sx={{ mb: 3 }} />}
           <JobCard job={job} />
         </Box>
       ))}
+      {exportJob && (
+        <Box>
+          <Divider sx={{ mb: 3 }} />
+          <ExportBackupJobCard job={exportJob} />
+        </Box>
+      )}
     </Stack>
   );
 };
