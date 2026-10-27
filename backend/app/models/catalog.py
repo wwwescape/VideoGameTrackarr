@@ -175,6 +175,18 @@ class Game(TimestampMixin, Base):
         JSON, comment="IGDB's similar_games field, cached at import/resync time — powers recommendations (M8)"
     )
 
+    linked_from_custom: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment=(
+            "True for a game added by hand and later linked to IGDB (Link to IGDB) — never shown "
+            "as such, but it's what offers Change IGDB link and Unlink from IGDB; a game added "
+            "from IGDB search never gets it. Cleared again by unlinking"
+        ),
+    )
+
     auto_discovered: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

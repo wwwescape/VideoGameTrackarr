@@ -3,30 +3,21 @@ import {
   acknowledgeRestoreStatus,
   createFullBackupLink,
   exportBackupBlob,
-  exportCsvBlob,
-  exportHardwareCsvBlob,
   fetchRestoreStatus,
   restoreBackup,
+  type BackupFileOptions,
 } from "../api/importExport";
 import { resolveAssetUrl } from "../api/client";
 import { downloadBlob, downloadFromUrl } from "../utils/download";
 
 export const restoreStatusQueryKey = ["restore", "status"] as const;
 
-export function useExportCsv() {
-  return useMutation({
-    mutationFn: async () => {
-      const blob = await exportCsvBlob();
-      downloadBlob(blob, "videogametrackarr-library.csv");
-    },
-  });
-}
-
+// The backup: a .json with the data, or a .zip when any files are picked to go with it.
 export function useExportBackup() {
   return useMutation({
-    mutationFn: async ({ includeFiles }: { includeFiles: boolean } = { includeFiles: false }) => {
-      if (includeFiles) {
-        const url = await createFullBackupLink();
+    mutationFn: async (files: BackupFileOptions = { roms: false, bios: false, images: false }) => {
+      if (files.roms || files.bios || files.images) {
+        const url = await createFullBackupLink(files);
         downloadFromUrl(resolveAssetUrl(url) ?? url);
         return;
       }
@@ -78,15 +69,6 @@ export function useAcknowledgeRestoreStatus() {
     mutationFn: acknowledgeRestoreStatus,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: restoreStatusQueryKey });
-    },
-  });
-}
-
-export function useExportHardwareCsv() {
-  return useMutation({
-    mutationFn: async () => {
-      const blob = await exportHardwareCsvBlob();
-      downloadBlob(blob, "videogametrackarr-hardware.csv");
     },
   });
 }

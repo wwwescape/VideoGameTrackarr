@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -20,6 +21,7 @@ import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGames, useLinkGameToIgdb, useLinkGameToIgdbViaParent, useMergeGameIntoIgdb } from "../hooks/useGames";
 import { useIgdbSearch } from "../hooks/useIgdbSearch";
 import { gameIdentifier } from "../utils/identifiers";
+import { isAddon } from "../utils/utils";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import GameCard from "./GameCard";
@@ -43,6 +45,11 @@ interface LinkToIgdbDialogProps {
   gameId: number;
   gameName: string;
   gameCategory: GameCategory | null;
+  // Change IGDB link (a game linked from custom) rather than Link to IGDB: same flow, its own
+  // title, and a warning that the current link's add-ons go.
+  changing?: boolean;
+  // Instead of opening the linked game afterwards (e.g. IGDB Import, which stays on its list).
+  onLinked?: () => void;
   onClose: () => void;
 }
 
@@ -57,7 +64,15 @@ interface DuplicateFound {
   name: string;
 }
 
-const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: LinkToIgdbDialogProps) => {
+const LinkToIgdbDialog = ({
+  open,
+  gameId,
+  gameName,
+  gameCategory,
+  changing = false,
+  onLinked,
+  onClose,
+}: LinkToIgdbDialogProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState(gameName);
@@ -106,9 +121,13 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
 
   const handleLink = async (igdbId: number, name: string) => {
     try {
-      await linkGameToIgdb.mutateAsync(igdbId);
+      const game = await linkGameToIgdb.mutateAsync(igdbId);
       toast.success(t("igdb.linkedSuccess"), TOAST_OPTIONS);
       onClose();
+      // Linked in place, but under IGDB's name: its address changes (a changed link's old
+      // address no longer finds it at all), so move to the new one in place of the old.
+      if (onLinked) onLinked();
+      else navigate(`/${isAddon(game) ? "addon" : "game"}/${gameIdentifier(game)}`, { replace: true });
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
         setDuplicateFound({ igdbId, name });
@@ -175,7 +194,8 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
       toast.success(t("igdb.parentAddedSuccess"), TOAST_OPTIONS);
       setParentNeeded(null);
       onClose();
-      navigate(`/addon/${gameIdentifier(game)}`);
+      if (onLinked) onLinked();
+      else navigate(`/addon/${gameIdentifier(game)}`);
     } catch (error) {
       console.error("Error adding parent game:", error);
       toast.error(t("igdb.addParentError"), TOAST_OPTIONS);
@@ -189,7 +209,8 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
       toast.success(t("igdb.mergeSuccess"), TOAST_OPTIONS);
       setDuplicateFound(null);
       onClose();
-      navigate(`/game/${gameIdentifier(game)}`);
+      if (onLinked) onLinked();
+      else navigate(`/game/${gameIdentifier(game)}`);
     } catch (error) {
       console.error("Error merging duplicate game:", error);
       const message =
@@ -203,8 +224,13 @@ const LinkToIgdbDialog = ({ open, gameId, gameName, gameCategory, onClose }: Lin
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle>{t("igdb.dialogTitle")}</DialogTitle>
+        <DialogTitle>{t(changing ? "igdb.changeDialogTitle" : "igdb.dialogTitle")}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {changing ? (
+            <Alert severity="warning" sx={{ mb: 2, flexShrink: 0 }}>
+              {t("igdb.changeAddonsWarning")}
+            </Alert>
+          ) : null}
           <TextField
             label={t("igdb.searchLabel")}
             fullWidth

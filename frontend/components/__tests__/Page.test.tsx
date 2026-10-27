@@ -132,7 +132,8 @@ describe("Page toolbar", () => {
     );
 
     const toolbar = screen.getByRole("toolbar");
-    expect(within(toolbar).getAllByRole("link")).toHaveLength(8);
+    expect(within(toolbar).getAllByRole("link")).toHaveLength(9);
+    expect(within(toolbar).getByRole("link", { name: "IGDB Import" })).toHaveAttribute("href", "/settings/igdb-import");
     expect(within(toolbar).getByRole("link", { name: "General" })).toHaveAttribute("href", "/settings");
     expect(within(toolbar).getByRole("link", { name: "Emulation" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText("BIOS files and cores.")).toBeInTheDocument();

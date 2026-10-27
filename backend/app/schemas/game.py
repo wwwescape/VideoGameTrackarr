@@ -84,6 +84,8 @@ class GameDetailResponse(GameSummaryResponse):
     igdb_rating_count: int | None
     igdb_critic_rating: float | None
     igdb_critic_rating_count: int | None
+    # Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
+    linked_from_custom: bool
     progress: GameProgressResponse
     tags: list[TagResponse]
     genres: list[CatalogRefResponse]
@@ -166,6 +168,7 @@ def game_detail_from_orm(
         igdb_rating_count=game.igdb_rating_count,
         igdb_critic_rating=game.igdb_critic_rating,
         igdb_critic_rating_count=game.igdb_critic_rating_count,
+        linked_from_custom=game.linked_from_custom,
         progress=game_progress_from_orm(game.id, progress),
         tags=[tag_from_orm(tag) for tag in tags],
         genres=[genre_ref_from_orm(gg.genre) for gg in game.genres],

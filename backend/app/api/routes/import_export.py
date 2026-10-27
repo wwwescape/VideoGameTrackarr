@@ -3,7 +3,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse, Response
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -12,8 +12,8 @@ from starlette.background import BackgroundTask
 from app.api.deps import get_current_user, get_db, get_session_factory
 from app.core.security import TokenError, TokenType, create_backup_download_token, decode_token
 from app.models.system import User
-from app.schemas.backup import FullBackupLinkResponse, RestoreStatusResponse
-from app.services import backup_service, csv_service, hardware_csv_service, restore_job
+from app.schemas.backup import FullBackupLinkRequest, FullBackupLinkResponse, RestoreStatusResponse
+from app.services import backup_service, restore_job
 
 router = APIRouter(tags=["import-export"], dependencies=[Depends(get_current_user)])
 # Reached by a plain browser navigation with a signed token in the path (no auth header).
@@ -34,22 +34,10 @@ def _to_response(state: restore_job.RestoreJobState) -> RestoreStatusResponse:
     )
 
 
-@router.get("/api/export/csv")
-def export_csv(db: Session = Depends(get_db)) -> Response:
-    csv_text = csv_service.export_csv(db)
-    return Response(
-        content=csv_text,
-        media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="videogametrackarr-library.csv"'},
-    )
-
-
 @router.get("/api/export/backup")
-def export_backup(full: bool = False, db: Session = Depends(get_db)) -> Response:
-    """The JSON backup, or with ?full=true a .zip that also carries every ROM, save and BIOS
-    file (built in a temp file that's deleted once it has been sent)."""
-    if full:
-        return _full_backup_response(db)
+def export_backup(db: Session = Depends(get_db)) -> Response:
+    """The backup as plain JSON — everything but files. A backup with files is a .zip,
+    downloaded through a signed link (POST /api/export/backup/full-link)."""
     backup_json = backup_service.export_backup_json(db)
     return Response(
         content=backup_json,
@@ -58,31 +46,44 @@ def export_backup(full: bool = False, db: Session = Depends(get_db)) -> Response
     )
 
 
-def _full_backup_response(db: Session) -> FileResponse:
-    path = backup_service.export_full_backup_zip(db)
+def _full_backup_response(db: Session, roms: bool, bios: bool, images: bool) -> FileResponse:
+    """The .zip backup with the files picked, built in a temp file that's deleted once sent."""
+    path = backup_service.export_full_backup_zip(db, roms=roms, bios=bios, images=images)
     return FileResponse(
         path,
         media_type="application/zip",
-        filename="videogametrackarr-full-backup.zip",
+        filename="videogametrackarr-backup.zip",
         background=BackgroundTask(path.unlink, missing_ok=True),
     )
 
 
 @router.post("/api/export/backup/full-link", response_model=FullBackupLinkResponse)
-def create_full_backup_link(current_user: User = Depends(get_current_user)) -> FullBackupLinkResponse:
+def create_full_backup_link(
+    body: FullBackupLinkRequest, current_user: User = Depends(get_current_user)
+) -> FullBackupLinkResponse:
+    """A short-lived signed link the browser downloads the .zip from itself — it can be many
+    GB, too big to fetch into memory first. Which files go in rides along in the address."""
     token = create_backup_download_token(current_user.id)
-    return FullBackupLinkResponse(url=f"/api/export/backup/full/{token}/videogametrackarr-full-backup.zip")
+    flags = f"roms={str(body.roms).lower()}&bios={str(body.bios).lower()}&images={str(body.images).lower()}"
+    return FullBackupLinkResponse(url=f"/api/export/backup/full/{token}/videogametrackarr-backup.zip?{flags}")
 
 
 @download_router.get("/api/export/backup/full/{token}/{filename}")
-def download_full_backup(token: str, filename: str, db: Session = Depends(get_db)) -> FileResponse:
+def download_full_backup(
+    token: str,
+    filename: str,
+    roms: bool = Query(default=True),
+    bios: bool = Query(default=True),
+    images: bool = Query(default=False),
+    db: Session = Depends(get_db),
+) -> FileResponse:
     try:
         payload = decode_token(token, TokenType.BACKUP_DOWNLOAD)
     except TokenError as exc:
         raise HTTPException(status_code=401, detail="Invalid or expired download link") from exc
     if db.get(User, int(payload["sub"])) is None:
         raise HTTPException(status_code=401, detail="Invalid or expired download link")
-    return _full_backup_response(db)
+    return _full_backup_response(db, roms=roms, bios=bios, images=images)
 
 
 @router.post("/api/import/backup", response_model=RestoreStatusResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -142,12 +143,3 @@ def restore_backup_status() -> RestoreStatusResponse:
 def acknowledge_restore_backup_status() -> None:
     restore_job.acknowledge()
 
-
-@router.get("/api/export/hardware-csv")
-def export_hardware_csv(db: Session = Depends(get_db)) -> Response:
-    csv_text = hardware_csv_service.export_hardware_csv(db)
-    return Response(
-        content=csv_text,
-        media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="videogametrackarr-hardware.csv"'},
-    )

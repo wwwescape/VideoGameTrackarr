@@ -198,6 +198,12 @@ export async function setGameRating(gameId: number, rating: number | null): Prom
   return response.data.rating;
 }
 
+// Unlink from IGDB: a game linked from custom becomes custom again (its add-ons are removed).
+export async function unlinkGameFromIgdb(gameId: number): Promise<GameDetail> {
+  const response = await apiClient.post<GameDetail>(`/api/games/${gameId}/unlink-igdb`);
+  return response.data;
+}
+
 export async function claimDiscoveredGame(gameId: number): Promise<GameDetail> {
   const response = await apiClient.post<GameDetail>(`/api/games/${gameId}/claim`);
   return response.data;

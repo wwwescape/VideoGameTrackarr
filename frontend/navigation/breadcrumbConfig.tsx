@@ -241,6 +241,11 @@ export const emulationCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.emulation") },
 ];
 
+export const igdbImportCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.igdbImport") },
+];
+
 export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.steamSync") },

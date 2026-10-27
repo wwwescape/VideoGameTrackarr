@@ -52,11 +52,11 @@ device:
   saves only to your logged-in session. BIOS files live under `backend/uploads/roms/bios/`,
   just as private.
 - **Backups**: the JSON backup leaves ROMs, saves and BIOS files out (a restore on the same
-  instance keeps ROMs, and their saves, whose copy still exists). Tick **Include ROMs, saves
-  and BIOS files** in Settings → Data Management to download a `.zip` full backup instead —
-  as large as all your ROMs together, streamed straight to disk. Restoring that `.zip` (Restore
-  accepts either) replaces ROMs, saves and BIOS files along with everything else; behind a
-  reverse proxy, its request body limit applies to restores too.
+  instance keeps ROMs, and their saves, whose copy still exists). Tick **ROMs and saves** and/or
+  **BIOS files** under Backup in Settings → General → Data to download a `.zip` instead — as
+  large as those files together, streamed straight to disk. Restoring that `.zip` (Restore
+  accepts either) replaces just the kinds of files it carries along with everything else; behind
+  a reverse proxy, its request body limit applies to restores too.
 
 EmulatorJS (GPL-3.0) and each bundled core (under its own license) are credited on the About
 page. They're downloaded from the npm registry at build time — pinned and integrity-checked —

@@ -94,6 +94,27 @@ def _isolate_rom_storage(tmp_path, monkeypatch):
     yield rom_dir
 
 
+@pytest.fixture(autouse=True)
+def _isolate_backups_and_uploads(tmp_path, monkeypatch):
+    # Safety snapshots (restore, Danger Zone resets) and uploaded images must never land in, or
+    # be deleted from, the real backend/db/backups and backend/uploads directories.
+    from app.services import backup_service, upload_service
+
+    covers = tmp_path / "uploads" / "covers"
+    accessories = tmp_path / "uploads" / "accessory-images"
+    monkeypatch.setattr(backup_service, "BACKUPS_DIR", tmp_path / "backups")
+    monkeypatch.setattr(upload_service, "COVERS_DIR", covers)
+    monkeypatch.setattr(upload_service, "ACCESSORY_IMAGES_DIR", accessories)
+    monkeypatch.setattr(
+        backup_service,
+        "_IMAGE_FOLDERS",
+        (
+            (backup_service.COVERS_URL_PREFIX, "covers", covers),
+            (backup_service.ACCESSORY_IMAGES_URL_PREFIX, "accessory-images", accessories),
+        ),
+    )
+
+
 @pytest.fixture()
 def db_session(tmp_path):
     engine = create_engine(f"sqlite:///{(tmp_path / 'test.db').as_posix()}")

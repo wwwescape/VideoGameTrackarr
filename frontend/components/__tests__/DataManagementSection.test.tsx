@@ -9,11 +9,8 @@ vi.mock("react-toastify", () => ({
 
 const exportBackup = vi.fn();
 const restoreBackup = vi.fn();
-const idle = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock("../../hooks/useImportExport", () => ({
-  useExportCsv: () => idle,
-  useExportHardwareCsv: () => idle,
   useExportBackup: () => ({ mutateAsync: exportBackup, isPending: false }),
   useRestoreBackup: () => ({ mutateAsync: restoreBackup, isPending: false }),
   useRestoreStatus: () => ({ data: { status: "idle" } }),
@@ -24,16 +21,19 @@ describe("DataManagementSection", () => {
     vi.clearAllMocks();
   });
 
-  it("exports the JSON backup by default, and the full .zip when files are included", async () => {
+  it("has one backup: a .json by default, a .zip with the files picked", async () => {
     const user = userEvent.setup();
     render(<DataManagementSection />);
 
-    await user.click(screen.getByRole("button", { name: "Full backup (JSON)" }));
-    expect(exportBackup).toHaveBeenLastCalledWith({ includeFiles: false });
+    // The CSV exports are gone: JSON is the one format, and it restores.
+    expect(screen.queryByRole("button", { name: /CSV/ })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Download backup (.json)" }));
+    expect(exportBackup).toHaveBeenLastCalledWith({ roms: false, bios: false, images: false });
 
-    await user.click(screen.getByRole("checkbox", { name: "Include ROMs, saves and BIOS files" }));
-    await user.click(screen.getByRole("button", { name: "Full backup with files (ZIP)" }));
-    expect(exportBackup).toHaveBeenLastCalledWith({ includeFiles: true });
+    await user.click(screen.getByRole("checkbox", { name: "ROMs and saves" }));
+    await user.click(screen.getByRole("checkbox", { name: /Images/ }));
+    await user.click(screen.getByRole("button", { name: "Download backup (.zip)" }));
+    expect(exportBackup).toHaveBeenLastCalledWith({ roms: true, bios: false, images: true });
   });
 
   it("restores from a .zip full backup as well as .json", async () => {

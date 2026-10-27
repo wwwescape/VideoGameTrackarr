@@ -19,6 +19,7 @@ from app.api.routes import (
     catalog_resync,
     collections,
     companies,
+    danger_zone,
     dashboard,
     device,
     events,
@@ -28,6 +29,7 @@ from app.api.routes import (
     hardware_stats,
     health,
     igdb,
+    igdb_import,
     import_export,
     insights,
     integrations,
@@ -246,6 +248,8 @@ app.include_router(platforms.router)
 app.include_router(regions.router)
 app.include_router(games.router)
 app.include_router(igdb.router)
+app.include_router(igdb_import.router)
+app.include_router(danger_zone.router)
 app.include_router(library.router)
 app.include_router(progress.router)
 app.include_router(notes.router)

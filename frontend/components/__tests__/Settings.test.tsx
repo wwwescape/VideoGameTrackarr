@@ -45,6 +45,7 @@ vi.mock("../../theme/ColorModeProvider", () => ({
 // Their own tests cover them; here they only need to sit in their rows.
 vi.mock("../DataManagementSection", () => ({ default: () => <div>Backup panel</div> }));
 vi.mock("../ShareSection", () => ({ default: () => <div>Share panel</div> }));
+vi.mock("../DangerZoneSection", () => ({ default: () => <div>Danger Zone panel</div> }));
 
 function renderPage() {
   render(

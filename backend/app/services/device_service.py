@@ -19,8 +19,7 @@ from app.services.exceptions import NotFoundError
 
 # Lookup fields resolved by name (get-or-create) rather than id — lets the Add Device
 # form submit a freshly-typed name (a new color, a new platform, ...) without a separate
-# "create this lookup row first" round trip. Mirrors how csv_service.py already resolves
-# platform/region by name for games.
+# "create this lookup row first" round trip.
 _NAME_LOOKUP_RESOLVERS = {
     "manufacturer": ("manufacturer_id", manufacturer_repository.get_or_create_by_name),
     "device_type": ("device_type_id", device_type_repository.get_or_create_by_name),

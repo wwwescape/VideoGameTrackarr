@@ -225,3 +225,9 @@ def merge_game_into_igdb(
 ) -> GameDetailResponse:
     game = game_service.merge_duplicate_game(db, game_id, body.igdb_id)
     return _game_detail_response(db, game)
+
+
+@router.post("/{game_id}/unlink-igdb", response_model=GameDetailResponse)
+def unlink_game_from_igdb(game_id: int, db: Session = Depends(get_db)) -> GameDetailResponse:
+    game = game_service.unlink_game_from_igdb(db, game_id)
+    return _game_detail_response(db, game)

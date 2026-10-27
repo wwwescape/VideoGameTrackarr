@@ -47,6 +47,10 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
     nameKey: "settings.jobs.jobs.resyncSeries.name",
     descriptionKey: "settings.jobs.jobs.resyncSeries.description",
   },
+  igdb_match: {
+    nameKey: "settings.jobs.jobs.igdbMatch.name",
+    descriptionKey: "settings.jobs.jobs.igdbMatch.description",
+  },
   steam_import: {
     nameKey: "settings.jobs.jobs.steamImport.name",
     descriptionKey: "settings.jobs.jobs.steamImport.description",

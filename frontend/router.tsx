@@ -38,6 +38,7 @@ import PublicHardwarePage from "./components/PublicHardwarePage";
 import Settings from "./components/Settings";
 import SalesIgnoredListPage from "./components/SalesIgnoredListPage";
 import SaleTrackedPage from "./components/SaleTrackedPage";
+import IgdbImportPage from "./components/IgdbImportPage";
 import SteamSyncPage from "./components/SteamSyncPage";
 import OnSalePage from "./components/OnSalePage";
 import TagManagerPage from "./components/TagManagerPage";
@@ -79,6 +80,7 @@ import {
   seriesCrumbs,
   settingsCrumbs,
   steamSyncCrumbs,
+  igdbImportCrumbs,
   tagManagerCrumbs,
 } from "./navigation/breadcrumbConfig";
 import Login from "./pages/Login";
@@ -242,6 +244,11 @@ const router = createBrowserRouter([
             path: "/settings/emulation",
             element: <EmulationPage />,
             handle: { crumbs: emulationCrumbs },
+          },
+          {
+            path: "/settings/igdb-import",
+            element: <IgdbImportPage />,
+            handle: { crumbs: igdbImportCrumbs },
           },
           {
             path: "/settings/steam-sync",

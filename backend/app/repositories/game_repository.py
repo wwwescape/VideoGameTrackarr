@@ -20,6 +20,7 @@ from app.models.catalog import (
     ReleaseDate,
     Screenshot,
 )
+from app.models.igdb_import import IgdbImportEntry
 from app.models.library import (
     GameProgress,
     GameTag,
@@ -668,6 +669,8 @@ def merge_game(db: Session, source: Game, target: Game) -> None:
     # Your rating lives on the game row itself: the target keeps its own, else takes source's.
     if target.user_rating is None:
         target.user_rating = source.user_rating
+    # Source's IGDB Import match goes with it (target is linked, so has none to keep).
+    db.execute(delete(IgdbImportEntry).where(IgdbImportEntry.game_id == source.id))
     db.delete(source)
     db.flush()
 
@@ -681,8 +684,18 @@ def delete_game_with_addons(db: Session, game: Game) -> list[str]:
     Returns the stored filenames of every deleted ROM and its save states/in-game save, for
     the caller to remove from disk (rom_service.delete_files) once its transaction commits."""
     addon_ids = list(db.scalars(select(Game.id).where(Game.parent_game_id == game.id)))
-    game_ids = [game.id, *addon_ids]
+    return _delete_games(db, [game.id, *addon_ids])
 
+
+def delete_addons(db: Session, game: Game) -> list[str]:
+    """Deletes the game's addons (not the game itself) and everything that hangs off them,
+    like delete_game_with_addons — for Change IGDB link / Unlink from IGDB, where the addons
+    came from the old link. Returns their ROM filenames for the caller to remove from disk."""
+    addon_ids = list(db.scalars(select(Game.id).where(Game.parent_game_id == game.id)))
+    return _delete_games(db, addon_ids) if addon_ids else []
+
+
+def _delete_games(db: Session, game_ids: list[int]) -> list[str]:
     item_ids = select(LibraryItem.id).where(LibraryItem.game_id.in_(game_ids))
     rom_ids = select(RomFile.id).where(RomFile.library_item_id.in_(item_ids))
     rom_filenames: list[str] = []
@@ -712,5 +725,6 @@ def delete_game_with_addons(db: Session, game: Game) -> list[str]:
     db.execute(delete(Artwork).where(Artwork.game_id.in_(game_ids)))
     db.execute(delete(GameVideo).where(GameVideo.game_id.in_(game_ids)))
     db.execute(delete(ReleaseDate).where(ReleaseDate.game_id.in_(game_ids)))
+    db.execute(delete(IgdbImportEntry).where(IgdbImportEntry.game_id.in_(game_ids)))
     db.execute(delete(Game).where(Game.id.in_(game_ids)))
     return rom_filenames

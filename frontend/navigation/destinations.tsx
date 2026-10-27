@@ -21,6 +21,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
 import GamesIcon from "@mui/icons-material/Games";
+import IgdbIcon from "../icons/IgdbIcon";
 import SteamIcon from "../icons/SteamIcon";
 
 export interface NavSubDestination {
@@ -139,11 +140,12 @@ export function settingsPages(): NavSubDestination[] {
     { to: "/settings/integrations", labelKey: "nav.integrations", icon: <CableIcon /> },
     { to: "/settings/emulation", labelKey: "nav.emulation", icon: <SportsEsportsIcon /> },
     {
-      to: "/settings/steam-sync",
-      labelKey: "nav.steamSync",
-      icon: <SteamIcon />,
+      to: "/settings/igdb-import",
+      labelKey: "nav.igdbImport",
+      icon: <IgdbIcon />,
       separatorBefore: true,
     },
+    { to: "/settings/steam-sync", labelKey: "nav.steamSync", icon: <SteamIcon /> },
     { to: "/settings/sale-tracked", labelKey: "nav.saleTracked", icon: <VisibilityIcon /> },
     { to: "/settings/sales-ignored", labelKey: "nav.salesIgnored", icon: <BlockIcon /> },
   ];

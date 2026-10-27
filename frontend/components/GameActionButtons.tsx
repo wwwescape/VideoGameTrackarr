@@ -4,6 +4,7 @@ import { isAxiosError } from "axios";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
@@ -11,7 +12,7 @@ import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameCategory, LibraryItem } from "../api/types";
-import { useClaimDiscoveredGame, useDeleteGame, useResyncGame } from "../hooks/useGames";
+import { useClaimDiscoveredGame, useDeleteGame, useResyncGame, useUnlinkGameFromIgdb } from "../hooks/useGames";
 import { editFromDetail } from "../utils/navState";
 import { hasPlayableRom } from "../utils/roms";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -29,6 +30,9 @@ interface GameActionButtonsProps {
   // GameDetails.tsx for why this is about the parent relationship, not the category.
   hasParentGame: boolean;
   hasIgdbId: boolean;
+  // Added by hand and later linked to IGDB: besides Resync, offers Change IGDB link (the Link
+  // to IGDB flow again) and Unlink from IGDB (custom again). Games added from search don't.
+  linkedFromCustom: boolean;
   // The id to resync against IGDB: the game's own id normally, or its parent's id when
   // viewing an addon — resyncing the parent already re-fetches all of its addons too, so
   // an addon's own "Resync" button just triggers that same cascade instead of resyncing
@@ -52,6 +56,7 @@ const GameActionButtons = ({
   gameCategory,
   hasParentGame,
   hasIgdbId,
+  linkedFromCustom,
   resyncGameId,
   isAutoDiscovered,
   libraryItems,
@@ -62,10 +67,12 @@ const GameActionButtons = ({
   const deleteGameMutation = useDeleteGame();
   const resyncGameMutation = useResyncGame(resyncGameId);
   const claimGameMutation = useClaimDiscoveredGame(gameId);
+  const unlinkMutation = useUnlinkGameFromIgdb(gameId);
 
   const [resyncGameDialogOpen, setResyncGameDialogOpen] = useState(false);
   const [linkIgdbDialogOpen, setLinkIgdbDialogOpen] = useState(false);
   const [removeGameDialogOpen, setRemoveGameDialogOpen] = useState(false);
+  const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
   const [playDialogOpen, setPlayDialogOpen] = useState(false);
 
   const handleRemoveGame = async () => {
@@ -93,6 +100,17 @@ const GameActionButtons = ({
         hasParentGame ? t("games.actions.claimAddonErrorToast") : t("games.actions.claimGameErrorToast"),
         TOAST_OPTIONS
       );
+    }
+  };
+
+  const handleUnlink = async () => {
+    try {
+      await unlinkMutation.mutateAsync();
+      setUnlinkDialogOpen(false);
+      toast.success(t("games.actions.unlinkSuccessToast"), TOAST_OPTIONS);
+    } catch (error) {
+      console.error("Error unlinking game from IGDB:", error);
+      toast.error(t("games.actions.unlinkErrorToast"), TOAST_OPTIONS);
     }
   };
 
@@ -161,6 +179,38 @@ const GameActionButtons = ({
             onConfirm={handleResyncGame}
             busy={resyncGameMutation.isPending}
           />
+          {linkedFromCustom ? (
+            <>
+              <ToolbarButton
+                icon={<LinkIcon />}
+                label={t("games.actions.changeIgdbLinkButton")}
+                onClick={() => setLinkIgdbDialogOpen(true)}
+              />
+              <LinkToIgdbDialog
+                open={linkIgdbDialogOpen}
+                gameId={gameId}
+                gameName={gameName}
+                gameCategory={gameCategory}
+                changing
+                onClose={() => setLinkIgdbDialogOpen(false)}
+              />
+              <ToolbarButton
+                icon={<LinkOffIcon />}
+                label={t("games.actions.unlinkFromIgdbButton")}
+                onClick={() => setUnlinkDialogOpen(true)}
+              />
+              <ConfirmDialog
+                open={unlinkDialogOpen}
+                title={t("games.actions.unlinkConfirmTitle")}
+                description={t("games.actions.unlinkConfirmDescription", { name: gameName })}
+                confirmLabel={t("games.actions.unlinkConfirmLabel")}
+                confirmColor="error"
+                onClose={() => setUnlinkDialogOpen(false)}
+                onConfirm={() => void handleUnlink()}
+                busy={unlinkMutation.isPending}
+              />
+            </>
+          ) : null}
         </>
       ) : (
         <>

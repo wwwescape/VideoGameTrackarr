@@ -61,10 +61,16 @@ def delete_if_local_upload(url: str | None) -> None:
     cover_url ultimately comes from a request body (ManualGameCreateRequest.cover_url is
     free text, not restricted to URLs save_cover_image actually generated), so resolving and
     confirming the result is still inside COVERS_DIR — rather than trusting the joined path
-    directly — guards against a crafted value like "/uploads/covers/../../../etc/passwd"."""
-    if url is None or not url.startswith(COVERS_URL_PREFIX):
+    directly — guards against a crafted value like "/uploads/covers/../../../etc/passwd".
+    Covers accessory photos too (the Danger Zone's resets remove both), and only ever a file
+    inside the folder, never the folder itself (an empty name)."""
+    if url is None:
         return
-    filename = url.removeprefix(COVERS_URL_PREFIX)
-    candidate = (COVERS_DIR / filename).resolve()
-    if candidate.is_relative_to(COVERS_DIR.resolve()):
-        candidate.unlink(missing_ok=True)
+    for prefix, directory in ((COVERS_URL_PREFIX, COVERS_DIR), (ACCESSORY_IMAGES_URL_PREFIX, ACCESSORY_IMAGES_DIR)):
+        if not url.startswith(prefix):
+            continue
+        root = directory.resolve()
+        candidate = (directory / url.removeprefix(prefix)).resolve()
+        if candidate != root and candidate.is_relative_to(root) and not candidate.is_dir():
+            candidate.unlink(missing_ok=True)
+        return

@@ -42,6 +42,9 @@ class JobDefinition:
     # function defaults it to a no-op) so existing direct/unit-test callers that only pass
     # session_factory keep working unchanged.
     run: Callable[[Callable[[], Session], Callable[[int, int], None]], dict[str, Any]]
+    # False for a job only started from its own page (IGDB Import's bulk Link works through
+    # the games queued there), which Settings -> Jobs doesn't list or offer to schedule.
+    listed: bool = True
 
 
 # Process-global, in-memory — generalizes app/services/restore_job.py's single global slot

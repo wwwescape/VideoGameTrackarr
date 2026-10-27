@@ -58,8 +58,9 @@
 - **Share links** — unlisted, read-only links to your Games or Hardware collection.
 - **Jobs** — scheduled catalog resyncs, Steam import, sale refreshes, and event syncs, with live
   progress.
-- **Data portability** — CSV export, and JSON or full `.zip` backups (including ROMs, saves,
-  and BIOS files) with an automatic safety snapshot before every restore.
+- **Backup & restore** — one JSON backup of your library, hardware, target prices and settings,
+  or a `.zip` that also carries your pick of ROMs and saves, BIOS files and uploaded images,
+  with an automatic safety snapshot before every restore.
 - **PWA** — installable, works offline for anything you've already viewed, and syncs offline
   edits when you reconnect.
 - **Design** — light, dark, and high-contrast modes with your choice of accent color (Material 3

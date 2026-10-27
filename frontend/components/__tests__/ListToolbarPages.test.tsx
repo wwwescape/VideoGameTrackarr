@@ -103,7 +103,9 @@ beforeEach(() => {
   events = [];
 });
 
-describe("On Sale toolbar", () => {
+// Many menu and header clicks on a full table, which can pass the 5s default when the whole
+// suite runs in parallel.
+describe("On Sale toolbar", { timeout: 20_000 }, () => {
   it("shows a table, sorts by price, and filters by store and target", async () => {
     const user = renderPage(<OnSalePage />);
 

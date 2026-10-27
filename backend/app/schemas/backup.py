@@ -5,8 +5,9 @@ from pydantic import BaseModel, ConfigDict
 from app.schemas.base import CamelModel
 
 # 2 added the optional rom_files/rom_save_states/bios_files sections (full backups only);
-# a version-1 file still restores — those sections just default to empty.
-BACKUP_FORMAT_VERSION = 2
+# 3 added target prices, ignored price lookups, account settings and included_files (which
+# kinds of files a .zip carries). Older files still restore — the new parts default to empty.
+BACKUP_FORMAT_VERSION = 3
 
 
 class _BackupRow(BaseModel):
@@ -75,6 +76,8 @@ class BackupLibraryItem(_BackupRow):
     edition: str | None = None
     acquired_at: str | None = None
     notes: str | None = None
+    # The Sale - Tracked target price (version 3+).
+    target_price: float | None = None
 
 
 class BackupGameProgress(_BackupRow):
@@ -232,6 +235,31 @@ class BackupBiosFile(_BackupRow):
     md5: str
 
 
+class BackupSalesIgnored(_BackupRow):
+    """A game a price provider's lookup was told to skip (Sale - Ignored List). The price
+    caches themselves aren't backed up — they refetch — only these choices are."""
+
+    provider: Literal["itad", "platprices"]
+    game_id: int
+
+
+class BackupSettings(_BackupRow):
+    """Account settings kept on the server. Store region isn't here: it's kept per browser."""
+
+    currency: str | None = None
+    overview_layout: list[dict] | None = None
+    steam_id_64: str | None = None
+
+
+class BackupIncludedFiles(_BackupRow):
+    """Which kinds of files a .zip backup carries under files/ — a restore only replaces
+    those kinds, leaving the rest as they are."""
+
+    roms: bool = False
+    bios: bool = False
+    images: bool = False
+
+
 class BackupPayload(_BackupRow):
     version: int
     exported_at: str
@@ -255,7 +283,11 @@ class BackupPayload(_BackupRow):
     accessory_compatibility: list[BackupAccessoryCompatibility] = []
     user_hardware: list[BackupUserHardware] = []
     user_accessories: list[BackupUserAccessory] = []
-    # Full backups only (a .zip carrying the files themselves under files/<stored path>).
+    sales_ignored: list[BackupSalesIgnored] = []
+    settings: BackupSettings | None = None
+    # .zip backups only (the files themselves under files/<...>). Null in a version-2 .zip,
+    # which always carried ROMs and BIOS files.
+    included_files: BackupIncludedFiles | None = None
     rom_files: list[BackupRomFile] = []
     rom_save_states: list[BackupRomSaveState] = []
     bios_files: list[BackupBiosFile] = []
@@ -265,8 +297,20 @@ class BackupRestoreResult(CamelModel):
     restored_games: int
     restored_library_items: int
     safety_snapshot_path: str
-    # Only a full-backup (.zip) restore brings ROMs back; 0 for a JSON restore.
+    restored_devices: int = 0
+    restored_accessories: int = 0
+    # Only a .zip carrying those files brings them back; 0 otherwise.
     restored_roms: int = 0
+    restored_bios_files: int = 0
+    restored_images: int = 0
+
+
+class FullBackupLinkRequest(CamelModel):
+    """Which files the .zip backup carries (at least one, or it would just be the .json)."""
+
+    roms: bool = False
+    bios: bool = False
+    images: bool = False
 
 
 class FullBackupLinkResponse(CamelModel):

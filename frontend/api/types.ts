@@ -279,6 +279,9 @@ export interface GameDetail extends GameSummary {
   igdbRatingCount: number | null;
   igdbCriticRating: number | null;
   igdbCriticRatingCount: number | null;
+  // Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
+  // Never shown as custom.
+  linkedFromCustom: boolean;
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];
@@ -402,6 +405,12 @@ export interface BackupRestoreResult {
   restoredGames: number;
   restoredLibraryItems: number;
   safetySnapshotPath: string;
+  restoredDevices: number;
+  restoredAccessories: number;
+  // Only a .zip carrying those files brings them back; 0 otherwise.
+  restoredRoms: number;
+  restoredBiosFiles: number;
+  restoredImages: number;
 }
 
 export type RestoreJobStatus = "idle" | "running" | "completed" | "failed";

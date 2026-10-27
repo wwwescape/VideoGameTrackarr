@@ -15,6 +15,7 @@ import { STORE_REGION_AUTO, STORE_REGION_OFF, STORE_REGIONS } from "../utils/sto
 import AccentColorSetting from "./AccentColorSetting";
 import AutocompleteSelect from "./AutocompleteSelect";
 import ChangePasswordDialog from "./ChangePasswordDialog";
+import DangerZoneSection from "./DangerZoneSection";
 import DataManagementSection from "./DataManagementSection";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -143,6 +144,8 @@ const Settings = () => {
           </SettingRow>
         </SettingsGroup>
         <ChangePasswordDialog open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+
+        <DangerZoneSection />
       </SettingsColumn>
     </SettingsFrame>
   );

@@ -55,6 +55,7 @@
     "duplicates": "Duplicates",
     "missingAddons": "Missing Addons",
     "orphanedAccessories": "Orphaned Accessories",
+    "igdbImport": "IGDB Import",
     "steamSync": "Steam Sync",
     "saleTracked": "Sale - Tracked",
     "salesIgnored": "Sale - Ignored List",
@@ -191,7 +192,21 @@
     }
   },
   "restore": {
-    "completedToast": "Restored {{count}} game(s). A safety copy of what was there before was saved server-side.",
+    "completedTitle": "Restore complete",
+    "summaryGames_one": "{{count}} game, with {{copies}} copies",
+    "summaryGames_other": "{{count}} games, with {{copies}} copies",
+    "summaryHardware": "{{devices}} devices and {{accessories}} accessories",
+    "summaryRoms_one": "{{count}} ROM, with its saves",
+    "summaryRoms_other": "{{count}} ROMs, with their saves",
+    "summaryBios_one": "{{count}} BIOS file",
+    "summaryBios_other": "{{count}} BIOS files",
+    "summaryImages_one": "{{count}} image",
+    "summaryImages_other": "{{count}} images",
+    "resyncPrompt": "A backup doesn't carry IGDB details (genres, media, release dates, Collections, Series). The Resync Games, Collections & Series job fetches them again for every game; you can also run it later from Settings → Jobs.",
+    "resyncNow": "Resync now",
+    "resyncLater": "Later",
+    "resyncStartedToast": "Resync started — follow it in Settings → Jobs",
+    "resyncStartError": "Couldn't start the resync. You can run it from Settings → Jobs.",
     "inProgressTitle": "Have patience while restore is in progress.",
     "inProgressSubtitle": "This may take several minutes depending on the size of the restore.",
     "failedTitle": "Restore failed",
@@ -273,24 +288,85 @@
     "data": {
       "heading": "Data"
     },
+    "dangerZone": {
+      "heading": "Danger Zone",
+      "lead": "Remove one kind of your data, or start over. Your account, settings and integration setup are never touched.",
+      "clearConfirmTitle": "{{action}}?",
+      "resetConfirmTitle": "{{action}}?",
+      "snapshotNote": "A safety snapshot of everything as it is now is saved on the server first, so this can be undone by restoring it.",
+      "typeToConfirm": "Type {{word}} to confirm",
+      "doneToast": "{{action}}: done",
+      "resetDoneToast": "{{action}}: done. A safety snapshot was saved on the server first.",
+      "errorToast": "{{action}} didn't work. Please try again.",
+      "actions": {
+        "clearProgress": {
+          "name": "Clear play progress",
+          "button": "Clear",
+          "removes": "Removes every game's play status, playtime, dates and reviews, and all play sessions.",
+          "keeps": "Keeps your games, copies and ratings."
+        },
+        "clearRatings": {
+          "name": "Clear ratings",
+          "button": "Clear",
+          "removes": "Removes your rating from every game.",
+          "keeps": "Keeps everything else."
+        },
+        "clearNotes": {
+          "name": "Clear notes",
+          "button": "Clear",
+          "removes": "Removes every note on your games, devices and accessories.",
+          "keeps": "Keeps everything else."
+        },
+        "clearTags": {
+          "name": "Clear tags",
+          "button": "Clear",
+          "removes": "Removes every tag, from all your games and hardware.",
+          "keeps": "Keeps your games and hardware."
+        },
+        "clearSyncCaches": {
+          "name": "Clear sync caches",
+          "button": "Clear",
+          "removes": "Removes what Steam Sync, IGDB Import and the price lookups have fetched; they fetch it again on their next run.",
+          "keeps": "Keeps your data and the games you told them to ignore."
+        },
+        "resetLibrary": {
+          "name": "Reset game library",
+          "button": "Reset",
+          "removes": "Removes every game and everything on it: copies, ROMs and saves, progress, play sessions, ratings, notes, Collections and Series.",
+          "keeps": "Keeps your hardware, tags, account and settings."
+        },
+        "resetHardware": {
+          "name": "Reset hardware",
+          "button": "Reset",
+          "removes": "Removes every device and accessory, with their notes, tags and links.",
+          "keeps": "Keeps your games, account and settings."
+        },
+        "resetEverything": {
+          "name": "Reset everything",
+          "button": "Reset",
+          "removes": "Removes all of the above: games, hardware, tags and sync caches.",
+          "keeps": "Keeps your account, settings and integration setup."
+        }
+      }
+    },
     "dataManagement": {
-      "exportHeading": "Export",
-      "exportLibraryCsv": "Library (CSV)",
-      "exportHardwareCsv": "Hardware (CSV)",
-      "exportFullBackup": "Full backup (JSON)",
+      "backupHeading": "Backup",
+      "backupDescription": "Saves your games and copies, progress, ratings, notes, tags, hardware, target prices and account settings. IGDB details (genres, media, release dates, Collections, Series) aren't included: the Resync Games, Collections & Series job brings them back after a restore.",
+      "includeFilesHeading": "Also include",
+      "includeRomsLabel": "ROMs and saves",
+      "includeBiosLabel": "BIOS files",
+      "includeImagesLabel": "Images (custom game covers and accessory photos)",
+      "downloadBackupJson": "Download backup (.json)",
+      "downloadBackupZip": "Download backup (.zip)",
       "restoreHeading": "Restore",
       "restoreButton": "Restore from backup",
-      "restoreWarning": "Restoring replaces your entire library with the contents of the backup file (a .json backup, or a .zip full backup, which also replaces ROMs, saves and BIOS files). A safety snapshot of the current data is saved on the server first, but this still isn't something to do by accident.",
+      "restoreWarning": "Restoring replaces your entire library with the contents of the backup file (.json or .zip; a .zip also replaces the kinds of files it carries). A safety snapshot of the current data is saved on the server first, but this still isn't something to do by accident.",
       "restoreConfirmTitle": "Restore from backup?",
       "restoreConfirmDescription": "This will permanently replace your entire library with the contents of \"{{fileName}}\". A safety snapshot of what's there now will be saved on the server first, but this action itself cannot be undone from here.",
       "restoreConfirmButton": "Replace my library",
-      "exportCsvError": "Error exporting CSV. Please try again.",
-      "exportHardwareCsvError": "Error exporting hardware CSV. Please try again.",
       "exportBackupError": "Error exporting backup. Please try again.",
       "restoreStartError": "Could not start the restore. Please try again.",
-      "exportFullBackupWithFiles": "Full backup with files (ZIP)",
-      "includeFilesLabel": "Include ROMs, saves and BIOS files",
-      "includeFilesHelp": "Downloads a .zip instead of the JSON file — it can be as large as all your ROMs together. Restoring a .zip replaces ROMs, saves and BIOS files too."
+      "includeFilesHelp": "With any of these, the backup is a .zip instead of a .json — as large as those files together. Restoring a .zip replaces only the kinds of files it carries."
     },
     "jobs": {
       "heading": "Jobs",
@@ -329,6 +405,10 @@
         "resyncSeries": {
           "name": "Resync Series",
           "description": "Re-fetches only Series data for every IGDB-linked game — restores Series after a backup restore, which doesn't carry it over."
+        },
+        "igdbMatch": {
+          "name": "Find IGDB matches",
+          "description": "Searches IGDB by name for every custom game (added by hand) and saves the matches for Settings → IGDB Import, where you link them."
         },
         "steamImport": {
           "name": "Steam import",
@@ -709,6 +789,13 @@
       "resyncConfirmLabel": "Resync",
       "editGameButton": "Edit Game",
       "linkToIgdbButton": "Link to IGDB",
+      "changeIgdbLinkButton": "Change IGDB link",
+      "unlinkFromIgdbButton": "Unlink from IGDB",
+      "unlinkConfirmTitle": "Unlink from IGDB?",
+      "unlinkConfirmDescription": "{{name}} becomes a custom game again and keeps its current details, copies, progress, rating, notes and tags. Its add-ons from IGDB are removed, along with their copies, progress and notes.",
+      "unlinkConfirmLabel": "Unlink",
+      "unlinkSuccessToast": "Unlinked from IGDB",
+      "unlinkErrorToast": "Couldn't unlink from IGDB. Please try again.",
       "removeGameButton": "Remove Game",
       "removeConfirmTitle": "Confirm Removal",
       "removeConfirmDescription": "Are you sure you want to remove \"{{name}}\"? This permanently deletes it along with all of its addons (DLC, expansions, packs), collection/wishlist entries, progress, and notes. This cannot be undone.",
@@ -1290,8 +1377,75 @@
     "deleteError": "Error deleting note. Please try again.",
     "addAction": "Add note"
   },
+  "igdbImport": {
+    "description": "Your custom games (added by hand), matched to IGDB by name. Find matches searches IGDB for each one; link them one by one or select several and Link selected. A game matching one already in your library merges into it.",
+    "findMatchesButton": "Find matches",
+    "matchRunning": "Finding matches… {{progress}}",
+    "linkRunning": "Linking to IGDB… {{progress}}",
+    "progress": "{{current}} of {{total}}",
+    "tableHeading": "Custom games",
+    "selectedCount_one": "{{count}} selected",
+    "selectedCount_other": "{{count}} selected",
+    "pageSelectedNotice_one": "{{count}} game on this page is selected.",
+    "pageSelectedNotice_other": "All {{count}} games on this page are selected.",
+    "selectAllButton_one": "Select {{count}} game with a match",
+    "selectAllButton_other": "Select all {{count}} games with a match",
+    "allSelectedNotice_one": "{{count}} game is selected.",
+    "allSelectedNotice_other": "All {{count}} games with a match are selected.",
+    "clearSelectionButton": "Clear selection",
+    "ignoreSelectedButton": "Ignore selected",
+    "linkSelectedButton": "Link selected",
+    "hideIgnoredLabel": "Hide ignored",
+    "selectPageLabel": "Select the games with a match on this page",
+    "selectRowLabel": "Select {{name}}",
+    "columnGame": "Game",
+    "columnMatch": "IGDB match",
+    "columnStatus": "Status",
+    "columnActions": "Actions",
+    "status": {
+      "matchFound": "Match found",
+      "inLibrary": "In your library",
+      "severalMatches": "Several matches",
+      "noMatch": "No match",
+      "notChecked": "Not checked",
+      "ignored": "Ignored"
+    },
+    "severalMatchesHint": "{{count}} IGDB games have this name — choose one",
+    "noMatchHint": "No IGDB game has this name",
+    "notCheckedHint": "Run Find matches",
+    "mergesInto": "Merges into {{name}}",
+    "linkButton": "Link",
+    "mergeButton": "Merge",
+    "chooseButton": "Choose another",
+    "ignoreButton": "Ignore",
+    "unignoreButton": "Un-ignore",
+    "emptyState": "You have no custom games. Games you add by hand show up here, so you can link them to IGDB.",
+    "linkConfirmTitle_one": "Link {{count}} game to IGDB?",
+    "linkConfirmTitle_other": "Link {{count}} games to IGDB?",
+    "linkConfirmDescription_one": "It becomes an IGDB game with IGDB's details and add-ons, keeping your copies, progress, rating, notes and tags.",
+    "linkConfirmDescription_other": "They become IGDB games with IGDB's details and add-ons, keeping your copies, progress, ratings, notes and tags.",
+    "linkConfirmMerges_one": "{{count}} of them matches a game already in your library and merges into it.",
+    "linkConfirmMerges_other": "{{count}} of them match games already in your library and merge into them.",
+    "linkConfirmLabel": "Link",
+    "linkStartedToast_one": "Linking {{count}} game to IGDB…",
+    "linkStartedToast_other": "Linking {{count}} games to IGDB…",
+    "linkDoneToast": "Linked {{count}} of {{total}} to IGDB",
+    "linkFailedToast": "Linking to IGDB failed: {{error}}",
+    "linkStartErrorToast": "Couldn't start linking. Please try again.",
+    "linkFailuresHeading_one": "{{count}} game couldn't be linked:",
+    "linkFailuresHeading_other": "{{count}} games couldn't be linked:",
+    "linkedOneToast": "Linked {{name}} to IGDB",
+    "linkOneErrorToast": "Couldn't link {{name}} to IGDB. Please try again.",
+    "matchDoneToast_one": "Checked {{count}} game on IGDB",
+    "matchDoneToast_other": "Checked {{count}} games on IGDB",
+    "matchFailedToast": "Finding matches failed: {{error}}",
+    "matchStartErrorToast": "Couldn't start finding matches. Please try again.",
+    "ignoreErrorToast": "Couldn't update the ignored games. Please try again."
+  },
   "igdb": {
     "dialogTitle": "Link to IGDB",
+    "changeDialogTitle": "Change IGDB link",
+    "changeAddonsWarning": "Its current add-ons from IGDB are removed, along with their copies, progress and notes. The new game's add-ons come in instead.",
     "searchLabel": "Search IGDB",
     "notConfigured": "IGDB isn't configured on this server.",
     "keepTyping": "Keep typing to search IGDB.",

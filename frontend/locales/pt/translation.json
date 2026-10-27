@@ -55,6 +55,7 @@
     "duplicates": "Duplicados",
     "missingAddons": "Complementos em Falta",
     "orphanedAccessories": "Acessórios Órfãos",
+    "igdbImport": "Importação do IGDB",
     "steamSync": "Sincronização Steam",
     "saleTracked": "Promoções - Monitorizadas",
     "salesIgnored": "Promoções - Ignoradas",
@@ -191,7 +192,21 @@
     }
   },
   "restore": {
-    "completedToast": "Foram restaurados {{count}} jogo(s). Foi guardada uma cópia de segurança do que existia antes, no servidor.",
+    "completedTitle": "Restauração concluída",
+    "summaryGames_one": "{{count}} jogo, com {{copies}} cópias",
+    "summaryGames_other": "{{count}} jogos, com {{copies}} cópias",
+    "summaryHardware": "{{devices}} dispositivos e {{accessories}} acessórios",
+    "summaryRoms_one": "{{count}} ROM, com seus saves",
+    "summaryRoms_other": "{{count}} ROMs, com seus saves",
+    "summaryBios_one": "{{count}} arquivo de BIOS",
+    "summaryBios_other": "{{count}} arquivos de BIOS",
+    "summaryImages_one": "{{count}} imagem",
+    "summaryImages_other": "{{count}} imagens",
+    "resyncPrompt": "Um backup não inclui os dados do IGDB (gêneros, mídia, datas de lançamento, Coleções, Séries). A tarefa Ressincronizar jogos, coleções e séries os busca de novo para cada jogo; você também pode executá-la depois em Configurações → Tarefas.",
+    "resyncNow": "Ressincronizar agora",
+    "resyncLater": "Depois",
+    "resyncStartedToast": "Ressincronização iniciada — acompanhe em Configurações → Tarefas",
+    "resyncStartError": "Não foi possível iniciar a ressincronização. Você pode executá-la em Configurações → Tarefas.",
     "inProgressTitle": "Tenha paciência enquanto a restauração está em curso.",
     "inProgressSubtitle": "Isto pode demorar vários minutos, dependendo do tamanho da restauração.",
     "failedTitle": "Falha na restauração",
@@ -273,24 +288,85 @@
     "data": {
       "heading": "Dados"
     },
+    "dangerZone": {
+      "heading": "Zona de perigo",
+      "lead": "Remova um tipo de dado ou comece do zero. Sua conta, suas configurações e a configuração das integrações nunca são alteradas.",
+      "clearConfirmTitle": "{{action}}?",
+      "resetConfirmTitle": "{{action}}?",
+      "snapshotNote": "Antes, uma cópia de segurança de tudo como está agora é salva no servidor, então dá para desfazer restaurando-a.",
+      "typeToConfirm": "Digite {{word}} para confirmar",
+      "doneToast": "{{action}}: concluído",
+      "resetDoneToast": "{{action}}: concluído. Uma cópia de segurança foi salva no servidor antes.",
+      "errorToast": "Não foi possível concluir \"{{action}}\". Tente novamente.",
+      "actions": {
+        "clearProgress": {
+          "name": "Limpar o progresso",
+          "button": "Limpar",
+          "removes": "Remove o status de jogo, o tempo jogado, as datas e as análises de cada jogo, e todas as sessões de jogo.",
+          "keeps": "Mantém seus jogos, cópias e avaliações."
+        },
+        "clearRatings": {
+          "name": "Limpar as avaliações",
+          "button": "Limpar",
+          "removes": "Remove sua avaliação de cada jogo.",
+          "keeps": "Mantém todo o resto."
+        },
+        "clearNotes": {
+          "name": "Limpar as notas",
+          "button": "Limpar",
+          "removes": "Remove todas as notas dos seus jogos, dispositivos e acessórios.",
+          "keeps": "Mantém todo o resto."
+        },
+        "clearTags": {
+          "name": "Limpar as tags",
+          "button": "Limpar",
+          "removes": "Remove todas as tags de todos os seus jogos e hardware.",
+          "keeps": "Mantém seus jogos e hardware."
+        },
+        "clearSyncCaches": {
+          "name": "Limpar os caches de sincronização",
+          "button": "Limpar",
+          "removes": "Remove o que a Sincronização Steam, a Importação do IGDB e as buscas de preço obtiveram; eles obtêm de novo na próxima execução.",
+          "keeps": "Mantém seus dados e os jogos que você pediu para ignorar."
+        },
+        "resetLibrary": {
+          "name": "Redefinir a biblioteca de jogos",
+          "button": "Redefinir",
+          "removes": "Remove todos os jogos e tudo o que há neles: cópias, ROMs e saves, progresso, sessões, avaliações, notas, Coleções e Séries.",
+          "keeps": "Mantém seu hardware, tags, conta e configurações."
+        },
+        "resetHardware": {
+          "name": "Redefinir o hardware",
+          "button": "Redefinir",
+          "removes": "Remove todos os dispositivos e acessórios, com suas notas, tags e vínculos.",
+          "keeps": "Mantém seus jogos, conta e configurações."
+        },
+        "resetEverything": {
+          "name": "Redefinir tudo",
+          "button": "Redefinir",
+          "removes": "Remove tudo o que está acima: jogos, hardware, tags e caches de sincronização.",
+          "keeps": "Mantém sua conta, suas configurações e a configuração das integrações."
+        }
+      }
+    },
     "dataManagement": {
-      "exportHeading": "Exportar",
-      "exportLibraryCsv": "Biblioteca (CSV)",
-      "exportHardwareCsv": "Hardware (CSV)",
-      "exportFullBackup": "Cópia de segurança completa (JSON)",
+      "backupHeading": "Backup",
+      "backupDescription": "Guarda seus jogos e cópias, progresso, avaliações, notas, tags, hardware, preços-alvo e configurações da conta. Os dados do IGDB (gêneros, mídia, datas de lançamento, Coleções, Séries) não são incluídos: a tarefa Ressincronizar jogos, coleções e séries os traz de volta após restaurar.",
+      "includeFilesHeading": "Incluir também",
+      "includeRomsLabel": "ROMs e saves",
+      "includeBiosLabel": "Arquivos de BIOS",
+      "includeImagesLabel": "Imagens (capas de jogos personalizados e fotos de acessórios)",
+      "downloadBackupJson": "Baixar backup (.json)",
+      "downloadBackupZip": "Baixar backup (.zip)",
       "restoreHeading": "Restaurar",
       "restoreButton": "Restaurar a partir de cópia de segurança",
-      "restoreWarning": "Restaurar substitui toda a sua biblioteca pelo conteúdo do arquivo de backup (um backup .json, ou um backup completo .zip, que também substitui ROMs, saves e arquivos de BIOS). Um snapshot de segurança dos dados atuais é salvo no servidor antes, mas isso ainda não é algo para fazer por acidente.",
+      "restoreWarning": "Restaurar substitui toda a sua biblioteca pelo conteúdo do backup (.json ou .zip; um .zip também substitui os tipos de arquivo que contém). Uma cópia de segurança dos dados atuais é salva no servidor antes, mas isso ainda não é algo para fazer por engano.",
       "restoreConfirmTitle": "Restaurar a partir de cópia de segurança?",
       "restoreConfirmDescription": "Isto irá substituir permanentemente toda a sua biblioteca pelo conteúdo de \"{{fileName}}\". Será guardado primeiro, no servidor, um instantâneo de segurança do que existe atualmente, mas esta ação em si não pode ser anulada a partir daqui.",
       "restoreConfirmButton": "Substituir a minha biblioteca",
-      "exportCsvError": "Erro ao exportar o CSV. Por favor, tente novamente.",
-      "exportHardwareCsvError": "Erro ao exportar o CSV de hardware. Por favor, tente novamente.",
       "exportBackupError": "Erro ao exportar a cópia de segurança. Por favor, tente novamente.",
       "restoreStartError": "Não foi possível iniciar a restauração. Por favor, tente novamente.",
-      "exportFullBackupWithFiles": "Backup completo com arquivos (ZIP)",
-      "includeFilesLabel": "Incluir ROMs, saves e arquivos de BIOS",
-      "includeFilesHelp": "Baixa um .zip em vez do arquivo JSON — ele pode ser tão grande quanto todas as suas ROMs juntas. Restaurar um .zip também substitui ROMs, saves e arquivos de BIOS."
+      "includeFilesHelp": "Com qualquer uma destas opções, o backup é um .zip em vez de um .json, do tamanho desses arquivos juntos. Restaurar um .zip substitui apenas os tipos de arquivo que ele contém."
     },
     "jobs": {
       "heading": "Tarefas",
@@ -329,6 +405,10 @@
         "resyncSeries": {
           "name": "Ressincronizar séries",
           "description": "Obtém novamente apenas os dados de séries de cada jogo associado ao IGDB — restaura as séries após uma restauração de cópia de segurança, que não as inclui."
+        },
+        "igdbMatch": {
+          "name": "Encontrar correspondências no IGDB",
+          "description": "Pesquisa no IGDB pelo nome cada jogo personalizado (adicionado manualmente) e guarda as correspondências para Configurações → Importação do IGDB, onde você os vincula."
         },
         "steamImport": {
           "name": "Importação Steam",
@@ -709,6 +789,13 @@
       "resyncConfirmLabel": "Ressincronizar",
       "editGameButton": "Editar Jogo",
       "linkToIgdbButton": "Associar ao IGDB",
+      "changeIgdbLinkButton": "Alterar vínculo do IGDB",
+      "unlinkFromIgdbButton": "Desvincular do IGDB",
+      "unlinkConfirmTitle": "Desvincular do IGDB?",
+      "unlinkConfirmDescription": "{{name}} volta a ser um jogo personalizado e mantém seus dados atuais, cópias, progresso, avaliação, notas e tags. Os complementos vindos do IGDB são removidos, junto com suas cópias, progresso e notas.",
+      "unlinkConfirmLabel": "Desvincular",
+      "unlinkSuccessToast": "Desvinculado do IGDB",
+      "unlinkErrorToast": "Não foi possível desvincular do IGDB. Tente novamente.",
       "removeGameButton": "Remover Jogo",
       "removeConfirmTitle": "Confirmar Remoção",
       "removeConfirmDescription": "Tem a certeza de que quer remover \"{{name}}\"? Isto elimina-o permanentemente, juntamente com todos os seus complementos (DLC, expansões, pacotes), entradas de coleção/lista de desejos, progresso e notas. Esta ação não pode ser anulada.",
@@ -1290,8 +1377,75 @@
     "deleteError": "Erro ao eliminar a nota. Por favor, tente novamente.",
     "addAction": "Adicionar nota"
   },
+  "igdbImport": {
+    "description": "Seus jogos personalizados (adicionados manualmente), associados ao IGDB pelo nome. Encontrar correspondências pesquisa cada um no IGDB; vincule-os um a um ou selecione vários e use Vincular selecionados. Um jogo que corresponde a um já na sua biblioteca é mesclado com ele.",
+    "findMatchesButton": "Encontrar correspondências",
+    "matchRunning": "Encontrando correspondências… {{progress}}",
+    "linkRunning": "Vinculando ao IGDB… {{progress}}",
+    "progress": "{{current}} de {{total}}",
+    "tableHeading": "Jogos personalizados",
+    "selectedCount_one": "{{count}} selecionado",
+    "selectedCount_other": "{{count}} selecionados",
+    "pageSelectedNotice_one": "{{count}} jogo desta página está selecionado.",
+    "pageSelectedNotice_other": "Todos os {{count}} jogos desta página estão selecionados.",
+    "selectAllButton_one": "Selecionar {{count}} jogo com correspondência",
+    "selectAllButton_other": "Selecionar todos os {{count}} jogos com correspondência",
+    "allSelectedNotice_one": "{{count}} jogo está selecionado.",
+    "allSelectedNotice_other": "Todos os {{count}} jogos com correspondência estão selecionados.",
+    "clearSelectionButton": "Limpar seleção",
+    "ignoreSelectedButton": "Ignorar selecionados",
+    "linkSelectedButton": "Vincular selecionados",
+    "hideIgnoredLabel": "Ocultar ignorados",
+    "selectPageLabel": "Selecionar os jogos com correspondência nesta página",
+    "selectRowLabel": "Selecionar {{name}}",
+    "columnGame": "Jogo",
+    "columnMatch": "Correspondência no IGDB",
+    "columnStatus": "Status",
+    "columnActions": "Ações",
+    "status": {
+      "matchFound": "Correspondência",
+      "inLibrary": "Na sua biblioteca",
+      "severalMatches": "Várias correspondências",
+      "noMatch": "Sem correspondência",
+      "notChecked": "Não verificado",
+      "ignored": "Ignorado"
+    },
+    "severalMatchesHint": "{{count}} jogos do IGDB têm este nome — escolha um",
+    "noMatchHint": "Nenhum jogo do IGDB tem este nome",
+    "notCheckedHint": "Execute Encontrar correspondências",
+    "mergesInto": "Mescla com {{name}}",
+    "linkButton": "Vincular",
+    "mergeButton": "Mesclar",
+    "chooseButton": "Escolher outro",
+    "ignoreButton": "Ignorar",
+    "unignoreButton": "Deixar de ignorar",
+    "emptyState": "Você não tem jogos personalizados. Os jogos que você adiciona manualmente aparecem aqui para que você possa vinculá-los ao IGDB.",
+    "linkConfirmTitle_one": "Vincular {{count}} jogo ao IGDB?",
+    "linkConfirmTitle_other": "Vincular {{count}} jogos ao IGDB?",
+    "linkConfirmDescription_one": "Ele passa a ser um jogo do IGDB, com os dados e complementos do IGDB, e mantém suas cópias, progresso, avaliação, notas e tags.",
+    "linkConfirmDescription_other": "Eles passam a ser jogos do IGDB, com os dados e complementos do IGDB, e mantêm suas cópias, progresso, avaliações, notas e tags.",
+    "linkConfirmMerges_one": "{{count}} deles corresponde a um jogo já na sua biblioteca e é mesclado com ele.",
+    "linkConfirmMerges_other": "{{count}} deles correspondem a jogos já na sua biblioteca e são mesclados com eles.",
+    "linkConfirmLabel": "Vincular",
+    "linkStartedToast_one": "Vinculando {{count}} jogo ao IGDB…",
+    "linkStartedToast_other": "Vinculando {{count}} jogos ao IGDB…",
+    "linkDoneToast": "{{count}} de {{total}} vinculados ao IGDB",
+    "linkFailedToast": "A vinculação ao IGDB falhou: {{error}}",
+    "linkStartErrorToast": "Não foi possível começar a vincular. Tente novamente.",
+    "linkFailuresHeading_one": "{{count}} jogo não pôde ser vinculado:",
+    "linkFailuresHeading_other": "{{count}} jogos não puderam ser vinculados:",
+    "linkedOneToast": "{{name}} vinculado ao IGDB",
+    "linkOneErrorToast": "Não foi possível vincular {{name}} ao IGDB. Tente novamente.",
+    "matchDoneToast_one": "{{count}} jogo verificado no IGDB",
+    "matchDoneToast_other": "{{count}} jogos verificados no IGDB",
+    "matchFailedToast": "A busca de correspondências falhou: {{error}}",
+    "matchStartErrorToast": "Não foi possível começar a buscar correspondências. Tente novamente.",
+    "ignoreErrorToast": "Não foi possível atualizar os jogos ignorados. Tente novamente."
+  },
   "igdb": {
     "dialogTitle": "Associar ao IGDB",
+    "changeDialogTitle": "Alterar vínculo do IGDB",
+    "changeAddonsWarning": "Os complementos atuais vindos do IGDB são removidos, junto com suas cópias, progresso e notas. Os complementos do novo jogo entram no lugar.",
     "searchLabel": "Pesquisar no IGDB",
     "notConfigured": "O IGDB não está configurado neste servidor.",
     "keepTyping": "Continue a escrever para pesquisar no IGDB.",

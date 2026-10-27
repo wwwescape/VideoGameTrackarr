@@ -25,7 +25,7 @@ def _to_summary(db: Session, job_id: str) -> JobSummaryResponse:
 
 @router.get("", response_model=list[JobSummaryResponse])
 def list_jobs(db: Session = Depends(get_db)) -> list[JobSummaryResponse]:
-    return [_to_summary(db, definition.id) for definition in job_registry.list_jobs()]
+    return [_to_summary(db, definition.id) for definition in job_registry.list_jobs() if definition.listed]
 
 
 @router.get("/{job_id}/status", response_model=JobSummaryResponse)

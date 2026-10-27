@@ -11,12 +11,13 @@ vi.mock("../../hooks/useGames", () => ({
   useDeleteGame: () => mutation,
   useResyncGame: () => mutation,
   useClaimDiscoveredGame: () => mutation,
+  useUnlinkGameFromIgdb: () => mutation,
 }));
 
 // Only rendered for custom games; its own hooks aren't what these tests are about.
 vi.mock("../LinkToIgdbDialog", () => ({ default: () => null }));
 
-function renderButtons(libraryItems: LibraryItem[] | undefined) {
+function renderButtons(libraryItems: LibraryItem[] | undefined, linkedFromCustom = false) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter>
@@ -27,6 +28,7 @@ function renderButtons(libraryItems: LibraryItem[] | undefined) {
           gameCategory="main_game"
           hasParentGame={false}
           hasIgdbId
+          linkedFromCustom={linkedFromCustom}
           resyncGameId={1}
           isAutoDiscovered={false}
           libraryItems={libraryItems}
@@ -87,6 +89,7 @@ describe("GameActionButtons Edit", () => {
               gameCategory="main_game"
               hasParentGame={false}
               hasIgdbId={false}
+              linkedFromCustom={false}
               resyncGameId={1}
               isAutoDiscovered={false}
               onGameRemoved={vi.fn()}
@@ -107,5 +110,33 @@ describe("GameActionButtons Edit", () => {
 
     expect(router.state.location.pathname).toBe("/game/my-homebrew-uuid1/edit");
     expect(router.state.location.state).toEqual({ fromDetail: true });
+  });
+});
+
+describe("GameActionButtons IGDB link", () => {
+  it("offers Change IGDB link and Unlink only for a game that was linked from custom", () => {
+    renderButtons(undefined);
+    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual(["Resync Game", "Remove Game"]);
+  });
+
+  it("asks before unlinking, warning that the add-ons go", async () => {
+    mutation.mutateAsync.mockClear().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderButtons(undefined, true);
+
+    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "Resync Game",
+      "Change IGDB link",
+      "Unlink from IGDB",
+      "Remove Game",
+    ]);
+    await user.click(screen.getByRole("button", { name: "Unlink from IGDB" }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("Mario becomes a custom game again");
+    expect(dialog).toHaveTextContent("add-ons from IGDB are removed");
+    expect(mutation.mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Unlink" }));
+    expect(mutation.mutateAsync).toHaveBeenCalledTimes(1);
   });
 });

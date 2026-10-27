@@ -62,7 +62,7 @@ def test_export_backup_contains_every_section(auth_client, db_session, seed_game
     # The backup file's internal keys are snake_case by design, not camelCase -
     # see schemas/backup.py's note on why this file format skips the API convention.
     body = response.json()
-    assert body["version"] == 2
+    assert body["version"] == 3
     assert len(body["games"]) == 1
     assert body["games"][0]["user_rating"] == 8
     assert body["game_progress"][0]["rating"] is None
@@ -316,3 +316,51 @@ def test_restore_backup_refuses_an_oversized_json_backup(auth_client, monkeypatc
     response = _upload_backup(auth_client, {"version": 1, "exportedAt": "now", "games": []})
 
     assert response.status_code == 413
+
+
+def test_backup_round_trips_target_prices_ignored_lookups_and_settings(
+    auth_client, db_session, test_user, seed_game, seed_platform
+):
+    from app.models.itad import ItadPriceCache
+    from app.models.platprices import PlatPricesCache
+
+    item = LibraryItem(
+        game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST, target_price=19.99
+    )
+    db_session.add(item)
+    db_session.add(ItadPriceCache(game_id=seed_game.id, ignored=True))
+    test_user.currency = "EUR"
+    test_user.overview_layout = [{"key": "quickAdd", "hidden": True}]
+    test_user.steam_id_64 = "76561197960287930"
+    db_session.commit()
+    seed_game_id = seed_game.id
+
+    body = auth_client.get("/api/export/backup").json()
+    assert body["library_items"][0]["target_price"] == 19.99
+    assert body["sales_ignored"] == [{"provider": "itad", "game_id": seed_game_id}]
+    assert body["settings"]["currency"] == "EUR"
+
+    # Change all of it, plus a cached price that would point at the wrong game afterwards.
+    db_session.query(LibraryItem).update({"target_price": None})
+    db_session.query(ItadPriceCache).delete()
+    db_session.add(PlatPricesCache(game_id=seed_game_id, current_price_amount=5.0))
+    test_user.currency = "USD"
+    test_user.overview_layout = None
+    test_user.steam_id_64 = None
+    db_session.commit()
+
+    assert _upload_backup(auth_client, body).status_code == 202
+    assert _wait_for_restore_completion(auth_client)["status"] == "completed"
+
+    db_session.expire_all()
+    assert db_session.query(LibraryItem).one().target_price == 19.99
+    [cache] = db_session.query(ItadPriceCache).all()
+    assert (cache.game_id, cache.ignored) == (seed_game_id, True)
+    # Price caches refetch after a restore; only the ignored choices come back.
+    assert db_session.query(PlatPricesCache).count() == 0
+    user = db_session.get(type(test_user), test_user.id)
+    assert (user.currency, user.overview_layout, user.steam_id_64) == (
+        "EUR",
+        [{"key": "quickAdd", "hidden": True}],
+        "76561197960287930",
+    )

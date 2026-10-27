@@ -466,6 +466,143 @@ def test_link_game_to_igdb_resyncs_in_place(auth_client, db_session, igdb_client
     assert body["id"] == manual_game.id
     assert body["igdbId"] == 4242
     assert body["name"] == "Real Game Name"
+    # Remembered (never shown as custom): it's what offers Change IGDB link and Unlink.
+    assert body["linkedFromCustom"] is True
+
+
+def test_a_game_added_from_search_is_not_linked_from_custom(auth_client, seed_game):
+    assert auth_client.get(f"/api/games/{seed_game.slug}").json()["linkedFromCustom"] is False
+
+
+def _linked_from_custom(db_session, seed_platform, igdb_id=4242):
+    """A game added by hand and linked to IGDB game `igdb_id`, with one addon that came in
+    from that link (owned, with a note) — for the Change IGDB link / Unlink tests."""
+    game = Game(
+        igdb_id=igdb_id,
+        name="Wrong Game",
+        category=GameCategory.MAIN_GAME,
+        igdb_url="https://www.igdb.com/games/wrong-game",
+        igdb_rating=70.0,
+        igdb_rating_count=10,
+        linked_from_custom=True,
+        user_rating=8,
+    )
+    db_session.add(game)
+    db_session.flush()
+    addon = Game(igdb_id=igdb_id + 1, name="Wrong Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=game.id)
+    db_session.add(addon)
+    db_session.flush()
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(LibraryItem(game_id=addon.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.add(Note(game_id=addon.id, body="DLC note"))
+    db_session.commit()
+    return game, addon
+
+
+@respx.mock
+def test_change_igdb_link_relinks_in_place_and_removes_the_old_addons(
+    auth_client, db_session, igdb_client, seed_platform
+):
+    game, _addon = _linked_from_custom(db_session, seed_platform)
+    game_id = game.id
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/games").mock(
+        side_effect=[
+            httpx.Response(200, json=[{"id": 4343, "name": "Right Game", "category": 0}]),
+            httpx.Response(200, json=[{"id": 4344, "name": "Right Game DLC", "category": 1}]),
+        ]
+    )
+
+    response = auth_client.post(f"/api/games/{game_id}/link-igdb", json={"igdbId": 4343})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["id"], body["igdbId"], body["name"]) == (game_id, 4343, "Right Game")
+    assert body["linkedFromCustom"] is True
+    assert body["rating"] == 8
+    db_session.expire_all()
+    # Every addon from the old link is gone, with its copies and notes (the user's choice).
+    # Checked by IGDB id: SQLite can hand the freed row id to the new link's addon.
+    assert db_session.query(Game).filter_by(igdb_id=4243).count() == 0
+    assert db_session.query(Note).filter_by(body="DLC note").count() == 0
+    [new_addon] = db_session.query(Game).filter_by(parent_game_id=game_id).all()
+    assert new_addon.name == "Right Game DLC"
+    assert db_session.query(LibraryItem).filter_by(game_id=new_addon.id).count() == 0
+    # The game's own copy stays.
+    assert db_session.query(LibraryItem).filter_by(game_id=game_id).count() == 1
+
+
+def test_change_igdb_link_to_a_game_already_in_the_library_removes_nothing(
+    auth_client, db_session, igdb_client, seed_game, seed_platform
+):
+    game, addon = _linked_from_custom(db_session, seed_platform)
+    addon_id = addon.id
+
+    response = auth_client.post(f"/api/games/{game.id}/link-igdb", json={"igdbId": seed_game.igdb_id})
+
+    # The dialog then offers to merge into it; nothing is removed by this refusal.
+    assert response.status_code == 409
+    db_session.expire_all()
+    assert db_session.get(Game, addon_id) is not None
+    assert db_session.get(Game, game.id).igdb_id == 4242
+
+
+def test_change_igdb_link_by_merging_into_a_game_already_in_the_library(
+    auth_client, db_session, igdb_client, seed_game, seed_platform
+):
+    game, addon = _linked_from_custom(db_session, seed_platform)
+    game_id, addon_id = game.id, addon.id
+
+    response = auth_client.post(f"/api/games/{game_id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == seed_game.id
+    # The game that was already in the library keeps its own (search-added) flag.
+    assert body["linkedFromCustom"] is False
+    db_session.expire_all()
+    assert db_session.get(Game, game_id) is None
+    assert db_session.get(Game, addon_id) is None
+    assert db_session.query(LibraryItem).filter_by(game_id=seed_game.id).count() == 1
+
+
+def test_change_igdb_link_is_refused_for_a_game_added_from_search(auth_client, igdb_client, seed_game):
+    for path in ("link-igdb", "merge-into-igdb", "link-igdb-via-parent"):
+        response = auth_client.post(f"/api/games/{seed_game.id}/{path}", json={"igdbId": 5555})
+        assert response.status_code == 409, path
+
+
+def test_unlink_from_igdb_makes_it_custom_again_and_removes_the_old_addons(
+    auth_client, db_session, seed_platform
+):
+    game, addon = _linked_from_custom(db_session, seed_platform)
+    game_id, addon_id = game.id, addon.id
+
+    response = auth_client.post(f"/api/games/{game_id}/unlink-igdb")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["igdbId"] is None
+    assert body["igdbUrl"] is None
+    assert body["igdbRating"] is None
+    assert body["linkedFromCustom"] is False
+    # Everything else it had stays as the custom game's own, along with your data.
+    assert body["name"] == "Wrong Game"
+    assert body["rating"] == 8
+    assert body["owned"] is True
+    db_session.expire_all()
+    assert db_session.get(Game, addon_id) is None
+    assert db_session.query(Note).filter_by(game_id=addon_id).count() == 0
+
+
+def test_unlink_from_igdb_is_refused_unless_linked_from_custom(auth_client, db_session, seed_game):
+    custom = Game(name="Still Custom", category=None)
+    db_session.add(custom)
+    db_session.commit()
+
+    assert auth_client.post(f"/api/games/{seed_game.id}/unlink-igdb").status_code == 409
+    assert auth_client.post(f"/api/games/{custom.id}/unlink-igdb").status_code == 409
+    assert auth_client.post("/api/games/999999/unlink-igdb").status_code == 404
 
 
 @respx.mock

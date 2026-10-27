@@ -300,25 +300,62 @@ async def resync_game(
     return await import_game_from_igdb(db, igdb_client, game.igdb_id, scope=scope)
 
 
+def _ensure_linkable(game: Game) -> None:
+    """Link to IGDB is for custom games; Change IGDB link reuses the same three paths (link,
+    link via a new parent, merge into a duplicate) for a game that was linked from custom."""
+    if game.igdb_id is not None and not game.linked_from_custom:
+        raise ConflictError(f"Game {game.id} is already linked to IGDB")
+
+
+def _clear_igdb_link(game: Game) -> None:
+    # What only means something while the game is linked; everything else IGDB filled in
+    # (name, cover, summary, genres, media, release dates...) stays as the game's own.
+    game.igdb_id = None
+    game.igdb_url = None
+    game.igdb_rating = None
+    game.igdb_rating_count = None
+    game.igdb_critic_rating = None
+    game.igdb_critic_rating_count = None
+    game.similar_game_igdb_ids = None
+
+
+def _drop_old_link(db: Session, game: Game) -> list[str]:
+    """For Change IGDB link: removes the old link's addons (all of them, with their copies,
+    progress and notes — the user's choice) and the old IGDB id, so the link paths below run
+    as they do for a custom game. Returns the removed addons' ROM filenames, for the caller
+    to delete from disk once its transaction commits. A no-op for a custom game."""
+    if game.igdb_id is None:
+        return []
+    rom_filenames = game_repository.delete_addons(db, game)
+    _clear_igdb_link(game)
+    db.flush()
+    return rom_filenames
+
+
 async def link_game_to_igdb(db: Session, igdb_client: IGDBClient, game_id: int, igdb_id: int) -> GameWithStatus:
     """Turns a manually-added game into an IGDB-backed one: links this row's igdb_id (rather
     than going through import_game_from_igdb directly, which would create a brand new row
     and leave this one as an orphaned duplicate) then resyncs in place so it picks up full
-    catalog richness immediately."""
+    catalog richness immediately. Also Change IGDB link, for a game linked from custom:
+    the old link's addons go first (see _drop_old_link)."""
     game = db.get(Game, game_id)
     if game is None:
         raise NotFoundError(f"Game {game_id} not found")
-    if game.igdb_id is not None:
-        raise ConflictError(f"Game {game_id} is already linked to IGDB")
+    _ensure_linkable(game)
+    if game.igdb_id == igdb_id:
+        # Changed to the IGDB game it's already linked to: nothing to change but a resync.
+        return await import_game_from_igdb(db, igdb_client, igdb_id)
     if game_repository.get_game_by_igdb_id(db, igdb_id) is not None:
         raise ConflictError(f"IGDB game {igdb_id} is already in your library")
 
+    rom_filenames = _drop_old_link(db, game)
     # import_game_from_igdb's main-game upsert path doesn't pass parent_game_id, so a
     # manually-added addon being linked directly (rather than its parent) would otherwise
     # get silently detached — restore it afterward if that happened.
     existing_parent_id = game.parent_game_id
     old_cover_url = game.cover_url
     game.igdb_id = igdb_id
+    game.linked_from_custom = True
     db.flush()
 
     result = await import_game_from_igdb(db, igdb_client, igdb_id)
@@ -328,6 +365,7 @@ async def link_game_to_igdb(db: Session, igdb_client: IGDBClient, game_id: int, 
     # The upsert above always overwrites cover_url with IGDB's own (or None) — any
     # previously-uploaded cover (see app/services/upload_service.py) is now orphaned.
     upload_service.delete_if_local_upload(old_cover_url)
+    rom_service.delete_files(rom_filenames)
     return result
 
 
@@ -342,8 +380,7 @@ async def link_addon_via_new_parent(
     game = db.get(Game, game_id)
     if game is None:
         raise NotFoundError(f"Game {game_id} not found")
-    if game.igdb_id is not None:
-        raise ConflictError(f"Game {game_id} is already linked to IGDB")
+    _ensure_linkable(game)
 
     igdb_games = await igdb_client.get_games_by_ids([addon_igdb_id])
     if not igdb_games:
@@ -352,6 +389,7 @@ async def link_addon_via_new_parent(
     if not isinstance(parent_ref, dict) or parent_ref.get("id") is None:
         raise ConflictError(f"IGDB game {addon_igdb_id} has no parent to import")
 
+    rom_filenames = _drop_old_link(db, game)
     old_cover_url = game.cover_url
     await import_game_from_igdb(db, igdb_client, parent_ref["id"])
 
@@ -361,10 +399,12 @@ async def link_addon_via_new_parent(
 
     if new_addon.id != game.id:
         game_repository.merge_game(db, source=game, target=new_addon)
+    new_addon.linked_from_custom = True
     db.commit()
     # game's own cover_url (if any) was never carried over to new_addon — same orphaned-
     # upload cleanup as link_game_to_igdb above.
     upload_service.delete_if_local_upload(old_cover_url)
+    rom_service.delete_files(rom_filenames)
     return get_game_detail(db, new_addon.id)
 
 
@@ -373,26 +413,49 @@ def merge_duplicate_game(db: Session, game_id: int, igdb_id: int) -> GameWithSta
     another row (see link_game_to_igdb's ConflictError), so instead of just failing, this
     merges this manually-added game's library status/progress/notes/tags onto that existing
     row and discards this one — same outcome as link_addon_via_new_parent, but for a
-    duplicate that already existed rather than one this call just created."""
+    duplicate that already existed rather than one this call just created. The target keeps
+    its own linked_from_custom: it's the game that was already in the library."""
     game = db.get(Game, game_id)
     if game is None:
         raise NotFoundError(f"Game {game_id} not found")
-    if game.igdb_id is not None:
-        raise ConflictError(f"Game {game_id} is already linked to IGDB")
+    _ensure_linkable(game)
 
     target = game_repository.get_game_by_igdb_id(db, igdb_id)
     if target is None:
         raise NotFoundError(f"IGDB game {igdb_id} is not in your library")
+    if target.id == game.id:
+        raise ConflictError(f"Game {game_id} is already linked to IGDB game {igdb_id}")
 
     if game_repository.game_has_progress(db, game.id) and game_repository.game_has_progress(db, target.id):
         raise ConflictError("Both entries already track play progress — resolve that manually before merging")
 
+    rom_filenames = _drop_old_link(db, game)
     old_cover_url = game.cover_url
     game_repository.merge_game(db, source=game, target=target)
     db.commit()
     # Never carried over to target — same orphaned-upload cleanup as link_game_to_igdb above.
     upload_service.delete_if_local_upload(old_cover_url)
+    rom_service.delete_files(rom_filenames)
     return get_game_detail(db, target.id)
+
+
+def unlink_game_from_igdb(db: Session, game_id: int) -> GameWithStatus:
+    """Unlink from IGDB, for a game that was linked from custom: makes it a custom game again,
+    keeping everything IGDB filled in as its own details (see _clear_igdb_link) along with
+    the user's copies, progress, rating, notes and tags. The old link's addons are removed
+    (all of them — the user's choice)."""
+    game = db.get(Game, game_id)
+    if game is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    if game.igdb_id is None or not game.linked_from_custom:
+        raise ConflictError(f"Game {game_id} wasn't linked from a custom game, so it can't be unlinked")
+
+    rom_filenames = game_repository.delete_addons(db, game)
+    _clear_igdb_link(game)
+    game.linked_from_custom = False
+    db.commit()
+    rom_service.delete_files(rom_filenames)
+    return get_game_detail(db, game.id)
 
 
 def resolve_igdb_category(igdb_game: dict[str, Any]) -> tuple[int | None, GameCategory | None]:

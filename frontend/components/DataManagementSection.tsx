@@ -12,49 +12,33 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import type { BackupFileOptions } from "../api/importExport";
 import ConfirmDialog from "./ConfirmDialog";
-import {
-  useExportBackup,
-  useExportCsv,
-  useExportHardwareCsv,
-  useRestoreBackup,
-  useRestoreStatus,
-} from "../hooks/useImportExport";
+import { useExportBackup, useRestoreBackup, useRestoreStatus } from "../hooks/useImportExport";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
+const FILE_OPTIONS: { key: keyof BackupFileOptions; labelKey: string }[] = [
+  { key: "roms", labelKey: "settings.dataManagement.includeRomsLabel" },
+  { key: "bios", labelKey: "settings.dataManagement.includeBiosLabel" },
+  { key: "images", labelKey: "settings.dataManagement.includeImagesLabel" },
+];
+
+// Settings → General → Data: one Backup (a .json, or a .zip when files are picked to go
+// with it) and Restore, which takes either.
 const DataManagementSection = () => {
   const { t } = useTranslation();
-  const exportCsv = useExportCsv();
-  const exportHardwareCsv = useExportHardwareCsv();
   const exportBackup = useExportBackup();
   const restoreBackup = useRestoreBackup();
   const restoreStatus = useRestoreStatus();
   const restoreInProgress = restoreBackup.isPending || restoreStatus.data?.status === "running";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [includeFiles, setIncludeFiles] = useState(false);
-
-  const handleExportCsv = async () => {
-    try {
-      await exportCsv.mutateAsync();
-    } catch (error) {
-      console.error("Error exporting CSV:", error);
-      toast.error(t("settings.dataManagement.exportCsvError"), TOAST_OPTIONS);
-    }
-  };
-
-  const handleExportHardwareCsv = async () => {
-    try {
-      await exportHardwareCsv.mutateAsync();
-    } catch (error) {
-      console.error("Error exporting hardware CSV:", error);
-      toast.error(t("settings.dataManagement.exportHardwareCsvError"), TOAST_OPTIONS);
-    }
-  };
+  const [files, setFiles] = useState<BackupFileOptions>({ roms: false, bios: false, images: false });
+  const asZip = files.roms || files.bios || files.images;
 
   const handleExportBackup = async () => {
     try {
-      await exportBackup.mutateAsync({ includeFiles });
+      await exportBackup.mutateAsync(files);
     } catch (error) {
       console.error("Error exporting backup:", error);
       toast.error(t("settings.dataManagement.exportBackupError"), TOAST_OPTIONS);
@@ -83,37 +67,32 @@ const DataManagementSection = () => {
     <Stack spacing={2.5}>
       <Box>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          {t("settings.dataManagement.exportHeading")}
+          {t("settings.dataManagement.backupHeading")}
         </Typography>
-        <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap" }}>
-          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportCsv} disabled={exportCsv.isPending}>
-            {t("settings.dataManagement.exportLibraryCsv")}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportHardwareCsv}
-            disabled={exportHardwareCsv.isPending}
-          >
-            {t("settings.dataManagement.exportHardwareCsv")}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportBackup}
-            disabled={exportBackup.isPending}
-          >
-            {includeFiles
-              ? t("settings.dataManagement.exportFullBackupWithFiles")
-              : t("settings.dataManagement.exportFullBackup")}
-          </Button>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          {t("settings.dataManagement.backupDescription")}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {t("settings.dataManagement.includeFilesHeading")}
+        </Typography>
+        <Stack direction={{ xs: "column", sm: "row" }} sx={{ flexWrap: "wrap", columnGap: 2 }}>
+          {FILE_OPTIONS.map((option) => (
+            <FormControlLabel
+              key={option.key}
+              control={
+                <Checkbox
+                  checked={files[option.key]}
+                  onChange={(event) => setFiles((prev) => ({ ...prev, [option.key]: event.target.checked }))}
+                />
+              }
+              label={t(option.labelKey)}
+            />
+          ))}
         </Stack>
-        <FormControlLabel
-          sx={{ mt: 1 }}
-          control={<Checkbox checked={includeFiles} onChange={(event) => setIncludeFiles(event.target.checked)} />}
-          label={t("settings.dataManagement.includeFilesLabel")}
-        />
-        <FormHelperText sx={{ mt: 0 }}>{t("settings.dataManagement.includeFilesHelp")}</FormHelperText>
+        <FormHelperText sx={{ mt: 0, mb: 1.5 }}>{t("settings.dataManagement.includeFilesHelp")}</FormHelperText>
+        <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportBackup} disabled={exportBackup.isPending}>
+          {asZip ? t("settings.dataManagement.downloadBackupZip") : t("settings.dataManagement.downloadBackupJson")}
+        </Button>
       </Box>
 
       <Divider />

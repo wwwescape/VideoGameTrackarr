@@ -39,6 +39,8 @@ from app.models.hardware import (
     UserAccessory,
     UserDevice,
 )
+from app.models.igdb_import import IgdbImportEntry
+from app.models.itad import ItadPriceCache
 from app.models.library import (
     BiosFile,
     GameProgress,
@@ -54,6 +56,8 @@ from app.models.library import (
     RomSaveState,
     Tag,
 )
+from app.models.platprices import PlatPricesCache
+from app.models.system import User
 from app.schemas.backup import (
     BACKUP_FORMAT_VERSION,
     BackupAccessory,
@@ -67,6 +71,7 @@ from app.schemas.backup import (
     BackupHardware,
     BackupHardwarePlatform,
     BackupHardwareType,
+    BackupIncludedFiles,
     BackupLibraryItem,
     BackupManufacturer,
     BackupNote,
@@ -77,17 +82,28 @@ from app.schemas.backup import (
     BackupRestoreResult,
     BackupRomFile,
     BackupRomSaveState,
+    BackupSalesIgnored,
+    BackupSettings,
     BackupStorageVariant,
     BackupTag,
     BackupUserAccessory,
     BackupUserHardware,
 )
 from app.services import rom_service
+from app.services.upload_service import (
+    ACCESSORY_IMAGES_DIR,
+    ACCESSORY_IMAGES_URL_PREFIX,
+    COVERS_DIR,
+    COVERS_URL_PREFIX,
+)
 
 BACKUPS_DIR = BACKEND_DIR / "db" / "backups"
 
 
-def build_backup_payload(db: Session, include_files: bool = False) -> BackupPayload:
+def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False) -> BackupPayload:
+    """Everything a restore needs. `roms` / `bios` add the rows describing those files, for a
+    .zip that carries the files themselves (see export_full_backup_zip)."""
+    user = db.scalars(select(User)).first()
     payload = BackupPayload(
         version=BACKUP_FORMAT_VERSION,
         exported_at=datetime.now(UTC).isoformat(),
@@ -130,6 +146,7 @@ def build_backup_payload(db: Session, include_files: bool = False) -> BackupPayl
                 edition=li.edition,
                 acquired_at=li.acquired_at.isoformat() if li.acquired_at else None,
                 notes=li.notes,
+                target_price=li.target_price,
             )
             for li in db.scalars(select(LibraryItem))
         ],
@@ -231,8 +248,23 @@ def build_backup_payload(db: Session, include_files: bool = False) -> BackupPayl
             )
             for ua in db.scalars(select(UserAccessory))
         ],
+        sales_ignored=[
+            *(
+                BackupSalesIgnored(provider="itad", game_id=game_id)
+                for game_id in db.scalars(select(ItadPriceCache.game_id).where(ItadPriceCache.ignored.is_(True)))
+            ),
+            *(
+                BackupSalesIgnored(provider="platprices", game_id=game_id)
+                for game_id in db.scalars(select(PlatPricesCache.game_id).where(PlatPricesCache.ignored.is_(True)))
+            ),
+        ],
+        settings=(
+            BackupSettings(currency=user.currency, overview_layout=user.overview_layout, steam_id_64=user.steam_id_64)
+            if user
+            else None
+        ),
     )
-    if include_files:
+    if roms:
         payload.rom_files = [
             BackupRomFile(
                 id=r.id,
@@ -261,6 +293,7 @@ def build_backup_payload(db: Session, include_files: bool = False) -> BackupPayl
             )
             for s in db.scalars(select(RomSaveState))
         ]
+    if bios:
         payload.bios_files = [
             BackupBiosFile(
                 id=b.id, system=b.system, filename=b.filename, stored_filename=b.stored_filename,
@@ -279,7 +312,15 @@ FULL_BACKUP_JSON_NAME = "backup.json"
 FULL_BACKUP_FILES_PREFIX = "files/"
 
 
-def _payload_file_paths(payload: BackupPayload) -> list[str]:
+FULL_BACKUP_IMAGES_PREFIX = FULL_BACKUP_FILES_PREFIX + "images/"
+# Uploaded images by the address prefix they're served under, with the folder they live in.
+_IMAGE_FOLDERS = (
+    (COVERS_URL_PREFIX, "covers", COVERS_DIR),
+    (ACCESSORY_IMAGES_URL_PREFIX, "accessory-images", ACCESSORY_IMAGES_DIR),
+)
+
+
+def _rom_file_paths(payload: BackupPayload) -> list[str]:
     paths: list[str] = []
     for rom in payload.rom_files:
         paths.append(rom.stored_filename)
@@ -289,16 +330,37 @@ def _payload_file_paths(payload: BackupPayload) -> list[str]:
         paths.append(state.stored_filename)
         if state.screenshot_filename:
             paths.append(state.screenshot_filename)
-    paths.extend(b.stored_filename for b in payload.bios_files)
     return paths
 
 
-def export_full_backup_zip(db: Session) -> Path:
-    """A full backup: backup.json plus every ROM, save state, screenshot, in-game save and
-    BIOS file under files/<stored path>. Written to a temp file (the caller streams it out
-    and deletes it) so memory stays flat however many GB of ROMs there are. ROM data is
-    stored, not re-compressed — it's mostly already compressed, and deflating GBs is slow."""
-    payload = build_backup_payload(db, include_files=True)
+def _bios_file_paths(payload: BackupPayload) -> list[str]:
+    return [b.stored_filename for b in payload.bios_files]
+
+
+def _uploaded_images(payload: BackupPayload) -> list[tuple[str, Path]]:
+    """(zip member, file on disk) for every uploaded image the backup's rows point at: custom
+    game covers and accessory photos. IGDB covers and hardware reference photos are addresses
+    elsewhere, not files here, so they're never in this list. A name that isn't a plain file
+    name (a hand-edited backup) is skipped rather than followed."""
+    urls = [g.cover_url for g in payload.games] + [a.image_url for a in payload.accessories]
+    images: dict[str, Path] = {}
+    for url in urls:
+        for prefix, folder, directory in _IMAGE_FOLDERS:
+            if url and url.startswith(prefix):
+                name = url.removeprefix(prefix)
+                if name and Path(name).name == name and name not in (".", ".."):
+                    images[f"{FULL_BACKUP_IMAGES_PREFIX}{folder}/{name}"] = directory / name
+    return list(images.items())
+
+
+def export_full_backup_zip(db: Session, *, roms: bool = True, bios: bool = True, images: bool = False) -> Path:
+    """A .zip backup: backup.json plus the files picked — ROMs (with their save states,
+    screenshots and in-game saves) and BIOS files under files/<stored path>, uploaded images
+    under files/images/<folder>/<name>. Written to a temp file (the caller streams it out and
+    deletes it) so memory stays flat however many GB of ROMs there are. Stored, not
+    re-compressed: ROMs and images are mostly compressed already, and deflating GBs is slow."""
+    payload = build_backup_payload(db, roms=roms, bios=bios)
+    payload.included_files = BackupIncludedFiles(roms=roms, bios=bios, images=images)
     handle, name = tempfile.mkstemp(prefix="vgt-full-backup-", suffix=".zip")
     os.close(handle)
     path = Path(name)
@@ -307,10 +369,14 @@ def export_full_backup_zip(db: Session) -> Path:
             archive.writestr(
                 FULL_BACKUP_JSON_NAME, payload.model_dump_json(indent=2), compress_type=zipfile.ZIP_DEFLATED
             )
-            for relative in _payload_file_paths(payload):
+            for relative in _rom_file_paths(payload) + _bios_file_paths(payload):
                 source = rom_service.rom_dir_path(relative)
                 if source.is_file():
                     archive.write(source, FULL_BACKUP_FILES_PREFIX + relative)
+            if images:
+                for member, source in _uploaded_images(payload):
+                    if source.is_file():
+                        archive.write(source, member)
     except BaseException:
         path.unlink(missing_ok=True)
         raise
@@ -330,10 +396,12 @@ def read_full_backup_zip(path: Path) -> BackupPayload:
     return parse_backup_payload(raw)
 
 
-def _write_safety_snapshot(db: Session) -> Path:
+def write_safety_snapshot(db: Session, label: str = "restore") -> Path:
+    """A JSON backup of everything as it is now, saved on the server before something
+    replaces or removes it (a restore, a Danger Zone reset) — restorable like any backup."""
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    path = BACKUPS_DIR / f"pre-restore-{timestamp}.json"
+    path = BACKUPS_DIR / f"pre-{label}-{timestamp}.json"
     path.write_text(export_backup_json(db), encoding="utf-8")
     return path
 
@@ -353,7 +421,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     target (see backend/README.md), so this is a known, documented gap rather than a
     silent one if you run this against Postgres.
     """
-    safety_snapshot_path = _write_safety_snapshot(db)
+    safety_snapshot_path = write_safety_snapshot(db)
 
     # ROM files and their saves aren't part of the backup payload (size), but a same-instance
     # restore shouldn't throw away ROMs that still belong to the same copy afterwards.
@@ -418,6 +486,11 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
 
     db.execute(delete(GameTag))
     db.execute(delete(Note))
+    # Caches keyed on game ids, which the backup's ids may now point elsewhere: they refetch
+    # (the ignored-price choices come back from the backup below).
+    db.execute(delete(ItadPriceCache))
+    db.execute(delete(PlatPricesCache))
+    db.execute(delete(IgdbImportEntry))
     db.execute(delete(PlaySession))
     db.execute(delete(GameProgress))
     db.execute(delete(LibraryItem))
@@ -502,6 +575,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 edition=li.edition,
                 acquired_at=date.fromisoformat(li.acquired_at) if li.acquired_at else None,
                 notes=li.notes,
+                target_price=li.target_price,
             )
         )
     # platform_id is required now — a backup taken before per-platform Progress has no way
@@ -620,21 +694,44 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
             )
         )
 
+    restored_game_ids = {g.id for g in payload.games}
+    for ignored in payload.sales_ignored:
+        if ignored.game_id in restored_game_ids:
+            cache = ItadPriceCache if ignored.provider == "itad" else PlatPricesCache
+            db.add(cache(game_id=ignored.game_id, ignored=True))
+    user = db.scalars(select(User)).first()
+    if user is not None and payload.settings is not None:
+        user.currency = payload.settings.currency
+        user.overview_layout = payload.settings.overview_layout
+        user.steam_id_64 = payload.settings.steam_id_64
+
     restored_items = {li.id: li for li in payload.library_items}
     orphaned_rom_files: list[str] = []
-    if files_zip is not None:
-        # A full backup replaces ROMs, saves and BIOS files outright with its own. Files are
-        # extracted before the commit (same stored names are simply rewritten), and any old
-        # file the backup doesn't reuse is removed once the new rows are committed.
-        old_files = [f for snap in rom_snapshots for f in snap["files"]]
-        old_files += [b.stored_filename for b in db.scalars(select(BiosFile))]
+    included = _included_files(payload, files_zip)
+    if included.roms or included.bios:
+        _check_files_present(files_zip, payload, included)
+    restored_images = _extract_images(files_zip, payload) if included.images else 0
+    if included.bios:
+        # The .zip's BIOS files replace the current ones outright.
+        orphaned_rom_files += [b.stored_filename for b in db.scalars(select(BiosFile))]
         db.execute(delete(BiosFile))
         db.flush()
+        _extract_files(files_zip, _bios_file_paths(payload))
+        for bios in payload.bios_files:
+            db.add(BiosFile(
+                id=bios.id, system=bios.system, filename=bios.filename, stored_filename=bios.stored_filename,
+                size_bytes=bios.size_bytes, md5=bios.md5,
+            ))
+    if included.roms:
+        # The .zip's ROMs and saves replace the current ones outright. Files are extracted
+        # before the commit (same stored names are simply rewritten), and any old file the
+        # backup doesn't reuse is removed once the new rows are committed.
+        old_files = [f for snap in rom_snapshots for f in snap["files"]]
         # Drop rows pointing at copies/ROMs the payload doesn't have (a hand-edited file).
         payload.rom_files = [r for r in payload.rom_files if r.library_item_id in restored_items]
         rom_ids = {r.id for r in payload.rom_files}
         payload.rom_save_states = [s for s in payload.rom_save_states if s.rom_file_id in rom_ids]
-        _extract_full_backup_files(files_zip, payload)
+        _extract_files(files_zip, _rom_file_paths(payload))
         for rom in payload.rom_files:
             db.add(RomFile(
                 id=rom.id, library_item_id=rom.library_item_id, label=rom.label,
@@ -651,14 +748,12 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 size_bytes=state.size_bytes,
                 **({"created_at": datetime.fromisoformat(state.created_at)} if state.created_at else {}),
             ))
-        for bios in payload.bios_files:
-            db.add(BiosFile(
-                id=bios.id, system=bios.system, filename=bios.filename, stored_filename=bios.stored_filename,
-                size_bytes=bios.size_bytes, md5=bios.md5,
-            ))
-        kept = set(_payload_file_paths(payload))
-        orphaned_rom_files = [f for f in old_files if f not in kept]
+        kept = set(_rom_file_paths(payload))
+        orphaned_rom_files += [f for f in old_files if f not in kept]
         rom_snapshots = []
+    if included.bios:
+        kept_bios = set(_bios_file_paths(payload))
+        orphaned_rom_files = [f for f in orphaned_rom_files if f not in kept_bios]
     for snap in rom_snapshots:
         li = restored_items.get(snap["rom"]["library_item_id"])
         if (
@@ -681,27 +776,64 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         restored_games=len(payload.games),
         restored_library_items=len(payload.library_items),
         safety_snapshot_path=str(safety_snapshot_path),
-        restored_roms=len(payload.rom_files) if files_zip is not None else 0,
+        restored_devices=len(payload.user_hardware),
+        restored_accessories=len(payload.user_accessories),
+        restored_roms=len(payload.rom_files) if included.roms else 0,
+        restored_bios_files=len(payload.bios_files) if included.bios else 0,
+        restored_images=restored_images,
     )
 
 
-def _extract_full_backup_files(files_zip: Path, payload: BackupPayload) -> None:
-    """Copies each file the payload's rows reference out of the zip into the private ROM
-    dir. Only referenced names are read, and every destination goes through
-    rom_service.rom_dir_path, which refuses anything outside the ROM dir."""
+def _included_files(payload: BackupPayload, files_zip: Path | None) -> BackupIncludedFiles:
+    """Which kinds of files this restore replaces: none for a .json; what the .zip says it
+    carries; and ROMs + BIOS files for a version-2 .zip, which always carried both."""
+    if files_zip is None:
+        return BackupIncludedFiles()
+    return payload.included_files or BackupIncludedFiles(roms=True, bios=True)
+
+
+def _check_files_present(files_zip: Path | None, payload: BackupPayload, included: BackupIncludedFiles) -> None:
+    """Fails before anything is written when the .zip lacks a ROM or BIOS file its rows
+    name, so a broken zip fails cleanly."""
+    assert files_zip is not None
+    relatives = (_rom_file_paths(payload) if included.roms else []) + (
+        _bios_file_paths(payload) if included.bios else []
+    )
     with zipfile.ZipFile(files_zip) as archive:
         present = set(archive.namelist())
-        relatives = _payload_file_paths(payload)
-        # Check everything is there before writing anything, so a broken zip fails cleanly.
-        missing = [r for r in relatives if FULL_BACKUP_FILES_PREFIX + r not in present]
-        if missing:
-            raise ValueError(f"Backup is missing {len(missing)} file(s), e.g. {missing[0]}")
+    missing = [r for r in relatives if FULL_BACKUP_FILES_PREFIX + r not in present]
+    if missing:
+        raise ValueError(f"Backup is missing {len(missing)} file(s), e.g. {missing[0]}")
+
+
+def _extract_files(files_zip: Path | None, relatives: list[str]) -> None:
+    """Copies these ROM/BIOS files out of the zip into the private ROM dir. Only names the
+    rows reference are read, and every destination goes through rom_service.rom_dir_path,
+    which refuses anything outside the ROM dir."""
+    assert files_zip is not None
+    with zipfile.ZipFile(files_zip) as archive:
         for relative in relatives:
-            member = FULL_BACKUP_FILES_PREFIX + relative
             destination = rom_service.rom_dir_path(relative)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(FULL_BACKUP_FILES_PREFIX + relative) as source, destination.open("wb") as out:
+                shutil.copyfileobj(source, out, 1024 * 1024)
+
+
+def _extract_images(files_zip: Path | None, payload: BackupPayload) -> int:
+    """Puts back the uploaded images the backup's rows point at, from files/images/ in the
+    zip (an image the zip doesn't have is left as it is). Returns how many came back."""
+    assert files_zip is not None
+    restored = 0
+    with zipfile.ZipFile(files_zip) as archive:
+        present = set(archive.namelist())
+        for member, destination in _uploaded_images(payload):
+            if member not in present:
+                continue
             destination.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(member) as source, destination.open("wb") as out:
                 shutil.copyfileobj(source, out, 1024 * 1024)
+            restored += 1
+    return restored
 
 
 def parse_backup_payload(raw_json: str) -> BackupPayload:

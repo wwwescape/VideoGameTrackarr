@@ -121,6 +121,7 @@ const GameDetails = () => {
             gameCategory={game.category}
             hasParentGame={hasParentGame}
             hasIgdbId={game.igdbId !== null}
+            linkedFromCustom={game.linkedFromCustom}
             resyncGameId={resyncGameId}
             isAutoDiscovered={isAutoDiscovered}
             libraryItems={libraryItems}

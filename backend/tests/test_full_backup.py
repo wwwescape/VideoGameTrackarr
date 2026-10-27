@@ -53,7 +53,13 @@ def _wait(client, timeout: float = 5.0) -> dict:
     raise AssertionError("Restore did not finish within the test timeout")
 
 
-def _restore_zip(client, data: bytes, name="videogametrackarr-full-backup.zip"):
+def _zip_backup(client, roms=True, bios=True, images=False):
+    """A .zip backup the way the browser gets one: a signed link, then a plain download."""
+    url = client.post("/api/export/backup/full-link", json={"roms": roms, "bios": bios, "images": images}).json()["url"]
+    return client.get(url)
+
+
+def _restore_zip(client, data: bytes, name="videogametrackarr-backup.zip"):
     return client.post("/api/import/backup", files={"file": (name, io.BytesIO(data), "application/zip")})
 
 
@@ -78,7 +84,8 @@ def test_plain_export_leaves_files_out(auth_client, nes_item):
 
     body = auth_client.get("/api/export/backup").json()
 
-    assert body["version"] == 2
+    assert body["version"] == 3
+    assert body["included_files"] is None
     assert body["rom_files"] == [] and body["rom_save_states"] == [] and body["bios_files"] == []
 
 
@@ -87,7 +94,7 @@ def test_full_backup_round_trip(auth_client, db_session, nes_item, _isolate_rom_
     before = _hashes(_isolate_rom_storage)
     assert len(before) == 5  # ROM, state, screenshot, SRAM, BIOS
 
-    response = auth_client.get("/api/export/backup?full=true")
+    response = _zip_backup(auth_client)
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/zip"
@@ -96,6 +103,7 @@ def test_full_backup_round_trip(auth_client, db_session, nes_item, _isolate_rom_
         manifest = json.loads(archive.read("backup.json"))
     assert names == {"backup.json", *(f"files/{name}" for name in before)}
     assert [r["label"] for r in manifest["rom_files"]] == ["USA"]
+    assert manifest["included_files"] == {"roms": True, "bios": True, "images": False}
 
     # Lose everything: the copy (with its ROM + saves) and the BIOS.
     auth_client.delete(f"/api/library/{nes_item.id}")
@@ -109,6 +117,7 @@ def test_full_backup_round_trip(auth_client, db_session, nes_item, _isolate_rom_
 
     assert status["status"] == "completed", status
     assert status["result"]["restoredRoms"] == 1
+    assert status["result"]["restoredBiosFiles"] == 1
     assert _hashes(_isolate_rom_storage) == before
     db_session.expire_all()
     [restored] = auth_client.get(f"/api/games/{nes_item.game_id}/library").json()[0]["roms"]
@@ -123,7 +132,7 @@ def test_full_backup_round_trip(auth_client, db_session, nes_item, _isolate_rom_
 
 def test_full_restore_replaces_files_the_backup_does_not_have(auth_client, db_session, nes_item, _isolate_rom_storage):
     _populate(auth_client, nes_item)
-    backup = auth_client.get("/api/export/backup?full=true").content
+    backup = _zip_backup(auth_client).content
     before = _hashes(_isolate_rom_storage)
     extra = {"file": ("second.nes", io.BytesIO(NES_ROM + b"2"), "application/octet-stream")}
     auth_client.post(f"/api/library/{nes_item.id}/roms", files=extra)
@@ -180,7 +189,7 @@ def test_a_zip_missing_a_referenced_file_fails_without_touching_data(
 ):
     _populate(auth_client, nes_item)
     before = _hashes(_isolate_rom_storage)
-    full = zipfile.ZipFile(io.BytesIO(auth_client.get("/api/export/backup?full=true").content))
+    full = zipfile.ZipFile(io.BytesIO(_zip_backup(auth_client).content))
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as archive:
         archive.writestr("backup.json", full.read("backup.json"))  # but none of the files
@@ -197,9 +206,10 @@ def test_a_zip_missing_a_referenced_file_fails_without_touching_data(
 def test_full_backup_download_link(client, auth_client, test_user, nes_item):
     from app.core.security import create_access_token
 
-    url = auth_client.post("/api/export/backup/full-link").json()["url"]
+    url = auth_client.post("/api/export/backup/full-link", json={"roms": True}).json()["url"]
+    assert url.endswith("?roms=true&bios=false&images=false")
     client.headers.pop("Authorization", None)
-    assert client.post("/api/export/backup/full-link").status_code == 401
+    assert client.post("/api/export/backup/full-link", json={"roms": True}).status_code == 401
 
     response = client.get(url)
 
@@ -209,3 +219,115 @@ def test_full_backup_download_link(client, auth_client, test_user, nes_item):
         assert "backup.json" in archive.namelist()
     bad = f"/api/export/backup/full/{create_access_token(test_user.id)}/x.zip"
     assert client.get(bad).status_code == 401
+
+
+def test_a_roms_only_zip_leaves_bios_files_alone(auth_client, db_session, nes_item, _isolate_rom_storage):
+    _populate(auth_client, nes_item)
+    with zipfile.ZipFile(io.BytesIO(_zip_backup(auth_client, roms=True, bios=False).content)) as archive:
+        manifest = json.loads(archive.read("backup.json"))
+        bios_members = [n for n in archive.namelist() if n.startswith("files/bios")]
+    assert manifest["bios_files"] == [] and bios_members == []
+    backup = _zip_backup(auth_client, roms=True, bios=False).content
+
+    _restore_zip(auth_client, backup)
+
+    status = _wait(auth_client)
+    assert status["status"] == "completed", status
+    assert status["result"]["restoredBiosFiles"] == 0
+    db_session.expire_all()
+    # The BIOS file wasn't in the .zip, so the one already here is kept.
+    assert db_session.query(BiosFile).count() == 1
+    assert db_session.query(RomFile).count() == 1
+
+
+def test_a_version_2_zip_restores_its_roms_and_bios(auth_client, db_session, nes_item, _isolate_rom_storage):
+    _populate(auth_client, nes_item)
+    before = _hashes(_isolate_rom_storage)
+    current = zipfile.ZipFile(io.BytesIO(_zip_backup(auth_client).content))
+    manifest = json.loads(current.read("backup.json"))
+    manifest["version"] = 2
+    del manifest["included_files"]
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as archive:
+        archive.writestr("backup.json", json.dumps(manifest))
+        for name in current.namelist():
+            if name != "backup.json":
+                archive.writestr(name, current.read(name))
+    auth_client.delete(f"/api/library/{nes_item.id}")
+
+    _restore_zip(auth_client, buf.getvalue())
+
+    status = _wait(auth_client)
+    assert status["status"] == "completed", status
+    assert (status["result"]["restoredRoms"], status["result"]["restoredBiosFiles"]) == (1, 1)
+    assert _hashes(_isolate_rom_storage) == before
+
+
+@pytest.fixture()
+def scratch_images(monkeypatch, tmp_path):
+    """Uploaded-image folders in tmp_path, never the real uploads/ folder."""
+    covers = tmp_path / "uploads" / "covers"
+    accessories = tmp_path / "uploads" / "accessory-images"
+    monkeypatch.setattr(
+        backup_service,
+        "_IMAGE_FOLDERS",
+        (
+            (backup_service.COVERS_URL_PREFIX, "covers", covers),
+            (backup_service.ACCESSORY_IMAGES_URL_PREFIX, "accessory-images", accessories),
+        ),
+    )
+    covers.mkdir(parents=True)
+    accessories.mkdir(parents=True)
+    return covers, accessories
+
+
+def test_images_round_trip_in_a_zip(auth_client, db_session, scratch_images):
+    from app.models.catalog import Game
+    from app.models.hardware import Accessory, AccessoryType, Manufacturer
+
+    covers, accessories = scratch_images
+    (covers / "custom.jpg").write_bytes(b"COVER")
+    (accessories / "pad.jpg").write_bytes(b"PAD")
+    manufacturer, accessory_type = Manufacturer(name="Hori"), AccessoryType(name="Controller")
+    db_session.add_all([manufacturer, accessory_type])
+    db_session.flush()
+    db_session.add_all(
+        [
+            Game(name="Homebrew", cover_url="/uploads/covers/custom.jpg"),
+            Game(name="From IGDB", igdb_id=77, cover_url="https://images.igdb.com/x.jpg"),
+            Accessory(
+                official_name="Pad",
+                manufacturer_id=manufacturer.id,
+                accessory_type_id=accessory_type.id,
+                image_url="/uploads/accessory-images/pad.jpg",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    response = _zip_backup(auth_client, roms=False, bios=False, images=True)
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        names = set(archive.namelist())
+    # Only uploaded images: an IGDB cover is an address elsewhere, not a file here.
+    assert names == {"backup.json", "files/images/covers/custom.jpg", "files/images/accessory-images/pad.jpg"}
+
+    (covers / "custom.jpg").unlink()
+    (accessories / "pad.jpg").unlink()
+    _restore_zip(auth_client, response.content)
+
+    status = _wait(auth_client)
+    assert status["status"] == "completed", status
+    assert status["result"]["restoredImages"] == 2
+    assert (covers / "custom.jpg").read_bytes() == b"COVER"
+    assert (accessories / "pad.jpg").read_bytes() == b"PAD"
+
+
+def test_an_image_name_that_is_not_a_plain_file_name_is_skipped(auth_client, db_session, scratch_images):
+    from app.models.catalog import Game
+
+    db_session.add(Game(name="Sneaky", cover_url="/uploads/covers/../../escape.jpg"))
+    db_session.commit()
+
+    payload = backup_service.build_backup_payload(db_session)
+
+    assert backup_service._uploaded_images(payload) == []

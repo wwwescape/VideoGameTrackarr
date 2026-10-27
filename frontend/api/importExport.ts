@@ -1,20 +1,22 @@
 import { apiClient } from "./client";
 import type { RestoreStatus } from "./types";
 
-export async function exportCsvBlob(): Promise<Blob> {
-  const response = await apiClient.get("/api/export/csv", { responseType: "blob" });
-  return response.data;
-}
-
 export async function exportBackupBlob(): Promise<Blob> {
   const response = await apiClient.get("/api/export/backup", { responseType: "blob" });
   return response.data;
 }
 
-// A full backup (with ROMs, saves and BIOS files) can be many GB, so it isn't fetched into a
-// Blob: the server hands out a short-lived signed link and the browser downloads it itself.
-export async function createFullBackupLink(): Promise<string> {
-  const response = await apiClient.post<{ url: string }>("/api/export/backup/full-link");
+// Which files a .zip backup carries besides the data.
+export interface BackupFileOptions {
+  roms: boolean;
+  bios: boolean;
+  images: boolean;
+}
+
+// A backup with files can be many GB, so it isn't fetched into a Blob: the server hands out
+// a short-lived signed link and the browser downloads it itself.
+export async function createFullBackupLink(options: BackupFileOptions): Promise<string> {
+  const response = await apiClient.post<{ url: string }>("/api/export/backup/full-link", options);
   return response.data.url;
 }
 
@@ -38,9 +40,4 @@ export async function fetchRestoreStatus(): Promise<RestoreStatus> {
 
 export async function acknowledgeRestoreStatus(): Promise<void> {
   await apiClient.post("/api/import/backup/status/acknowledge");
-}
-
-export async function exportHardwareCsvBlob(): Promise<Blob> {
-  const response = await apiClient.get("/api/export/hardware-csv", { responseType: "blob" });
-  return response.data;
 }

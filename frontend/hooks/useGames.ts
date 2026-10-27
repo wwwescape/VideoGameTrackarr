@@ -16,6 +16,7 @@ import {
   resyncGame,
   setGameRating,
   startBulkImport,
+  unlinkGameFromIgdb,
   updateManualGame,
   type GameListFilters,
 } from "../api/games";
@@ -198,6 +199,18 @@ export function useLinkGameToIgdb(gameId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games", gameId, "addons"] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useUnlinkGameFromIgdb(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => unlinkGameFromIgdb(gameId),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
