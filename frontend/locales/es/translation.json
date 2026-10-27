@@ -707,6 +707,17 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "gameFilters": {
+      "heading": "Listas de juegos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visibles en el diálogo Filtros. Guardado en tu cuenta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desactiva los campos que nunca usas. El filtro de un campo oculto se conserva y aún puede quitarse desde su chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Preajustes guardados",
+      "savedHelp": "Creados desde el botón Preajustes de las listas de juegos. Edita uno para renombrarlo o eliminarlo."
     }
   },
   "screensaver": {
@@ -1381,6 +1392,20 @@
       "loadError": "No se pudieron cargar los instaladores. Inténtalo de nuevo.",
       "queueErrorToast": "No se pudo iniciar la descarga. Inténtalo de nuevo.",
       "saveErrorToast": "No se pudo guardar este archivo. Inténtalo de nuevo."
+    },
+    "savedViews": {
+      "button": "Preajustes",
+      "modifiedLabel": "{{name}} (modificado)",
+      "empty": "Aún no hay preajustes",
+      "saveCurrent": "Guardar los filtros actuales…",
+      "saveAsNew": "Guardar como nuevo preajuste…",
+      "update": "Actualizar «{{name}}»",
+      "saveTitle": "Guardar estos filtros",
+      "editTitle": "Editar preajuste",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nombre",
+      "replaceHelp": "Reemplaza el preajuste con este nombre.",
+      "deleted": "Preajuste «{{name}}» eliminado"
     }
   },
   "events": {
