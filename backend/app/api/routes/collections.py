@@ -18,7 +18,10 @@ router = APIRouter(prefix="/api/collections", tags=["collections"], dependencies
 @router.get("", response_model=list[CollectionSummaryResponse])
 def list_collections(db: Session = Depends(get_db)) -> list[CollectionSummaryResponse]:
     collections = collection_service.list_collections(db)
-    return [collection_summary_from_orm(collection, count, covers) for collection, count, covers in collections]
+    return [
+        collection_summary_from_orm(collection, count, covers, owned_count=owned)
+        for collection, count, owned, covers in collections
+    ]
 
 
 @router.get("/{slug}", response_model=CollectionDetailResponse)

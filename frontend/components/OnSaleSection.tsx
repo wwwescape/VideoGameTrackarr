@@ -1,19 +1,28 @@
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { OnSaleItem } from "../api/types";
-import { useOnSale } from "../hooks/useInsights";
 import { formatCurrency } from "../utils/currency";
 import { gameIdentifier } from "../utils/identifiers";
 import { isAddon } from "../utils/utils";
 import GameCard from "./GameCard";
-import { CARD_SIZE_DEFAULT } from "./GameListViews";
+
+export type OnSaleView = "covers" | "table";
 
 interface OnSaleSectionProps {
-  limit?: number;
+  // Already searched, filtered and sorted by the page.
+  items: OnSaleItem[];
+  view: OnSaleView;
+  cardSize: number;
 }
 
 export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
@@ -64,29 +73,128 @@ export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
   );
 };
 
-const OnSaleSection = ({ limit }: OnSaleSectionProps) => {
+const OnSaleSection = ({ items, view, cardSize }: OnSaleSectionProps) => {
   const { t } = useTranslation();
-  const { data: items } = useOnSale();
-  const visibleItems = limit ? (items ?? []).slice(0, limit) : (items ?? []);
+  const navigate = useNavigate();
+  const open = (item: OnSaleItem) =>
+    navigate(`/${isAddon(item.game) ? "addon" : "game"}/${gameIdentifier(item.game)}`);
 
-  if (!items || items.length === 0) {
+  if (view === "table") {
+    const price = (amount: number, currency: string | null) =>
+      formatCurrency(amount, currency ?? "USD");
     return (
-      <Typography variant="body2" color="text.secondary">
-        {t("insights.onSale.noneFound")}
-      </Typography>
+      <TableContainer
+        sx={{
+          border: 1,
+          borderColor: "divider",
+          borderRadius: 2,
+          bgcolor: "background.paper",
+          "& th, & td": { whiteSpace: "nowrap" },
+        }}
+      >
+        <Table size="small" aria-label={t("insights.dashboard.onSaleHeading")}>
+          <TableHead>
+            <TableRow>
+              <TableCell>{t("games.listView.columnName")}</TableCell>
+              <TableCell align="right">{t("insights.onSale.columnPrice")}</TableCell>
+              <TableCell align="right">{t("insights.onSale.columnDiscount")}</TableCell>
+              <TableCell>{t("insights.onSale.columnStore")}</TableCell>
+              <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                {t("insights.onSale.columnHistoricalLow")}
+              </TableCell>
+              <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                {t("insights.onSale.columnTarget")}
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow
+                key={item.libraryItemId}
+                hover
+                tabIndex={0}
+                aria-label={item.game.name}
+                onClick={() => open(item)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") open(item);
+                }}
+                sx={{
+                  cursor: "pointer",
+                  "&:focus-visible": {
+                    outline: "2px solid",
+                    outlineColor: "primary.main",
+                    outlineOffset: -2,
+                  },
+                }}
+              >
+                <TableCell
+                  sx={{
+                    fontWeight: 600,
+                    maxWidth: 360,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {item.game.name}
+                </TableCell>
+                <TableCell align="right">
+                  {price(item.currentPriceAmount, item.currentPriceCurrency)}
+                </TableCell>
+                <TableCell align="right" sx={{ color: "text.secondary" }}>
+                  {item.currentCut !== null ? `-${item.currentCut}%` : "—"}
+                </TableCell>
+                <TableCell sx={{ color: "text.secondary" }}>
+                  {item.currentShopName ?? t("common.unknown")}
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ color: "text.secondary", display: { xs: "none", sm: "table-cell" } }}
+                >
+                  {item.historicalLowAmount !== null
+                    ? price(item.historicalLowAmount, item.historicalLowCurrency)
+                    : "—"}
+                </TableCell>
+                <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                  {item.targetPrice !== null ? (
+                    <Stack
+                      direction="row"
+                      spacing={0.75}
+                      sx={{ alignItems: "center", justifyContent: "flex-end" }}
+                    >
+                      <span>{price(item.targetPrice, item.currentPriceCurrency)}</span>
+                      {item.isTargetHit ? (
+                        <Chip
+                          size="small"
+                          color="success"
+                          label={t("insights.onSale.targetHitLabel")}
+                        />
+                      ) : null}
+                    </Stack>
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     );
   }
 
   return (
-    // Two columns on phones, then as many cards of the Games list's default size as fit.
+    // Two columns on phones, then as many cards of the chosen size as fit.
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: `repeat(auto-fill, minmax(${CARD_SIZE_DEFAULT}px, 1fr))` },
+        gridTemplateColumns: {
+          xs: "repeat(2, minmax(0, 1fr))",
+          sm: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
+        },
         gap: "18px 14px",
       }}
     >
-      {visibleItems.map((item) => (
+      {items.map((item) => (
         <OnSaleTile key={item.libraryItemId} item={item} />
       ))}
     </Box>

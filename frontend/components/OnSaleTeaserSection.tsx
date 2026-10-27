@@ -9,7 +9,7 @@ const TEASER_LIMIT = 15;
 // "0 games on sale" block would just be noise on the Overview. OverviewPage itself also
 // gates whether this even mounts, so this early return is mostly a defensive fallback if
 // ever reused standalone.
-const OnSaleTeaserSection = () => {
+const OnSaleTeaserSection = ({ columnWidth }: { columnWidth?: number }) => {
   const { t } = useTranslation();
   const { data: items } = useOnSale();
 
@@ -24,6 +24,7 @@ const OnSaleTeaserSection = () => {
       renderItem={(item) => <OnSaleTile item={item} />}
       title={t("insights.dashboard.onSaleHeading")}
       viewAllHref="/insights/on-sale"
+      columnWidth={columnWidth}
     />
   );
 };

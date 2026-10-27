@@ -1,4 +1,4 @@
-from sqlalchemy import delete, func, select
+from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Franchise, Game, GameCategory, GameFranchise
@@ -46,21 +46,26 @@ def get_by_slug(db: Session, slug: str) -> Franchise | None:
     return db.scalars(select(Franchise).where(Franchise.slug == slug)).first()
 
 
-def list_franchises_with_counts(db: Session) -> list[tuple[Franchise, int]]:
+def list_franchises_with_counts(db: Session) -> list[tuple[Franchise, int, int]]:
     """Every franchise with at least one locally-known, browsable (non-addon) game — same
     _is_browsable_game/parent_game_id filter as list_games_for_franchise below, so this count
     always matches what the franchise's own Details page actually shows; a franchise whose
     only locally-known members are addons is excluded entirely rather than showing a non-zero
     count that leads to an empty Details page."""
     stmt = (
-        select(Franchise, func.count(func.distinct(GameFranchise.game_id)))
+        select(
+            Franchise,
+            func.count(func.distinct(GameFranchise.game_id)),
+            # How many of those you own (any copy), for the index's Complete / Missing filter.
+            func.count(func.distinct(case((_owned_exists(Game.id), Game.id)))),
+        )
         .join(GameFranchise, GameFranchise.franchise_id == Franchise.id)
         .join(Game, Game.id == GameFranchise.game_id)
         .where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
         .group_by(Franchise.id)
         .order_by(Franchise.name)
     )
-    return [(franchise, count) for franchise, count in db.execute(stmt)]
+    return [(franchise, count, owned) for franchise, count, owned in db.execute(stmt)]
 
 
 def list_games_for_franchise(db: Session, franchise_id: int) -> list[GameWithStatus]:

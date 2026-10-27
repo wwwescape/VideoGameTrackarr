@@ -21,11 +21,11 @@ def get_franchise_with_games(
     )
 
 
-def list_franchises(db: Session) -> list[tuple[Franchise, int, list[str]]]:
+def list_franchises(db: Session) -> list[tuple[Franchise, int, int, list[str]]]:
     covers = catalog_cover_repository.cover_urls_by_franchise(db)
     return [
-        (franchise, count, covers.get(franchise.id, []))
-        for franchise, count in franchise_repository.list_franchises_with_counts(db)
+        (franchise, count, owned, covers.get(franchise.id, []))
+        for franchise, count, owned in franchise_repository.list_franchises_with_counts(db)
     ]
 
 

@@ -21,11 +21,11 @@ def get_collection_with_games(
     )
 
 
-def list_collections(db: Session) -> list[tuple[Collection, int, list[str]]]:
+def list_collections(db: Session) -> list[tuple[Collection, int, int, list[str]]]:
     covers = catalog_cover_repository.cover_urls_by_collection(db)
     return [
-        (collection, count, covers.get(collection.id, []))
-        for collection, count in collection_repository.list_collections_with_counts(db)
+        (collection, count, owned, covers.get(collection.id, []))
+        for collection, count, owned in collection_repository.list_collections_with_counts(db)
     ]
 
 

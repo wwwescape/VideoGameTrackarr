@@ -10,9 +10,11 @@ import HardwareCard from "./HardwareCard";
 interface ReleaseCalendarSectionProps {
   scope: "games" | "hardware";
   title: string;
+  // Fixed card width in px (see CardCarousel); omitted, cards share the row like the grids.
+  columnWidth?: number;
 }
 
-const ReleaseCalendarSection = ({ scope, title }: ReleaseCalendarSectionProps) => {
+const ReleaseCalendarSection = ({ scope, title, columnWidth }: ReleaseCalendarSectionProps) => {
   const { t } = useTranslation();
   const { data, isLoading } = useReleaseCalendar();
   const navigate = useNavigate();
@@ -49,6 +51,7 @@ const ReleaseCalendarSection = ({ scope, title }: ReleaseCalendarSectionProps) =
             : `accessory-${item.accessory!.id}`
       }
       title={title}
+      columnWidth={columnWidth}
       renderItem={(item) => {
         if (item.kind === "game" && item.game) {
           return (
@@ -56,6 +59,7 @@ const ReleaseCalendarSection = ({ scope, title }: ReleaseCalendarSectionProps) =
               game={item.game}
               context="list"
               contextFunction={() => navigate(`/game/${gameIdentifier(item.game!)}`)}
+              dateFormat="full"
             />
           );
         }

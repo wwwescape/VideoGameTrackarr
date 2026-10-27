@@ -142,7 +142,14 @@ const HardwarePage = () => {
         </Box>
       ) : null}
 
-      <DeviceList searchKeyword={debouncedKeyword} status={state.status} filters={state.devices} view={view} cardSize={cardSize} />
+      <DeviceList
+        searchKeyword={debouncedKeyword}
+        status={state.status}
+        filters={state.devices}
+        sort={state.sort}
+        view={view}
+        cardSize={cardSize}
+      />
       <AccessoryList
         searchKeyword={debouncedKeyword}
         status={state.status}
@@ -171,6 +178,8 @@ const HardwarePage = () => {
         choices={[
           { value: "name", label: t("hardware.listToolbar.sortOptionName") },
           { value: "releaseDate", label: t("hardware.listToolbar.sortOptionReleaseDate") },
+          { value: "dateAddedDesc", label: t("hardware.listToolbar.sortOptionDateAddedDesc") },
+          { value: "dateAddedAsc", label: t("hardware.listToolbar.sortOptionDateAddedAsc") },
         ]}
         selected={state.sort}
         onSelect={state.setSort}

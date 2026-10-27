@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, String, func
+from sqlalchemy import JSON, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -24,6 +24,9 @@ class User(TimestampMixin, Base):
     )
     currency: Mapped[str | None] = mapped_column(
         String(3), comment="Display currency (ISO 4217 code), shared by every browser"
+    )
+    overview_layout: Mapped[list[dict] | None] = mapped_column(
+        JSON, comment="Overview page sections in display order, each {key, hidden}; null = the default layout"
     )
 
 

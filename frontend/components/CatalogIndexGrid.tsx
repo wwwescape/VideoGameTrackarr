@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import GridViewIcon from "@mui/icons-material/GridView";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import SortIcon from "@mui/icons-material/Sort";
 import TableRowsIcon from "@mui/icons-material/TableRows";
 import TuneIcon from "@mui/icons-material/Tune";
@@ -19,6 +20,7 @@ import { useSessionState } from "../hooks/useSessionState";
 import CatalogRefCard from "./CatalogRefCard";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import { CardSizeSlider, ChoiceMenu, ListSearchField, type MenuChoice } from "./ListControls";
+import { FilterChips, FilterDialog, ToggleFilter } from "./ListToolbar";
 import Page, { STICKY_TOP, ToolbarButton } from "./Page";
 import VirtualGameGrid from "./VirtualGameGrid";
 
@@ -40,6 +42,11 @@ export interface CatalogIndexColumn<T> {
   hideOnPhone?: boolean;
 }
 
+export interface CatalogIndexFilter<T> {
+  label: string;
+  choices: { value: string; label: string; matches: (entry: T) => boolean }[];
+}
+
 interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
   emptyMessage: string;
   // The count beside the breadcrumbs ("5 platforms"), a plural key.
@@ -58,6 +65,8 @@ interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
   estimateRowHeight?: (columns: number) => number;
   // The Table view's columns after the name. Defaults to the game count.
   tableColumns?: CatalogIndexColumn<T>[];
+  // The Filter: one pick-one choice (besides All), each saying which entries it keeps.
+  statusFilter?: CatalogIndexFilter<T>;
   // sessionStorage key for this page's remembered search/sort (see hooks/useSessionState.ts),
   // and the localStorage key for its view and card size.
   stateKey: string;
@@ -87,6 +96,7 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   renderCard,
   estimateRowHeight,
   tableColumns,
+  statusFilter,
   stateKey,
 }: CatalogIndexGridProps<T>) => {
   const { t } = useTranslation();
@@ -96,19 +106,22 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   const [view, setView] = useLocalPreference<CatalogIndexView>(`${stateKey}.view`, "cards");
   const [cardSize, setCardSize] = useLocalPreference(`${stateKey}.cardSize`, CARD_SIZE_DEFAULT);
   const [menu, setMenu] = useState<{ name: "options" | "view" | "sort"; anchor: HTMLElement } | null>(null);
+  const [status, setStatus] = useSessionState(`${stateKey}.status`, "all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeStatus = statusFilter?.choices.find((choice) => choice.value === status);
 
   const visibleEntries = useMemo(() => {
     if (!entries) return [];
     const trimmed = searchKeyword.trim().toLowerCase();
-    const filtered = trimmed
-      ? entries.filter((entry) => entry.name.toLowerCase().includes(trimmed))
-      : entries;
+    const filtered = entries.filter(
+      (entry) => (!trimmed || entry.name.toLowerCase().includes(trimmed)) && (!activeStatus || activeStatus.matches(entry))
+    );
     const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "name_desc") sorted.reverse();
     // Stable sort, so entries with the same count stay in name order.
     if (sort === "count_desc") sorted.sort((a, b) => getCount(b) - getCount(a));
     return sorted;
-  }, [entries, searchKeyword, sort, getCount]);
+  }, [entries, searchKeyword, sort, getCount, activeStatus]);
 
   const keyOf = getKey ?? ((entry: T) => entry.id);
   const columns: CatalogIndexColumn<T>[] = tableColumns ?? [
@@ -140,6 +153,15 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
         onClick={(event) => setMenu({ name: "sort", anchor: event.currentTarget })}
         aria-haspopup="menu"
       />
+      {statusFilter ? (
+        <ToolbarButton
+          icon={<FilterAltOutlinedIcon />}
+          label={t("games.listView.filter")}
+          count={activeStatus ? 1 : 0}
+          active={!!activeStatus}
+          onClick={() => setFiltersOpen(true)}
+        />
+      ) : null}
     </>
   );
 
@@ -195,6 +217,9 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
         <ListSearchField value={searchKeyword} onChange={setSearchKeyword} label={searchLabel} placeholder={searchPlaceholder} />
       }
     >
+      <FilterChips
+        chips={activeStatus ? [{ key: "status", label: activeStatus.label, onRemove: () => setStatus("all") }] : []}
+      />
       {isLoading ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
       ) : !entries || entries.length === 0 ? (
@@ -237,6 +262,25 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
         selected={sort}
         onSelect={setSort}
       />
+      {statusFilter ? (
+        <FilterDialog
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          onClear={() => setStatus("all")}
+          activeCount={activeStatus ? 1 : 0}
+        >
+          <ToggleFilter
+            id={`${stateKey}-status`}
+            label={statusFilter.label}
+            value={activeStatus ? status : "all"}
+            onChange={setStatus}
+            options={[
+              { value: "all", label: t("games.listToolbar.allOption") },
+              ...statusFilter.choices.map(({ value, label }) => ({ value, label })),
+            ]}
+          />
+        </FilterDialog>
+      ) : null}
     </Page>
   );
 };

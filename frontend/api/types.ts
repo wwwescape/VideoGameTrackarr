@@ -219,6 +219,8 @@ export interface CatalogRef {
 
 export interface CatalogRefSummary extends CatalogRef {
   gameCount: number;
+  // How many of those games you own.
+  ownedCount: number;
   // Up to 4: games you have first, then the earliest released.
   coverUrls: string[];
 }
@@ -493,7 +495,13 @@ export interface VersionInfo {
 
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
-export type GameSortOption = "name_asc" | "name_desc" | "release_date_asc" | "release_date_desc";
+export type GameSortOption =
+  | "name_asc"
+  | "name_desc"
+  | "release_date_asc"
+  | "release_date_desc"
+  | "date_added_desc"
+  | "date_added_asc";
 export type CatalogSortOption = "name_asc" | "name_desc" | "count_desc";
 export type RatingBoard = "esrb" | "pegi" | "cero" | "usk" | "grac" | "classind" | "acb" | "iarc";
 
@@ -734,6 +742,9 @@ export interface InsightAccessoryRef {
   officialName: string;
   imageUrl: string | null;
   manufacturerName: string;
+  accessoryTypeName: string;
+  // When it was added here (ISO timestamp).
+  createdAt: string;
 }
 
 export interface AuthTokens {
@@ -747,6 +758,13 @@ export interface CurrentUser {
   username: string;
   // The account's display currency; null until one is chosen.
   currency: string | null;
+  // The Overview's sections in order; null until customised (see hooks/useOverviewLayout.ts).
+  overviewLayout: OverviewSectionSetting[] | null;
+}
+
+export interface OverviewSectionSetting {
+  key: string;
+  hidden: boolean;
 }
 
 export interface SetupStatus {
@@ -815,6 +833,8 @@ export interface DeviceSummary {
   wishlisted: boolean;
   ownedQuantity: number;
   wishlistedQuantity: number;
+  // When it was added here (ISO timestamp), for the Hardware page's Date added sort.
+  createdAt: string;
 }
 
 export interface LinkedAccessory {
@@ -875,6 +895,8 @@ export interface AccessorySummary {
   wishlisted: boolean;
   ownedQuantity: number;
   wishlistedQuantity: number;
+  // When it was added here (ISO timestamp), for the Hardware page's Date added sort.
+  createdAt: string;
 }
 
 export interface LinkedDevice {

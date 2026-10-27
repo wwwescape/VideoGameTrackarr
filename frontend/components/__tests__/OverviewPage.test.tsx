@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { DashboardStats, GameSummary, HardwareStats } from "../../api/types";
+import type { DashboardStats, GameSummary, HardwareStats, OverviewSectionSetting } from "../../api/types";
 import { createVgtTheme } from "../../theme/createVgtTheme";
 import OverviewPage from "../OverviewPage";
 
@@ -50,6 +50,20 @@ vi.mock("../../hooks/useInsights", () => ({
 }));
 vi.mock("../../hooks/useEvents", () => ({ useEvents: () => ({ data: [] }) }));
 
+// The real layout logic, with the account's saved layout and the save call stubbed.
+let savedLayout: OverviewSectionSetting[] | null;
+const saveLayout = vi.fn();
+vi.mock("../../hooks/useOverviewLayout", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../hooks/useOverviewLayout")>();
+  return {
+    ...actual,
+    useOverviewLayout: () => ({
+      layout: actual.resolveOverviewLayout(savedLayout),
+      save: { mutateAsync: saveLayout, isPending: false },
+    }),
+  };
+});
+
 function renderPage() {
   render(
     <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
@@ -70,6 +84,8 @@ const session = (name: string) => JSON.parse(window.sessionStorage.getItem(`vgt.
 describe("OverviewPage", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
+    savedLayout = null;
+    saveLayout.mockReset().mockResolvedValue(undefined);
     stats = {
       totalOwned: 12,
       totalWishlisted: 4,
@@ -161,5 +177,40 @@ describe("OverviewPage", () => {
 
     expect(screen.getByText("Welcome to VideoGameTrackarr")).toBeInTheDocument();
     expect(screen.getByText("Nothing marked Playing yet.")).toBeInTheDocument();
+  });
+
+  it("shows the sections in the default order", () => {
+    renderPage();
+
+    const headings = screen.getAllByRole("heading").map((heading) => heading.textContent);
+    expect(headings).toEqual(["Quick add", "Now playing", "Recently added games", "Needs attention"]);
+  });
+
+  it("follows the saved layout: its order, and hidden sections left out", () => {
+    savedLayout = [
+      { key: "needsAttention", hidden: false },
+      { key: "quickAdd", hidden: true },
+      { key: "stats", hidden: true },
+    ];
+    renderPage();
+
+    const headings = screen.getAllByRole("heading").map((heading) => heading.textContent);
+    // Sections the saved layout doesn't mention keep their default places after it.
+    expect(headings).toEqual(["Needs attention", "Now playing", "Recently added games"]);
+    expect(screen.queryByRole("button", { name: /Games owned/ })).not.toBeInTheDocument();
+  });
+
+  it("hides a section and saves the layout from Customize", async () => {
+    const user = renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("switch", { name: "Show Quick add" }));
+    await user.click(within(dialog).getByRole("button", { name: "Move Needs attention up" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    const saved = saveLayout.mock.calls[0][0] as OverviewSectionSetting[];
+    expect(saved.find((section) => section.key === "quickAdd")?.hidden).toBe(true);
+    expect(saved.slice(-2).map((section) => section.key)).toEqual(["needsAttention", "recentlyAddedHardware"]);
   });
 });

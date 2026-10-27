@@ -83,6 +83,9 @@ class InsightAccessoryRefResponse(CamelModel):
     official_name: str
     image_url: str | None
     manufacturer_name: str
+    accessory_type_name: str
+    # When it was added here, for the Orphaned Accessories page's Date added sort.
+    created_at: datetime
 
 
 def insight_accessory_ref_from_orm(accessory: Accessory) -> InsightAccessoryRefResponse:
@@ -92,6 +95,8 @@ def insight_accessory_ref_from_orm(accessory: Accessory) -> InsightAccessoryRefR
         official_name=accessory.official_name,
         image_url=accessory.image_url,
         manufacturer_name=accessory.manufacturer.name,
+        accessory_type_name=accessory.accessory_type.name,
+        created_at=accessory.created_at,
     )
 
 

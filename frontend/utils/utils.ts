@@ -8,6 +8,17 @@ export function getReleaseYear(value: number | null | undefined): number | null 
   return new Date(value * 1000).getFullYear();
 }
 
+// A release date as "Sep 30, 2025" (in the UI language's order). IGDB dates are midnight UTC,
+// so they're read in UTC: a viewer west of Greenwich would otherwise see the day before.
+export function formatReleaseDate(value: number, language: string): string {
+  return new Date(value * 1000).toLocaleDateString(language, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 const ADDON_TYPE_LABELS: Partial<Record<GameCategory, string>> = {
   dlc_addon: "DLC",
   expansion: "Expansion",

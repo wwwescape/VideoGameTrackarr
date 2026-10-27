@@ -477,3 +477,40 @@ def test_list_collections_puts_undated_games_after_dated_ones(auth_client, db_se
     [entry] = auth_client.get("/api/collections").json()
 
     assert entry["coverUrls"] == ["https://img.example/202.jpg", "https://img.example/201.jpg"]
+
+
+def test_list_collections_counts_the_games_you_own(auth_client, db_session, seed_game, seed_platform):
+    collection = Collection(igdb_id=63, name="Owned Count", slug="owned-count")
+    other = Game(igdb_id=1999, name="Not Owned", category=GameCategory.MAIN_GAME)
+    db_session.add_all([collection, other])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameCollection(game_id=seed_game.id, collection_id=collection.id),
+            GameCollection(game_id=other.id, collection_id=collection.id),
+            LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+            LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+        ]
+    )
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/collections").json()
+
+    assert (entry["gameCount"], entry["ownedCount"]) == (2, 1)
+
+
+def test_list_franchises_counts_the_games_you_own(auth_client, db_session, seed_game, seed_platform):
+    franchise = Franchise(igdb_id=981, name="Owned Count", slug="owned-count")
+    db_session.add(franchise)
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameFranchise(game_id=seed_game.id, franchise_id=franchise.id),
+            LibraryItem(game_id=seed_game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST),
+        ]
+    )
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/franchises").json()
+
+    assert (entry["gameCount"], entry["ownedCount"]) == (1, 0)

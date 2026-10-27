@@ -61,6 +61,13 @@ const PlatformsPage = () => {
       getHref={(entry) => `/games/platforms/${platformIdentifier(entry)}${platformScopeQuery(entry.scope)}`}
       renderCard={(entry, onClick) => <PlatformCard platform={entry} scope={entry.scope} onClick={onClick} />}
       tableColumns={tableColumns}
+      statusFilter={{
+        label: t("catalog.index.filterOwnership"),
+        choices: [
+          { value: "owned", label: t("catalog.index.filterWithOwned"), matches: (entry) => entry.ownedCount > 0 },
+          { value: "wishlisted", label: t("catalog.index.filterWithWishlisted"), matches: (entry) => entry.wishlistedCount > 0 },
+        ],
+      }}
     />
   );
 };

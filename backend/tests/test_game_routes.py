@@ -689,6 +689,21 @@ def test_list_games_sort_by_release_date(auth_client, db_session):
     assert [g["name"] for g in response.json()] == ["Newer Game", "Older Game"]
 
 
+def test_list_games_sort_by_date_added(auth_client, db_session):
+    first = Game(igdb_id=2306, name="Zelda", category=GameCategory.MAIN_GAME)
+    second = Game(igdb_id=2307, name="Astro Bot", category=GameCategory.MAIN_GAME)
+    first.created_at = datetime(2026, 1, 1, tzinfo=UTC)
+    second.created_at = datetime(2026, 2, 1, tzinfo=UTC)
+    db_session.add_all([first, second])
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"sort": "date_added_desc"})
+    assert [g["name"] for g in response.json()] == ["Astro Bot", "Zelda"]
+
+    response = auth_client.get("/api/games", params={"sort": "date_added_asc"})
+    assert [g["name"] for g in response.json()] == ["Zelda", "Astro Bot"]
+
+
 def test_get_game_detail_includes_parent_name(auth_client, db_session, seed_game):
     addon = Game(igdb_id=2002, name="Test Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)

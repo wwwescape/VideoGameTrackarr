@@ -251,6 +251,15 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
   };
   const hasStoryline = game.storyline && game.storyline !== game.summary;
   const showReleaseDates = game.releaseDates.length > 1;
+  // Both by platform name (IGDB's own order is arbitrary); release dates then by date, so a
+  // platform's regional releases read earliest first.
+  const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
+  const platforms = [...game.platforms].sort((a, b) => byName(a.name, b.name));
+  const releaseDates = [...game.releaseDates].sort(
+    (a, b) =>
+      byName(a.platformName ?? "\uffff", b.platformName ?? "\uffff") ||
+      (a.date ?? Number.POSITIVE_INFINITY) - (b.date ?? Number.POSITIVE_INFINITY)
+  );
 
   return (
     <Section id="about" title={t("games.detail.aboutTitle")}>
@@ -282,7 +291,7 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
           {game.platforms.length ? (
             <AboutCard title={t("games.detail.platformsLabel")}>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-                {game.platforms.map((platform) => (
+                {platforms.map((platform) => (
                   <Pill key={platform.id}>{platform.name}</Pill>
                 ))}
               </Box>
@@ -291,7 +300,7 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
           {showReleaseDates ? (
             <AboutCard title={t("games.detail.releaseDatesTitle")}>
               <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
-                {game.releaseDates.map((releaseDate, index) => (
+                {releaseDates.map((releaseDate, index) => (
                   <Box
                     component="li"
                     key={releaseDate.id}

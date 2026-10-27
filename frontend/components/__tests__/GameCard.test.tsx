@@ -21,6 +21,12 @@ function renderWithTheme(ui: React.ReactElement): RenderResult {
 }
 
 describe("GameCard", () => {
+  it("shows the full release date instead of the year when asked (release calendar)", () => {
+    renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} dateFormat="full" />);
+
+    expect(screen.getByText("Feb 29, 2016")).toBeInTheDocument();
+  });
+
   it("shows a 'No cover' placeholder when there's no cover image", () => {
     renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} />);
 

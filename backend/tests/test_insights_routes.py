@@ -277,6 +277,8 @@ def test_accessories_without_owned_hardware_flags_accessory_with_no_links(auth_c
     assert response.status_code == 200
     [item] = response.json()
     assert item["id"] == seed_accessory.id
+    assert item["accessoryTypeName"] == seed_accessory.accessory_type.name
+    assert item["createdAt"]
 
 
 def test_accessories_without_owned_hardware_flags_accessory_linked_to_unowned_device(

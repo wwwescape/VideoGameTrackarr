@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models.hardware import Device
 from app.models.library import RatingBoard, Tag
 from app.repositories.device_repository import DeviceWithStatus
@@ -34,6 +36,8 @@ class DeviceSummaryResponse(CamelModel):
     wishlisted: bool
     owned_quantity: int
     wishlisted_quantity: int
+    # When it was added here, for the Hardware page's "Date added" sort.
+    created_at: datetime
 
 
 class LinkedAccessoryResponse(CamelModel):
@@ -75,6 +79,7 @@ def _device_fields(device: Device, with_status: DeviceWithStatus) -> dict:
         "wishlisted": with_status.wishlisted,
         "owned_quantity": with_status.owned_quantity,
         "wishlisted_quantity": with_status.wishlisted_quantity,
+        "created_at": device.created_at,
     }
 
 

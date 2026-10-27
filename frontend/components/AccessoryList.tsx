@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccessoryList } from "../hooks/useAccessories";
-import type { HardwareKindFilters, HardwareSort, HardwareStatusFilter } from "../hooks/useHardwareListState";
+import {
+  compareHardware,
+  type HardwareKindFilters,
+  type HardwareSort,
+  type HardwareStatusFilter,
+} from "../hooks/useHardwareListState";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { HardwareListSection, type HardwareListView, type HardwareRow } from "./HardwareListViews";
 
@@ -14,7 +19,14 @@ interface AccessoryListProps {
   cardSize: number;
 }
 
-const AccessoryList = ({ searchKeyword, status, filters, sort, view, cardSize }: AccessoryListProps) => {
+const AccessoryList = ({
+  searchKeyword,
+  status,
+  filters,
+  sort,
+  view,
+  cardSize,
+}: AccessoryListProps) => {
   const { t } = useTranslation();
   const { manufacturerIds, typeIds, platformIds } = filters;
 
@@ -28,12 +40,7 @@ const AccessoryList = ({ searchKeyword, status, filters, sort, view, cardSize }:
 
   const rows = useMemo(() => {
     if (!accessories) return undefined;
-    const items = [...accessories];
-    if (sort === "releaseDate") {
-      items.sort((a, b) => (b.releaseDate ?? 0) - (a.releaseDate ?? 0));
-    } else {
-      items.sort((a, b) => a.officialName.localeCompare(b.officialName));
-    }
+    const items = [...accessories].sort(compareHardware(sort));
     return items.map(
       (item): HardwareRow => ({
         id: item.id,

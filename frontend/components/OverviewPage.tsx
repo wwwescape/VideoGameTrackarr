@@ -1,20 +1,26 @@
-import type { ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import TuneIcon from "@mui/icons-material/Tune";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 import type { GameSummary, RecentlyAddedHardwareItem } from "../api/types";
 import { useDashboardStats, useReleaseCalendar } from "../hooks/useDashboard";
 import { useEvents } from "../hooks/useEvents";
 import { useGames } from "../hooks/useGames";
 import { useHardwareStats } from "../hooks/useHardwareStats";
 import { useOpenFilteredGames } from "../hooks/useOpenFilteredGames";
+import { useOverviewLayout, type OverviewSection, type OverviewSectionKey } from "../hooks/useOverviewLayout";
 import { useAccessoriesWithoutOwnedHardware, useDuplicateLibraryItems, useMissingAddons, useOnSale } from "../hooks/useInsights";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { formatCurrency } from "../utils/currency";
 import { gameIdentifier, hardwareIdentifier } from "../utils/identifiers";
+import { TOAST_OPTIONS } from "../utils/toastOptions";
+import CustomizeOverviewDialog from "./CustomizeOverviewDialog";
 import { Section, Strip } from "./Detail";
 import EventsTeaserSection from "./EventsTeaserSection";
 import GameCard from "./GameCard";
@@ -36,9 +42,10 @@ const SectionLink = ({ children, onClick, to }: { children: ReactNode; onClick?:
   </Box>
 );
 
-// The home page (the Dashboard and Overview combined): headline numbers, quick add, what you're
-// playing, recent additions and the gaps worth filling in, then the Dashboard's own sections —
-// events, sales and the release calendars. Deeper breakdowns live on Insights.
+// The home page (the Dashboard and Overview combined): headline numbers, quick add, events,
+// sales and the release calendars, what you're playing, recent additions and the gaps worth
+// filling in. Customize hides and reorders the sections (saved on the account; see
+// useOverviewLayout). Deeper breakdowns live on Insights.
 const OverviewPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -54,6 +61,8 @@ const OverviewPage = () => {
   const { data: releases } = useReleaseCalendar();
   const { data: onSaleItems } = useOnSale();
   const { data: events } = useEvents();
+  const { layout, save: saveLayout } = useOverviewLayout();
+  const [customizing, setCustomizing] = useState(false);
 
   const gameCard = (game: GameSummary) => (
     <GameCard key={game.id} game={game} context="list" contextFunction={() => navigate(`/game/${gameIdentifier(game)}`)} />
@@ -104,6 +113,20 @@ const OverviewPage = () => {
     { label: t("nav.addAccessory"), to: "/hardware/accessory/add" },
   ];
 
+  const labels: Record<OverviewSectionKey, string> = {
+    stats: t("overview.customize.stats"),
+    quickAdd: t("overview.quickAdd"),
+    events: t("insights.dashboard.eventsHeading"),
+    onSale: t("insights.dashboard.onSaleHeading"),
+    gamesCalendar: t("insights.dashboard.gamesCalendarHeading"),
+    hardwareCalendar: t("insights.dashboard.hardwareCalendarHeading"),
+    nowPlaying: t("overview.nowPlaying"),
+    recentlyPlayed: t("overview.recentlyPlayed"),
+    recentlyAddedGames: t("overview.recentlyAddedGames"),
+    recentlyAddedHardware: t("overview.recentlyAddedHardware"),
+    needsAttention: t("overview.needsAttention"),
+  };
+
   const attention = [
     { key: "custom", label: t("overview.attention.custom"), value: customGames?.length, onClick: () => openGames({ sources: ["custom"] }) },
     { key: "missingAddons", label: t("nav.missingAddons"), value: missingAddons?.length, to: "/insights/missing-addons" },
@@ -111,14 +134,8 @@ const OverviewPage = () => {
     { key: "orphans", label: t("overview.attention.orphans"), value: orphans?.length, to: "/insights/orphaned-accessories" },
   ];
 
-  return (
-    <Page>
-      {isEmpty ? (
-        <Typography variant="h6" component="p" color="text.secondary" sx={{ mb: 1 }}>
-          {t("insights.dashboard.welcomeMessage")}
-        </Typography>
-      ) : null}
-
+  const sections: Record<OverviewSectionKey, ReactNode> = {
+    stats: (
       <TileGrid>
         <StatTile
           label={t("overview.tiles.gamesOwned")}
@@ -152,7 +169,8 @@ const OverviewPage = () => {
           to="/insights"
         />
       </TileGrid>
-
+    ),
+    quickAdd: (
       <Section id="quick-add" title={t("overview.quickAdd")}>
         <TileGrid min={200}>
           {quickAdd.map((item) => (
@@ -179,7 +197,17 @@ const OverviewPage = () => {
           ))}
         </TileGrid>
       </Section>
-
+    ),
+    events: events?.length ? <EventsTeaserSection /> : null,
+    // Same card widths as the strips below (games, and hardware a little wider).
+    onSale: onSaleItems?.length ? <OnSaleTeaserSection columnWidth={STRIP_COLUMN} /> : null,
+    gamesCalendar: hasGameReleases ? (
+      <ReleaseCalendarSection scope="games" title={labels.gamesCalendar} columnWidth={STRIP_COLUMN} />
+    ) : null,
+    hardwareCalendar: hasHardwareReleases ? (
+      <ReleaseCalendarSection scope="hardware" title={labels.hardwareCalendar} columnWidth={STRIP_COLUMN + 20} />
+    ) : null,
+    nowPlaying: (
       <Section
         id="now-playing"
         title={t("overview.nowPlaying")}
@@ -202,29 +230,27 @@ const OverviewPage = () => {
           </Typography>
         )}
       </Section>
-
-      {stats?.recentlyPlayed.length ? (
-        <Section id="recently-played" title={t("overview.recentlyPlayed")}>
-          <Strip columnWidth={STRIP_COLUMN}>{stats.recentlyPlayed.map(gameCard)}</Strip>
-        </Section>
-      ) : null}
-
-      {stats?.recentlyAdded.length ? (
-        <Section id="recently-added" title={t("overview.recentlyAddedGames")} action={<SectionLink to="/games">{t("common.viewAll")}</SectionLink>}>
-          <Strip columnWidth={STRIP_COLUMN}>{stats.recentlyAdded.map(gameCard)}</Strip>
-        </Section>
-      ) : null}
-
-      {hardwareStats?.recentlyAdded.length ? (
-        <Section
-          id="recently-added-hardware"
-          title={t("overview.recentlyAddedHardware")}
-          action={<SectionLink to="/hardware">{t("common.viewAll")}</SectionLink>}
-        >
-          <Strip columnWidth={STRIP_COLUMN + 20}>{hardwareStats.recentlyAdded.map(hardwareCard)}</Strip>
-        </Section>
-      ) : null}
-
+    ),
+    recentlyPlayed: stats?.recentlyPlayed.length ? (
+      <Section id="recently-played" title={t("overview.recentlyPlayed")}>
+        <Strip columnWidth={STRIP_COLUMN}>{stats.recentlyPlayed.map(gameCard)}</Strip>
+      </Section>
+    ) : null,
+    recentlyAddedGames: stats?.recentlyAdded.length ? (
+      <Section id="recently-added" title={t("overview.recentlyAddedGames")} action={<SectionLink to="/games">{t("common.viewAll")}</SectionLink>}>
+        <Strip columnWidth={STRIP_COLUMN}>{stats.recentlyAdded.map(gameCard)}</Strip>
+      </Section>
+    ) : null,
+    recentlyAddedHardware: hardwareStats?.recentlyAdded.length ? (
+      <Section
+        id="recently-added-hardware"
+        title={t("overview.recentlyAddedHardware")}
+        action={<SectionLink to="/hardware">{t("common.viewAll")}</SectionLink>}
+      >
+        <Strip columnWidth={STRIP_COLUMN + 20}>{hardwareStats.recentlyAdded.map(hardwareCard)}</Strip>
+      </Section>
+    ) : null,
+    needsAttention: (
       <Section id="needs-attention" title={t("overview.needsAttention")}>
         <TileGrid>
           {attention.map((tile) => (
@@ -239,12 +265,52 @@ const OverviewPage = () => {
           ))}
         </TileGrid>
       </Section>
+    ),
+  };
 
-      {events?.length ? <EventsTeaserSection /> : null}
-      {onSaleItems?.length ? <OnSaleTeaserSection /> : null}
-      {hasGameReleases ? <ReleaseCalendarSection scope="games" title={t("insights.dashboard.gamesCalendarHeading")} /> : null}
-      {hasHardwareReleases ? (
-        <ReleaseCalendarSection scope="hardware" title={t("insights.dashboard.hardwareCalendarHeading")} />
+  const handleSaveLayout = async (next: OverviewSection[]) => {
+    try {
+      await saveLayout.mutateAsync(next);
+      setCustomizing(false);
+    } catch (error) {
+      console.error("Error saving the Overview layout:", error);
+      toast.error(t("overview.customize.saveError"), TOAST_OPTIONS);
+    }
+  };
+
+  const visible = layout.filter((section) => !section.hidden);
+
+  return (
+    <Page
+      actions={
+        <Button size="small" startIcon={<TuneIcon />} onClick={() => setCustomizing(true)}>
+          {t("overview.customize.button")}
+        </Button>
+      }
+    >
+      {isEmpty ? (
+        <Typography variant="h6" component="p" color="text.secondary" sx={{ mb: 1 }}>
+          {t("insights.dashboard.welcomeMessage")}
+        </Typography>
+      ) : null}
+
+      {visible.map((section) => (
+        <Fragment key={section.key}>{sections[section.key]}</Fragment>
+      ))}
+      {visible.length === 0 ? (
+        <Typography variant="body2" sx={{ color: "vgt.text3" }}>
+          {t("overview.customize.allHidden")}
+        </Typography>
+      ) : null}
+
+      {customizing ? (
+        <CustomizeOverviewDialog
+          layout={layout}
+          labels={labels}
+          saving={saveLayout.isPending}
+          onClose={() => setCustomizing(false)}
+          onSave={(next) => void handleSaveLayout(next)}
+        />
       ) : null}
     </Page>
   );

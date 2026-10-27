@@ -71,17 +71,25 @@ def logout(body: RefreshRequest, db: Session = Depends(get_db)) -> None:
 
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)) -> UserResponse:
-    return UserResponse(id=current_user.id, username=current_user.username, currency=current_user.currency)
+    return _user_response(current_user)
 
 
 @router.put("/me/preferences", response_model=UserResponse)
 def update_preferences(
     body: PreferencesRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> UserResponse:
-    """Display preferences kept on the server, so every browser shows the same (today the
-    currency; colour mode and language stay per browser)."""
-    user = auth_service.set_preferences(db, current_user, body.currency)
-    return UserResponse(id=user.id, username=user.username, currency=user.currency)
+    """Display preferences kept on the server, so every browser shows the same (the currency
+    and the Overview's section order; colour mode and language stay per browser). Only the
+    fields sent are changed."""
+    layout = [section.model_dump() for section in body.overview_layout] if body.overview_layout is not None else None
+    user = auth_service.set_preferences(db, current_user, currency=body.currency, overview_layout=layout)
+    return _user_response(user)
+
+
+def _user_response(user: User) -> UserResponse:
+    return UserResponse(
+        id=user.id, username=user.username, currency=user.currency, overview_layout=user.overview_layout
+    )
 
 
 @router.post("/change-password", response_model=TokenResponse)

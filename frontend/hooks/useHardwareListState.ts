@@ -1,7 +1,27 @@
 import { useSessionState } from "./useSessionState";
 
 export type HardwareStatusFilter = "all" | "owned" | "wishlist";
-export type HardwareSort = "name" | "releaseDate";
+export type HardwareSort = "name" | "releaseDate" | "dateAddedDesc" | "dateAddedAsc";
+
+// Shared by the Devices and Accessories lists. Release date only exists on accessories, so
+// devices (which have none of their own) stay by name for it.
+export function compareHardware<
+  T extends { officialName: string; createdAt: string; releaseDate?: number | null },
+>(sort: HardwareSort): (a: T, b: T) => number {
+  if (sort === "dateAddedDesc" || sort === "dateAddedAsc") {
+    const direction = sort === "dateAddedDesc" ? -1 : 1;
+    return (a, b) =>
+      direction * (Date.parse(a.createdAt) - Date.parse(b.createdAt)) ||
+      a.officialName.localeCompare(b.officialName);
+  }
+  if (sort === "releaseDate") {
+    return (a, b) =>
+      a.releaseDate === undefined || b.releaseDate === undefined
+        ? a.officialName.localeCompare(b.officialName)
+        : (b.releaseDate ?? 0) - (a.releaseDate ?? 0);
+  }
+  return (a, b) => a.officialName.localeCompare(b.officialName);
+}
 
 // One kind's lookup filters (Devices or Accessories): its type vocabularies differ, so each
 // keeps its own.
@@ -15,9 +35,15 @@ export interface HardwareKindFilters {
 }
 
 function useKindFilters(kind: "devices" | "accessories"): HardwareKindFilters {
-  const [manufacturerIds, setManufacturerIds] = useSessionState<number[]>(`hardware.${kind}.manufacturerIds`, []);
+  const [manufacturerIds, setManufacturerIds] = useSessionState<number[]>(
+    `hardware.${kind}.manufacturerIds`,
+    []
+  );
   const [typeIds, setTypeIds] = useSessionState<number[]>(`hardware.${kind}.typeIds`, []);
-  const [platformIds, setPlatformIds] = useSessionState<number[]>(`hardware.${kind}.platformIds`, []);
+  const [platformIds, setPlatformIds] = useSessionState<number[]>(
+    `hardware.${kind}.platformIds`,
+    []
+  );
   return { manufacturerIds, setManufacturerIds, typeIds, setTypeIds, platformIds, setPlatformIds };
 }
 
@@ -32,7 +58,8 @@ export function useHardwareListState() {
 
   const kindCount = (filters: HardwareKindFilters) =>
     filters.manufacturerIds.length + filters.typeIds.length + filters.platformIds.length;
-  const activeFilterCount = (status === "all" ? 0 : 1) + kindCount(devices) + kindCount(accessories);
+  const activeFilterCount =
+    (status === "all" ? 0 : 1) + kindCount(devices) + kindCount(accessories);
 
   const clearFilters = () => {
     setStatus("all");

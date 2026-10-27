@@ -157,6 +157,9 @@ class GameSortOption(enum.Enum):
     NAME_DESC = "name_desc"
     RELEASE_DATE_ASC = "release_date_asc"
     RELEASE_DATE_DESC = "release_date_desc"
+    # When the game was added here (its row's created_at).
+    DATE_ADDED_DESC = "date_added_desc"
+    DATE_ADDED_ASC = "date_added_asc"
 
 
 class GameSource(enum.Enum):
@@ -174,6 +177,10 @@ def _order_by_for_sort(sort: GameSortOption) -> ColumnElement[Any]:
         return Game.first_release_date.asc()
     if sort == GameSortOption.RELEASE_DATE_DESC:
         return Game.first_release_date.desc()
+    if sort == GameSortOption.DATE_ADDED_DESC:
+        return Game.created_at.desc()
+    if sort == GameSortOption.DATE_ADDED_ASC:
+        return Game.created_at.asc()
     return Game.name.asc()
 
 
@@ -182,7 +189,6 @@ def _maybe_negate(clause: ColumnElement[bool], exclude: bool) -> ColumnElement[b
     except what's selected" is just the logical negation of the same clause inclusion
     already uses, so every filter gets negative filtering for free with no new query shape."""
     return ~clause if exclude else clause
-
 
 
 def _match_values(
@@ -210,6 +216,7 @@ def _play_status_clause(statuses: list[PlayStatus]) -> ColumnElement[bool]:
     if PlayStatus.NONE in statuses:
         clauses.append(~exists().where(GameProgress.game_id == Game.id, GameProgress.play_status != PlayStatus.NONE))
     return or_(*clauses)
+
 
 def _apply_optional_game_filters(
     stmt: Select[Any],
@@ -381,9 +388,7 @@ def list_top_level_games(
     # card, only copies in that format/storefront.
     if required_platform_id is not None:
         stmt = stmt.where(
-            platform_copy_exists(
-                Game.id, required_platform_id, required_platform_format, required_platform_storefront
-            )
+            platform_copy_exists(Game.id, required_platform_id, required_platform_format, required_platform_storefront)
         )
     stmt = _apply_optional_game_filters(
         stmt,

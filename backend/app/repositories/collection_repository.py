@@ -1,4 +1,4 @@
-from sqlalchemy import delete, func, select
+from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Collection, Game, GameCategory, GameCollection
@@ -46,21 +46,26 @@ def get_by_slug(db: Session, slug: str) -> Collection | None:
     return db.scalars(select(Collection).where(Collection.slug == slug)).first()
 
 
-def list_collections_with_counts(db: Session) -> list[tuple[Collection, int]]:
+def list_collections_with_counts(db: Session) -> list[tuple[Collection, int, int]]:
     """Every collection with at least one locally-known, browsable (non-addon) game — same
     _is_browsable_game/parent_game_id filter as list_games_for_collection below, so this
     count always matches what the collection's own Details page actually shows; a collection
     whose only locally-known members are addons is excluded entirely rather than showing a
     non-zero count that leads to an empty Details page."""
     stmt = (
-        select(Collection, func.count(func.distinct(GameCollection.game_id)))
+        select(
+            Collection,
+            func.count(func.distinct(GameCollection.game_id)),
+            # How many of those you own (any copy), for the index's Complete / Missing filter.
+            func.count(func.distinct(case((_owned_exists(Game.id), Game.id)))),
+        )
         .join(GameCollection, GameCollection.collection_id == Collection.id)
         .join(Game, Game.id == GameCollection.game_id)
         .where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
         .group_by(Collection.id)
         .order_by(Collection.name)
     )
-    return [(collection, count) for collection, count in db.execute(stmt)]
+    return [(collection, count, owned) for collection, count, owned in db.execute(stmt)]
 
 
 def list_games_for_collection(db: Session, collection_id: int) -> list[GameWithStatus]:

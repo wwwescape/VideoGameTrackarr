@@ -319,3 +319,10 @@ def test_list_devices_filters_by_ownership_status(auth_client, seed_device):
 
     wishlist = auth_client.get("/api/devices", params={"status": "wishlist"}).json()
     assert wishlist == []
+
+
+def test_list_devices_includes_when_each_was_added(auth_client, seed_device):
+    response = auth_client.get("/api/devices")
+
+    assert response.status_code == 200
+    assert response.json()[0]["createdAt"]

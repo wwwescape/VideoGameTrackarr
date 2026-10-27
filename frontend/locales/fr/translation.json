@@ -575,7 +575,9 @@
       "showMissingLabel": "Afficher ce qu'il me manque ?",
       "steelbookOnlyLabel": "Steelbooks uniquement",
       "clearFiltersButton": "Effacer les filtres",
-      "noSearchMatches": "Aucun résultat trouvé."
+      "noSearchMatches": "Aucun résultat trouvé.",
+      "sortDateAddedDesc": "Date d'ajout (plus récent d'abord)",
+      "sortDateAddedAsc": "Date d'ajout (plus ancien d'abord)"
     },
     "card": {
       "playStatusBacklog": "À faire",
@@ -866,7 +868,10 @@
       "ongoingHeading": "En cours",
       "upcomingHeading": "À venir",
       "eventCount_one": "{{count}} événement",
-      "eventCount_other": "{{count}} événements"
+      "eventCount_other": "{{count}} événements",
+      "sortSoonest": "Date (la plus proche d'abord)",
+      "sortLatest": "Date (la plus lointaine d'abord)",
+      "searchPlaceholder": "Rechercher des événements"
     },
     "about": {
       "lastUpdatedLabel": "Dernière mise à jour : {{date}}",
@@ -1049,7 +1054,16 @@
       "targetHitLabel": "Objectif atteint",
       "currentPriceLabel": "{{price}} chez {{shop}} (-{{cut}} %)",
       "historicalLowLabel": "Prix le plus bas : {{price}}",
-      "targetPriceLabel": "Objectif : {{price}}"
+      "targetPriceLabel": "Objectif : {{price}}",
+      "columnPrice": "Prix",
+      "columnDiscount": "Remise",
+      "columnStore": "Boutique",
+      "columnHistoricalLow": "Plus bas historique",
+      "columnTarget": "Prix cible",
+      "sortBest": "Meilleures offres d'abord",
+      "sortDiscount": "Plus forte remise",
+      "sortPrice": "Prix le plus bas",
+      "targetReached": "Prix cible atteint"
     },
     "orphans": {
       "description": "Accessoires possédés dont aucun des appareils n'est possédé."
@@ -1069,7 +1083,13 @@
       "gameCountPlural": "{{count}} jeux"
     },
     "index": {
-      "viewCards": "Cartes"
+      "viewCards": "Cartes",
+      "filterOwnership": "Possession",
+      "filterComplete": "Complète",
+      "filterMissing": "Jeux manquants",
+      "filterNoneOwned": "Aucun possédé",
+      "filterWithOwned": "Avec des jeux possédés",
+      "filterWithWishlisted": "Avec des jeux souhaités"
     }
   },
   "hardware": {
@@ -1224,7 +1244,9 @@
       "allOption": "Tous",
       "manufacturerLabel": "Fabricant",
       "platformLabel": "Plateforme",
-      "sortByLabel": "Trier par"
+      "sortByLabel": "Trier par",
+      "sortOptionDateAddedDesc": "Date d'ajout (plus récent d'abord)",
+      "sortOptionDateAddedAsc": "Date d'ajout (plus ancien d'abord)"
     },
     "page": {
       "addDeviceButton": "Ajouter un appareil",
@@ -1479,6 +1501,18 @@
       "custom": "Jeux personnalisés",
       "duplicates": "Copies en double",
       "orphans": "Accessoires sans matériel"
+    },
+    "customize": {
+      "button": "Personnaliser",
+      "title": "Personnaliser l'aperçu",
+      "description": "Faites glisser les sections (ou utilisez les flèches) pour les réordonner, et désactivez celles dont vous ne voulez pas. Enregistré sur votre compte : tous les navigateurs affichent la même chose.",
+      "stats": "Tuiles de synthèse",
+      "moveUp": "Monter {{name}}",
+      "moveDown": "Descendre {{name}}",
+      "show": "Afficher {{name}}",
+      "reset": "Réinitialiser",
+      "saveError": "Impossible d'enregistrer la disposition de l'aperçu. Veuillez réessayer.",
+      "allHidden": "Toutes les sections sont masquées. Utilisez Personnaliser pour en réafficher."
     }
   }
 }

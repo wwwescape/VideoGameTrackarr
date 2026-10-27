@@ -41,6 +41,9 @@ import ManualGameForm from "./ManualGameForm";
 import SimpleTabPanel from "./SimpleTabPanel";
 import VirtualGameGrid from "./VirtualGameGrid";
 import { useSessionState } from "../hooks/useSessionState";
+import { useLocalPreference } from "../hooks/useLocalPreference";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
+import { ListToolbar } from "./ListToolbar";
 import { useSearchHandoff } from "../navigation/GlobalSearch";
 import Page from "./Page";
 
@@ -98,6 +101,9 @@ const AddGame = () => {
   // whatever tab was remembered, until the user switches tabs themselves.
   const [prefillForcesManual, setPrefillForcesManual] = useState(Boolean(steamPrefill));
   const mode: AddMode = prefillForcesManual ? "manual" : rememberedMode;
+  // Only Options (card size): IGDB returns results by relevance a page at a time, so sorting or
+  // filtering here would only reorder what has loaded so far.
+  const [cardSize, setCardSize] = useLocalPreference("addGame.cardSize", CARD_SIZE_DEFAULT);
   const navigate = useNavigate();
 
   const trimmedKeyword = searchKeyword.trim();
@@ -221,7 +227,11 @@ const AddGame = () => {
     !isAddableCategory(searchResults[0].category);
 
   return (
-    <Page>
+    <Page
+      toolbarEnd={
+        <ListToolbar cardSize={{ value: cardSize, onChange: setCardSize, disabled: mode !== "igdb" }} />
+      }
+    >
       {importGameMutation.isPending && (
         <Backdrop sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.modal + 1 }} open>
           <CircularProgress color="inherit" />
@@ -353,6 +363,7 @@ const AddGame = () => {
                 <VirtualGameGrid
                   items={searchResults}
                   getKey={(game) => game.igdbId}
+                  minItemWidth={cardSize}
                   renderItem={(game) => {
                     const addedGame = localGames?.find((g) => g.igdbId === game.igdbId);
                     return (

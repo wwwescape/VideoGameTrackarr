@@ -12,4 +12,6 @@ export const GAME_SORT_OPTIONS: GameSortOptionItem[] = [
   { value: "name_desc", labelKey: "games.listToolbar.sortNameDesc" },
   { value: "release_date_asc", labelKey: "games.listToolbar.sortReleaseDateAsc" },
   { value: "release_date_desc", labelKey: "games.listToolbar.sortReleaseDateDesc" },
+  { value: "date_added_desc", labelKey: "games.listToolbar.sortDateAddedDesc" },
+  { value: "date_added_asc", labelKey: "games.listToolbar.sortDateAddedAsc" },
 ];

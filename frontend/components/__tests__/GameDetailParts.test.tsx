@@ -157,6 +157,34 @@ describe("game About", () => {
     expect(screen.queryByText("Developed by")).toBeNull();
   });
 
+  it("lists platforms and release dates by platform name", () => {
+    renderAbout(
+      about({
+        platforms: [
+          { id: 48, name: "Sony Playstation 4" },
+          { id: 6, name: "PC (Microsoft Windows)" },
+          { id: 130, name: "Nintendo Switch" },
+        ] as GameAboutData["platforms"],
+        releaseDates: [
+          { id: 1, platformName: "Sony Playstation 4", date: 100, human: "Sep 30, 2025", releaseRegion: null },
+          { id: 2, platformName: "Nintendo Switch", date: 300, human: "Oct 2, 2025", releaseRegion: "europe" },
+          { id: 3, platformName: "Nintendo Switch", date: 200, human: "Oct 1, 2025", releaseRegion: "japan" },
+          { id: 4, platformName: "PC (Microsoft Windows)", date: 100, human: "Sep 30, 2025", releaseRegion: null },
+        ] as GameAboutData["releaseDates"],
+      })
+    );
+
+    const platforms = screen.getByRole("heading", { name: "Platforms" }).parentElement as HTMLElement;
+    expect(platforms).toHaveTextContent(/Nintendo Switch.*PC \(Microsoft Windows\).*Sony Playstation 4/);
+    const releases = screen.getByRole("heading", { name: "Release dates" }).parentElement as HTMLElement;
+    expect([...releases.querySelectorAll("li")].map((row) => row.textContent)).toEqual([
+      "Nintendo SwitchOct 1, 2025Japan",
+      "Nintendo SwitchOct 2, 2025Europe",
+      "PC (Microsoft Windows)Sep 30, 2025",
+      "Sony Playstation 4Sep 30, 2025",
+    ]);
+  });
+
   it("leaves out the release dates card when there's only the one the hero shows", () => {
     renderAbout(about({ releaseDates: [{ id: 1, platformName: "PC", human: "2018", releaseRegion: null }] as GameAboutData["releaseDates"] }));
 

@@ -45,7 +45,7 @@ def test_me_returns_current_user_with_valid_access_token(client, test_user):
     response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {access_token}"})
 
     assert response.status_code == 200
-    assert response.json() == {"id": test_user.id, "username": "admin", "currency": None}
+    assert response.json() == {"id": test_user.id, "username": "admin", "currency": None, "overviewLayout": None}
 
 
 def test_me_rejects_garbage_token(client):
@@ -331,5 +331,33 @@ def test_change_password_rejects_a_password_longer_than_72_bytes(auth_client):
     response = auth_client.post(
         "/api/auth/change-password", json={"currentPassword": "correct-password", "newPassword": "x" * 73}
     )
+
+    assert response.status_code == 422
+
+
+def test_overview_layout_is_saved_on_the_account(auth_client):
+    layout = [{"key": "onSale", "hidden": False}, {"key": "quickAdd", "hidden": True}]
+
+    response = auth_client.put("/api/auth/me/preferences", json={"overviewLayout": layout})
+
+    assert response.status_code == 200
+    assert response.json()["overviewLayout"] == layout
+    assert auth_client.get("/api/auth/me").json()["overviewLayout"] == layout
+
+
+def test_preferences_only_change_the_fields_sent(auth_client):
+    auth_client.put("/api/auth/me/preferences", json={"currency": "EUR"})
+    auth_client.put("/api/auth/me/preferences", json={"overviewLayout": [{"key": "events", "hidden": True}]})
+
+    me = auth_client.get("/api/auth/me").json()
+
+    assert me["currency"] == "EUR"
+    assert me["overviewLayout"] == [{"key": "events", "hidden": True}]
+
+
+def test_overview_layout_keys_are_validated(auth_client):
+    layout = [{"key": "<script>", "hidden": False}]
+
+    response = auth_client.put("/api/auth/me/preferences", json={"overviewLayout": layout})
 
     assert response.status_code == 422

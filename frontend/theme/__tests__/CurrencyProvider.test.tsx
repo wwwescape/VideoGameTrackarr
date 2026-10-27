@@ -57,7 +57,7 @@ describe("CurrencyProvider", () => {
 
   it("uses the account's currency over this browser's", () => {
     localStorage.setItem("vgt.currency", "GBP");
-    user = { id: 1, username: "admin", currency: "EUR" };
+    user = { id: 1, username: "admin", currency: "EUR", overviewLayout: null };
     renderProvider();
 
     expect(screen.getByTestId("currency")).toHaveTextContent("EUR");
@@ -67,7 +67,7 @@ describe("CurrencyProvider", () => {
 
   it("saves this browser's choice to an account that has none yet", async () => {
     localStorage.setItem("vgt.currency", "GBP");
-    user = { id: 1, username: "admin", currency: null };
+    user = { id: 1, username: "admin", currency: null, overviewLayout: null };
     renderProvider();
 
     await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith({ currency: "GBP" }));
@@ -75,7 +75,7 @@ describe("CurrencyProvider", () => {
   });
 
   it("saves a new choice to the account", async () => {
-    user = { id: 1, username: "admin", currency: "USD" };
+    user = { id: 1, username: "admin", currency: "USD", overviewLayout: null };
     renderProvider();
 
     act(() => setCurrency("JPY"));

@@ -575,7 +575,9 @@
       "showMissingLabel": "Show what I am missing?",
       "steelbookOnlyLabel": "Steelbooks only",
       "clearFiltersButton": "Clear filters",
-      "noSearchMatches": "No matches found."
+      "noSearchMatches": "No matches found.",
+      "sortDateAddedDesc": "Date added (newest first)",
+      "sortDateAddedAsc": "Date added (oldest first)"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -866,7 +868,10 @@
       "ongoingHeading": "Ongoing",
       "upcomingHeading": "Upcoming",
       "eventCount_one": "{{count}} event",
-      "eventCount_other": "{{count}} events"
+      "eventCount_other": "{{count}} events",
+      "sortSoonest": "Date (soonest first)",
+      "sortLatest": "Date (latest first)",
+      "searchPlaceholder": "Search events"
     },
     "about": {
       "lastUpdatedLabel": "Last updated: {{date}}",
@@ -1049,7 +1054,16 @@
       "targetHitLabel": "Target hit",
       "currentPriceLabel": "{{price}} at {{shop}} (-{{cut}}%)",
       "historicalLowLabel": "Historical low: {{price}}",
-      "targetPriceLabel": "Target: {{price}}"
+      "targetPriceLabel": "Target: {{price}}",
+      "columnPrice": "Price",
+      "columnDiscount": "Discount",
+      "columnStore": "Store",
+      "columnHistoricalLow": "Historical low",
+      "columnTarget": "Target price",
+      "sortBest": "Best deals first",
+      "sortDiscount": "Biggest discount",
+      "sortPrice": "Lowest price",
+      "targetReached": "Target price reached"
     },
     "orphans": {
       "description": "Accessories you own where none of their devices are owned."
@@ -1069,7 +1083,13 @@
       "gameCountPlural": "{{count}} games"
     },
     "index": {
-      "viewCards": "Cards"
+      "viewCards": "Cards",
+      "filterOwnership": "Ownership",
+      "filterComplete": "Complete",
+      "filterMissing": "Missing games",
+      "filterNoneOwned": "None owned",
+      "filterWithOwned": "With owned games",
+      "filterWithWishlisted": "With wishlisted games"
     }
   },
   "hardware": {
@@ -1224,7 +1244,9 @@
       "allOption": "All",
       "manufacturerLabel": "Manufacturer",
       "platformLabel": "Platform",
-      "sortByLabel": "Sort by"
+      "sortByLabel": "Sort by",
+      "sortOptionDateAddedDesc": "Date added (newest first)",
+      "sortOptionDateAddedAsc": "Date added (oldest first)"
     },
     "page": {
       "addDeviceButton": "Add Device",
@@ -1479,6 +1501,18 @@
       "custom": "Custom games",
       "duplicates": "Duplicate copies",
       "orphans": "Accessories without hardware"
+    },
+    "customize": {
+      "button": "Customize",
+      "title": "Customize Overview",
+      "description": "Drag sections (or use the arrows) to reorder them, and switch off the ones you don't want. Saved to your account, so every browser shows the same.",
+      "stats": "Summary tiles",
+      "moveUp": "Move {{name}} up",
+      "moveDown": "Move {{name}} down",
+      "show": "Show {{name}}",
+      "reset": "Reset to default",
+      "saveError": "Couldn't save the Overview layout. Please try again.",
+      "allHidden": "Every section is hidden. Use Customize to show some again."
     }
   }
 }

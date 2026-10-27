@@ -29,6 +29,9 @@ interface CardCarouselProps<T> {
   viewAllHref?: string;
   // In-page anchor for the section.
   id?: string;
+  // A fixed card width in px instead of the grid's per-breakpoint share of the row, so a
+  // carousel can sit among the Overview's fixed-width strips at the same card size.
+  columnWidth?: number;
 }
 
 function CardCarousel<T>({
@@ -38,6 +41,7 @@ function CardCarousel<T>({
   title,
   viewAllHref,
   id,
+  columnWidth,
 }: CardCarouselProps<T>) {
   const { t } = useTranslation();
   const columns = useResponsiveColumns();
@@ -110,7 +114,7 @@ function CardCarousel<T>({
           <Box
             key={getItemKey(item)}
             sx={{
-              flex: `0 0 ${itemFlexBasis(columns)}`,
+              flex: `0 0 ${columnWidth ? `${columnWidth}px` : itemFlexBasis(columns)}`,
               // Without this, a flex item's automatic minimum size defaults to its content's
               // min-content width — a long, unwrapped (white-space: nowrap) game title can
               // exceed the fixed flex-basis above and silently blow the card up past its

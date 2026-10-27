@@ -1,7 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL, apiClient } from "./client";
 import { tokenStorage } from "./tokenStorage";
-import type { AuthTokens, CurrentUser, SetupStatus } from "./types";
+import type { AuthTokens, CurrentUser, OverviewSectionSetting, SetupStatus } from "./types";
 
 // Login/logout/setup intentionally use plain axios, not apiClient: there's no access token
 // yet at this point, and the interceptors' refresh-on-401 logic doesn't apply to any of them.
@@ -47,7 +47,11 @@ export async function changePassword(currentPassword: string, newPassword: strin
   tokenStorage.setTokens(response.data.accessToken, response.data.refreshToken);
 }
 
-export async function updatePreferences(preferences: { currency: string }): Promise<CurrentUser> {
+// Only the fields given are changed.
+export async function updatePreferences(preferences: {
+  currency?: string;
+  overviewLayout?: OverviewSectionSetting[];
+}): Promise<CurrentUser> {
   const response = await apiClient.put<CurrentUser>("/api/auth/me/preferences", preferences);
   return response.data;
 }
