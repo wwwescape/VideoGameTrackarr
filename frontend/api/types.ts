@@ -936,6 +936,10 @@ export interface CurrentUser {
   currency: string | null;
   // The Overview's sections in order; null until customised (see hooks/useOverviewLayout.ts).
   overviewLayout: OverviewSectionSetting[] | null;
+  // The game list Filter dialog's hidden fields and named filters; null until first used (see
+  // hooks/useGameFilterPreferences.ts).
+  gameFilterFields: GameFilterFieldSetting[] | null;
+  savedGameFilters: SavedGameFilter[] | null;
   // The Screensaver lab's seconds per cover (5-15); null until changed (see SCREENSAVER_DEFAULT_INTERVAL).
   screensaverIntervalSeconds: number | null;
   // Settings → Screensaver → What to show (owned and wishlist are never both off).
@@ -966,6 +970,17 @@ export interface ScreensaverSample {
 export interface OverviewSectionSetting {
   key: string;
   hidden: boolean;
+}
+
+export interface GameFilterFieldSetting {
+  key: string;
+  hidden: boolean;
+}
+
+export interface SavedGameFilter {
+  name: string;
+  // The game list's filter state as useGameListState keeps it; the server stores it as-is.
+  filters: Record<string, unknown>;
 }
 
 export interface SetupStatus {
