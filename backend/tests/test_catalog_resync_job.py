@@ -30,6 +30,7 @@ def test_run_resync_skips_known_games_and_imports_missing_ones(db_session, monke
     db_session.commit()
 
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/collections").mock(
         return_value=httpx.Response(
             200,
@@ -66,6 +67,7 @@ def test_run_resync_isolates_a_bad_game(db_session, monkeypatch):
     _configure_igdb(monkeypatch)
 
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/franchises").mock(
         return_value=httpx.Response(
             200,
@@ -98,6 +100,7 @@ def test_run_resync_flags_cascade_imported_addons_too(db_session, monkeypatch):
     _configure_igdb(monkeypatch)
 
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/collections").mock(
         return_value=httpx.Response(200, json=[{"id": 555, "games": [{"id": 200, "game_type": 0}]}])
     )

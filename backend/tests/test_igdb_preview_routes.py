@@ -43,6 +43,7 @@ FULL_GAME = {
 
 def _mock_igdb(game_payloads):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(return_value=httpx.Response(200, json=game_payloads))
     respx.post(f"{IGDB_API_BASE}/covers").mock(
         return_value=httpx.Response(
