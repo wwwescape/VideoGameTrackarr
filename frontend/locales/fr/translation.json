@@ -1144,7 +1144,6 @@
       "description": "Promotions en cours sur vos jeux numériques en liste de souhaits, associés via IsThereAnyDeal (Windows/Mac/Linux/Android) et PlatPrices (PlayStation). Un jeu sans sortie numérique, ou sur une plateforme qu'aucun des deux ne couvre, n'apparaîtra tout simplement pas ici.",
       "noneFound": "Aucun jeu de votre liste de souhaits n'est actuellement en promotion.",
       "targetHitLabel": "Objectif atteint",
-      "currentPriceLabel": "{{price}} chez {{shop}} (-{{cut}} %)",
       "historicalLowLabel": "Prix le plus bas : {{price}}",
       "targetPriceLabel": "Objectif : {{price}}",
       "columnPrice": "Prix",
@@ -1153,7 +1152,8 @@
       "columnHistoricalLow": "Plus bas historique",
       "columnTarget": "Prix cible",
       "sortBest": "Meilleures offres",
-      "targetReached": "Prix cible atteint"
+      "targetReached": "Prix cible atteint",
+      "discountLabel": "-{{cut}} %"
     },
     "orphans": {
       "description": "Accessoires possédés dont aucun des appareils n'est possédé."

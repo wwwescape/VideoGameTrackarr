@@ -1144,7 +1144,6 @@
       "description": "Current deals on your wishlisted digital games, matched via IsThereAnyDeal (Windows/Mac/Linux/Android) and PlatPrices (PlayStation). A game with no digital release, or on a platform neither provider covers, just won't show up here.",
       "noneFound": "No wishlisted games are on sale right now.",
       "targetHitLabel": "Target hit",
-      "currentPriceLabel": "{{price}} at {{shop}} (-{{cut}}%)",
       "historicalLowLabel": "Historical low: {{price}}",
       "targetPriceLabel": "Target: {{price}}",
       "columnPrice": "Price",
@@ -1153,7 +1152,8 @@
       "columnHistoricalLow": "Historical low",
       "columnTarget": "Target price",
       "sortBest": "Best deals",
-      "targetReached": "Target price reached"
+      "targetReached": "Target price reached",
+      "discountLabel": "-{{cut}}%"
     },
     "orphans": {
       "description": "Accessories you own where none of their devices are owned."

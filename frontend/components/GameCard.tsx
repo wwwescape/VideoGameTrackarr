@@ -90,6 +90,9 @@ interface GameCardProps {
   // "full" shows the whole release date (day, month, year) instead of just the year — the
   // release calendar, where the day is the point.
   dateFormat?: "year" | "full";
+  // False drops the slot reserved for the play-status chip, for a row of cards that can never
+  // show one (On Sale's wishlisted games), so their own details sit right under the year.
+  reservePlayStatus?: boolean;
 }
 
 // The 2026 card: the cover carries it. A 3:4 cover with today's badges and chips on it, then
@@ -107,6 +110,7 @@ const GameCard = ({
   onOpen,
   hoverActions,
   dateFormat = "year",
+  reservePlayStatus = true,
 }: GameCardProps) => {
   const { t, i18n } = useTranslation();
   // Resets on every mount, including the virtualized grid recycling a card as it scrolls
@@ -398,7 +402,7 @@ const GameCard = ({
             </>
           ) : null}
         </Box>
-        {context === "list" || context === "addon" || context === "public" ? (
+        {(context === "list" || context === "addon" || context === "public") && reservePlayStatus ? (
           // Always reserves the chip's slot (just invisible when there's no play status, and
           // while selecting), so a "Completed" chip on only some cards can't break a row's
           // alignment and entering selection mode doesn't shift the grid.

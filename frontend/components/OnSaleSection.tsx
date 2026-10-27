@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -7,7 +6,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { OnSaleItem } from "../api/types";
@@ -30,10 +29,81 @@ interface OnSaleSectionProps {
   sort: ListSortControl<OnSaleSort>;
 }
 
+// "Target hit", the size of the card's own chips (a default small Chip is taller and heavier
+// than the 11px text around it).
+export const TargetHitChip = () => {
+  const { t } = useTranslation();
+  return (
+    <Box
+      component="span"
+      sx={{
+        flexShrink: 0,
+        height: 18,
+        px: 0.75,
+        borderRadius: 999,
+        bgcolor: "#2f9e6c",
+        color: "#fff",
+        fontSize: 10.5,
+        fontWeight: 650,
+        lineHeight: "18px",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {t("insights.onSale.targetHitLabel")}
+    </Box>
+  );
+};
+
+// One line of the tile's details: never wraps, ends in "…" on a narrow card, with the full
+// text on hover.
+const DetailLine = ({
+  children,
+  title,
+  strong,
+}: {
+  children: ReactNode;
+  title: string;
+  strong?: boolean;
+}) => (
+  <Box
+    title={title}
+    sx={{
+      fontSize: 12,
+      lineHeight: "18px",
+      color: strong ? "text.primary" : "text.secondary",
+      fontWeight: strong ? 600 : 400,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    }}
+  >
+    {children}
+  </Box>
+);
+
+// A wishlisted game on sale: the card, then up to four one-line rows — price and discount,
+// store, historical low, target (with "Target hit") — so every card size stays tidy.
 export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const addon = isAddon(item.game);
+  const price = formatCurrency(item.currentPriceAmount, item.currentPriceCurrency ?? "USD");
+  const discount = item.currentCut
+    ? t("insights.onSale.discountLabel", { cut: item.currentCut })
+    : null;
+  const shop = item.currentShopName ?? t("common.unknown");
+  const historicalLow =
+    item.historicalLowAmount !== null
+      ? t("insights.onSale.historicalLowLabel", {
+          price: formatCurrency(item.historicalLowAmount, item.historicalLowCurrency ?? "USD"),
+        })
+      : null;
+  const target =
+    item.targetPrice !== null
+      ? t("insights.onSale.targetPriceLabel", {
+          price: formatCurrency(item.targetPrice, item.currentPriceCurrency ?? "USD"),
+        })
+      : null;
 
   return (
     <Box>
@@ -43,37 +113,38 @@ export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
         contextFunction={() =>
           navigate(`/${addon ? "addon" : "game"}/${gameIdentifier(item.game)}`)
         }
+        reservePlayStatus={false}
       />
-      <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.75 }}>
-        {t("insights.onSale.currentPriceLabel", {
-          price: formatCurrency(item.currentPriceAmount, item.currentPriceCurrency ?? "USD"),
-          shop: item.currentShopName ?? t("common.unknown"),
-          cut: item.currentCut ?? 0,
-        })}
-      </Typography>
-      {item.historicalLowAmount !== null && (
-        <Typography variant="caption" color="text.secondary" component="div">
-          {t("insights.onSale.historicalLowLabel", {
-            price: formatCurrency(item.historicalLowAmount, item.historicalLowCurrency ?? "USD"),
-          })}
-        </Typography>
-      )}
-      {item.targetPrice !== null && (
-        <Stack
-          direction="row"
-          spacing={0.5}
-          sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.25 }}
-        >
-          <Typography variant="caption" color="text.secondary">
-            {t("insights.onSale.targetPriceLabel", {
-              price: formatCurrency(item.targetPrice, item.currentPriceCurrency ?? "USD"),
-            })}
-          </Typography>
-          {item.isTargetHit && (
-            <Chip size="small" color="success" label={t("insights.onSale.targetHitLabel")} />
-          )}
-        </Stack>
-      )}
+      <Box sx={{ mt: 0.75 }}>
+        <DetailLine strong title={discount ? `${price} ${discount}` : price}>
+          {price}
+          {discount ? (
+            <Box component="span" sx={{ color: "success.main", ml: 0.75 }}>
+              {discount}
+            </Box>
+          ) : null}
+        </DetailLine>
+        <DetailLine title={shop}>{shop}</DetailLine>
+        {historicalLow ? <DetailLine title={historicalLow}>{historicalLow}</DetailLine> : null}
+        {target ? (
+          // On a card too narrow for both, "Target hit" drops onto its own line rather than
+          // cutting the target price short.
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              columnGap: 0.75,
+              rowGap: 0.25,
+            }}
+          >
+            <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
+              <DetailLine title={target}>{target}</DetailLine>
+            </Box>
+            {item.isTargetHit ? <TargetHitChip /> : null}
+          </Box>
+        ) : null}
+      </Box>
     </Box>
   );
 };
@@ -103,10 +174,20 @@ const OnSaleSection = ({ items, view, cardSize, sort }: OnSaleSectionProps) => {
               <SortHeaderCell field="name" sort={sort.sort} onSort={sort.clickHeader}>
                 {t("games.listView.columnName")}
               </SortHeaderCell>
-              <SortHeaderCell field="price" sort={sort.sort} onSort={sort.clickHeader} align="right">
+              <SortHeaderCell
+                field="price"
+                sort={sort.sort}
+                onSort={sort.clickHeader}
+                align="right"
+              >
                 {t("insights.onSale.columnPrice")}
               </SortHeaderCell>
-              <SortHeaderCell field="discount" sort={sort.sort} onSort={sort.clickHeader} align="right">
+              <SortHeaderCell
+                field="discount"
+                sort={sort.sort}
+                onSort={sort.clickHeader}
+                align="right"
+              >
                 {t("insights.onSale.columnDiscount")}
               </SortHeaderCell>
               <SortHeaderCell field="store" sort={sort.sort} onSort={sort.clickHeader}>
@@ -187,13 +268,7 @@ const OnSaleSection = ({ items, view, cardSize, sort }: OnSaleSectionProps) => {
                       sx={{ alignItems: "center", justifyContent: "flex-end" }}
                     >
                       <span>{price(item.targetPrice, item.currentPriceCurrency)}</span>
-                      {item.isTargetHit ? (
-                        <Chip
-                          size="small"
-                          color="success"
-                          label={t("insights.onSale.targetHitLabel")}
-                        />
-                      ) : null}
+                      {item.isTargetHit ? <TargetHitChip /> : null}
                     </Stack>
                   ) : (
                     "—"
