@@ -297,6 +297,9 @@ export interface GameDetail extends GameSummary {
   // hand over IGDB's — the Players section.
   localPlayers: number | null;
   localPlayersOverride: number | null;
+  // IGDB had no count: another source's (see the players_fill job).
+  localPlayersFallback: number | null;
+  localPlayersFallbackSource: "pcgamingwiki" | "steam" | null;
   onlineMultiplayer: boolean | null;
   coop: boolean | null;
   // Main story, in seconds.

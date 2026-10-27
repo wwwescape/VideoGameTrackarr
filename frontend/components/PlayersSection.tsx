@@ -13,13 +13,29 @@ const LOCAL_PLAYER_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16];
 
 type PlayersSectionProps = Pick<
   GameDetail,
-  "id" | "localPlayers" | "localPlayersOverride" | "onlineMultiplayer" | "coop" | "timeToBeatMain"
+  | "id"
+  | "localPlayers"
+  | "localPlayersOverride"
+  | "localPlayersFallback"
+  | "localPlayersFallbackSource"
+  | "onlineMultiplayer"
+  | "coop"
+  | "timeToBeatMain"
 >;
 
 // The game page's Players: how it's played, as IGDB has it, and the local player count — set
 // by hand when IGDB has none or the wrong one (Pico Park has no count on IGDB at all). The
 // count is saved as soon as it's picked; clearing it goes back to IGDB's.
-const PlayersSection = ({ id, localPlayers, localPlayersOverride, onlineMultiplayer, coop, timeToBeatMain }: PlayersSectionProps) => {
+const PlayersSection = ({
+  id,
+  localPlayers,
+  localPlayersOverride,
+  localPlayersFallback,
+  localPlayersFallbackSource,
+  onlineMultiplayer,
+  coop,
+  timeToBeatMain,
+}: PlayersSectionProps) => {
   const { t } = useTranslation();
   const setLocalPlayers = useSetGameLocalPlayers(id);
   // Shown straight away; goes back to the saved count if saving fails.
@@ -36,6 +52,13 @@ const PlayersSection = ({ id, localPlayers, localPlayersOverride, onlineMultipla
       toast.error(t("games.players.saveErrorToast"), TOAST_OPTIONS);
     }
   };
+
+  // What the filter uses when nothing's set by hand: IGDB's count, else another source's.
+  const known = localPlayers
+    ? t("games.players.fromIgdb", { count: localPlayers })
+    : localPlayersFallback && localPlayersFallbackSource
+      ? t(`games.players.from_${localPlayersFallbackSource}`, { count: localPlayersFallback })
+      : t("games.players.notKnown");
 
   const yesNo = (known: boolean | null) =>
     known === null ? t("games.players.unknown") : known ? t("common.yes") : t("common.no");
@@ -57,11 +80,7 @@ const PlayersSection = ({ id, localPlayers, localPlayersOverride, onlineMultipla
         onChange={(next) => void save(next)}
         getOptionLabel={(count) => t("games.players.localCount", { count })}
         placeholder={t("games.players.sameAsIgdb")}
-        helperText={
-          localPlayers
-            ? t(value !== null ? "games.players.setByHandIgdb" : "games.players.fromIgdb", { count: localPlayers })
-            : t(value !== null ? "games.players.setByHand" : "games.players.notOnIgdb")
-        }
+        helperText={value !== null ? `${t("games.players.setByHand")} ${known}` : known}
         fullWidth
       />
       <Box component="dl" sx={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 2, rowGap: 0.5, mt: 1.5, mb: 0 }}>

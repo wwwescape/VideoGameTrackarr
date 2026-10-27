@@ -90,6 +90,9 @@ class GameDetailResponse(GameSummaryResponse):
     # hand over IGDB's — the game page's Players section.
     local_players: int | None
     local_players_override: int | None
+    # IGDB had no count: another source's, and which (pcgamingwiki or steam).
+    local_players_fallback: int | None
+    local_players_fallback_source: str | None
     online_multiplayer: bool | None
     coop: bool | None
     time_to_beat_main: int | None
@@ -178,6 +181,8 @@ def game_detail_from_orm(
         linked_from_custom=game.linked_from_custom,
         local_players=game.local_players,
         local_players_override=game.local_players_override,
+        local_players_fallback=game.local_players_fallback,
+        local_players_fallback_source=game.local_players_fallback_source,
         online_multiplayer=game.online_multiplayer,
         coop=game.coop,
         time_to_beat_main=game.time_to_beat_main,

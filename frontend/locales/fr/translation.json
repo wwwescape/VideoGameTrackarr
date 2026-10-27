@@ -425,6 +425,10 @@
         "eventsSync": {
           "name": "Synchroniser les événements",
           "description": "Récupère les événements de l'industrie du jeu vidéo actuellement à venir depuis IGDB et supprime tout événement précédemment synchronisé qui est terminé — alimente la page Événements et la Vue d'ensemble."
+        },
+        "playersFill": {
+          "name": "Compléter le nombre de joueurs",
+          "description": "Cherche le nombre de joueurs en local sur PCGamingWiki, puis sur la boutique Steam, pour les jeux sans nombre sur IGDB. Une recherche par seconde ; une resynchronisation n'efface jamais ce qu'il trouve."
         }
       },
       "runHeading": "Exécuter",
@@ -1004,19 +1008,21 @@
       "localCount_one": "{{count}} joueur",
       "localCount_other": "Jusqu'à {{count}} joueurs",
       "sameAsIgdb": "Comme IGDB",
-      "fromIgdb_one": "IGDB : {{count}} joueur",
-      "fromIgdb_other": "IGDB : jusqu'à {{count}} joueurs",
-      "notOnIgdb": "IGDB n'indique pas de nombre de joueurs pour ce jeu : choisissez-en un pour qu'il compte dans le filtre Joueurs.",
-      "setByHand": "Saisi à la main (IGDB n'indique rien).",
-      "setByHandIgdb_one": "Saisi à la main (IGDB : {{count}}).",
-      "setByHandIgdb_other": "Saisi à la main (IGDB : jusqu'à {{count}}).",
       "online": "Multijoueur en ligne",
       "coop": "Coopération",
       "timeToBeat": "Histoire principale",
       "hours_one": "Environ {{count}} heure",
       "hours_other": "Environ {{count}} heures",
       "unknown": "Pas sur IGDB",
-      "saveErrorToast": "Impossible d'enregistrer le nombre de joueurs. Veuillez réessayer."
+      "saveErrorToast": "Impossible d'enregistrer le nombre de joueurs. Veuillez réessayer.",
+      "fromIgdb_one": "IGDB : {{count}} joueur.",
+      "fromIgdb_other": "IGDB : jusqu'à {{count}} joueurs.",
+      "from_pcgamingwiki_one": "PCGamingWiki : {{count}} joueur (IGDB n'indique rien).",
+      "from_pcgamingwiki_other": "PCGamingWiki : jusqu'à {{count}} joueurs (IGDB n'indique rien).",
+      "from_steam_one": "Boutique Steam : un joueur (IGDB n'indique rien).",
+      "from_steam_other": "Boutique Steam : jeu sur le même écran, 2 ou plus (IGDB n'indique rien).",
+      "notKnown": "Aucun nombre de joueurs sur IGDB, PCGamingWiki ou Steam : choisissez-en un pour qu'il compte dans le filtre Joueurs.",
+      "setByHand": "Saisi à la main."
     }
   },
   "events": {

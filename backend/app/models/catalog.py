@@ -197,6 +197,12 @@ class Game(TimestampMixin, Base):
     # Set by hand on the game page when IGDB has no count or a wrong one; wins over
     # local_players in the Players filter and is never touched by a resync.
     local_players_override: Mapped[int | None] = mapped_column(Integer)
+    # From another source when IGDB has no count (see players_fill_jobs.py): kept apart from
+    # local_players so an IGDB resync, which rewrites that, doesn't wipe it.
+    local_players_fallback: Mapped[int | None] = mapped_column(Integer)
+    local_players_fallback_source: Mapped[str | None] = mapped_column(
+        String(20), comment="Where local_players_fallback came from: pcgamingwiki or steam"
+    )
     online_multiplayer: Mapped[bool | None] = mapped_column(Boolean)
     coop: Mapped[bool | None] = mapped_column(Boolean, comment="Any co-op mode: local, online or campaign")
     time_to_beat_main: Mapped[int | None] = mapped_column(Integer, comment="Seconds, IGDB's 'normally' estimate")

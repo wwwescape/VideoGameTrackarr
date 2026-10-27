@@ -34,6 +34,7 @@ from app.models.library import (
     RomFile,
     RomSaveState,
 )
+from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
 
 # Repositories only add/flush/delete — they never commit. The service (or script) that
 # calls them owns the transaction boundary, so a multi-step use case (e.g. importing a
@@ -483,7 +484,10 @@ def _apply_optional_game_filters(
     # The IGDB-backed columns below are NULL when IGDB has no data, and a NULL never satisfies
     # a comparison — so each of these filters only keeps games IGDB actually knows about.
     if local_players_min is not None:
-        stmt = stmt.where(func.coalesce(Game.local_players_override, Game.local_players) >= local_players_min)
+        stmt = stmt.where(
+            func.coalesce(Game.local_players_override, Game.local_players, Game.local_players_fallback)
+            >= local_players_min
+        )
     if online_multiplayer_only:
         stmt = stmt.where(Game.online_multiplayer.is_(True))
     if coop_only:
@@ -701,6 +705,52 @@ def list_igdb_linked_games(db: Session) -> list[tuple[int, str]]:
     to resync from (see game_service.resync_game) and are excluded."""
     stmt = select(Game.id, Game.name).where(Game.igdb_id.is_not(None)).order_by(Game.id)
     return [(row[0], row[1]) for row in db.execute(stmt)]
+
+
+# IGDB's platform id for PC (Microsoft Windows): the games worth looking up on PCGamingWiki.
+PC_IGDB_PLATFORM_ID = 6
+
+
+@dataclass(frozen=True)
+class GameMissingLocalPlayers:
+    id: int
+    name: str
+    steam_app_id: int | None
+    on_pc: bool
+
+
+def list_games_missing_local_players(db: Session) -> list[GameMissingLocalPlayers]:
+    """Owned or wishlisted top-level games with no local player count from IGDB or by hand —
+    what the players fill job (app/services/players_fill_jobs.py) looks up elsewhere. The
+    Steam AppID comes from the Steam library/wishlist match, when there is one."""
+    steam_app_id = func.coalesce(
+        select(SteamLibraryEntry.steam_app_id).where(SteamLibraryEntry.game_id == Game.id).limit(1).scalar_subquery(),
+        select(SteamWishlistEntry.steam_app_id).where(SteamWishlistEntry.game_id == Game.id).limit(1).scalar_subquery(),
+    )
+    on_pc = exists().where(
+        GamePlatform.game_id == Game.id,
+        GamePlatform.platform_id == Platform.id,
+        Platform.igdb_id == PC_IGDB_PLATFORM_ID,
+    )
+    stmt = (
+        select(Game.id, Game.name, steam_app_id, on_pc)
+        .where(
+            Game.parent_game_id.is_(None),
+            Game.local_players.is_(None),
+            Game.local_players_override.is_(None),
+            exists().where(LibraryItem.game_id == Game.id),
+        )
+        .order_by(Game.id)
+    )
+    return [GameMissingLocalPlayers(*row) for row in db.execute(stmt)]
+
+
+def set_local_players_fallback(db: Session, game_id: int, local_players: int | None, source: str | None) -> None:
+    db.execute(
+        update(Game)
+        .where(Game.id == game_id)
+        .values(local_players_fallback=local_players, local_players_fallback_source=source)
+    )
 
 
 def list_addons(db: Session, parent_game_id: int) -> list[GameWithStatus]:

@@ -425,6 +425,10 @@
         "eventsSync": {
           "name": "Sync Events",
           "description": "Fetches currently-upcoming gaming-industry events from IGDB and drops any previously-synced event that has since ended — powers the Events page and Overview teaser."
+        },
+        "playersFill": {
+          "name": "Fill in player counts",
+          "description": "Looks up a local player count on PCGamingWiki, then the Steam store, for the games IGDB has none for. One lookup a second; a resync never erases what it finds."
         }
       },
       "runHeading": "Run",
@@ -1004,19 +1008,21 @@
       "localCount_one": "{{count}} player",
       "localCount_other": "Up to {{count}} players",
       "sameAsIgdb": "Same as IGDB",
-      "fromIgdb_one": "IGDB: {{count}} player",
-      "fromIgdb_other": "IGDB: up to {{count}} players",
-      "notOnIgdb": "IGDB has no player count for this game: pick one to use it in the Players filter.",
-      "setByHand": "Set by hand (IGDB has no count).",
-      "setByHandIgdb_one": "Set by hand (IGDB: {{count}}).",
-      "setByHandIgdb_other": "Set by hand (IGDB: up to {{count}}).",
       "online": "Online multiplayer",
       "coop": "Co-op",
       "timeToBeat": "Main story",
       "hours_one": "About {{count}} hour",
       "hours_other": "About {{count}} hours",
       "unknown": "Not on IGDB",
-      "saveErrorToast": "Couldn't save the player count. Please try again."
+      "saveErrorToast": "Couldn't save the player count. Please try again.",
+      "fromIgdb_one": "IGDB: {{count}} player.",
+      "fromIgdb_other": "IGDB: up to {{count}} players.",
+      "from_pcgamingwiki_one": "PCGamingWiki: {{count}} player (IGDB has no count).",
+      "from_pcgamingwiki_other": "PCGamingWiki: up to {{count}} players (IGDB has no count).",
+      "from_steam_one": "Steam store: single-player (IGDB has no count).",
+      "from_steam_other": "Steam store: same-screen play, 2 or more (IGDB has no count).",
+      "notKnown": "No player count on IGDB, PCGamingWiki or Steam: pick one to use it in the Players filter.",
+      "setByHand": "Set by hand."
     }
   },
   "events": {

@@ -425,6 +425,10 @@
         "eventsSync": {
           "name": "Sincronizar eventos",
           "description": "Obtém os eventos da indústria de jogos atualmente próximos a partir do IGDB e remove qualquer evento previamente sincronizado que já tenha terminado — alimenta a página Eventos e a Visão geral."
+        },
+        "playersFill": {
+          "name": "Completar o número de jogadores",
+          "description": "Procura o número de jogadores locais no PCGamingWiki e depois na loja Steam para os jogos sem número no IGDB. Uma pesquisa por segundo; uma ressincronização nunca apaga o que encontra."
         }
       },
       "runHeading": "Executar",
@@ -1004,19 +1008,21 @@
       "localCount_one": "{{count}} jogador",
       "localCount_other": "Até {{count}} jogadores",
       "sameAsIgdb": "Como no IGDB",
-      "fromIgdb_one": "IGDB: {{count}} jogador",
-      "fromIgdb_other": "IGDB: até {{count}} jogadores",
-      "notOnIgdb": "O IGDB não indica o número de jogadores deste jogo: escolha um para o usar no filtro Jogadores.",
-      "setByHand": "Definido à mão (o IGDB não indica).",
-      "setByHandIgdb_one": "Definido à mão (IGDB: {{count}}).",
-      "setByHandIgdb_other": "Definido à mão (IGDB: até {{count}}).",
       "online": "Multijogador online",
       "coop": "Cooperativo",
       "timeToBeat": "História principal",
       "hours_one": "Cerca de {{count}} hora",
       "hours_other": "Cerca de {{count}} horas",
       "unknown": "Não está no IGDB",
-      "saveErrorToast": "Não foi possível guardar o número de jogadores. Tente novamente."
+      "saveErrorToast": "Não foi possível guardar o número de jogadores. Tente novamente.",
+      "fromIgdb_one": "IGDB: {{count}} jogador.",
+      "fromIgdb_other": "IGDB: até {{count}} jogadores.",
+      "from_pcgamingwiki_one": "PCGamingWiki: {{count}} jogador (o IGDB não indica).",
+      "from_pcgamingwiki_other": "PCGamingWiki: até {{count}} jogadores (o IGDB não indica).",
+      "from_steam_one": "Loja Steam: um jogador (o IGDB não indica).",
+      "from_steam_other": "Loja Steam: mesmo ecrã, 2 ou mais (o IGDB não indica).",
+      "notKnown": "Nem o IGDB, nem o PCGamingWiki, nem a Steam indicam o número de jogadores: escolha um para o usar no filtro Jogadores.",
+      "setByHand": "Definido à mão."
     }
   },
   "events": {
