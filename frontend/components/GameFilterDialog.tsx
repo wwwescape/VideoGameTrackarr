@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { MatchAllField, MatchAllFilters } from "../api/games";
+import type { GameFilterFieldKey } from "../hooks/useGameFilterPreferences";
 import TextField from "@mui/material/TextField";
 import type {
   CatalogRefSummary,
@@ -347,6 +348,9 @@ export interface GameFilterFieldsProps {
 interface GameFilterDialogProps extends GameFilterFieldsProps {
   open: boolean;
   onClose: () => void;
+  // Fields switched off in Settings (see useGameFilterPreferences). A hidden field's filter
+  // still applies, and still shows as a chip on the list, so it can be cleared from there.
+  hiddenFields?: ReadonlySet<GameFilterFieldKey>;
 }
 
 // How many filter values are set — the Filter button's badge.
@@ -486,8 +490,15 @@ const GameFilterDialog = ({
   onRatingMinChange,
   open,
   onClose,
+  hiddenFields,
 }: GameFilterDialogProps) => {
   const { t } = useTranslation();
+  // Off when Settings hides the field, or when the page has no use for it (the Game Shelf, where
+  // every case is an owned physical copy, has no Ownership or Format field).
+  const shown = (field: GameFilterFieldKey) =>
+    !hiddenFields?.has(field) &&
+    !(field === "ownership" && hideOwnershipField) &&
+    !(field === "format" && hideFormatsField);
   const allPlaceholder = t("games.listToolbar.allOption");
   const selectedTags = tagOptions.filter((tag) => tagIds.includes(tag.id));
   const selectedPlatforms = platformOptions.filter((platform) => platformKeys.includes(platform.id));
@@ -598,7 +609,7 @@ const GameFilterDialog = ({
       <DialogTitle>{t("games.listView.filterTitle")}</DialogTitle>
       <DialogContent>
       <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          {!hideGameTypesField ? (
+          {!hideGameTypesField && shown("gameType") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
                 <AutocompleteMultiSelect<GameTypeOption>
@@ -621,79 +632,83 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack spacing={0.5}>
-              <AutocompleteMultiSelect<Tag>
-                label={t("games.listToolbar.tagLabel")}
-                options={tagOptions}
-                value={selectedTags}
-                onChange={(newValue) => onTagIdsChange(newValue.map((tag) => tag.id))}
-                getOptionLabel={(option) => option.name}
-                isOptionEqualToValue={(option, val) => option.id === val.id}
-                placeholder={allPlaceholder}
-                fullWidth
-                renderValue={(tagsValue, getItemProps) =>
-                  tagsValue.map((tag, index) => {
-                    const { key, ...itemProps } = getItemProps({ index });
-                    return <TagChip key={key} tag={tag} {...itemProps} />;
-                  })
-                }
-              />
-              <FilterFieldOptions
-                selectedCount={tagIds.length}
-                exclude={tagExclude}
-                onExcludeChange={onTagExcludeChange}
-                {...matchAllProps("tag")}
-              />
-            </Stack>
-          </Grid>
-          {!hideOwnershipField ? (
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack spacing={0.5}>
-              <AutocompleteMultiSelect<OwnershipOption>
-                label={t("games.listToolbar.ownershipLabel")}
-                options={OWNERSHIP_OPTIONS}
-                value={selectedOwnershipStatuses}
-                onChange={(newValue) =>
-                  onOwnershipStatusesChange(newValue.map((option) => option.value))
-                }
-                getOptionLabel={(option) => t(option.labelKey)}
-                isOptionEqualToValue={(option, val) => option.value === val.value}
-                placeholder={allPlaceholder}
-                fullWidth
-              />
-              <FilterFieldOptions
-                selectedCount={ownershipStatuses.length}
-                exclude={ownershipExclude}
-                onExcludeChange={onOwnershipExcludeChange}
-                {...matchAllProps("ownership")}
-              />
-            </Stack>
-          </Grid>
+          {shown("tag") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.5}>
+                <AutocompleteMultiSelect<Tag>
+                  label={t("games.listToolbar.tagLabel")}
+                  options={tagOptions}
+                  value={selectedTags}
+                  onChange={(newValue) => onTagIdsChange(newValue.map((tag) => tag.id))}
+                  getOptionLabel={(option) => option.name}
+                  isOptionEqualToValue={(option, val) => option.id === val.id}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                  renderValue={(tagsValue, getItemProps) =>
+                    tagsValue.map((tag, index) => {
+                      const { key, ...itemProps } = getItemProps({ index });
+                      return <TagChip key={key} tag={tag} {...itemProps} />;
+                    })
+                  }
+                />
+                <FilterFieldOptions
+                  selectedCount={tagIds.length}
+                  exclude={tagExclude}
+                  onExcludeChange={onTagExcludeChange}
+                  {...matchAllProps("tag")}
+                />
+              </Stack>
+            </Grid>
           ) : null}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack spacing={0.5}>
-              <AutocompleteMultiSelect<PlayStatusOption>
-                label={t("games.listToolbar.playStatusLabel")}
-                options={PLAY_STATUS_OPTIONS}
-                value={selectedPlayStatuses}
-                onChange={(newValue) =>
-                  onPlayStatusesChange(newValue.map((option) => option.value))
-                }
-                getOptionLabel={(option) => t(option.labelKey)}
-                isOptionEqualToValue={(option, val) => option.value === val.value}
-                placeholder={allPlaceholder}
-                fullWidth
-              />
-              <FilterFieldOptions
-                selectedCount={playStatuses.length}
-                exclude={playStatusExclude}
-                onExcludeChange={onPlayStatusExcludeChange}
-                {...matchAllProps("playStatus")}
-              />
-            </Stack>
-          </Grid>
-          {!hidePlatformsField ? (
+          {shown("ownership") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.5}>
+                <AutocompleteMultiSelect<OwnershipOption>
+                  label={t("games.listToolbar.ownershipLabel")}
+                  options={OWNERSHIP_OPTIONS}
+                  value={selectedOwnershipStatuses}
+                  onChange={(newValue) =>
+                    onOwnershipStatusesChange(newValue.map((option) => option.value))
+                  }
+                  getOptionLabel={(option) => t(option.labelKey)}
+                  isOptionEqualToValue={(option, val) => option.value === val.value}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                />
+                <FilterFieldOptions
+                  selectedCount={ownershipStatuses.length}
+                  exclude={ownershipExclude}
+                  onExcludeChange={onOwnershipExcludeChange}
+                  {...matchAllProps("ownership")}
+                />
+              </Stack>
+            </Grid>
+          ) : null}
+          {shown("playStatus") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.5}>
+                <AutocompleteMultiSelect<PlayStatusOption>
+                  label={t("games.listToolbar.playStatusLabel")}
+                  options={PLAY_STATUS_OPTIONS}
+                  value={selectedPlayStatuses}
+                  onChange={(newValue) =>
+                    onPlayStatusesChange(newValue.map((option) => option.value))
+                  }
+                  getOptionLabel={(option) => t(option.labelKey)}
+                  isOptionEqualToValue={(option, val) => option.value === val.value}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                />
+                <FilterFieldOptions
+                  selectedCount={playStatuses.length}
+                  exclude={playStatusExclude}
+                  onExcludeChange={onPlayStatusExcludeChange}
+                  {...matchAllProps("playStatus")}
+                />
+              </Stack>
+            </Grid>
+          ) : null}
+          {!hidePlatformsField && shown("platform") ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <Stack spacing={0.5}>
               <AutocompleteMultiSelect<PlatformFilterOption>
@@ -717,31 +732,31 @@ const GameFilterDialog = ({
             </Stack>
           </Grid>
           ) : null}
-          {!hideFormatsField ? (
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack spacing={0.5}>
-              <AutocompleteMultiSelect<FormatOption>
-                label={t("games.listToolbar.formatLabel")}
-                options={FORMAT_OPTIONS}
-                value={selectedFormats}
-                onChange={(newValue) =>
-                  onFormatsChange(newValue.map((option) => option.value))
-                }
-                getOptionLabel={(option) => option.label}
-                isOptionEqualToValue={(option, val) => option.value === val.value}
-                placeholder={allPlaceholder}
-                fullWidth
-              />
-              <FilterFieldOptions
-                selectedCount={formats.length}
-                exclude={formatExclude}
-                onExcludeChange={onFormatExcludeChange}
-                {...matchAllProps("format")}
-              />
-            </Stack>
-          </Grid>
+          {shown("format") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.5}>
+                <AutocompleteMultiSelect<FormatOption>
+                  label={t("games.listToolbar.formatLabel")}
+                  options={FORMAT_OPTIONS}
+                  value={selectedFormats}
+                  onChange={(newValue) =>
+                    onFormatsChange(newValue.map((option) => option.value))
+                  }
+                  getOptionLabel={(option) => option.label}
+                  isOptionEqualToValue={(option, val) => option.value === val.value}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                />
+                <FilterFieldOptions
+                  selectedCount={formats.length}
+                  exclude={formatExclude}
+                  onExcludeChange={onFormatExcludeChange}
+                  {...matchAllProps("format")}
+                />
+              </Stack>
+            </Grid>
           ) : null}
-          {showStorefrontFilter ? (
+          {showStorefrontFilter && shown("format") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
                 <AutocompleteMultiSelect<string>
@@ -763,7 +778,7 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          {onSteelbookOnlyChange ? (
+          {onSteelbookOnlyChange && shown("steelbook") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControlLabel
                 control={
@@ -788,7 +803,7 @@ const GameFilterDialog = ({
               </Tooltip>
             </Grid>
           ) : null}
-          {!hideCollectionsField ? (
+          {!hideCollectionsField && shown("collection") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
                 <AutocompleteMultiSelect<CatalogRefSummary>
@@ -812,7 +827,7 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          {!hideFranchisesField ? (
+          {!hideFranchisesField && shown("series") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
                 <AutocompleteMultiSelect<CatalogRefSummary>
@@ -836,7 +851,7 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          {onSourcesChange ? (
+          {onSourcesChange && shown("source") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
                 <AutocompleteMultiSelect<SourceOption>
@@ -859,7 +874,7 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          {onScreensaverFilterChange ? (
+          {onScreensaverFilterChange && shown("screensaver") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.75}>
                 <Typography id="screensaver-filter-label" variant="body2" sx={{ color: "text.secondary" }}>
@@ -881,111 +896,127 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack spacing={0.5}>
-              <AutocompleteMultiSelect<GenreSummary>
-                label={t("games.listToolbar.genreLabel")}
-                options={genreOptions}
-                value={selectedGenres}
-                onChange={(newValue) => onGenreIdsChange(newValue.map((genre) => genre.id))}
-                getOptionLabel={(option) => option.name}
-                isOptionEqualToValue={(option, val) => option.id === val.id}
+          {shown("genre") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.5}>
+                <AutocompleteMultiSelect<GenreSummary>
+                  label={t("games.listToolbar.genreLabel")}
+                  options={genreOptions}
+                  value={selectedGenres}
+                  onChange={(newValue) => onGenreIdsChange(newValue.map((genre) => genre.id))}
+                  getOptionLabel={(option) => option.name}
+                  isOptionEqualToValue={(option, val) => option.id === val.id}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                />
+                <FilterFieldOptions
+                  selectedCount={genreIds.length}
+                  exclude={genreExclude}
+                  onExcludeChange={onGenreExcludeChange}
+                  {...matchAllProps("genre")}
+                />
+              </Stack>
+            </Grid>
+          ) : null}
+          {shown("release") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={1.5}>
+                {/* No Exclude/All row: a game is either out or not, so "not released" is
+                    already the other option. */}
+                <AutocompleteMultiSelect<ReleaseStatusOption>
+                  label={t("games.listToolbar.releaseStatusLabel")}
+                  options={RELEASE_STATUS_OPTIONS}
+                  value={selectedReleaseStatuses}
+                  onChange={(newValue) => onReleaseStatusesChange(newValue.map((option) => option.value))}
+                  getOptionLabel={(option) => t(option.labelKey)}
+                  isOptionEqualToValue={(option, val) => option.value === val.value}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                />
+                <Stack direction="row" spacing={1}>
+                  <TextField
+                    label={t("games.listToolbar.releaseYearFromLabel")}
+                    type="number"
+                    value={releaseYearFrom ?? ""}
+                    onChange={(event) => onReleaseYearFromChange(event.target.value ? Number(event.target.value) : null)}
+                    slotProps={{ htmlInput: { min: 1950, max: 2100 } }}
+                    fullWidth
+                  />
+                  <TextField
+                    label={t("games.listToolbar.releaseYearToLabel")}
+                    type="number"
+                    value={releaseYearTo ?? ""}
+                    onChange={(event) => onReleaseYearToChange(event.target.value ? Number(event.target.value) : null)}
+                    slotProps={{ htmlInput: { min: 1950, max: 2100 } }}
+                    fullWidth
+                  />
+                </Stack>
+              </Stack>
+            </Grid>
+          ) : null}
+          {shown("localPlayers") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <AutocompleteSelect<number>
+                label={t("games.listToolbar.localPlayersLabel")}
+                options={LOCAL_PLAYERS_OPTIONS}
+                value={localPlayersMin}
+                onChange={onLocalPlayersMinChange}
+                getOptionLabel={(option) => t("games.listToolbar.localPlayersOption", { count: option })}
                 placeholder={allPlaceholder}
                 fullWidth
               />
-              <FilterFieldOptions
-                selectedCount={genreIds.length}
-                exclude={genreExclude}
-                onExcludeChange={onGenreExcludeChange}
-                {...matchAllProps("genre")}
-              />
-            </Stack>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack spacing={1.5}>
-              {/* No Exclude/All row: a game is either out or not, so "not released" is
-                  already the other option. */}
-              <AutocompleteMultiSelect<ReleaseStatusOption>
-                label={t("games.listToolbar.releaseStatusLabel")}
-                options={RELEASE_STATUS_OPTIONS}
-                value={selectedReleaseStatuses}
-                onChange={(newValue) => onReleaseStatusesChange(newValue.map((option) => option.value))}
-                getOptionLabel={(option) => t(option.labelKey)}
+            </Grid>
+          ) : null}
+          {shown("timeToBeat") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <AutocompleteSelect<TimeToBeatOption>
+                label={t("games.listToolbar.timeToBeatLabel")}
+                options={TIME_TO_BEAT_OPTIONS}
+                value={TIME_TO_BEAT_OPTIONS.find((option) => option.value === timeToBeat) ?? null}
+                onChange={(option) => onTimeToBeatChange(option?.value ?? null)}
+                getOptionLabel={(option) => timeToBeatLabel(option, t)}
                 isOptionEqualToValue={(option, val) => option.value === val.value}
                 placeholder={allPlaceholder}
                 fullWidth
               />
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  label={t("games.listToolbar.releaseYearFromLabel")}
-                  type="number"
-                  value={releaseYearFrom ?? ""}
-                  onChange={(event) => onReleaseYearFromChange(event.target.value ? Number(event.target.value) : null)}
-                  slotProps={{ htmlInput: { min: 1950, max: 2100 } }}
-                  fullWidth
-                />
-                <TextField
-                  label={t("games.listToolbar.releaseYearToLabel")}
-                  type="number"
-                  value={releaseYearTo ?? ""}
-                  onChange={(event) => onReleaseYearToChange(event.target.value ? Number(event.target.value) : null)}
-                  slotProps={{ htmlInput: { min: 1950, max: 2100 } }}
-                  fullWidth
-                />
-              </Stack>
-            </Stack>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <AutocompleteSelect<number>
-              label={t("games.listToolbar.localPlayersLabel")}
-              options={LOCAL_PLAYERS_OPTIONS}
-              value={localPlayersMin}
-              onChange={onLocalPlayersMinChange}
-              getOptionLabel={(option) => t("games.listToolbar.localPlayersOption", { count: option })}
-              placeholder={allPlaceholder}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <AutocompleteSelect<TimeToBeatOption>
-              label={t("games.listToolbar.timeToBeatLabel")}
-              options={TIME_TO_BEAT_OPTIONS}
-              value={TIME_TO_BEAT_OPTIONS.find((option) => option.value === timeToBeat) ?? null}
-              onChange={(option) => onTimeToBeatChange(option?.value ?? null)}
-              getOptionLabel={(option) => timeToBeatLabel(option, t)}
-              isOptionEqualToValue={(option, val) => option.value === val.value}
-              placeholder={allPlaceholder}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <AutocompleteSelect<number>
-              label={t("games.listToolbar.ratingLabel")}
-              options={RATING_OPTIONS}
-              value={ratingMin}
-              onChange={onRatingMinChange}
-              getOptionLabel={(option) => t("games.listToolbar.ratingOption", { min: option / 10 })}
-              placeholder={allPlaceholder}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={onlineMultiplayerOnly}
-                    onChange={(event) => onOnlineMultiplayerOnlyChange(event.target.checked)}
+            </Grid>
+          ) : null}
+          {shown("rating") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <AutocompleteSelect<number>
+                label={t("games.listToolbar.ratingLabel")}
+                options={RATING_OPTIONS}
+                value={ratingMin}
+                onChange={onRatingMinChange}
+                getOptionLabel={(option) => t("games.listToolbar.ratingOption", { min: option / 10 })}
+                placeholder={allPlaceholder}
+                fullWidth
+              />
+            </Grid>
+          ) : null}
+          {shown("onlineMultiplayer") || shown("coop") ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack>
+                {shown("onlineMultiplayer") ? (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={onlineMultiplayerOnly}
+                        onChange={(event) => onOnlineMultiplayerOnlyChange(event.target.checked)}
+                      />
+                    }
+                    label={t("games.listToolbar.onlineMultiplayerOnlyLabel")}
                   />
-                }
-                label={t("games.listToolbar.onlineMultiplayerOnlyLabel")}
-              />
-              <FormControlLabel
-                control={<Switch checked={coopOnly} onChange={(event) => onCoopOnlyChange(event.target.checked)} />}
-                label={t("games.listToolbar.coopOnlyLabel")}
-              />
-            </Stack>
-          </Grid>
+                ) : null}
+                {shown("coop") ? (
+                  <FormControlLabel
+                    control={<Switch checked={coopOnly} onChange={(event) => onCoopOnlyChange(event.target.checked)} />}
+                    label={t("games.listToolbar.coopOnlyLabel")}
+                  />
+                ) : null}
+              </Stack>
+            </Grid>
+          ) : null}
         </Grid>
       </DialogContent>
       <DialogActions>

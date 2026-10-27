@@ -51,6 +51,12 @@ class User(TimestampMixin, Base):
         String(32),
         comment="Newest app version whose What's New was closed; null = an install from before What's New",
     )
+    game_filter_fields: Mapped[list[dict] | None] = mapped_column(
+        JSON, comment="Game list Filter dialog fields, each {key, hidden}; null = every field shown"
+    )
+    saved_game_filters: Mapped[list[dict] | None] = mapped_column(
+        JSON, comment="Named game list filters, each {name, filters}; filters is the frontend's own state"
+    )
 
 
 class RefreshToken(Base):

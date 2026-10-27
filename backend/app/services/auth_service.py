@@ -142,6 +142,8 @@ def set_preferences(
     screensaver_show_owned: bool | None = None,
     screensaver_show_wishlist: bool | None = None,
     screensaver_include_custom: bool | None = None,
+    game_filter_fields: list[dict] | None = None,
+    saved_game_filters: list[dict] | None = None,
 ) -> User:
     """Changes only what's given (None leaves a preference as it is). The Screensaver's owned and
     wishlist groups are checked together, after merging: at least one has to stay on."""
@@ -159,6 +161,10 @@ def set_preferences(
     user.screensaver_show_wishlist = show_wishlist
     if screensaver_include_custom is not None:
         user.screensaver_include_custom = screensaver_include_custom
+    if game_filter_fields is not None:
+        user.game_filter_fields = game_filter_fields
+    if saved_game_filters is not None:
+        user.saved_game_filters = saved_game_filters
     db.commit()
     db.refresh(user)
     return user
