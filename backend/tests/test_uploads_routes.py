@@ -2,7 +2,7 @@ import io
 
 from PIL import Image
 
-from app.core.config import UPLOADS_DIR
+from app.services import upload_service
 
 
 def _image_bytes(size: tuple[int, int] = (100, 140), image_format: str = "PNG") -> bytes:
@@ -29,7 +29,7 @@ def test_upload_cover_saves_and_returns_url(auth_client):
     assert url.startswith("/uploads/covers/")
     assert url.endswith(".jpg")
 
-    saved_path = UPLOADS_DIR / "covers" / url.removeprefix("/uploads/covers/")
+    saved_path = upload_service.COVERS_DIR / url.removeprefix("/uploads/covers/")
     assert saved_path.is_file()
     with Image.open(saved_path) as saved:
         assert saved.format == "JPEG"
@@ -44,7 +44,7 @@ def test_upload_cover_crops_to_target_size(auth_client):
 
     assert response.status_code == 201
     url = response.json()["url"]
-    saved_path = UPLOADS_DIR / "covers" / url.removeprefix("/uploads/covers/")
+    saved_path = upload_service.COVERS_DIR / url.removeprefix("/uploads/covers/")
     with Image.open(saved_path) as saved:
         assert saved.size == (540, 720)
     saved_path.unlink()
@@ -58,7 +58,7 @@ def test_upload_cover_crops_undersized_image_to_target_size(auth_client):
 
     assert response.status_code == 201
     url = response.json()["url"]
-    saved_path = UPLOADS_DIR / "covers" / url.removeprefix("/uploads/covers/")
+    saved_path = upload_service.COVERS_DIR / url.removeprefix("/uploads/covers/")
     with Image.open(saved_path) as saved:
         assert saved.size == (540, 720)
     saved_path.unlink()
@@ -90,7 +90,7 @@ def test_upload_accessory_image_saves_and_returns_url(auth_client):
     assert url.startswith("/uploads/accessory-images/")
     assert url.endswith(".jpg")
 
-    saved_path = UPLOADS_DIR / "accessory-images" / url.removeprefix("/uploads/accessory-images/")
+    saved_path = upload_service.ACCESSORY_IMAGES_DIR / url.removeprefix("/uploads/accessory-images/")
     assert saved_path.is_file()
     with Image.open(saved_path) as saved:
         assert saved.format == "JPEG"

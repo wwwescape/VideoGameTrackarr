@@ -4,7 +4,6 @@ import httpx
 import respx
 from PIL import Image
 
-from app.core.config import UPLOADS_DIR
 from app.models.catalog import Game, GameCategory
 from app.models.library import GameProgress, GameTag, LibraryItem, LibraryStatus, Note, Tag
 from app.services import upload_service
@@ -610,7 +609,7 @@ def test_link_game_to_igdb_deletes_uploaded_cover(auth_client, db_session, igdb_
     image_bytes = io.BytesIO()
     Image.new("RGB", (10, 10), color="blue").save(image_bytes, format="PNG")
     uploaded_url = upload_service.save_cover_image(image_bytes.getvalue())
-    uploaded_path = UPLOADS_DIR / "covers" / uploaded_url.removeprefix("/uploads/covers/")
+    uploaded_path = upload_service.COVERS_DIR / uploaded_url.removeprefix("/uploads/covers/")
     assert uploaded_path.is_file()
 
     manual_game = Game(name="My Homebrew Game", category=None, cover_url=uploaded_url)
@@ -848,7 +847,7 @@ def test_merge_into_igdb_discards_source_cover_image(auth_client, db_session, se
     image_bytes = io.BytesIO()
     Image.new("RGB", (10, 10), color="blue").save(image_bytes, format="PNG")
     uploaded_url = upload_service.save_cover_image(image_bytes.getvalue())
-    uploaded_path = UPLOADS_DIR / "covers" / uploaded_url.removeprefix("/uploads/covers/")
+    uploaded_path = upload_service.COVERS_DIR / uploaded_url.removeprefix("/uploads/covers/")
     assert uploaded_path.is_file()
 
     manual_game = Game(name="Custom Duplicate", category=None, cover_url=uploaded_url)

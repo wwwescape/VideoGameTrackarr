@@ -68,10 +68,14 @@ export function GameCoverGrid({ games, cardSize, showRail, renderCard }: CoverGr
 
   // The rail fills the window from where it sits down to just above the bottom edge: lower at
   // the top of the page (below the breadcrumbs), then stuck under the toolbar once scrolled.
+  // Measured from no higher than its sticky spot: at the end of the list the grid pushes the
+  // rail up past that spot, and measuring from there made it taller, which made the page
+  // taller, which let it scroll further and push the rail up again — without end.
   const fitRail = () => {
     const rail = railRef.current;
     if (!rail) return;
-    rail.style.height = `${window.innerHeight - rail.getBoundingClientRect().top - RAIL_GAP}px`;
+    const top = Math.max(rail.getBoundingClientRect().top, STICKY_TOP.sm + RAIL_GAP);
+    rail.style.height = `${window.innerHeight - top - RAIL_GAP}px`;
   };
   // Every render too, since chips or a notice above the grid can move it.
   useLayoutEffect(fitRail);
