@@ -20,7 +20,7 @@ from app.repositories import (
 from app.repositories.game_repository import GameWithStatus
 from app.services import gog_download_service, rom_service, upload_service
 from app.services.exceptions import ConflictError, NotFoundError
-from app.services.igdb_client import IGDBClient, extract_store_urls
+from app.services.igdb_client import IGDBClient, extract_play_fields, extract_store_urls
 
 _COMPANY_ROLE_FLAGS = (
     ("developer", CompanyRole.DEVELOPER),
@@ -86,6 +86,19 @@ def search_local_games(
     source_exclude: bool = False,
     screensaver: game_repository.ScreensaverFilter | None = None,
     include_addons: bool = False,
+    platform_scopes: list[str] | None = None,
+    genre_ids: list[int] | None = None,
+    genre_exclude: bool = False,
+    genre_match_all: bool = False,
+    release_statuses: list[game_repository.ReleaseStatus] | None = None,
+    release_year_from: int | None = None,
+    release_year_to: int | None = None,
+    local_players_min: int | None = None,
+    online_multiplayer_only: bool = False,
+    coop_only: bool = False,
+    time_to_beat_min: int | None = None,
+    time_to_beat_max: int | None = None,
+    rating_min: int | None = None,
     sort: game_repository.GameSortOption = game_repository.GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
@@ -128,6 +141,19 @@ def search_local_games(
         source_exclude=source_exclude,
         screensaver=screensaver,
         include_addons=include_addons,
+        platform_scopes=platform_scopes,
+        genre_ids=genre_ids,
+        genre_exclude=genre_exclude,
+        genre_match_all=genre_match_all,
+        release_statuses=release_statuses,
+        release_year_from=release_year_from,
+        release_year_to=release_year_to,
+        local_players_min=local_players_min,
+        online_multiplayer_only=online_multiplayer_only,
+        coop_only=coop_only,
+        time_to_beat_min=time_to_beat_min,
+        time_to_beat_max=time_to_beat_max,
+        rating_min=rating_min,
         sort=sort,
         required_collection_id=required_collection_id,
         required_franchise_id=required_franchise_id,
@@ -584,6 +610,7 @@ def _upsert_from_igdb_payload(
         version_parent_igdb_id=version_parent_igdb_id(igdb_game),
         version_parent_checked=True,
         **extract_store_urls(igdb_game),
+        **extract_play_fields(igdb_game),
     )
 
     _sync_catalog_richness(db, game, igdb_game, scope=scope)
