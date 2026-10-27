@@ -110,7 +110,16 @@ describe("On Sale toolbar", () => {
     await pick(user, "View", "Table");
     expect(tableRows()).toEqual(["Hades", "Celeste", "Balatro"]);
 
-    await pick(user, "Sort", "Lowest price");
+    await pick(user, "Sort", "Price");
+    expect(tableRows()).toEqual(["Celeste", "Balatro", "Hades"]);
+    expect(screen.getByRole("columnheader", { name: "Price" })).toHaveAttribute("aria-sort", "ascending");
+
+    // The headers change the same sort: a click flips the sorted column, another starts it.
+    await user.click(screen.getByRole("button", { name: "Price" }));
+    expect(tableRows()).toEqual(["Hades", "Balatro", "Celeste"]);
+    await user.click(screen.getByRole("button", { name: "Name" }));
+    expect(tableRows()).toEqual(["Balatro", "Celeste", "Hades"]);
+    await user.click(screen.getByRole("button", { name: "Price" }));
     expect(tableRows()).toEqual(["Celeste", "Balatro", "Hades"]);
 
     await user.click(screen.getByRole("button", { name: "Filter" }));
@@ -149,7 +158,15 @@ describe("Orphaned accessories toolbar", () => {
     const user = renderPage(<OrphanedAccessoriesPage />);
 
     await pick(user, "View", "Table");
-    await pick(user, "Sort", "Date added (newest first)");
+    await pick(user, "Sort", "Date added");
+    expect(tableRows()).toEqual(["Battery Pack", "Arcade Stick"]);
+    await pick(user, "Sort", "Ascending");
+    expect(tableRows()).toEqual(["Arcade Stick", "Battery Pack"]);
+    // Every orphan is owned, so Library isn't a sortable header here.
+    expect(screen.queryByRole("button", { name: "Library" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Manufacturer" }));
+    expect(tableRows()).toEqual(["Arcade Stick", "Battery Pack"]);
+    await user.click(screen.getByRole("button", { name: "Manufacturer" }));
     expect(tableRows()).toEqual(["Battery Pack", "Arcade Stick"]);
 
     await user.click(screen.getByRole("button", { name: "Filter" }));
@@ -201,7 +218,7 @@ describe("Events toolbar", () => {
     expect(screen.queryByRole("heading", { name: "Ongoing" })).not.toBeInTheDocument();
     expect(screen.queryByText("Summer Showcase")).not.toBeInTheDocument();
 
-    await pick(user, "Sort", "Name (ASC)");
+    await pick(user, "Sort", "Name");
     const autumn = screen.getByText("Autumn Expo");
     const winter = screen.getByText("Winter Direct");
     expect(autumn.compareDocumentPosition(winter) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

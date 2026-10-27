@@ -14,7 +14,8 @@ import Menu from "@mui/material/Menu";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { useTranslation } from "react-i18next";
-import { CardSizeSlider, ChoiceMenu, type MenuChoice } from "./ListControls";
+import type { ListSortControl } from "../hooks/useListSort";
+import { CardSizeSlider, ChoiceMenu, SortMenu, type MenuChoice } from "./ListControls";
 import { ToolbarButton } from "./Page";
 
 // The Options · View · Sort · Filter toolbar for the smaller list pages (On Sale, Events,
@@ -25,7 +26,8 @@ import { ToolbarButton } from "./Page";
 interface ListToolbarProps<V extends string, S extends string> {
   cardSize?: { value: number; onChange: (value: number) => void; disabled?: boolean };
   view?: { value: V; choices: MenuChoice<V>[]; onChange: (value: V) => void };
-  sort?: { value: S; choices: MenuChoice<S>[]; onChange: (value: S) => void };
+  // A field + direction Sort menu (useListSort); a table on the page shares the same control.
+  sort?: ListSortControl<S>;
   // How many filters are in use (the badge), and what opens the page's FilterDialog.
   filter?: { count: number; onOpen: () => void };
 }
@@ -99,12 +101,14 @@ export function ListToolbar<V extends string = string, S extends string = string
         />
       ) : null}
       {sort ? (
-        <ChoiceMenu<S>
+        <SortMenu<S>
           anchor={menu?.name === "sort" ? menu.anchor : null}
           onClose={closeMenu}
-          choices={sort.choices}
-          selected={sort.value}
-          onSelect={sort.onChange}
+          fields={sort.fields.map((option) => ({ value: option.field, label: option.label }))}
+          field={sort.sort.field}
+          direction={sort.sort.direction}
+          onFieldChange={sort.pickField}
+          onDirectionChange={sort.setDirection}
         />
       ) : null}
     </>

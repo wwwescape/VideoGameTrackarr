@@ -7,10 +7,17 @@ import type { GameSortOption } from "../api/types";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { usePublicGames } from "../hooks/usePublic";
 import { useSessionState } from "../hooks/useSessionState";
-import { GAME_SORT_OPTIONS } from "../utils/gameSortOptions";
+import {
+  GAME_SORT_FIELDS,
+  gameSortDirection,
+  gameSortField,
+  makeGameSort,
+  pickGameSortField,
+  PUBLIC_SORT_FIELDS,
+} from "../utils/gameSortOptions";
 import GameCard from "./GameCard";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
-import { ChoiceMenu, ListSearchField } from "./ListControls";
+import { ListSearchField, SortMenu } from "./ListControls";
 import { ToolbarButton } from "./Page";
 import PublicPageHeader from "./PublicPageHeader";
 import VirtualGameGrid from "./VirtualGameGrid";
@@ -42,12 +49,17 @@ const PublicGamesPage = () => {
           aria-haspopup="menu"
           sx={{ flexDirection: "row", flexShrink: 0 }}
         />
-        <ChoiceMenu
+        <SortMenu
           anchor={sortAnchor}
           onClose={() => setSortAnchor(null)}
-          choices={GAME_SORT_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
-          selected={sort}
-          onSelect={setSort}
+          fields={GAME_SORT_FIELDS.filter((option) => PUBLIC_SORT_FIELDS.includes(option.field)).map((option) => ({
+            value: option.field,
+            label: t(option.labelKey),
+          }))}
+          field={gameSortField(sort)}
+          direction={gameSortDirection(sort)}
+          onFieldChange={(field) => setSort(pickGameSortField(sort, field))}
+          onDirectionChange={(direction) => setSort(makeGameSort(gameSortField(sort), direction))}
         />
       </PublicPageHeader>
       {isLoading ? (

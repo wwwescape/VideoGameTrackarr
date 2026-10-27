@@ -124,6 +124,37 @@ def search_local_games(
     )
 
 
+def sort_by_labels(
+    games: list[GameWithStatus], sort: game_repository.GameSortOption, on_sale_game_ids: frozenset[int]
+) -> list[GameWithStatus]:
+    """The Labels sort (On sale, then Missing, then Custom; reversed for descending, games
+    with no label last either way). On sale comes from the price providers, not a column, so
+    this reorders the name-sorted list the repository returned; ties keep that A-Z order."""
+    if sort not in (game_repository.GameSortOption.LABELS_ASC, game_repository.GameSortOption.LABELS_DESC):
+        return games
+
+    def rank(status: GameWithStatus) -> int | None:
+        missing = status.game.auto_discovered and not status.owned and not status.wishlisted
+        if status.game.id in on_sale_game_ids:
+            return 0
+        if missing:
+            return 1
+        if status.game.igdb_id is None:
+            return 2
+        return None
+
+    descending = sort == game_repository.GameSortOption.LABELS_DESC
+    ranks = {status.game.id: rank(status) for status in games}
+
+    def key(status: GameWithStatus) -> tuple[bool, int]:
+        value = ranks[status.game.id]
+        if value is None:
+            return (True, 0)
+        return (False, -value if descending else value)
+
+    return sorted(games, key=key)
+
+
 def get_game_detail(db: Session, game_id: int) -> GameWithStatus:
     result = game_repository.get_game(db, game_id)
     if result is None:

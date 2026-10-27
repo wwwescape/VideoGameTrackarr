@@ -32,6 +32,8 @@ const MissingAddonsSection = () => {
     cardSize,
     setCardSize,
     showViewMenu: false,
+    // These sort the owned games the add-ons belong to, which are always in the library.
+    sortFields: ["name", "date_added", "type", "release_date", "platforms", "play_status", "rating"],
   });
 
   const { data: entries } = useMissingAddons(state.apiFilters);

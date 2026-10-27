@@ -165,11 +165,43 @@ describe("HardwarePage", () => {
     expect(sectionNames("accessories")).toEqual(["Access", "DualSense", "DualShock 4"]);
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    await user.click(screen.getByRole("menuitem", { name: /Release date/ }));
+    await user.click(screen.getByRole("menuitem", { name: "Release date" }));
 
     expect(sectionNames("accessories")).toEqual(["DualSense", "DualShock 4", "Access"]);
     expect(sectionNames("devices")).toEqual(["PlayStation 4", "PlayStation 5"]);
-    expect(window.sessionStorage.getItem("vgt.view.hardware.sort")).toBe(JSON.stringify("releaseDate"));
+    expect(window.sessionStorage.getItem("vgt.view.hardware.sortBy")).toBe(
+      JSON.stringify({ field: "release_date", direction: "desc" })
+    );
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Ascending" }));
+    expect(sectionNames("accessories")).toEqual(["Access", "DualShock 4", "DualSense"]);
+  });
+
+  it("sorts the table from its column headers, for both sections", async () => {
+    devices = [
+      { ...device(1, "PlayStation 5"), ownedQuantity: 1 },
+      { ...device(2, "PlayStation 4"), ownedQuantity: 3 },
+      { ...device(3, "PlayStation 3"), owned: false, wishlisted: true, ownedQuantity: 0 },
+    ];
+    const user = renderPage();
+    await user.click(screen.getByRole("button", { name: "View" }));
+    await user.click(screen.getByRole("menuitem", { name: /Table/ }));
+    const devicesTable = within(document.getElementById("devices") as HTMLElement);
+    const deviceRows = () => devicesTable.getAllByRole("row").slice(1).map((row) => row.getAttribute("aria-label"));
+
+    expect(devicesTable.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
+    await user.click(devicesTable.getByRole("button", { name: "Qty" }));
+    // Highest first; a device you don't own has no quantity, so it goes last.
+    expect(deviceRows()).toEqual(["PlayStation 4", "PlayStation 5", "PlayStation 3"]);
+    await user.click(devicesTable.getByRole("button", { name: "Library" }));
+    expect(deviceRows()).toEqual(["PlayStation 4", "PlayStation 5", "PlayStation 3"]);
+    await user.click(devicesTable.getByRole("button", { name: "Library" }));
+    expect(deviceRows()).toEqual(["PlayStation 3", "PlayStation 4", "PlayStation 5"]);
+    // One sort for the page: the Accessories table follows it too.
+    expect(
+      within(document.getElementById("accessories") as HTMLElement).getByRole("columnheader", { name: "Library" })
+    ).toHaveAttribute("aria-sort", "descending");
   });
 
   it("switches to the Table view with a row per device", async () => {

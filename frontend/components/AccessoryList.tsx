@@ -1,20 +1,21 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccessoryList } from "../hooks/useAccessories";
-import {
-  compareHardware,
-  type HardwareKindFilters,
-  type HardwareSort,
-  type HardwareStatusFilter,
-} from "../hooks/useHardwareListState";
+import type { HardwareKindFilters, HardwareStatusFilter } from "../hooks/useHardwareListState";
+import type { ListSortControl } from "../hooks/useListSort";
 import { hardwareIdentifier } from "../utils/identifiers";
-import { HardwareListSection, type HardwareListView, type HardwareRow } from "./HardwareListViews";
+import {
+  HardwareListSection,
+  type HardwareListView,
+  type HardwareRow,
+  type HardwareSortField,
+} from "./HardwareListViews";
 
 interface AccessoryListProps {
   searchKeyword: string;
   status: HardwareStatusFilter;
   filters: HardwareKindFilters;
-  sort: HardwareSort;
+  sort: ListSortControl<HardwareSortField>;
   view: HardwareListView;
   cardSize: number;
 }
@@ -40,8 +41,7 @@ const AccessoryList = ({
 
   const rows = useMemo(() => {
     if (!accessories) return undefined;
-    const items = [...accessories].sort(compareHardware(sort));
-    return items.map(
+    return accessories.map(
       (item): HardwareRow => ({
         id: item.id,
         name: item.officialName,
@@ -52,9 +52,11 @@ const AccessoryList = ({
         wishlisted: item.wishlisted,
         ownedQuantity: item.ownedQuantity,
         href: `/hardware/accessory/${hardwareIdentifier(item.officialName, item.uuid)}`,
+        createdAt: item.createdAt,
+        releaseDate: item.releaseDate,
       })
     );
-  }, [accessories, sort]);
+  }, [accessories]);
 
   return (
     <HardwareListSection
@@ -66,6 +68,7 @@ const AccessoryList = ({
       detailLabel={t("hardware.accessoryList.typeLabel")}
       view={view}
       cardSize={cardSize}
+      sort={sort}
     />
   );
 };

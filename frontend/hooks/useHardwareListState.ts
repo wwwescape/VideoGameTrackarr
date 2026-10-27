@@ -1,27 +1,10 @@
+import { useTranslation } from "react-i18next";
+import type { HardwareSortField } from "../components/HardwareListViews";
+import type { SortField } from "../utils/listSort";
+import { useListSort } from "./useListSort";
 import { useSessionState } from "./useSessionState";
 
 export type HardwareStatusFilter = "all" | "owned" | "wishlist";
-export type HardwareSort = "name" | "releaseDate" | "dateAddedDesc" | "dateAddedAsc";
-
-// Shared by the Devices and Accessories lists. Release date only exists on accessories, so
-// devices (which have none of their own) stay by name for it.
-export function compareHardware<
-  T extends { officialName: string; createdAt: string; releaseDate?: number | null },
->(sort: HardwareSort): (a: T, b: T) => number {
-  if (sort === "dateAddedDesc" || sort === "dateAddedAsc") {
-    const direction = sort === "dateAddedDesc" ? -1 : 1;
-    return (a, b) =>
-      direction * (Date.parse(a.createdAt) - Date.parse(b.createdAt)) ||
-      a.officialName.localeCompare(b.officialName);
-  }
-  if (sort === "releaseDate") {
-    return (a, b) =>
-      a.releaseDate === undefined || b.releaseDate === undefined
-        ? a.officialName.localeCompare(b.officialName)
-        : (b.releaseDate ?? 0) - (a.releaseDate ?? 0);
-  }
-  return (a, b) => a.officialName.localeCompare(b.officialName);
-}
 
 // One kind's lookup filters (Devices or Accessories): its type vocabularies differ, so each
 // keeps its own.
@@ -52,7 +35,19 @@ function useKindFilters(kind: "devices" | "accessories"): HardwareKindFilters {
 export function useHardwareListState() {
   const [searchKeyword, setSearchKeyword] = useSessionState("hardware.searchKeyword", "");
   const [status, setStatus] = useSessionState<HardwareStatusFilter>("hardware.status", "all");
-  const [sort, setSort] = useSessionState<HardwareSort>("hardware.sort", "name");
+  // Shared by the Devices and Accessories sections. Release date only exists on accessories,
+  // so devices (which have none of their own) stay by name for it.
+  const { t } = useTranslation();
+  const sortFields: SortField<HardwareSortField>[] = [
+    { field: "name", label: t("games.listView.columnName") },
+    { field: "manufacturer", label: t("hardware.listToolbar.manufacturerLabel") },
+    { field: "detail", label: t("hardware.listToolbar.sortOptionPlatformOrType") },
+    { field: "library", label: t("games.listView.columnLibrary") },
+    { field: "quantity", label: t("hardware.filter.columnQuantity"), defaultDirection: "desc" },
+    { field: "date_added", label: t("games.listView.sortDateAdded"), defaultDirection: "desc" },
+    { field: "release_date", label: t("hardware.listToolbar.sortOptionReleaseDate"), defaultDirection: "desc" },
+  ];
+  const sort = useListSort("hardware.sortBy", sortFields, { field: "name", direction: "asc" });
   const devices = useKindFilters("devices");
   const accessories = useKindFilters("accessories");
 
@@ -76,7 +71,6 @@ export function useHardwareListState() {
     status,
     setStatus,
     sort,
-    setSort,
     devices,
     accessories,
     activeFilterCount,

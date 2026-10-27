@@ -10,7 +10,7 @@ from app.schemas.collection import (
     collection_summary_from_orm,
 )
 from app.schemas.game import GameSummaryResponse, game_summary_from_orm
-from app.services import collection_service, insight_service
+from app.services import collection_service, game_service, insight_service
 
 router = APIRouter(prefix="/api/collections", tags=["collections"], dependencies=[Depends(get_current_user)])
 
@@ -37,4 +37,5 @@ def list_collection_addons(
 ) -> list[GameSummaryResponse]:
     addons = collection_service.list_collection_addons(db, slug, **vars(params))
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    addons = game_service.sort_by_labels(addons, params.sort, on_sale_game_ids)
     return [game_summary_from_orm(addon, on_sale_game_ids) for addon in addons]

@@ -363,6 +363,8 @@ export interface UpcomingRelease {
   device?: DeviceSummary;
   accessory?: AccessorySummary;
   releaseDate: string;
+  // "year" when only the release year is known (releaseDate is then Jan 1 of it).
+  releaseDatePrecision: "day" | "year";
 }
 
 export interface CatalogBrowseResult {
@@ -501,8 +503,19 @@ export type GameSortOption =
   | "release_date_asc"
   | "release_date_desc"
   | "date_added_desc"
-  | "date_added_asc";
-export type CatalogSortOption = "name_asc" | "name_desc" | "count_desc";
+  | "date_added_asc"
+  | "type_asc"
+  | "type_desc"
+  | "platforms_asc"
+  | "platforms_desc"
+  | "play_status_asc"
+  | "play_status_desc"
+  | "rating_asc"
+  | "rating_desc"
+  | "library_asc"
+  | "library_desc"
+  | "labels_asc"
+  | "labels_desc";
 export type RatingBoard = "esrb" | "pegi" | "cero" | "usk" | "grac" | "classind" | "acb" | "iarc";
 
 export interface LibraryItem {

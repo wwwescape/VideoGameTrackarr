@@ -1,20 +1,21 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDeviceList } from "../hooks/useDevice";
-import {
-  compareHardware,
-  type HardwareKindFilters,
-  type HardwareSort,
-  type HardwareStatusFilter,
-} from "../hooks/useHardwareListState";
+import type { HardwareKindFilters, HardwareStatusFilter } from "../hooks/useHardwareListState";
+import type { ListSortControl } from "../hooks/useListSort";
 import { hardwareIdentifier } from "../utils/identifiers";
-import { HardwareListSection, type HardwareListView, type HardwareRow } from "./HardwareListViews";
+import {
+  HardwareListSection,
+  type HardwareListView,
+  type HardwareRow,
+  type HardwareSortField,
+} from "./HardwareListViews";
 
 interface DeviceListProps {
   searchKeyword: string;
   status: HardwareStatusFilter;
   filters: HardwareKindFilters;
-  sort: HardwareSort;
+  sort: ListSortControl<HardwareSortField>;
   view: HardwareListView;
   cardSize: number;
 }
@@ -32,11 +33,11 @@ const DeviceList = ({ searchKeyword, status, filters, sort, view, cardSize }: De
   });
 
   // Devices have no release-date field of their own to sort by (it lives on the linked
-  // HardwareReferenceEntry instead), so "Release date" keeps them by name (compareHardware).
+  // HardwareReferenceEntry instead), so "Release date" keeps them by name.
   const rows = useMemo(
     () =>
       devices
-        ? [...devices].sort(compareHardware(sort)).map(
+        ? devices.map(
             (item): HardwareRow => ({
               id: item.id,
               name: item.officialName,
@@ -47,10 +48,11 @@ const DeviceList = ({ searchKeyword, status, filters, sort, view, cardSize }: De
               wishlisted: item.wishlisted,
               ownedQuantity: item.ownedQuantity,
               href: `/hardware/device/${hardwareIdentifier(item.officialName, item.uuid)}`,
+              createdAt: item.createdAt,
             })
           )
         : undefined,
-    [devices, sort]
+    [devices]
   );
 
   return (
@@ -63,6 +65,7 @@ const DeviceList = ({ searchKeyword, status, filters, sort, view, cardSize }: De
       detailLabel={t("hardware.listToolbar.platformLabel")}
       view={view}
       cardSize={cardSize}
+      sort={sort}
     />
   );
 };

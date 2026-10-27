@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.repositories.game_repository import GameSortOption
+from app.repositories.game_repository import PRIVATE_SORTS, GameSortOption
 from app.schemas.public import (
     PublicAccessorySummaryResponse,
     PublicDeviceSummaryResponse,
@@ -28,6 +28,9 @@ def list_public_games(
     db: Session = Depends(get_db),
 ) -> list[PublicGameSummaryResponse]:
     auth_service.get_user_by_share_token(db, token)
+    # The share page doesn't show copies, progress, ratings or sales, so it can't sort by them.
+    if sort in PRIVATE_SORTS:
+        sort = GameSortOption.NAME_ASC
     games = game_service.search_local_games(db, search=search, sort=sort)
     return [public_game_from_orm(game) for game in games]
 

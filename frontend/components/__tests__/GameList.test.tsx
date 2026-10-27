@@ -130,9 +130,19 @@ describe("Games list", () => {
     const { user } = renderList();
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    await user.click(screen.getByRole("menuitem", { name: /Name \(DESC\)/ }));
-
+    await user.click(screen.getByRole("menuitem", { name: "Descending" }));
     expect(useGamesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "name_desc" }));
+
+    // A new field starts in its own direction (highest rated first), keeping the menu's two parts.
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Rating" }));
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "rating_desc" }));
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(screen.getByRole("menuitem", { name: "Library" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Labels" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Ascending" }));
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "rating_asc" }));
   });
 
   it("shows active filters as chips that can be removed one by one", async () => {

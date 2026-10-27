@@ -704,6 +704,119 @@ def test_list_games_sort_by_date_added(auth_client, db_session):
     assert [g["name"] for g in response.json()] == ["Zelda", "Astro Bot"]
 
 
+def _sorted_names(auth_client, sort: str) -> list[str]:
+    return [g["name"] for g in auth_client.get("/api/games", params={"sort": sort}).json()]
+
+
+def test_list_games_sort_keeps_empty_values_last(auth_client, db_session):
+    db_session.add_all(
+        [
+            Game(igdb_id=2310, name="Undated", category=GameCategory.MAIN_GAME),
+            Game(igdb_id=2311, name="Old", category=GameCategory.MAIN_GAME, first_release_date=100),
+            Game(igdb_id=2312, name="New", category=GameCategory.MAIN_GAME, first_release_date=200),
+        ]
+    )
+    db_session.commit()
+
+    assert _sorted_names(auth_client, "release_date_asc") == ["Old", "New", "Undated"]
+    assert _sorted_names(auth_client, "release_date_desc") == ["New", "Old", "Undated"]
+
+
+def test_list_games_sort_by_type(auth_client, db_session):
+    db_session.add_all(
+        [
+            Game(igdb_id=2320, name="Bundle", category=GameCategory.BUNDLE),
+            Game(igdb_id=2321, name="Remaster", category=GameCategory.REMASTER),
+            Game(igdb_id=2322, name="Main B", category=GameCategory.MAIN_GAME),
+            Game(igdb_id=2323, name="Main A", category=GameCategory.MAIN_GAME),
+            Game(igdb_id=2324, name="Unknown", category=None),
+        ]
+    )
+    db_session.commit()
+
+    assert _sorted_names(auth_client, "type_asc") == ["Main A", "Main B", "Remaster", "Bundle", "Unknown"]
+    assert _sorted_names(auth_client, "type_desc") == ["Bundle", "Remaster", "Main A", "Main B", "Unknown"]
+
+
+def test_list_games_sort_by_platforms(auth_client, db_session, seed_platform, seed_pc_platform):
+    ps5 = Game(igdb_id=2330, name="On PS5", category=GameCategory.MAIN_GAME)
+    pc = Game(igdb_id=2331, name="On PC", category=GameCategory.MAIN_GAME)
+    none = Game(igdb_id=2332, name="No Copy", category=GameCategory.MAIN_GAME)
+    db_session.add_all([ps5, pc, none])
+    db_session.flush()
+    db_session.add_all(
+        [
+            LibraryItem(game_id=ps5.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+            LibraryItem(game_id=pc.id, platform_id=seed_pc_platform.id, status=LibraryStatus.WISHLIST),
+        ]
+    )
+    db_session.commit()
+
+    # "PC (Microsoft Windows)" before "PlayStation 5"; no copy last either way.
+    assert _sorted_names(auth_client, "platforms_asc") == ["On PC", "On PS5", "No Copy"]
+    assert _sorted_names(auth_client, "platforms_desc") == ["On PS5", "On PC", "No Copy"]
+
+
+def test_list_games_sort_by_play_status_and_rating(auth_client, db_session, seed_platform):
+    games = {
+        name: Game(igdb_id=2340 + index, name=name, category=GameCategory.MAIN_GAME)
+        for index, name in enumerate(["Playing", "Backlog", "Completed", "Untracked"])
+    }
+    db_session.add_all(games.values())
+    db_session.flush()
+    db_session.add_all(
+        [
+            GameProgress(game_id=games["Playing"].id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING, rating=6),
+            GameProgress(game_id=games["Backlog"].id, platform_id=seed_platform.id, play_status=PlayStatus.BACKLOG),
+            GameProgress(
+                game_id=games["Completed"].id, platform_id=seed_platform.id, play_status=PlayStatus.COMPLETED, rating=9
+            ),
+        ]
+    )
+    db_session.commit()
+
+    assert _sorted_names(auth_client, "play_status_asc") == ["Playing", "Backlog", "Completed", "Untracked"]
+    assert _sorted_names(auth_client, "play_status_desc") == ["Completed", "Backlog", "Playing", "Untracked"]
+    assert _sorted_names(auth_client, "rating_desc") == ["Completed", "Playing", "Backlog", "Untracked"]
+    assert _sorted_names(auth_client, "rating_asc") == ["Playing", "Completed", "Backlog", "Untracked"]
+
+
+def test_list_games_sort_by_library(auth_client, db_session, seed_platform, seed_pc_platform):
+    games = {
+        name: Game(igdb_id=2350 + index, name=name, category=GameCategory.MAIN_GAME)
+        for index, name in enumerate(["Both", "Owned", "Wishlisted", "Neither"])
+    }
+    db_session.add_all(games.values())
+    db_session.flush()
+    db_session.add_all(
+        [
+            LibraryItem(game_id=games["Both"].id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+            LibraryItem(game_id=games["Both"].id, platform_id=seed_pc_platform.id, status=LibraryStatus.WISHLIST),
+            LibraryItem(game_id=games["Owned"].id, platform_id=seed_platform.id, status=LibraryStatus.OWNED),
+            LibraryItem(game_id=games["Wishlisted"].id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST),
+        ]
+    )
+    db_session.commit()
+
+    assert _sorted_names(auth_client, "library_asc") == ["Both", "Owned", "Wishlisted", "Neither"]
+    assert _sorted_names(auth_client, "library_desc") == ["Wishlisted", "Owned", "Both", "Neither"]
+
+
+def test_list_games_sort_by_labels(auth_client, db_session, monkeypatch):
+    from app.services import insight_service
+
+    on_sale = Game(igdb_id=2360, name="On Sale", category=GameCategory.MAIN_GAME)
+    missing = Game(igdb_id=2361, name="Missing", category=GameCategory.MAIN_GAME, auto_discovered=True)
+    custom = Game(igdb_id=None, name="Custom", category=GameCategory.MAIN_GAME)
+    plain = Game(igdb_id=2362, name="A Plain Game", category=GameCategory.MAIN_GAME)
+    db_session.add_all([on_sale, missing, custom, plain])
+    db_session.commit()
+    monkeypatch.setattr(insight_service, "get_on_sale_game_ids", lambda db: frozenset({on_sale.id}))
+
+    assert _sorted_names(auth_client, "labels_asc") == ["On Sale", "Missing", "Custom", "A Plain Game"]
+    assert _sorted_names(auth_client, "labels_desc") == ["Custom", "Missing", "On Sale", "A Plain Game"]
+
+
 def test_get_game_detail_includes_parent_name(auth_client, db_session, seed_game):
     addon = Game(igdb_id=2002, name="Test Game DLC", category=GameCategory.DLC_ADDON, parent_game_id=seed_game.id)
     db_session.add(addon)

@@ -16,12 +16,17 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import type { MediaFormat } from "../api/types";
+import { useListSort } from "../hooks/useListSort";
 import { useTrackedSalesItems, useUntrackSalesItem } from "../hooks/useSalesTracking";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { formatCurrency } from "../utils/currency";
 import { gameIdentifier } from "../utils/identifiers";
+import { sortRows, type SortField } from "../utils/listSort";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { SortHeaderCell } from "./ListControls";
 import SettingsFrame from "./SettingsFrame";
+
+type TrackedSort = "name" | "platform" | "format" | "storefront" | "target";
 
 const SaleTrackedPage = () => {
   const { t } = useTranslation();
@@ -41,7 +46,39 @@ const SaleTrackedPage = () => {
     other: t("games.library.formatOther"),
   };
 
-  const rows = items ?? [];
+  const sortFields: SortField<TrackedSort>[] = [
+    { field: "name", label: t("insights.saleTracked.columnName") },
+    { field: "platform", label: t("insights.saleTracked.columnPlatform") },
+    { field: "format", label: t("insights.saleTracked.columnFormat") },
+    { field: "storefront", label: t("insights.saleTracked.columnStorefront") },
+    { field: "target", label: t("insights.saleTracked.columnTargetPrice") },
+  ];
+  const sort = useListSort("saleTracked.sortBy", sortFields, { field: "name", direction: "asc" });
+  // Sorted as a whole, then paged; a new sort starts again on the first page.
+  const rows = sortRows(
+    items ?? [],
+    sort.sort,
+    {
+      name: (row) => row.gameName,
+      platform: (row) => row.platformName,
+      format: (row) => (row.format ? formatLabels[row.format] : null),
+      storefront: (row) => row.digitalStorefront,
+      target: (row) => row.targetPrice,
+    },
+    (row) => row.gameName
+  );
+  const header = (field: TrackedSort) => (
+    <SortHeaderCell
+      field={field}
+      sort={sort.sort}
+      onSort={(next) => {
+        sort.clickHeader(next);
+        setPage(0);
+      }}
+    >
+      {sortFields.find((option) => option.field === field)?.label}
+    </SortHeaderCell>
+  );
   const visibleRows = rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleUntrack = async (libraryItemId: number) => {
@@ -68,11 +105,11 @@ const SaleTrackedPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell />
-                  <TableCell>{t("insights.saleTracked.columnName")}</TableCell>
-                  <TableCell>{t("insights.saleTracked.columnPlatform")}</TableCell>
-                  <TableCell>{t("insights.saleTracked.columnFormat")}</TableCell>
-                  <TableCell>{t("insights.saleTracked.columnStorefront")}</TableCell>
-                  <TableCell>{t("insights.saleTracked.columnTargetPrice")}</TableCell>
+                  {header("name")}
+                  {header("platform")}
+                  {header("format")}
+                  {header("storefront")}
+                  {header("target")}
                   <TableCell align="right">{t("insights.saleTracked.columnActions")}</TableCell>
                 </TableRow>
               </TableHead>

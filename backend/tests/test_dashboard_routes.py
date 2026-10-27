@@ -5,17 +5,17 @@ from app.models.hardware import HardwareReferenceEntry, UserAccessory, UserDevic
 from app.models.library import GameProgress, LibraryItem, LibraryStatus, PlayStatus
 
 
-def _link_device_to_reference(db_session, device, release_date: date) -> None:
+def _link_device_to_reference(db_session, device, release_date: date | str) -> None:
     """Devices have no release_date column of their own — a device's release date for the
     release calendar always comes from its linked HardwareReferenceEntry."""
     entry = HardwareReferenceEntry(
         brand="Sony",
         generation="PlayStation 5",
         artefact="PlayStation 5",
-        official_name=f"Sony PlayStation 5 (test ref {release_date.isoformat()})",
+        official_name=f"Sony PlayStation 5 (test ref {release_date})",
         category="Console",
         type="Device",
-        release_date=release_date.isoformat(),
+        release_date=release_date if isinstance(release_date, str) else release_date.isoformat(),
         discontinued=False,
     )
     db_session.add(entry)
@@ -179,6 +179,20 @@ def test_release_calendar_includes_future_wishlisted_device(auth_client, db_sess
     [item] = response.json()
     assert item["kind"] == "device"
     assert item["device"]["id"] == seed_device.id
+    assert item["releaseDatePrecision"] == "day"
+
+
+def test_release_calendar_marks_year_only_reference_dates(auth_client, db_session, seed_device):
+    next_year = date.today().year + 1
+    _link_device_to_reference(db_session, seed_device, str(next_year))
+    db_session.add(UserDevice(device_id=seed_device.id, status=LibraryStatus.WISHLIST))
+    db_session.commit()
+
+    response = auth_client.get("/api/dashboard/release-calendar")
+
+    [item] = response.json()
+    assert item["releaseDate"] == f"{next_year}-01-01"
+    assert item["releaseDatePrecision"] == "year"
 
 
 def test_release_calendar_includes_future_wishlisted_accessory(auth_client, db_session, seed_accessory):
@@ -193,6 +207,7 @@ def test_release_calendar_includes_future_wishlisted_accessory(auth_client, db_s
     [item] = response.json()
     assert item["kind"] == "accessory"
     assert item["accessory"]["id"] == seed_accessory.id
+    assert item["releaseDatePrecision"] == "year"
 
 
 def test_release_calendar_excludes_hardware_not_owned_or_wishlisted(auth_client, db_session, seed_device):

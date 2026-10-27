@@ -6,8 +6,10 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { OnSaleItem } from "../api/types";
 import { useOnSale } from "../hooks/useInsights";
+import { useListSort } from "../hooks/useListSort";
 import { useLocalPreference } from "../hooks/useLocalPreference";
 import { useSessionState } from "../hooks/useSessionState";
+import { sortRows, type SortField } from "../utils/listSort";
 import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import { ListSearchField } from "./ListControls";
@@ -21,16 +23,8 @@ import {
 import OnSaleSection, { type OnSaleView } from "./OnSaleSection";
 import Page from "./Page";
 
-export type OnSaleSort = "best" | "discount" | "price" | "name";
+export type OnSaleSort = "best" | "name" | "price" | "discount" | "store" | "historical_low" | "target";
 type TargetFilter = "all" | "reached";
-
-// "Best deals" is the server's own order: target price reached first, then biggest discount.
-const SORTERS: Record<Exclude<OnSaleSort, "best">, (a: OnSaleItem, b: OnSaleItem) => number> = {
-  discount: (a, b) => (b.currentCut ?? 0) - (a.currentCut ?? 0),
-  // Amounts in different currencies are compared as they are; most libraries use one.
-  price: (a, b) => a.currentPriceAmount - b.currentPriceAmount,
-  name: (a, b) => a.game.name.localeCompare(b.game.name),
-};
 
 // Insights → On Sale: wishlisted games on sale, as covers or a price table, with the same
 // toolbar as the Games list. Search, sort and filters are client-side over the full list.
@@ -38,7 +32,16 @@ const OnSalePage = () => {
   const { t } = useTranslation();
   const { data: items, isLoading } = useOnSale();
   const [searchKeyword, setSearchKeyword] = useSessionState("onSale.searchKeyword", "");
-  const [sort, setSort] = useSessionState<OnSaleSort>("onSale.sort", "best");
+  const sortFields: SortField<OnSaleSort>[] = [
+    { field: "best", label: t("insights.onSale.sortBest") },
+    { field: "name", label: t("games.listView.columnName") },
+    { field: "price", label: t("insights.onSale.columnPrice") },
+    { field: "discount", label: t("insights.onSale.columnDiscount"), defaultDirection: "desc" },
+    { field: "store", label: t("insights.onSale.columnStore") },
+    { field: "historical_low", label: t("insights.onSale.columnHistoricalLow") },
+    { field: "target", label: t("insights.onSale.columnTarget") },
+  ];
+  const sort = useListSort("onSale.sortBy", sortFields, { field: "best", direction: "asc" });
   const [stores, setStores] = useSessionState<string[]>("onSale.stores", []);
   const [target, setTarget] = useSessionState<TargetFilter>("onSale.target", "all");
   const [view, setView] = useLocalPreference<OnSaleView>("onSale.view", "covers");
@@ -64,8 +67,20 @@ const OnSalePage = () => {
           (item.currentShopName !== null && stores.includes(item.currentShopName))) &&
         (target === "all" || item.isTargetHit)
     );
-    return sort === "best" ? filtered : [...filtered].sort(SORTERS[sort]);
-  }, [items, searchKeyword, stores, target, sort]);
+    // "Best deals" is the server's own order: target price reached first, then biggest
+    // discount. Amounts in different currencies are compared as they are; most libraries use one.
+    const serverOrder = new Map((items ?? []).map((item, index) => [item.libraryItemId, index]));
+    const values: Record<OnSaleSort, (item: OnSaleItem) => number | string | null> = {
+      best: (item) => serverOrder.get(item.libraryItemId) ?? null,
+      name: (item) => item.game.name,
+      price: (item) => item.currentPriceAmount,
+      discount: (item) => item.currentCut,
+      store: (item) => item.currentShopName,
+      historical_low: (item) => item.historicalLowAmount,
+      target: (item) => item.targetPrice,
+    };
+    return sortRows(filtered, sort.sort, values, (item) => item.game.name);
+  }, [items, searchKeyword, stores, target, sort.sort]);
 
   const activeFilterCount = stores.length + (target === "all" ? 0 : 1);
   const clearFilters = () => {
@@ -103,16 +118,7 @@ const OnSalePage = () => {
               { value: "table", label: t("games.listView.view_table"), icon: <TableRowsIcon /> },
             ],
           }}
-          sort={{
-            value: sort,
-            onChange: setSort,
-            choices: [
-              { value: "best", label: t("insights.onSale.sortBest") },
-              { value: "discount", label: t("insights.onSale.sortDiscount") },
-              { value: "price", label: t("insights.onSale.sortPrice") },
-              { value: "name", label: t("games.listToolbar.sortNameAsc") },
-            ],
-          }}
+          sort={sort}
           filter={{ count: activeFilterCount, onOpen: () => setFiltersOpen(true) }}
         />
       }
@@ -138,7 +144,7 @@ const OnSalePage = () => {
       ) : !visible.length ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>{t("games.listToolbar.noSearchMatches")}</Paper>
       ) : (
-        <OnSaleSection items={visible} view={view} cardSize={cardSize} />
+        <OnSaleSection items={visible} view={view} cardSize={cardSize} sort={sort} />
       )}
 
       <FilterDialog

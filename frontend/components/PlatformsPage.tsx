@@ -37,8 +37,13 @@ const PlatformsPage = () => {
   );
 
   const tableColumns: CatalogIndexColumn<PlatformCardEntry>[] = [
-    { key: "owned", label: t("games.platformsPage.columnOwned"), render: (entry) => entry.ownedCount },
-    { key: "wishlisted", label: t("games.platformsPage.columnWishlisted"), render: (entry) => entry.wishlistedCount },
+    { key: "owned", label: t("games.platformsPage.columnOwned"), render: (entry) => entry.ownedCount, sortValue: (entry) => entry.ownedCount },
+    {
+      key: "wishlisted",
+      label: t("games.platformsPage.columnWishlisted"),
+      render: (entry) => entry.wishlistedCount,
+      sortValue: (entry) => entry.wishlistedCount,
+    },
     {
       key: "logo",
       label: "",

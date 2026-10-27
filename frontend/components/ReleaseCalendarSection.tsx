@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import type { UpcomingRelease } from "../api/types";
 import { useReleaseCalendar } from "../hooks/useDashboard";
 import { gameIdentifier, hardwareIdentifier } from "../utils/identifiers";
+import { formatReleaseDate } from "../utils/utils";
 import CardCarousel from "./CardCarousel";
 import GameCard from "./GameCard";
 import HardwareCard from "./HardwareCard";
@@ -15,9 +17,16 @@ interface ReleaseCalendarSectionProps {
 }
 
 const ReleaseCalendarSection = ({ scope, title, columnWidth }: ReleaseCalendarSectionProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data, isLoading } = useReleaseCalendar();
   const navigate = useNavigate();
+
+  // Hardware cards show the release date like the game cards do, or just the year when
+  // that's all the hardware reference (or a custom accessory) knows.
+  const releaseDateLabel = (item: UpcomingRelease) =>
+    item.releaseDatePrecision === "year"
+      ? item.releaseDate.slice(0, 4)
+      : formatReleaseDate(Date.parse(item.releaseDate) / 1000, i18n.resolvedLanguage ?? i18n.language);
 
   if (isLoading) {
     return <Typography color="text.secondary">{t("releaseCalendar.loading")}</Typography>;
@@ -74,6 +83,7 @@ const ReleaseCalendarSection = ({ scope, title, columnWidth }: ReleaseCalendarSe
               owned={item.device.owned}
               wishlisted={item.device.wishlisted}
               ownedQuantity={item.device.ownedQuantity}
+              dateLine={releaseDateLabel(item)}
               onClick={() =>
                 navigate(
                   `/hardware/device/${hardwareIdentifier(item.device!.officialName, item.device!.uuid)}`
@@ -93,6 +103,7 @@ const ReleaseCalendarSection = ({ scope, title, columnWidth }: ReleaseCalendarSe
               owned={item.accessory.owned}
               wishlisted={item.accessory.wishlisted}
               ownedQuantity={item.accessory.ownedQuantity}
+              dateLine={releaseDateLabel(item)}
               onClick={() =>
                 navigate(
                   `/hardware/accessory/${hardwareIdentifier(item.accessory!.officialName, item.accessory!.uuid)}`

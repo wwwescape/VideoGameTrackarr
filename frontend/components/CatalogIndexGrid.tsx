@@ -14,12 +14,13 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { useTranslation } from "react-i18next";
-import type { CatalogSortOption } from "../api/types";
+import { useListSort } from "../hooks/useListSort";
 import { useLocalPreference } from "../hooks/useLocalPreference";
 import { useSessionState } from "../hooks/useSessionState";
+import { sortRows, type SortField, type SortValue } from "../utils/listSort";
 import CatalogRefCard from "./CatalogRefCard";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
-import { CardSizeSlider, ChoiceMenu, ListSearchField, type MenuChoice } from "./ListControls";
+import { CardSizeSlider, ChoiceMenu, ListSearchField, SortHeaderCell, SortMenu, type MenuChoice } from "./ListControls";
 import { FilterChips, FilterDialog, ToggleFilter } from "./ListToolbar";
 import Page, { STICKY_TOP, ToolbarButton } from "./Page";
 import VirtualGameGrid from "./VirtualGameGrid";
@@ -40,6 +41,8 @@ export interface CatalogIndexColumn<T> {
   render: (entry: T) => ReactNode;
   // Hidden on phones, to keep the table to the name and a count.
   hideOnPhone?: boolean;
+  // Makes the column sortable (its header and the Sort menu), highest first to start.
+  sortValue?: (entry: T) => SortValue;
 }
 
 export interface CatalogIndexFilter<T> {
@@ -58,7 +61,7 @@ interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
   getHref: (entry: T) => string;
   // Defaults to the entry's id; Platforms needs its own, since PC has a card per storefront.
   getKey?: (entry: T) => number | string;
-  // What the "Most games" sort orders by.
+  // The default card's and table's game count.
   getCount: (entry: T) => number;
   // Defaults to a plain name + game count CatalogRefCard.
   renderCard?: (entry: T, onClick: () => void) => ReactNode;
@@ -71,12 +74,6 @@ interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
   // and the localStorage key for its view and card size.
   stateKey: string;
 }
-
-const SORT_CHOICES: { value: CatalogSortOption; labelKey: string }[] = [
-  { value: "name_asc", labelKey: "games.listToolbar.sortNameAsc" },
-  { value: "name_desc", labelKey: "games.listToolbar.sortNameDesc" },
-  { value: "count_desc", labelKey: "games.listToolbar.sortMostGames" },
-];
 
 // Shared by CollectionsPage, SeriesPage and PlatformsPage — same "index of catalog refs, each
 // linking to its own browse page" shape, just a different data source, card and link target.
@@ -102,7 +99,6 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useSessionState(`${stateKey}.searchKeyword`, "");
-  const [sort, setSort] = useSessionState<CatalogSortOption>(`${stateKey}.sort`, "name_asc");
   const [view, setView] = useLocalPreference<CatalogIndexView>(`${stateKey}.view`, "cards");
   const [cardSize, setCardSize] = useLocalPreference(`${stateKey}.cardSize`, CARD_SIZE_DEFAULT);
   const [menu, setMenu] = useState<{ name: "options" | "view" | "sort"; anchor: HTMLElement } | null>(null);
@@ -110,23 +106,35 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeStatus = statusFilter?.choices.find((choice) => choice.value === status);
 
+  const columns: CatalogIndexColumn<T>[] = tableColumns ?? [
+    { key: "games", label: t("games.listView.columnGames"), render: (entry) => getCount(entry), sortValue: getCount },
+  ];
+  // Name, then every sortable table column (the counts), in the table's order. The game count
+  // (getCount) is always offered: as its own column, or for Platforms (Owned + Wishlisted
+  // columns) in the Sort menu only.
+  const sortColumns = columns.filter((column) => column.sortValue);
+  const countField = sortColumns.some((column) => column.key === "games")
+    ? []
+    : [{ field: "games", label: t("games.listView.columnGames"), defaultDirection: "desc" as const }];
+  const sortFields: SortField<string>[] = [
+    { field: "name", label: t("games.listView.columnName") },
+    ...sortColumns.map((column) => ({ field: column.key, label: column.label, defaultDirection: "desc" as const })),
+    ...countField,
+  ];
+  const sort = useListSort(`${stateKey}.sortBy`, sortFields, { field: "name", direction: "asc" });
+
   const visibleEntries = useMemo(() => {
     if (!entries) return [];
     const trimmed = searchKeyword.trim().toLowerCase();
     const filtered = entries.filter(
       (entry) => (!trimmed || entry.name.toLowerCase().includes(trimmed)) && (!activeStatus || activeStatus.matches(entry))
     );
-    const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-    if (sort === "name_desc") sorted.reverse();
-    // Stable sort, so entries with the same count stay in name order.
-    if (sort === "count_desc") sorted.sort((a, b) => getCount(b) - getCount(a));
-    return sorted;
-  }, [entries, searchKeyword, sort, getCount, activeStatus]);
+    const values: Record<string, (entry: T) => SortValue> = { name: (entry) => entry.name, games: getCount };
+    sortColumns.forEach((column) => (values[column.key] = column.sortValue!));
+    return sortRows(filtered, sort.sort, values, (entry) => entry.name);
+  }, [entries, searchKeyword, sort.sort, activeStatus, sortColumns, getCount]);
 
   const keyOf = getKey ?? ((entry: T) => entry.id);
-  const columns: CatalogIndexColumn<T>[] = tableColumns ?? [
-    { key: "games", label: t("games.listView.columnGames"), render: (entry) => getCount(entry) },
-  ];
   const viewChoices: MenuChoice<CatalogIndexView>[] = [
     { value: "cards", label: t("catalog.index.viewCards"), icon: <GridViewIcon /> },
     { value: "table", label: t("games.listView.view_table"), icon: <TableRowsIcon /> },
@@ -172,12 +180,21 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
       <Table size="small" aria-label={searchLabel}>
         <TableHead>
           <TableRow>
-            <TableCell>{t("games.listView.columnName")}</TableCell>
-            {columns.map((column) => (
-              <TableCell key={column.key} sx={column.hideOnPhone ? { display: { xs: "none", sm: "table-cell" } } : undefined}>
-                {column.label}
-              </TableCell>
-            ))}
+            <SortHeaderCell field="name" sort={sort.sort} onSort={sort.clickHeader}>
+              {t("games.listView.columnName")}
+            </SortHeaderCell>
+            {columns.map((column) => {
+              const sx = column.hideOnPhone ? { display: { xs: "none", sm: "table-cell" } } : undefined;
+              return column.sortValue ? (
+                <SortHeaderCell key={column.key} field={column.key} sort={sort.sort} onSort={sort.clickHeader} sx={sx}>
+                  {column.label}
+                </SortHeaderCell>
+              ) : (
+                <TableCell key={column.key} sx={sx}>
+                  {column.label}
+                </TableCell>
+              );
+            })}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -255,12 +272,14 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
         <CardSizeSlider value={cardSize} onChange={setCardSize} disabled={view !== "cards"} />
       </Menu>
       <ChoiceMenu anchor={menu?.name === "view" ? menu.anchor : null} onClose={closeMenu} choices={viewChoices} selected={view} onSelect={setView} />
-      <ChoiceMenu
+      <SortMenu
         anchor={menu?.name === "sort" ? menu.anchor : null}
         onClose={closeMenu}
-        choices={SORT_CHOICES.map((choice) => ({ value: choice.value, label: t(choice.labelKey) }))}
-        selected={sort}
-        onSelect={setSort}
+        fields={sortFields.map((option) => ({ value: option.field, label: option.label }))}
+        field={sort.sort.field}
+        direction={sort.sort.direction}
+        onFieldChange={sort.pickField}
+        onDirectionChange={sort.setDirection}
       />
       {statusFilter ? (
         <FilterDialog

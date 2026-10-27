@@ -17,8 +17,8 @@ const CollectionsPage = () => {
       isLoading={isLoading}
       getCount={(entry) => entry.gameCount}
       tableColumns={[
-        { key: "games", label: t("games.listView.columnGames"), render: (entry) => entry.gameCount },
-        { key: "owned", label: t("games.platformsPage.columnOwned"), render: (entry) => entry.ownedCount },
+        { key: "games", label: t("games.listView.columnGames"), render: (entry) => entry.gameCount, sortValue: (entry) => entry.gameCount },
+        { key: "owned", label: t("games.platformsPage.columnOwned"), render: (entry) => entry.ownedCount, sortValue: (entry) => entry.ownedCount },
       ]}
       statusFilter={{
         label: t("catalog.index.filterOwnership"),

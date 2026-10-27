@@ -11,10 +11,13 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { OnSaleItem } from "../api/types";
+import type { ListSortControl } from "../hooks/useListSort";
 import { formatCurrency } from "../utils/currency";
 import { gameIdentifier } from "../utils/identifiers";
 import { isAddon } from "../utils/utils";
 import GameCard from "./GameCard";
+import { SortHeaderCell } from "./ListControls";
+import type { OnSaleSort } from "./OnSalePage";
 
 export type OnSaleView = "covers" | "table";
 
@@ -23,6 +26,8 @@ interface OnSaleSectionProps {
   items: OnSaleItem[];
   view: OnSaleView;
   cardSize: number;
+  // The page's sort, which the table's headers change.
+  sort: ListSortControl<OnSaleSort>;
 }
 
 export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
@@ -73,7 +78,7 @@ export const OnSaleTile = ({ item }: { item: OnSaleItem }) => {
   );
 };
 
-const OnSaleSection = ({ items, view, cardSize }: OnSaleSectionProps) => {
+const OnSaleSection = ({ items, view, cardSize, sort }: OnSaleSectionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const open = (item: OnSaleItem) =>
@@ -95,16 +100,36 @@ const OnSaleSection = ({ items, view, cardSize }: OnSaleSectionProps) => {
         <Table size="small" aria-label={t("insights.dashboard.onSaleHeading")}>
           <TableHead>
             <TableRow>
-              <TableCell>{t("games.listView.columnName")}</TableCell>
-              <TableCell align="right">{t("insights.onSale.columnPrice")}</TableCell>
-              <TableCell align="right">{t("insights.onSale.columnDiscount")}</TableCell>
-              <TableCell>{t("insights.onSale.columnStore")}</TableCell>
-              <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+              <SortHeaderCell field="name" sort={sort.sort} onSort={sort.clickHeader}>
+                {t("games.listView.columnName")}
+              </SortHeaderCell>
+              <SortHeaderCell field="price" sort={sort.sort} onSort={sort.clickHeader} align="right">
+                {t("insights.onSale.columnPrice")}
+              </SortHeaderCell>
+              <SortHeaderCell field="discount" sort={sort.sort} onSort={sort.clickHeader} align="right">
+                {t("insights.onSale.columnDiscount")}
+              </SortHeaderCell>
+              <SortHeaderCell field="store" sort={sort.sort} onSort={sort.clickHeader}>
+                {t("insights.onSale.columnStore")}
+              </SortHeaderCell>
+              <SortHeaderCell
+                field="historical_low"
+                sort={sort.sort}
+                onSort={sort.clickHeader}
+                align="right"
+                sx={{ display: { xs: "none", sm: "table-cell" } }}
+              >
                 {t("insights.onSale.columnHistoricalLow")}
-              </TableCell>
-              <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+              </SortHeaderCell>
+              <SortHeaderCell
+                field="target"
+                sort={sort.sort}
+                onSort={sort.clickHeader}
+                align="right"
+                sx={{ display: { xs: "none", sm: "table-cell" } }}
+              >
                 {t("insights.onSale.columnTarget")}
-              </TableCell>
+              </SortHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>

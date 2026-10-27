@@ -567,17 +567,10 @@
       "matchModeAriaLabel": "Match any or all of the selected values",
       "matchModeTooltip": "Match any: a game needs at least one of the selected values. Match all: it needs every one. Select two or more values to switch.",
       "allOption": "All",
-      "sortNameAsc": "Name (ASC)",
-      "sortNameDesc": "Name (DESC)",
-      "sortMostGames": "Most games",
-      "sortReleaseDateAsc": "Release Date (ASC)",
-      "sortReleaseDateDesc": "Release Date (DESC)",
       "showMissingLabel": "Show what I am missing?",
       "steelbookOnlyLabel": "Steelbooks only",
       "clearFiltersButton": "Clear filters",
-      "noSearchMatches": "No matches found.",
-      "sortDateAddedDesc": "Date added (newest first)",
-      "sortDateAddedAsc": "Date added (oldest first)"
+      "noSearchMatches": "No matches found."
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -678,7 +671,6 @@
       "seriesLabel": "Series: {{name}}",
       "collectionLabel": "Collection: {{name}}",
       "unknownPlatform": "Unknown platform",
-      "tbd": "TBD",
       "storylineTitle": "Storyline",
       "artworkTitle": "Artwork",
       "videosTitle": "Videos",
@@ -848,6 +840,11 @@
       "columnYear": "Year",
       "columnPlatforms": "Platforms",
       "columnRating": "Rating",
+      "columnLibrary": "Library",
+      "columnLabels": "Labels",
+      "sortDateAdded": "Date added",
+      "sortAscending": "Ascending",
+      "sortDescending": "Descending",
       "edit": "Edit",
       "play": "Play",
       "clearSearch": "Clear search",
@@ -858,19 +855,17 @@
     },
     "detail": {
       "aboutTitle": "About",
-      "platformsLabel": "Platforms",
-      "releaseDatesTitle": "Release dates"
+      "platformsReleaseDatesTitle": "Platforms & release dates"
     }
   },
   "events": {
     "page": {
       "emptyState": "No upcoming events right now.",
+      "sortStart": "Start date",
       "ongoingHeading": "Ongoing",
       "upcomingHeading": "Upcoming",
       "eventCount_one": "{{count}} event",
       "eventCount_other": "{{count}} events",
-      "sortSoonest": "Date (soonest first)",
-      "sortLatest": "Date (latest first)",
       "searchPlaceholder": "Search events"
     },
     "about": {
@@ -1060,9 +1055,7 @@
       "columnStore": "Store",
       "columnHistoricalLow": "Historical low",
       "columnTarget": "Target price",
-      "sortBest": "Best deals first",
-      "sortDiscount": "Biggest discount",
-      "sortPrice": "Lowest price",
+      "sortBest": "Best deals",
       "targetReached": "Target price reached"
     },
     "orphans": {
@@ -1239,14 +1232,12 @@
       "noImageAvailable": "No Image Available"
     },
     "listToolbar": {
-      "sortOptionName": "Name",
       "sortOptionReleaseDate": "Release date",
+      "sortOptionPlatformOrType": "Platform / type",
       "allOption": "All",
       "manufacturerLabel": "Manufacturer",
       "platformLabel": "Platform",
-      "sortByLabel": "Sort by",
-      "sortOptionDateAddedDesc": "Date added (newest first)",
-      "sortOptionDateAddedAsc": "Date added (oldest first)"
+      "sortByLabel": "Sort by"
     },
     "page": {
       "addDeviceButton": "Add Device",

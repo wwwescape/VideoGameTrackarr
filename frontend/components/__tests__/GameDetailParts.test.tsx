@@ -127,7 +127,12 @@ describe("game About", () => {
       </ThemeProvider>
     );
 
-  it("shows the platforms and release dates as cards, without the old facts", () => {
+  const platformRows = () =>
+    [...(screen.getByRole("heading", { name: "Platforms & release dates" }).parentElement as HTMLElement).querySelectorAll("li")].map(
+      (row) => row.textContent
+    );
+
+  it("shows the platforms and release dates as one card, without the old facts", () => {
     renderAbout(
       about({
         summary: "Climb the mountain.",
@@ -140,24 +145,21 @@ describe("game About", () => {
           { id: 130, name: "Nintendo Switch" },
         ] as GameAboutData["platforms"],
         releaseDates: [
-          { id: 1, platformName: "PC (Microsoft Windows)", human: "Jan 25, 2018", releaseRegion: "worldwide" },
-          { id: 2, platformName: "Nintendo Switch", human: "Jan 25, 2018", releaseRegion: "europe" },
+          { id: 1, platformName: "PC (Microsoft Windows)", date: 1516838400, human: "Jan 25, 2018", releaseRegion: "worldwide" },
+          { id: 2, platformName: "Nintendo Switch", date: 1516838400, human: "Jan 25, 2018", releaseRegion: "europe" },
         ] as GameAboutData["releaseDates"],
       })
     );
 
     expect(screen.getByText("Climb the mountain.")).toBeInTheDocument();
-    const platforms = screen.getByRole("heading", { name: "Platforms" }).parentElement as HTMLElement;
-    expect(platforms).toHaveTextContent("PC (Microsoft Windows)");
-    expect(platforms).toHaveTextContent("Nintendo Switch");
-    const releases = screen.getByRole("heading", { name: "Release dates" }).parentElement as HTMLElement;
-    expect(releases.querySelectorAll("li")).toHaveLength(2);
-    expect(releases).toHaveTextContent("Europe");
+    expect(platformRows()).toEqual(["Nintendo SwitchJan 25, 2018Europe", "PC (Microsoft Windows)Jan 25, 2018Worldwide"]);
+    expect(screen.queryByRole("heading", { name: "Platforms" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Release dates" })).toBeNull();
     expect(screen.queryByText("Porting Co")).toBeNull();
     expect(screen.queryByText("Developed by")).toBeNull();
   });
 
-  it("lists platforms and release dates by platform name", () => {
+  it("lists a row per platform by name, its dates earliest first", () => {
     renderAbout(
       about({
         platforms: [
@@ -174,21 +176,40 @@ describe("game About", () => {
       })
     );
 
-    const platforms = screen.getByRole("heading", { name: "Platforms" }).parentElement as HTMLElement;
-    expect(platforms).toHaveTextContent(/Nintendo Switch.*PC \(Microsoft Windows\).*Sony Playstation 4/);
-    const releases = screen.getByRole("heading", { name: "Release dates" }).parentElement as HTMLElement;
-    expect([...releases.querySelectorAll("li")].map((row) => row.textContent)).toEqual([
-      "Nintendo SwitchOct 1, 2025Japan",
-      "Nintendo SwitchOct 2, 2025Europe",
+    expect(platformRows()).toEqual([
+      "Nintendo SwitchOct 1, 2025JapanOct 2, 2025Europe",
       "PC (Microsoft Windows)Sep 30, 2025",
       "Sony Playstation 4Sep 30, 2025",
     ]);
   });
 
-  it("leaves out the release dates card when there's only the one the hero shows", () => {
-    renderAbout(about({ releaseDates: [{ id: 1, platformName: "PC", human: "2018", releaseRegion: null }] as GameAboutData["releaseDates"] }));
+  it("leaves the date blank for a platform with no known release date", () => {
+    renderAbout(
+      about({
+        platforms: [
+          { id: 6, name: "PC (Microsoft Windows)" },
+          { id: 167, name: "PlayStation 5" },
+          { id: 169, name: "Xbox Series X|S" },
+        ] as GameAboutData["platforms"],
+        releaseDates: [
+          { id: 1, platformName: "PC (Microsoft Windows)", date: 1759190400, human: "Sep 30, 2025", releaseRegion: null },
+          { id: 2, platformName: "PlayStation 5", date: null, human: "TBD", releaseRegion: null },
+        ] as GameAboutData["releaseDates"],
+      })
+    );
 
-    expect(screen.queryByRole("heading", { name: "Release dates" })).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Platforms" })).toBeNull();
+    expect(platformRows()).toEqual(["PC (Microsoft Windows)Sep 30, 2025", "PlayStation 5", "Xbox Series X|S"]);
+    expect(screen.queryByText(/TBD/)).toBeNull();
+  });
+
+  it("shows the card for a single release, and nothing without platforms or dates", () => {
+    const { unmount } = renderAbout(
+      about({ releaseDates: [{ id: 1, platformName: "PC", date: 1514764800, human: "2018", releaseRegion: null }] as GameAboutData["releaseDates"] })
+    );
+    expect(platformRows()).toEqual(["PC2018"]);
+    unmount();
+
+    renderAbout(about({}));
+    expect(screen.queryByRole("heading", { name: "Platforms & release dates" })).toBeNull();
   });
 });

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories import dashboard_repository
 from app.repositories.accessory_repository import AccessoryWithStatus
-from app.repositories.dashboard_repository import DashboardStatsData
+from app.repositories.dashboard_repository import DashboardStatsData, ReleasePrecision
 from app.repositories.device_repository import DeviceWithStatus
 from app.repositories.game_repository import GameWithStatus
 
@@ -24,6 +24,7 @@ class UpcomingReleaseItem:
     device: DeviceWithStatus | None
     accessory: AccessoryWithStatus | None
     release_date: date
+    precision: ReleasePrecision = "day"
 
 
 def _release_calendar_name(item: UpcomingReleaseItem) -> str:
@@ -59,6 +60,7 @@ def list_upcoming_releases(db: Session) -> list[UpcomingReleaseItem]:
             device=release.device,
             accessory=release.accessory,
             release_date=release.release_date,
+            precision=release.precision,
         )
         for release in hardware
     )

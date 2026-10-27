@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { GameSummary } from "../../api/types";
+import type { GameSortOption, GameSummary } from "../../api/types";
 import { createVgtTheme } from "../../theme/createVgtTheme";
 import GameCard, { GameCardHoverAction } from "../GameCard";
 import { categoryLabel, GameCoverGrid, GameOverviewRows, GameTable } from "../GameListViews";
@@ -72,7 +72,7 @@ describe("Games list views", () => {
     const onToggleSelect = vi.fn();
     const games = [game(1, "Celeste", { rating: 9, libraryPlatforms: ["PC"] })];
     const { rerender } = renderWithTheme(
-      <GameTable games={games} onOpen={onOpen} selecting={false} selectedIds={new Set()} onToggleSelect={onToggleSelect} />
+      <GameTable games={games} onOpen={onOpen} selecting={false} selectedIds={new Set()} onToggleSelect={onToggleSelect} sort="name_asc" onSortChange={vi.fn()} />
     );
 
     screen.getByRole("row", { name: "Celeste" }).focus();
@@ -83,13 +83,39 @@ describe("Games list views", () => {
     rerender(
       <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
         <MemoryRouter>
-          <GameTable games={games} onOpen={onOpen} selecting selectedIds={new Set()} onToggleSelect={onToggleSelect} />
+          <GameTable games={games} onOpen={onOpen} selecting selectedIds={new Set()} onToggleSelect={onToggleSelect} sort="name_asc" onSortChange={vi.fn()} />
         </MemoryRouter>
       </ThemeProvider>
     );
     await user.click(screen.getByRole("row", { name: "Celeste" }));
     expect(onToggleSelect).toHaveBeenCalledWith(1);
     expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it("sorts by a column when its header is clicked, flipping the direction on a second click", async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+    const games = [game(1, "Celeste")];
+    const table = (sort: GameSortOption) => (
+      <ThemeProvider theme={createVgtTheme("light", "normal", "#7c4dff")}>
+        <MemoryRouter>
+          <GameTable games={games} onOpen={vi.fn()} selecting={false} selectedIds={new Set()} onToggleSelect={vi.fn()} sort={sort} onSortChange={onSortChange} />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    const { rerender } = render(table("name_asc"));
+
+    expect(screen.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
+    await user.click(screen.getByRole("button", { name: "Rating" }));
+    expect(onSortChange).toHaveBeenLastCalledWith("rating_desc");
+    await user.click(screen.getByRole("button", { name: "Library" }));
+    expect(onSortChange).toHaveBeenLastCalledWith("library_asc");
+
+    rerender(table("labels_asc"));
+    expect(screen.getByRole("columnheader", { name: "Labels" })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("columnheader", { name: "Name" })).not.toHaveAttribute("aria-sort");
+    await user.click(screen.getByRole("button", { name: "Labels" }));
+    expect(onSortChange).toHaveBeenLastCalledWith("labels_desc");
   });
 
   it("shows an overview row's facts and the same chips as the card", () => {

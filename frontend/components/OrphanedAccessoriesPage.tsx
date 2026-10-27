@@ -5,16 +5,21 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { useAccessoriesWithoutOwnedHardware } from "../hooks/useInsights";
 import { useLocalPreference } from "../hooks/useLocalPreference";
+import { useListSort } from "../hooks/useListSort";
 import { useSessionState } from "../hooks/useSessionState";
 import { hardwareIdentifier } from "../utils/identifiers";
+import type { SortField } from "../utils/listSort";
 import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
-import { HardwareListSection, type HardwareListView, type HardwareRow } from "./HardwareListViews";
+import {
+  HardwareListSection,
+  type HardwareListView,
+  type HardwareRow,
+  type HardwareSortField,
+} from "./HardwareListViews";
 import { ListSearchField } from "./ListControls";
 import { FilterChips, FilterDialog, ListToolbar, type FilterChip } from "./ListToolbar";
 import Page from "./Page";
-
-type OrphanSort = "name" | "dateAddedDesc" | "dateAddedAsc";
 
 // Insights → Orphaned accessories: accessories you own with none of their devices owned, as
 // Hardware cards or a table, with Hardware's search, sort and Manufacturer/Type filters.
@@ -24,7 +29,13 @@ const OrphanedAccessoriesPage = () => {
   const [view, setView] = useLocalPreference<HardwareListView>("orphans.view", "cards");
   const [cardSize, setCardSize] = useLocalPreference("orphans.cardSize", CARD_SIZE_DEFAULT);
   const [searchKeyword, setSearchKeyword] = useSessionState("orphans.searchKeyword", "");
-  const [sort, setSort] = useSessionState<OrphanSort>("orphans.sort", "name");
+  const sortFields: SortField<HardwareSortField>[] = [
+    { field: "name", label: t("games.listView.columnName") },
+    { field: "manufacturer", label: t("hardware.listToolbar.manufacturerLabel") },
+    { field: "detail", label: t("hardware.accessoryList.typeLabel") },
+    { field: "date_added", label: t("games.listView.sortDateAdded"), defaultDirection: "desc" },
+  ];
+  const sort = useListSort("orphans.sortBy", sortFields, { field: "name", direction: "asc" });
   const [manufacturers, setManufacturers] = useSessionState<string[]>("orphans.manufacturers", []);
   const [types, setTypes] = useSessionState<string[]>("orphans.types", []);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -43,19 +54,12 @@ const OrphanedAccessoriesPage = () => {
   const rows: HardwareRow[] | undefined = useMemo(() => {
     if (!accessories) return undefined;
     const keyword = searchKeyword.trim().toLowerCase();
-    const direction = sort === "dateAddedDesc" ? -1 : 1;
     return accessories
       .filter(
         (item) =>
           (!keyword || item.officialName.toLowerCase().includes(keyword)) &&
           (!manufacturers.length || manufacturers.includes(item.manufacturerName)) &&
           (!types.length || types.includes(item.accessoryTypeName))
-      )
-      .sort((a, b) =>
-        sort === "name"
-          ? a.officialName.localeCompare(b.officialName)
-          : direction * (Date.parse(a.createdAt) - Date.parse(b.createdAt)) ||
-            a.officialName.localeCompare(b.officialName)
       )
       .map((accessory) => ({
         id: accessory.id,
@@ -67,8 +71,9 @@ const OrphanedAccessoriesPage = () => {
         wishlisted: false,
         ownedQuantity: 1,
         href: `/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`,
+        createdAt: accessory.createdAt,
       }));
-  }, [accessories, searchKeyword, sort, manufacturers, types]);
+  }, [accessories, searchKeyword, manufacturers, types]);
 
   const activeFilterCount = manufacturers.length + types.length;
   const chips: FilterChip[] = [
@@ -87,7 +92,7 @@ const OrphanedAccessoriesPage = () => {
   return (
     <Page
       toolbarEnd={
-        <ListToolbar<HardwareListView, OrphanSort>
+        <ListToolbar<HardwareListView, HardwareSortField>
           cardSize={{ value: cardSize, onChange: setCardSize, disabled: view !== "cards" }}
           view={{
             value: view,
@@ -97,15 +102,7 @@ const OrphanedAccessoriesPage = () => {
               { value: "table", label: t("games.listView.view_table"), icon: <TableRowsIcon /> },
             ],
           }}
-          sort={{
-            value: sort,
-            onChange: setSort,
-            choices: [
-              { value: "name", label: t("hardware.listToolbar.sortOptionName") },
-              { value: "dateAddedDesc", label: t("hardware.listToolbar.sortOptionDateAddedDesc") },
-              { value: "dateAddedAsc", label: t("hardware.listToolbar.sortOptionDateAddedAsc") },
-            ],
-          }}
+          sort={sort}
           filter={{ count: activeFilterCount, onOpen: () => setFiltersOpen(true) }}
         />
       }
@@ -136,6 +133,7 @@ const OrphanedAccessoriesPage = () => {
         view={view}
         cardSize={cardSize}
         compact
+        sort={sort}
       />
 
       <FilterDialog

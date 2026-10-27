@@ -288,3 +288,34 @@ describe("SteamSyncPage Ignore selected and Un-ignore", { timeout: 20_000 }, () 
     );
   });
 });
+
+describe("SteamSyncPage sorting", { timeout: 20_000 }, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.sessionStorage.clear();
+    ownedEntries = [
+      { ...entry(10, "Celeste", "new"), steamPlaytimeMinutes: 120 },
+      { ...entry(11, "Balatro", "up_to_date"), steamPlaytimeMinutes: 600 },
+    ];
+    wishlistEntries = [wishlistEntry(12, "Astro Bot", "new")];
+  });
+
+  const names = () =>
+    within(screen.getAllByRole("rowgroup")[1])
+      .getAllByRole("row")
+      .map((row) => within(row).getAllByRole("cell")[3].textContent);
+
+  it("sorts from the column headers, with wishlist rows (no playtime) last either way", () => {
+    renderPage();
+    expect(names()).toEqual(["Astro Bot", "Balatro", "Celeste"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Steam Playtime" }));
+    expect(names()).toEqual(["Balatro", "Celeste", "Astro Bot"]);
+    fireEvent.click(screen.getByRole("button", { name: "Steam Playtime" }));
+    expect(names()).toEqual(["Celeste", "Balatro", "Astro Bot"]);
+    expect(screen.getByRole("columnheader", { name: "Steam Playtime" })).toHaveAttribute("aria-sort", "ascending");
+
+    fireEvent.click(screen.getByRole("button", { name: "Name" }));
+    expect(names()).toEqual(["Astro Bot", "Balatro", "Celeste"]);
+  });
+});

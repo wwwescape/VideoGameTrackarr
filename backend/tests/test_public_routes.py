@@ -56,6 +56,10 @@ def test_public_games_sort(auth_client, client, db_session, seed_game):
     assert names("release_date_asc") == ["Test Game", "Another Game"]
     assert names("release_date_desc") == ["Another Game", "Test Game"]
     assert client.get(f"/api/public/{token}/games", params={"sort": "bogus"}).status_code == 422
+    # Sorts by what the share page doesn't show fall back to name order.
+    assert names("rating_desc") == ["Another Game", "Test Game"]
+    assert names("platforms_desc") == ["Another Game", "Test Game"]
+    assert names("type_desc") == ["Another Game", "Test Game"]
 
 
 def test_public_devices_with_valid_token(auth_client, client, seed_device):

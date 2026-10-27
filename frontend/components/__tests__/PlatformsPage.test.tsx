@@ -112,7 +112,7 @@ describe("PlatformsPage", () => {
   });
 
   it("sorts by most games (owned plus wishlisted)", () => {
-    window.sessionStorage.setItem("vgt.view.platforms.sort", JSON.stringify("count_desc"));
+    window.sessionStorage.setItem("vgt.view.platforms.sortBy", JSON.stringify({ field: "games", direction: "desc" }));
     renderPage();
 
     expect(cardNames()).toEqual(["Nintendo Switch", "PlayStation 5", "Atari Jaguar"]);
@@ -235,10 +235,12 @@ describe("PlatformsPage toolbar", () => {
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    await user.click(screen.getByRole("menuitem", { name: /Most games/ }));
+    await user.click(screen.getByRole("menuitem", { name: "Games" }));
 
     expect(cardNames()).toEqual(["Nintendo Switch", "PlayStation 5"]);
-    expect(window.sessionStorage.getItem("vgt.view.platforms.sort")).toBe(JSON.stringify("count_desc"));
+    expect(window.sessionStorage.getItem("vgt.view.platforms.sortBy")).toBe(
+      JSON.stringify({ field: "games", direction: "desc" })
+    );
   });
 });
 

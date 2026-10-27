@@ -49,6 +49,8 @@ class UpcomingReleaseResponse(CamelModel):
     device: DeviceSummaryResponse | None = None
     accessory: AccessorySummaryResponse | None = None
     release_date: str
+    # "year" when only the release year is known (release_date is then Jan 1 of it).
+    release_date_precision: Literal["day", "year"]
 
 
 def upcoming_release_from_item(
@@ -60,4 +62,5 @@ def upcoming_release_from_item(
         device=device_summary_from_orm(item.device) if item.device else None,
         accessory=accessory_summary_from_orm(item.accessory) if item.accessory else None,
         release_date=item.release_date.isoformat(),
+        release_date_precision=item.precision,
     )

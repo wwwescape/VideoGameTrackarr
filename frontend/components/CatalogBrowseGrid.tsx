@@ -164,7 +164,7 @@ const CatalogBrowseGrid = ({
   const empty = (message: string) => <Paper sx={{ p: 3, textAlign: "center" }}>{message}</Paper>;
   const renderList = (list: GameSummary[], context: "list" | "addon") => {
     const rows = { games: list, onOpen: handleGameClick, selecting: false, selectedIds: NO_SELECTION, onToggleSelect: () => {} };
-    if (view === "table") return <GameTable {...rows} />;
+    if (view === "table") return <GameTable {...rows} sort={state.sort} onSortChange={state.setSort} />;
     if (view === "overview") return <GameOverviewRows {...rows} />;
     return (
       <GameCoverGrid

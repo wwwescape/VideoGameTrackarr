@@ -567,17 +567,10 @@
       "matchModeAriaLabel": "Corresponder a qualquer um ou a todos os valores selecionados",
       "matchModeTooltip": "Corresponder a qualquer: o jogo precisa de pelo menos um dos valores selecionados. Corresponder a todos: precisa de todos. Selecione dois ou mais valores para alternar.",
       "allOption": "Todos",
-      "sortNameAsc": "Nome (ASC)",
-      "sortNameDesc": "Nome (DESC)",
-      "sortMostGames": "Mais jogos",
-      "sortReleaseDateAsc": "Data de lançamento (ASC)",
-      "sortReleaseDateDesc": "Data de lançamento (DESC)",
       "showMissingLabel": "Mostrar o que me falta?",
       "steelbookOnlyLabel": "Somente Steelbooks",
       "clearFiltersButton": "Limpar filtros",
-      "noSearchMatches": "Nenhum resultado encontrado.",
-      "sortDateAddedDesc": "Data de adição (mais recente primeiro)",
-      "sortDateAddedAsc": "Data de adição (mais antiga primeiro)"
+      "noSearchMatches": "Nenhum resultado encontrado."
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -678,7 +671,6 @@
       "seriesLabel": "Série: {{name}}",
       "collectionLabel": "Coleção: {{name}}",
       "unknownPlatform": "Plataforma desconhecida",
-      "tbd": "A definir",
       "storylineTitle": "Enredo",
       "artworkTitle": "Arte",
       "videosTitle": "Vídeos",
@@ -848,6 +840,11 @@
       "columnYear": "Ano",
       "columnPlatforms": "Plataformas",
       "columnRating": "Avaliação",
+      "columnLibrary": "Biblioteca",
+      "columnLabels": "Etiquetas",
+      "sortDateAdded": "Data de adição",
+      "sortAscending": "Crescente",
+      "sortDescending": "Decrescente",
       "edit": "Editar",
       "play": "Jogar",
       "clearSearch": "Limpar pesquisa",
@@ -858,19 +855,17 @@
     },
     "detail": {
       "aboutTitle": "Sobre",
-      "platformsLabel": "Plataformas",
-      "releaseDatesTitle": "Datas de lançamento"
+      "platformsReleaseDatesTitle": "Plataformas e datas de lançamento"
     }
   },
   "events": {
     "page": {
       "emptyState": "Sem eventos próximos por agora.",
+      "sortStart": "Data de início",
       "ongoingHeading": "A decorrer",
       "upcomingHeading": "Próximos",
       "eventCount_one": "{{count}} evento",
       "eventCount_other": "{{count}} eventos",
-      "sortSoonest": "Data (mais próxima primeiro)",
-      "sortLatest": "Data (mais distante primeiro)",
       "searchPlaceholder": "Pesquisar eventos"
     },
     "about": {
@@ -1060,9 +1055,7 @@
       "columnStore": "Loja",
       "columnHistoricalLow": "Mínimo histórico",
       "columnTarget": "Preço-alvo",
-      "sortBest": "Melhores promoções primeiro",
-      "sortDiscount": "Maior desconto",
-      "sortPrice": "Preço mais baixo",
+      "sortBest": "Melhores promoções",
       "targetReached": "Preço-alvo atingido"
     },
     "orphans": {
@@ -1239,14 +1232,12 @@
       "noImageAvailable": "Imagem Não Disponível"
     },
     "listToolbar": {
-      "sortOptionName": "Nome",
       "sortOptionReleaseDate": "Data de lançamento",
+      "sortOptionPlatformOrType": "Plataforma / tipo",
       "allOption": "Todos",
       "manufacturerLabel": "Fabricante",
       "platformLabel": "Plataforma",
-      "sortByLabel": "Ordenar por",
-      "sortOptionDateAddedDesc": "Data de adição (mais recente primeiro)",
-      "sortOptionDateAddedAsc": "Data de adição (mais antiga primeiro)"
+      "sortByLabel": "Ordenar por"
     },
     "page": {
       "addDeviceButton": "Adicionar Dispositivo",

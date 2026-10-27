@@ -211,6 +211,8 @@ const GameList = () => {
           selecting={selectionMode}
           selectedIds={selectedIds}
           onToggleSelect={toggleSelected}
+          sort={state.sort}
+          onSortChange={state.setSort}
         />
       ) : view === "overview" ? (
         <GameOverviewRows

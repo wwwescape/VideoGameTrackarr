@@ -16,6 +16,7 @@ from app.models.catalog import (
     GameGenre,
     GamePlatform,
     GameVideo,
+    Platform,
     ReleaseDate,
     Screenshot,
 )
@@ -160,6 +161,38 @@ class GameSortOption(enum.Enum):
     # When the game was added here (its row's created_at).
     DATE_ADDED_DESC = "date_added_desc"
     DATE_ADDED_ASC = "date_added_asc"
+    # One pair per Table view column (see _order_by_for_sort for each order).
+    TYPE_ASC = "type_asc"
+    TYPE_DESC = "type_desc"
+    PLATFORMS_ASC = "platforms_asc"
+    PLATFORMS_DESC = "platforms_desc"
+    PLAY_STATUS_ASC = "play_status_asc"
+    PLAY_STATUS_DESC = "play_status_desc"
+    RATING_ASC = "rating_asc"
+    RATING_DESC = "rating_desc"
+    LIBRARY_ASC = "library_asc"
+    LIBRARY_DESC = "library_desc"
+    # The On sale / Missing / Custom chips. On sale isn't a column (it's worked out from the
+    # price providers in Python), so these sort by name here and the routes reorder with
+    # game_service.sort_by_labels.
+    LABELS_ASC = "labels_asc"
+    LABELS_DESC = "labels_desc"
+
+
+# Sorts that read a game's copies, progress, rating or sale state — kept off the public share
+# page, which doesn't show them (see routes/public.py).
+PRIVATE_SORTS = frozenset(
+    {
+        GameSortOption.PLATFORMS_ASC,
+        GameSortOption.PLATFORMS_DESC,
+        GameSortOption.PLAY_STATUS_ASC,
+        GameSortOption.PLAY_STATUS_DESC,
+        GameSortOption.RATING_ASC,
+        GameSortOption.RATING_DESC,
+        GameSortOption.LABELS_ASC,
+        GameSortOption.LABELS_DESC,
+    }
+)
 
 
 class GameSource(enum.Enum):
@@ -170,18 +203,74 @@ class GameSource(enum.Enum):
     CUSTOM = "custom"
 
 
-def _order_by_for_sort(sort: GameSortOption) -> ColumnElement[Any]:
+def _rank(value: ColumnElement[Any], order: list[Any]) -> ColumnElement[int | None]:
+    """A value's position in a fixed order, NULL for anything not in it."""
+    return case(*((value == item, index) for index, item in enumerate(order)), else_=None)
+
+
+# Type: browsable games in a fixed order (labels are translated, so not A-Z), then add-ons.
+_TYPE_ORDER = [
+    GameCategory.MAIN_GAME,
+    GameCategory.REMAKE,
+    GameCategory.REMASTER,
+    GameCategory.EXPANDED_GAME,
+    GameCategory.STANDALONE_EXPANSION,
+    GameCategory.PORT,
+    GameCategory.BUNDLE,
+    GameCategory.DLC_ADDON,
+    GameCategory.EXPANSION,
+    GameCategory.PACK,
+    GameCategory.EPISODE,
+    GameCategory.SEASON,
+    GameCategory.MOD,
+    GameCategory.FORK,
+    GameCategory.UPDATE,
+]
+_PLAY_STATUS_ORDER = [PlayStatus.PLAYING, PlayStatus.BACKLOG, PlayStatus.COMPLETED, PlayStatus.ABANDONED]
+
+
+def _first_copy_platform(game_id_column: ColumnElement[int]) -> ColumnElement[str | None]:
+    # The first of the platform labels the Table view lists (library_item_repository.list_copy_platforms).
+    return (
+        select(func.min(func.coalesce(Platform.abbreviation, Platform.name)))
+        .join(LibraryItem, LibraryItem.platform_id == Platform.id)
+        .where(LibraryItem.game_id == game_id_column)
+        .scalar_subquery()
+    )
+
+
+def _library_rank(game_id_column: ColumnElement[int]) -> ColumnElement[int | None]:
+    # Owned + wishlisted, owned, wishlisted; NULL (last either way) for neither.
+    owned = _owned_exists(game_id_column)
+    wishlisted = _wishlisted_exists(game_id_column)
+    return case((and_(owned, wishlisted), 0), (owned, 1), (wishlisted, 2), else_=None)
+
+
+def _order_by_for_sort(sort: GameSortOption) -> list[ColumnElement[Any]]:
+    """The sort's own order, empty values (no date, no rating, not in the library...) last
+    in either direction, then by name so ties read A-Z."""
     if sort == GameSortOption.NAME_DESC:
-        return Game.name.desc()
-    if sort == GameSortOption.RELEASE_DATE_ASC:
-        return Game.first_release_date.asc()
-    if sort == GameSortOption.RELEASE_DATE_DESC:
-        return Game.first_release_date.desc()
-    if sort == GameSortOption.DATE_ADDED_DESC:
-        return Game.created_at.desc()
-    if sort == GameSortOption.DATE_ADDED_ASC:
-        return Game.created_at.asc()
-    return Game.name.asc()
+        return [Game.name.desc()]
+    value: ColumnElement[Any]
+    if sort in (GameSortOption.RELEASE_DATE_ASC, GameSortOption.RELEASE_DATE_DESC):
+        value = Game.first_release_date
+    elif sort in (GameSortOption.DATE_ADDED_ASC, GameSortOption.DATE_ADDED_DESC):
+        value = Game.created_at
+    elif sort in (GameSortOption.TYPE_ASC, GameSortOption.TYPE_DESC):
+        value = _rank(Game.category, _TYPE_ORDER)
+    elif sort in (GameSortOption.PLATFORMS_ASC, GameSortOption.PLATFORMS_DESC):
+        value = _first_copy_platform(Game.id)
+    elif sort in (GameSortOption.PLAY_STATUS_ASC, GameSortOption.PLAY_STATUS_DESC):
+        value = _rank(_play_status_subquery(Game.id), _PLAY_STATUS_ORDER)
+    elif sort in (GameSortOption.RATING_ASC, GameSortOption.RATING_DESC):
+        value = _rating_subquery(Game.id)
+    elif sort in (GameSortOption.LIBRARY_ASC, GameSortOption.LIBRARY_DESC):
+        value = _library_rank(Game.id)
+    else:
+        # NAME_ASC, and LABELS_* (reordered by game_service.sort_by_labels afterwards).
+        return [Game.name.asc()]
+    direction = value.desc() if sort.value.endswith("_desc") else value.asc()
+    return [value.is_(None), direction, Game.name.asc()]
 
 
 def _maybe_negate(clause: ColumnElement[bool], exclude: bool) -> ColumnElement[bool]:
@@ -325,7 +414,7 @@ def _apply_optional_game_filters(
             *(Game.igdb_id.is_not(None) if source == GameSource.IGDB else Game.igdb_id.is_(None) for source in sources)
         )
         stmt = stmt.where(_maybe_negate(clause, source_exclude))
-    return stmt.order_by(_order_by_for_sort(sort))
+    return stmt.order_by(*_order_by_for_sort(sort))
 
 
 def list_top_level_games(

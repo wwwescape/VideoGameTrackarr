@@ -17,7 +17,7 @@ import { resolveAssetUrl } from "../api/client";
 import type { GameAboutData, GameCompany, GameSummary, IgdbReleaseRegion, PlayStatus } from "../api/types";
 import type { Crumb } from "../navigation/breadcrumbConfig";
 import { gameIdentifier } from "../utils/identifiers";
-import { getAddonType, isAddon } from "../utils/utils";
+import { formatReleaseDate, getAddonType, isAddon } from "../utils/utils";
 import { DetailHero, Pill, Section } from "./Detail";
 import ExpandableText from "./ExpandableText";
 import { useGameStoreLinks } from "./GameStoreLinks";
@@ -224,7 +224,7 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken }:
   );
 };
 
-// A small titled card under About (Platforms, Release dates).
+// A small titled card under About (Platforms & release dates).
 const AboutCard = ({ title, children }: { title: string; children: ReactNode }) => (
   <Box sx={{ bgcolor: "background.paper", border: 1, borderColor: "divider", borderRadius: 2, px: 1.75, py: 1.5, minWidth: 0 }}>
     <Typography component="h3" sx={{ fontSize: 11.5, color: "vgt.text3", mb: 1 }}>
@@ -234,11 +234,11 @@ const AboutCard = ({ title, children }: { title: string; children: ReactNode }) 
   </Box>
 );
 
-// About: summary and storyline, then the platforms IGDB lists and, when there's more than the
-// one the hero shows, the release dates. Developer, publisher and genres are in the hero, and
-// the store links are chips there too.
+// About: summary and storyline, then one row per platform with its release dates (IGDB lists
+// the platforms and the release dates separately, and they usually name the same platforms).
+// Developer, publisher and genres are in the hero, and the store links are chips there too.
 export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const regionLabel: Record<IgdbReleaseRegion, string> = {
     europe: t("games.about.regionEurope"),
     north_america: t("games.about.regionNorthAmerica"),
@@ -250,16 +250,21 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
     worldwide: t("games.about.regionWorldwide"),
   };
   const hasStoryline = game.storyline && game.storyline !== game.summary;
-  const showReleaseDates = game.releaseDates.length > 1;
-  // Both by platform name (IGDB's own order is arbitrary); release dates then by date, so a
-  // platform's regional releases read earliest first.
+  // A row per platform from either list, by platform name (IGDB's own order is arbitrary), with
+  // release dates without a platform last. A platform's dates read earliest first; one with no
+  // known date (IGDB's "TBD") or no release date at all leaves the date blank.
   const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
-  const platforms = [...game.platforms].sort((a, b) => byName(a.name, b.name));
-  const releaseDates = [...game.releaseDates].sort(
-    (a, b) =>
-      byName(a.platformName ?? "\uffff", b.platformName ?? "\uffff") ||
-      (a.date ?? Number.POSITIVE_INFINITY) - (b.date ?? Number.POSITIVE_INFINITY)
+  const datesByPlatform = new Map<string | null, GameAboutData["releaseDates"]>(
+    game.platforms.map((platform) => [platform.name, []])
   );
+  for (const releaseDate of game.releaseDates) {
+    const dates = datesByPlatform.get(releaseDate.platformName) ?? [];
+    if (releaseDate.date !== null) dates.push(releaseDate);
+    datesByPlatform.set(releaseDate.platformName, dates);
+  }
+  const platformRows = [...datesByPlatform]
+    .map(([name, dates]) => ({ name, dates: dates.sort((a, b) => (a.date as number) - (b.date as number)) }))
+    .sort((a, b) => byName(a.name ?? "\uffff", b.name ?? "\uffff"));
 
   return (
     <Section id="about" title={t("games.detail.aboutTitle")}>
@@ -278,58 +283,43 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
           </Box>
         </Box>
       ) : null}
-      {game.platforms.length || showReleaseDates ? (
-        <Box
-          sx={{
-            mt: 2,
-            display: "grid",
-            gap: 1.25,
-            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
-            alignItems: "start",
-          }}
-        >
-          {game.platforms.length ? (
-            <AboutCard title={t("games.detail.platformsLabel")}>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-                {platforms.map((platform) => (
-                  <Pill key={platform.id}>{platform.name}</Pill>
-                ))}
-              </Box>
-            </AboutCard>
-          ) : null}
-          {showReleaseDates ? (
-            <AboutCard title={t("games.detail.releaseDatesTitle")}>
-              <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
-                {releaseDates.map((releaseDate, index) => (
-                  <Box
-                    component="li"
-                    key={releaseDate.id}
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: "minmax(0, 1fr) auto",
-                      columnGap: 1.5,
-                      py: 0.75,
-                      borderTop: index ? 1 : 0,
-                      borderColor: "divider",
-                      fontSize: 13.5,
-                    }}
-                  >
-                    <Box sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {releaseDate.platformName ?? t("games.about.unknownPlatform")}
-                    </Box>
-                    <Box sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                      {releaseDate.human ?? t("games.about.tbd")}
-                      {releaseDate.releaseRegion ? (
-                        <Box component="span" sx={{ color: "vgt.text3", ml: 0.75 }}>
-                          {regionLabel[releaseDate.releaseRegion]}
-                        </Box>
-                      ) : null}
-                    </Box>
+      {platformRows.length ? (
+        <Box sx={{ mt: 2, maxWidth: 900 }}>
+          <AboutCard title={t("games.detail.platformsReleaseDatesTitle")}>
+            <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+              {platformRows.map((row, index) => (
+                <Box
+                  component="li"
+                  key={row.name ?? ""}
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) auto",
+                    columnGap: 1.5,
+                    py: 0.75,
+                    borderTop: index ? 1 : 0,
+                    borderColor: "divider",
+                    fontSize: 13.5,
+                  }}
+                >
+                  <Box sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {row.name ?? t("games.about.unknownPlatform")}
                   </Box>
-                ))}
-              </Box>
-            </AboutCard>
-          ) : null}
+                  <Box sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    {row.dates.map((releaseDate) => (
+                      <div key={releaseDate.id}>
+                        {releaseDate.human ?? formatReleaseDate(releaseDate.date as number, i18n.language)}
+                        {releaseDate.releaseRegion ? (
+                          <Box component="span" sx={{ color: "vgt.text3", ml: 0.75 }}>
+                            {regionLabel[releaseDate.releaseRegion]}
+                          </Box>
+                        ) : null}
+                      </div>
+                    ))}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </AboutCard>
         </Box>
       ) : null}
     </Section>

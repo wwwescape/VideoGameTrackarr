@@ -12,7 +12,14 @@ import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import { useTranslation } from "react-i18next";
 import type { GameListState } from "../hooks/useGameListState";
-import { GAME_SORT_OPTIONS } from "../utils/gameSortOptions";
+import {
+  GAME_SORT_FIELDS,
+  gameSortDirection,
+  gameSortField,
+  makeGameSort,
+  pickGameSortField,
+  type GameSortField,
+} from "../utils/gameSortOptions";
 import GameFilterDialog, {
   countActiveFilters,
   FORMAT_OPTIONS,
@@ -23,7 +30,7 @@ import GameFilterDialog, {
   SOURCE_OPTIONS,
 } from "./GameFilterDialog";
 import type { GameListView } from "./GameListViews";
-import { CardSizeSlider, ChoiceMenuItem, ListSearchField } from "./ListControls";
+import { CardSizeSlider, ChoiceMenuItem, ListSearchField, SortMenu } from "./ListControls";
 import { ToolbarButton } from "./Page";
 
 // A page's own on/off option in the Options menu ("Show what I'm missing", "Include add-ons").
@@ -46,6 +53,8 @@ interface GameListControlsOptions {
   toggles?: ListToggle[];
   // Off for a list that only has one way to show it (Missing Add-ons's grouped cards).
   showViewMenu?: boolean;
+  // What the Sort menu offers, when not every field fits the page.
+  sortFields?: GameSortField[];
 }
 
 const VIEW_ICONS: Record<GameListView, ReactNode> = {
@@ -70,6 +79,7 @@ export function useGameListControls(
     hideFranchisesField,
     toggles = [],
     showViewMenu = true,
+    sortFields,
   }: GameListControlsOptions
 ) {
   const { t } = useTranslation();
@@ -223,11 +233,18 @@ export function useGameListControls(
           menuItem(option, t(`games.listView.view_${option}`), view === option, () => setView(option), VIEW_ICONS[option])
         )}
       </Menu>
-      <Menu anchorEl={menu?.anchor} open={menu?.name === "sort"} onClose={() => setMenu(null)}>
-        {GAME_SORT_OPTIONS.map((option) =>
-          menuItem(option.value, t(option.labelKey), state.sort === option.value, () => state.setSort(option.value))
-        )}
-      </Menu>
+      <SortMenu
+        anchor={menu?.name === "sort" ? menu.anchor : null}
+        onClose={() => setMenu(null)}
+        fields={GAME_SORT_FIELDS.filter((option) => !sortFields || sortFields.includes(option.field)).map((option) => ({
+          value: option.field,
+          label: t(option.labelKey),
+        }))}
+        field={gameSortField(state.sort)}
+        direction={gameSortDirection(state.sort)}
+        onFieldChange={(field) => state.setSort(pickGameSortField(state.sort, field))}
+        onDirectionChange={(direction) => state.setSort(makeGameSort(gameSortField(state.sort), direction))}
+      />
       <GameFilterDialog
         {...fields}
         hidePlatformsField={hidePlatformsField}

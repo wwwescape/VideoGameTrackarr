@@ -189,26 +189,32 @@ def list_upcoming_releases(db: Session, now: datetime) -> list[GameWithStatus]:
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 
 
+ReleasePrecision = Literal["day", "year"]
+
+
 @dataclass
 class UpcomingHardwareRelease:
     kind: Literal["device", "accessory"]
     device: DeviceWithStatus | None
     accessory: AccessoryWithStatus | None
     release_date: date
+    # "year" when only the year is known (release_date is then Jan 1 of it), so the calendar
+    # shows the year rather than a made-up full date.
+    precision: ReleasePrecision
 
 
-def _parse_reference_release_date(value: str | None) -> date | None:
+def _parse_reference_release_date(value: str | None) -> tuple[date, ReleasePrecision] | None:
     """HardwareReferenceEntry.release_date is free text — mixes year-only strings ("1994")
     with full ISO dates ("1985-10-18"). Tries a full parse first, falls back to treating a
     bare year as Jan 1 of that year, and gives up (None) on anything else."""
     if not value:
         return None
     try:
-        return date.fromisoformat(value)
+        return date.fromisoformat(value), "day"
     except ValueError:
         pass
     try:
-        return date(int(value), 1, 1)
+        return date(int(value), 1, 1), "year"
     except (ValueError, TypeError):
         return None
 
@@ -230,11 +236,15 @@ def list_upcoming_hardware_releases(db: Session, today: date) -> list[UpcomingHa
         .where(_device_owned_exists(Device.id) | _device_wishlisted_exists(Device.id))
     )
     for row in db.execute(device_stmt):
-        release_date = _parse_reference_release_date(row[-1])
-        if release_date is not None and release_date > today:
+        parsed = _parse_reference_release_date(row[-1])
+        if parsed is not None and parsed[0] > today:
             releases.append(
                 UpcomingHardwareRelease(
-                    kind="device", device=_row_to_device(row), accessory=None, release_date=release_date
+                    kind="device",
+                    device=_row_to_device(row),
+                    accessory=None,
+                    release_date=parsed[0],
+                    precision=parsed[1],
                 )
             )
 
@@ -249,6 +259,7 @@ def list_upcoming_hardware_releases(db: Session, today: date) -> list[UpcomingHa
             device=None,
             accessory=_row_to_accessory(row),
             release_date=date(row[0].release_date, 1, 1),
+            precision="year",
         )
         for row in db.execute(accessory_stmt)
     )
@@ -262,11 +273,15 @@ def list_upcoming_hardware_releases(db: Session, today: date) -> list[UpcomingHa
         )
     )
     for row in db.execute(accessory_ref_stmt):
-        release_date = _parse_reference_release_date(row[-1])
-        if release_date is not None and release_date > today:
+        parsed = _parse_reference_release_date(row[-1])
+        if parsed is not None and parsed[0] > today:
             releases.append(
                 UpcomingHardwareRelease(
-                    kind="accessory", device=None, accessory=_row_to_accessory(row), release_date=release_date
+                    kind="accessory",
+                    device=None,
+                    accessory=_row_to_accessory(row),
+                    release_date=parsed[0],
+                    precision=parsed[1],
                 )
             )
 

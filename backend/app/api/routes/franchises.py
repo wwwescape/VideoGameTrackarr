@@ -10,7 +10,7 @@ from app.schemas.franchise import (
     franchise_summary_from_orm,
 )
 from app.schemas.game import GameSummaryResponse, game_summary_from_orm
-from app.services import franchise_service, insight_service
+from app.services import franchise_service, game_service, insight_service
 
 router = APIRouter(prefix="/api/franchises", tags=["franchises"], dependencies=[Depends(get_current_user)])
 
@@ -36,4 +36,5 @@ def list_franchise_addons(
 ) -> list[GameSummaryResponse]:
     addons = franchise_service.list_franchise_addons(db, slug, **vars(params))
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    addons = game_service.sort_by_labels(addons, params.sort, on_sale_game_ids)
     return [game_summary_from_orm(addon, on_sale_game_ids) for addon in addons]

@@ -71,6 +71,7 @@ def list_games(
         required_platform_storefront=required_platform_storefront,
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    games = game_service.sort_by_labels(games, params.sort, on_sale_game_ids)
     extras = game_card_service.get_card_extras(db, [game.game.id for game in games])
     return [game_summary_from_orm(game, on_sale_game_ids, extras[game.game.id]) for game in games]
 

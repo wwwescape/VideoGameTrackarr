@@ -14,14 +14,14 @@ import { useTranslation } from "react-i18next";
 import type { NamedLookup } from "../api/types";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useAccessoryTypes, useDeviceTypes, useHardwarePlatforms, useManufacturers } from "../hooks/useHardwareLookups";
-import { useHardwareListState, type HardwareKindFilters, type HardwareSort } from "../hooks/useHardwareListState";
+import { useHardwareListState, type HardwareKindFilters } from "../hooks/useHardwareListState";
 import { useLocalPreference } from "../hooks/useLocalPreference";
 import AccessoryList from "./AccessoryList";
 import DeviceList from "./DeviceList";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import HardwareFilterDialog, { type HardwareLookups } from "./HardwareFilterDialog";
 import type { HardwareListView } from "./HardwareListViews";
-import { CardSizeSlider, ChoiceMenu, ListSearchField } from "./ListControls";
+import { CardSizeSlider, ChoiceMenu, ListSearchField, SortMenu } from "./ListControls";
 import Page, { ToolbarButton } from "./Page";
 
 const HardwarePage = () => {
@@ -172,17 +172,14 @@ const HardwarePage = () => {
         selected={view}
         onSelect={setView}
       />
-      <ChoiceMenu<HardwareSort>
+      <SortMenu
         anchor={menu?.name === "sort" ? menu.anchor : null}
         onClose={closeMenu}
-        choices={[
-          { value: "name", label: t("hardware.listToolbar.sortOptionName") },
-          { value: "releaseDate", label: t("hardware.listToolbar.sortOptionReleaseDate") },
-          { value: "dateAddedDesc", label: t("hardware.listToolbar.sortOptionDateAddedDesc") },
-          { value: "dateAddedAsc", label: t("hardware.listToolbar.sortOptionDateAddedAsc") },
-        ]}
-        selected={state.sort}
-        onSelect={state.setSort}
+        fields={state.sort.fields.map((option) => ({ value: option.field, label: option.label }))}
+        field={state.sort.sort.field}
+        direction={state.sort.sort.direction}
+        onFieldChange={state.sort.pickField}
+        onDirectionChange={state.sort.setDirection}
       />
       <HardwareFilterDialog state={state} lookups={lookups} open={filtersOpen} onClose={() => setFiltersOpen(false)} />
     </Page>

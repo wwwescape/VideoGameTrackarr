@@ -11,6 +11,8 @@ interface HardwareCardProps {
   owned: boolean;
   wishlisted: boolean;
   ownedQuantity: number;
+  // An extra line under the subtitle (the release date in the release calendar).
+  dateLine?: string;
   // Optional so a read-only context (the public share-link view) can render a non-clickable
   // card without a dummy handler.
   onClick?: () => void;
@@ -21,7 +23,7 @@ interface HardwareCardProps {
 // GameCard's game-specific fields (release year, play status, addon type), so this is
 // its own component rather than a GameCard reuse. Photo first: the product shot sits whole
 // in a white 4:3 well (shots are on white backgrounds), in light and dark mode.
-const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuantity, onClick }: HardwareCardProps) => {
+const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuantity, dateLine, onClick }: HardwareCardProps) => {
   const { t } = useTranslation();
 
   return (
@@ -29,7 +31,7 @@ const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuanti
       name={name}
       onClick={onClick}
       mediaSx={{ aspectRatio: "4 / 3", bgcolor: imageUrl ? "#fff" : "vgt.surface2" }}
-      lines={[subtitle || " "]}
+      lines={dateLine === undefined ? [subtitle || " "] : [subtitle || " ", dateLine]}
       overlay={
         <>
           <OwnershipBadges owned={owned} wishlisted={wishlisted} />

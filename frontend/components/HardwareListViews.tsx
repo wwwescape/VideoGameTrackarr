@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -11,8 +12,11 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
+import type { ListSortControl } from "../hooks/useListSort";
+import { libraryRank, sortRows, type SortValue } from "../utils/listSort";
 import { Section } from "./Detail";
 import HardwareCard from "./HardwareCard";
+import { SortHeaderCell } from "./ListControls";
 import { STICKY_TOP } from "./Page";
 import VirtualGameGrid from "./VirtualGameGrid";
 
@@ -30,7 +34,29 @@ export interface HardwareRow {
   wishlisted: boolean;
   ownedQuantity: number;
   href: string;
+  createdAt: string;
+  // Accessories only (a year); devices have none of their own.
+  releaseDate?: number | null;
 }
+
+export type HardwareSortField =
+  | "name"
+  | "manufacturer"
+  | "detail"
+  | "library"
+  | "quantity"
+  | "date_added"
+  | "release_date";
+
+const HARDWARE_SORT_VALUES: Record<HardwareSortField, (row: HardwareRow) => SortValue> = {
+  name: (row) => row.name,
+  manufacturer: (row) => row.manufacturer,
+  detail: (row) => row.detail,
+  library: libraryRank,
+  quantity: (row) => (row.owned ? row.ownedQuantity : null),
+  date_added: (row) => Date.parse(row.createdAt),
+  release_date: (row) => row.releaseDate,
+};
 
 interface HardwareListSectionProps {
   id: string;
@@ -44,6 +70,8 @@ interface HardwareListSectionProps {
   // Rows with no type/platform or quantity to show (Orphaned accessories): those table columns
   // are left out.
   compact?: boolean;
+  // The page's sort: it orders the cards and table, and the table's headers change it.
+  sort: ListSortControl<HardwareSortField>;
 }
 
 // The Devices or Accessories section of the Hardware page: its count, then cards or a table.
@@ -57,13 +85,28 @@ export function HardwareListSection({
   view,
   cardSize,
   compact = false,
+  sort,
 }: HardwareListSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const sortedRows = useMemo(
+    () => (rows ? sortRows(rows, sort.sort, HARDWARE_SORT_VALUES, (row) => row.name) : undefined),
+    [rows, sort.sort]
+  );
+  // Only the fields the page's Sort menu offers sort from a header (Orphaned accessories are
+  // all owned, so its Library column doesn't).
+  const header = (field: HardwareSortField, label: string, sx?: object) =>
+    sort.fields.some((option) => option.field === field) ? (
+      <SortHeaderCell field={field} sort={sort.sort} onSort={sort.clickHeader} sx={sx}>
+        {label}
+      </SortHeaderCell>
+    ) : (
+      <TableCell sx={sx}>{label}</TableCell>
+    );
 
   const body = isLoading ? (
     <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
-  ) : !rows || rows.length === 0 ? (
+  ) : !sortedRows || sortedRows.length === 0 ? (
     <Paper sx={{ p: 3, textAlign: "center" }}>{emptyMessage}</Paper>
   ) : view === "table" ? (
     <TableContainer
@@ -73,19 +116,19 @@ export function HardwareListSection({
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: 56 }} />
-            <TableCell>{t("games.listView.columnName")}</TableCell>
-            <TableCell sx={{ width: 56 }} />
-            <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{t("hardware.listToolbar.manufacturerLabel")}</TableCell>
+            {header("name", t("games.listView.columnName"))}
+            {header("library", t("games.listView.columnLibrary"))}
+            {header("manufacturer", t("hardware.listToolbar.manufacturerLabel"), { display: { xs: "none", sm: "table-cell" } })}
             {!compact ? (
               <>
-                <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{detailLabel}</TableCell>
-                <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{t("hardware.filter.columnQuantity")}</TableCell>
+                {header("detail", detailLabel, { display: { xs: "none", md: "table-cell" } })}
+                {header("quantity", t("hardware.filter.columnQuantity"), { display: { xs: "none", sm: "table-cell" } })}
               </>
             ) : null}
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
+          {sortedRows.map((row) => (
             <TableRow
               key={row.id}
               hover
@@ -148,7 +191,7 @@ export function HardwareListSection({
     </TableContainer>
   ) : (
     <VirtualGameGrid
-      items={rows}
+      items={sortedRows}
       getKey={(row) => row.id}
       minItemWidth={cardSize}
       scrollPaddingStart={STICKY_TOP.sm + 12}

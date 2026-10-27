@@ -23,9 +23,14 @@ import {
   useRemoveIgnoredSalesTitle,
   useRetryIgnoredSalesTitle,
 } from "../hooks/useSalesTracking";
+import { useListSort } from "../hooks/useListSort";
 import { gameIdentifier } from "../utils/identifiers";
+import { sortRows, type SortField } from "../utils/listSort";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { SortHeaderCell } from "./ListControls";
 import SettingsFrame from "./SettingsFrame";
+
+type IgnoredSort = "name" | "provider" | "checked_at";
 
 const PROVIDER_LABEL_KEY: Record<SalesProvider, string> = {
   itad: "insights.salesIgnored.provider.itad",
@@ -41,7 +46,35 @@ const SalesIgnoredListPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
-  const rows = items ?? [];
+  const sortFields: SortField<IgnoredSort>[] = [
+    { field: "name", label: t("insights.salesIgnored.columnName") },
+    { field: "provider", label: t("insights.salesIgnored.columnProvider") },
+    { field: "checked_at", label: t("insights.salesIgnored.columnCheckedAt"), defaultDirection: "desc" },
+  ];
+  const sort = useListSort("salesIgnored.sortBy", sortFields, { field: "name", direction: "asc" });
+  // Sorted as a whole, then paged; a new sort starts again on the first page.
+  const rows = sortRows(
+    items ?? [],
+    sort.sort,
+    {
+      name: (row) => row.gameName,
+      provider: (row) => t(PROVIDER_LABEL_KEY[row.provider]),
+      checked_at: (row) => (row.checkedAt ? Date.parse(row.checkedAt) : null),
+    },
+    (row) => row.gameName
+  );
+  const header = (field: IgnoredSort) => (
+    <SortHeaderCell
+      field={field}
+      sort={sort.sort}
+      onSort={(next) => {
+        sort.clickHeader(next);
+        setPage(0);
+      }}
+    >
+      {sortFields.find((option) => option.field === field)?.label}
+    </SortHeaderCell>
+  );
   const visibleRows = rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleRetry = async (provider: SalesProvider, gameId: number) => {
@@ -78,9 +111,9 @@ const SalesIgnoredListPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell />
-                  <TableCell>{t("insights.salesIgnored.columnName")}</TableCell>
-                  <TableCell>{t("insights.salesIgnored.columnProvider")}</TableCell>
-                  <TableCell>{t("insights.salesIgnored.columnCheckedAt")}</TableCell>
+                  {header("name")}
+                  {header("provider")}
+                  {header("checked_at")}
                   <TableCell align="right">{t("insights.salesIgnored.columnActions")}</TableCell>
                 </TableRow>
               </TableHead>

@@ -3,6 +3,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -10,8 +11,11 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Slider from "@mui/material/Slider";
+import TableCell, { type TableCellProps } from "@mui/material/TableCell";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import TextField from "@mui/material/TextField";
 import { useTranslation } from "react-i18next";
+import type { ListSort } from "../utils/listSort";
 import { CARD_SIZE_MAX, CARD_SIZE_MIN } from "./GameListViews";
 
 // Building blocks for a list page's toolbar, shared by the game lists (GameListControls), the
@@ -102,6 +106,75 @@ export function ChoiceMenu<V extends string>({ anchor, onClose, choices, selecte
           }}
         />
       ))}
+    </Menu>
+  );
+}
+
+interface SortHeaderCellProps<F extends string> extends Omit<TableCellProps, "onClick"> {
+  field: F;
+  sort: ListSort<F>;
+  onSort: (field: F) => void;
+}
+
+// A table column header that sorts the list by its column: active with an arrow while it's the
+// sort, and clicking it again flips the direction (see nextListSort).
+export function SortHeaderCell<F extends string>({ field, sort, onSort, children, ...cellProps }: SortHeaderCellProps<F>) {
+  const active = sort.field === field;
+  return (
+    <TableCell {...cellProps} aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : undefined}>
+      <TableSortLabel active={active} direction={active ? sort.direction : "asc"} onClick={() => onSort(field)}>
+        {children}
+      </TableSortLabel>
+    </TableCell>
+  );
+}
+
+interface SortMenuProps<F extends string> {
+  anchor: HTMLElement | null;
+  onClose: () => void;
+  fields: MenuChoice<F>[];
+  field: F;
+  direction: "asc" | "desc";
+  onFieldChange: (field: F) => void;
+  onDirectionChange: (direction: "asc" | "desc") => void;
+}
+
+// A Sort menu: what to sort by, then Ascending or Descending. Either pick closes it.
+export function SortMenu<F extends string>({
+  anchor,
+  onClose,
+  fields,
+  field,
+  direction,
+  onFieldChange,
+  onDirectionChange,
+}: SortMenuProps<F>) {
+  const { t } = useTranslation();
+  const pick = (apply: () => void) => () => {
+    apply();
+    onClose();
+  };
+  return (
+    <Menu anchorEl={anchor} open={!!anchor} onClose={onClose}>
+      {fields.map((choice) => (
+        <ChoiceMenuItem
+          key={choice.value}
+          label={choice.label}
+          selected={choice.value === field}
+          onClick={pick(() => onFieldChange(choice.value))}
+        />
+      ))}
+      <Divider />
+      <ChoiceMenuItem
+        label={t("games.listView.sortAscending")}
+        selected={direction === "asc"}
+        onClick={pick(() => onDirectionChange("asc"))}
+      />
+      <ChoiceMenuItem
+        label={t("games.listView.sortDescending")}
+        selected={direction === "desc"}
+        onClick={pick(() => onDirectionChange("desc"))}
+      />
     </Menu>
   );
 }

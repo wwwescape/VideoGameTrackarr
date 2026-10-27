@@ -54,9 +54,12 @@ import {
   useUnlinkSteamWishlistEntry,
 } from "../hooks/useIntegrations";
 import { useJobsList, useRunJob } from "../hooks/useJobs";
+import { useListSort } from "../hooks/useListSort";
 import { useSessionState } from "../hooks/useSessionState";
+import { sortRows, type SortField } from "../utils/listSort";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
+import { SortHeaderCell } from "./ListControls";
 import RelinkSteamEntryDialog, { type RelinkTarget } from "./RelinkSteamEntryDialog";
 import SettingsFrame from "./SettingsFrame";
 import { ToolbarButton } from "./Page";
@@ -115,6 +118,12 @@ const WISHLIST_STATUS_CHIP: Record<
 };
 
 const formatHours = (minutes: number) => (minutes / 60).toFixed(1);
+
+type SyncSort = "name" | "steam_status" | "steam_playtime" | "vgt_playtime" | "vgt_status";
+
+// The status chip's label key for a row (the VGT Status column).
+const statusLabelKey = (row: SyncRow) =>
+  row.source === "owned" ? OWNED_STATUS_CHIP[row.entry.status].labelKey : WISHLIST_STATUS_CHIP[row.entry.status].labelKey;
 
 // Groups the combined owned+wishlist entry list into top-level rows + their DLC/expansion/
 // pack children (matched via each entry's parentGameId). Nesting deliberately spans *both*
@@ -186,11 +195,46 @@ const SteamSyncPage = () => {
 
   const isImporting = jobs?.find((job) => job.id === STEAM_IMPORT_JOB_ID)?.run.status === "running";
 
-  const trees = useMemo(() => {
-    const combined = buildTrees(ownedEntries ?? [], wishlistEntries ?? []);
-    combined.sort((a, b) => rowName(a.row).localeCompare(rowName(b.row)));
-    return combined;
-  }, [ownedEntries, wishlistEntries]);
+  const sortFields: SortField<SyncSort>[] = [
+    { field: "name", label: t("insights.steamSync.columnName") },
+    { field: "steam_status", label: t("insights.steamSync.columnSteamStatus") },
+    { field: "steam_playtime", label: t("insights.steamSync.columnSteamPlaytime"), defaultDirection: "desc" },
+    { field: "vgt_playtime", label: t("insights.steamSync.columnVgtPlaytime"), defaultDirection: "desc" },
+    { field: "vgt_status", label: t("insights.steamSync.columnVgtStatus") },
+  ];
+  const sort = useListSort("steamSync.sortBy", sortFields, { field: "name", direction: "asc" });
+
+  // Top-level rows in the sort's order; each one's add-ons stay under it.
+  const trees = useMemo(
+    () =>
+      sortRows(
+        buildTrees(ownedEntries ?? [], wishlistEntries ?? []),
+        sort.sort,
+        {
+          name: (tree) => rowName(tree.row),
+          steam_status: (tree) =>
+            t(tree.row.source === "owned" ? "insights.steamSync.steamStatusOwned" : "insights.steamSync.steamStatusWishlisted"),
+          steam_playtime: (tree) => (tree.row.source === "owned" ? tree.row.entry.steamPlaytimeMinutes : null),
+          vgt_playtime: (tree) => (tree.row.source === "owned" ? tree.row.entry.vgtPlaytimeMinutes : null),
+          vgt_status: (tree) => t(statusLabelKey(tree.row)),
+        },
+        (tree) => rowName(tree.row)
+      ),
+    [ownedEntries, wishlistEntries, sort.sort, t]
+  );
+  const header = (field: SyncSort, align?: "right") => (
+    <SortHeaderCell
+      field={field}
+      align={align}
+      sort={sort.sort}
+      onSort={(next) => {
+        sort.clickHeader(next);
+        setPage(0);
+      }}
+    >
+      {sortFields.find((option) => option.field === field)?.label}
+    </SortHeaderCell>
+  );
 
   // What the table pages over. With "Hide synced" on, done rows drop out — except a done
   // parent whose DLC still has something to sync, which stays so those children are reachable.
@@ -738,11 +782,11 @@ const SteamSyncPage = () => {
                   </TableCell>
                   <TableCell padding="checkbox" />
                   <TableCell />
-                  <TableCell>{t("insights.steamSync.columnName")}</TableCell>
-                  <TableCell>{t("insights.steamSync.columnSteamStatus")}</TableCell>
-                  <TableCell align="right">{t("insights.steamSync.columnSteamPlaytime")}</TableCell>
-                  <TableCell align="right">{t("insights.steamSync.columnVgtPlaytime")}</TableCell>
-                  <TableCell>{t("insights.steamSync.columnVgtStatus")}</TableCell>
+                  {header("name")}
+                  {header("steam_status")}
+                  {header("steam_playtime", "right")}
+                  {header("vgt_playtime", "right")}
+                  {header("vgt_status")}
                   <TableCell align="right">{t("insights.steamSync.columnActions")}</TableCell>
                 </TableRow>
               </TableHead>

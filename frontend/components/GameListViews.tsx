@@ -13,9 +13,11 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
-import type { GameSummary, PlayStatus } from "../api/types";
+import type { GameSortOption, GameSummary, PlayStatus } from "../api/types";
+import { gameSortDirection, gameSortField, nextGameSort, type GameSortField } from "../utils/gameSortOptions";
 import { getAddonType, getReleaseYear } from "../utils/utils";
 import { GAME_TYPE_OPTIONS } from "./GameFilterDialog";
+import { SortHeaderCell } from "./ListControls";
 import { STICKY_TOP } from "./Page";
 import VirtualGameGrid, { type VirtualGridHandle } from "./VirtualGameGrid";
 
@@ -266,10 +268,23 @@ const SelectBox = ({ game, selectedIds, onToggleSelect }: Pick<RowsProps, "selec
   );
 };
 
-// Table view: one dense row per game, every field in its own column.
-export function GameTable(props: RowsProps) {
-  const { games, selecting, selectedIds, onToggleSelect } = props;
+interface GameTableProps extends RowsProps {
+  // The list's sort, which a column header click changes (same setting as the Sort menu).
+  sort: GameSortOption;
+  onSortChange: (sort: GameSortOption) => void;
+}
+
+// Table view: one dense row per game, every field in its own column. Every column but the
+// cover sorts the list when its header is clicked; clicking it again flips the direction.
+export function GameTable(props: GameTableProps) {
+  const { games, selecting, selectedIds, onToggleSelect, sort, onSortChange } = props;
   const { t } = useTranslation();
+  const current = { field: gameSortField(sort), direction: gameSortDirection(sort) };
+  const header = (field: GameSortField, label: ReactNode, sx?: object) => (
+    <SortHeaderCell field={field} sort={current} onSort={(next) => onSortChange(nextGameSort(sort, next))} sx={sx}>
+      {label}
+    </SortHeaderCell>
+  );
   return (
     <TableContainer
       sx={{
@@ -285,14 +300,14 @@ export function GameTable(props: RowsProps) {
           <TableRow>
             {selecting ? <TableCell padding="checkbox" /> : null}
             <TableCell sx={{ width: 46 }} />
-            <TableCell>{t("games.listView.columnName")}</TableCell>
-            <TableCell sx={{ width: 56 }} />
-            <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{t("games.listView.columnType")}</TableCell>
-            <TableCell>{t("games.listView.columnYear")}</TableCell>
-            <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{t("games.listView.columnPlatforms")}</TableCell>
-            <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{t("games.listToolbar.playStatusLabel")}</TableCell>
-            <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>{t("games.listView.columnRating")}</TableCell>
-            <TableCell sx={{ display: { xs: "none", md: "table-cell" } }} />
+            {header("name", t("games.listView.columnName"))}
+            {header("library", t("games.listView.columnLibrary"))}
+            {header("type", t("games.listView.columnType"), { display: { xs: "none", md: "table-cell" } })}
+            {header("release_date", t("games.listView.columnYear"))}
+            {header("platforms", t("games.listView.columnPlatforms"), { display: { xs: "none", sm: "table-cell" } })}
+            {header("play_status", t("games.listToolbar.playStatusLabel"), { display: { xs: "none", md: "table-cell" } })}
+            {header("rating", t("games.listView.columnRating"), { display: { xs: "none", lg: "table-cell" } })}
+            {header("labels", t("games.listView.columnLabels"), { display: { xs: "none", md: "table-cell" } })}
           </TableRow>
         </TableHead>
         <TableBody>

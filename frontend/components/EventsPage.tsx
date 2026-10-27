@@ -4,8 +4,10 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import type { EventSummary } from "../api/types";
 import { useEvents } from "../hooks/useEvents";
+import { useListSort } from "../hooks/useListSort";
 import { useLocalPreference } from "../hooks/useLocalPreference";
 import { useSessionState } from "../hooks/useSessionState";
+import { sortRows, type SortField } from "../utils/listSort";
 import { Section } from "./Detail";
 import EventCard from "./EventCard";
 import { ListSearchField } from "./ListControls";
@@ -18,7 +20,7 @@ import {
 } from "./ListToolbar";
 import Page from "./Page";
 
-type EventSort = "soonest" | "latest" | "name";
+type EventSort = "start" | "name";
 type EventStatus = "all" | "ongoing" | "upcoming";
 
 // Event cards are landscape, so they start wider than game covers.
@@ -41,17 +43,15 @@ const EventGrid = ({ events, cardSize }: { events: EventSummary[]; cardSize: num
   </Box>
 );
 
-// An event with no start date sorts after the dated ones either way.
-const byStart = (direction: 1 | -1) => (a: EventSummary, b: EventSummary) =>
-  a.startTime === null || b.startTime === null
-    ? Number(a.startTime === null) - Number(b.startTime === null)
-    : direction * (a.startTime - b.startTime);
-
 const EventsPage = () => {
   const { t } = useTranslation();
   const { data: events, isLoading } = useEvents();
   const [searchKeyword, setSearchKeyword] = useSessionState("events.searchKeyword", "");
-  const [sort, setSort] = useSessionState<EventSort>("events.sort", "soonest");
+  const sortFields: SortField<EventSort>[] = [
+    { field: "start", label: t("events.page.sortStart") },
+    { field: "name", label: t("games.listView.columnName") },
+  ];
+  const sort = useListSort("events.sortBy", sortFields, { field: "start", direction: "asc" });
   const [status, setStatus] = useSessionState<EventStatus>("events.status", "all");
   const [cardSize, setCardSize] = useLocalPreference("events.cardSize", EVENT_CARD_SIZE_DEFAULT);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -62,13 +62,13 @@ const EventsPage = () => {
   const { ongoing, upcoming, shown } = useMemo(() => {
     const now = Math.floor(Date.now() / 1000);
     const keyword = searchKeyword.trim().toLowerCase();
-    const compare =
-      sort === "name"
-        ? (a: EventSummary, b: EventSummary) => a.name.localeCompare(b.name)
-        : byStart(sort === "latest" ? -1 : 1);
-    const matching = (events ?? [])
-      .filter((event) => !keyword || event.name.toLowerCase().includes(keyword))
-      .sort(compare);
+    // An event with no start date sorts after the dated ones either way.
+    const matching = sortRows(
+      (events ?? []).filter((event) => !keyword || event.name.toLowerCase().includes(keyword)),
+      sort.sort,
+      { start: (event) => event.startTime, name: (event) => event.name },
+      (event) => event.name
+    );
     const started = matching.filter((event) => event.startTime !== null && event.startTime <= now);
     const notStarted = matching.filter(
       (event) => event.startTime === null || event.startTime > now
@@ -80,7 +80,7 @@ const EventsPage = () => {
         (status === "upcoming" ? 0 : started.length) +
         (status === "ongoing" ? 0 : notStarted.length),
     };
-  }, [events, searchKeyword, sort, status]);
+  }, [events, searchKeyword, sort.sort, status]);
 
   const statusLabel: Record<EventStatus, string> = {
     all: t("games.listToolbar.allOption"),
@@ -99,15 +99,7 @@ const EventsPage = () => {
       toolbarEnd={
         <ListToolbar<string, EventSort>
           cardSize={{ value: cardSize, onChange: setCardSize }}
-          sort={{
-            value: sort,
-            onChange: setSort,
-            choices: [
-              { value: "soonest", label: t("events.page.sortSoonest") },
-              { value: "latest", label: t("events.page.sortLatest") },
-              { value: "name", label: t("games.listToolbar.sortNameAsc") },
-            ],
-          }}
+          sort={sort}
           filter={{ count: chips.length, onOpen: () => setFiltersOpen(true) }}
         />
       }
