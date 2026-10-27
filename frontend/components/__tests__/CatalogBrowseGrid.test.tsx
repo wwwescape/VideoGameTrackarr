@@ -50,6 +50,9 @@ vi.mock("../../hooks/usePlatforms", () => ({
   usePlatformAddons: () => ({ data: undefined, isLoading: false }),
 }));
 vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/useGameFilterPreferences", () => ({
+  useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters: [], saveFilter: vi.fn(), deleteFilter: vi.fn() }),
+}));
 vi.mock("../../hooks/useTags", () => ({ useTags: () => ({ data: [], isSuccess: true }) }));
 vi.mock("../../hooks/useStorefronts", () => ({ useStorefronts: () => ({ data: [] }) }));
 

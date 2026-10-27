@@ -1,3 +1,6 @@
+import json
+from typing import Any
+
 from pydantic import Field, field_validator
 
 from app.schemas.base import CamelModel
@@ -37,13 +40,35 @@ class OverviewSection(CamelModel):
     hidden: bool = False
 
 
+class GameFilterField(CamelModel):
+    # The Filter dialog's field keys (GameFilterDialog); like OverviewSection, keys the
+    # frontend doesn't know are ignored there.
+    key: str = Field(pattern=r"^[a-zA-Z][a-zA-Z0-9]{0,39}$")
+    hidden: bool = False
+
+
+class SavedGameFilter(CamelModel):
+    name: str = Field(min_length=1, max_length=60)
+    # The game list's filter state as the frontend keeps it (useGameListState), stored as-is:
+    # the server never reads it, and the frontend drops whatever it no longer knows.
+    filters: dict[str, Any]
+
+    @field_validator("filters")
+    @classmethod
+    def _filters_are_small(cls, value: dict[str, Any]) -> dict[str, Any]:
+        if len(value) > 100 or len(json.dumps(value)) > 10_000:
+            raise ValueError("too many filters")
+        return value
+
+
 class PreferencesRequest(CamelModel):
-    """Only the fields sent are changed, so the currency and the Overview layout can be
-    saved independently."""
+    """Only the fields sent are changed, so each preference can be saved independently."""
 
     # An ISO 4217 code; the frontend only offers the currencies it can format.
     currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
     overview_layout: list[OverviewSection] | None = Field(default=None, max_length=50)
+    game_filter_fields: list[GameFilterField] | None = Field(default=None, max_length=50)
+    saved_game_filters: list[SavedGameFilter] | None = Field(default=None, max_length=50)
 
 
 class RefreshRequest(CamelModel):
@@ -61,6 +86,8 @@ class UserResponse(CamelModel):
     username: str
     currency: str | None = None
     overview_layout: list[OverviewSection] | None = None
+    game_filter_fields: list[GameFilterField] | None = None
+    saved_game_filters: list[SavedGameFilter] | None = None
 
 
 class SetupStatusResponse(CamelModel):

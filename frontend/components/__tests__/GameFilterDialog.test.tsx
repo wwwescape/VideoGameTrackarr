@@ -273,3 +273,14 @@ describe("buildGameFilterParams play filters", () => {
     expect(params.timeToBeatMax).toBe(5);
   });
 });
+
+describe("GameFilterDialog fields switched off in Settings", () => {
+  it("leaves out the hidden fields and keeps the others", () => {
+    renderToolbar({ hiddenFields: new Set(["format", "coop"] as const) });
+
+    expect(screen.queryByRole("combobox", { name: "Formats" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Co-op" })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Genres" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Online multiplayer" })).toBeInTheDocument();
+  });
+});

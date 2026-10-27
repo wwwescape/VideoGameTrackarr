@@ -11,6 +11,7 @@ import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import { useTranslation } from "react-i18next";
+import { useGameFilterPreferences } from "../hooks/useGameFilterPreferences";
 import type { GameListState } from "../hooks/useGameListState";
 import {
   GAME_SORT_FIELDS,
@@ -31,6 +32,7 @@ import GameFilterDialog, {
   TIME_TO_BEAT_OPTIONS,
   timeToBeatLabel,
 } from "./GameFilterDialog";
+import GameListPresets from "./GameListPresets";
 import type { GameListView } from "./GameListViews";
 import { CardSizeSlider, ChoiceMenuItem, ListSearchField, SortMenu } from "./ListControls";
 import { ToolbarButton } from "./Page";
@@ -88,6 +90,7 @@ export function useGameListControls(
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [menu, setMenu] = useState<{ name: "options" | "view" | "sort"; anchor: HTMLElement } | null>(null);
   const { fields } = state;
+  const filterPreferences = useGameFilterPreferences();
 
   const activeFilterCount = countActiveFilters({
     ownershipStatuses: fields.ownershipStatuses,
@@ -208,6 +211,7 @@ export function useGameListControls(
         onClick={(event) => setMenu({ name: "sort", anchor: event.currentTarget })}
         aria-haspopup="menu"
       />
+      <GameListPresets state={state} canSave={activeFilterCount > 0} />
       <ToolbarButton
         icon={<FilterAltOutlinedIcon />}
         label={t("games.listView.filter")}
@@ -272,6 +276,7 @@ export function useGameListControls(
         hidePlatformsField={hidePlatformsField}
         hideCollectionsField={hideCollectionsField}
         hideFranchisesField={hideFranchisesField}
+        hiddenFields={filterPreferences.hiddenFields}
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
       />

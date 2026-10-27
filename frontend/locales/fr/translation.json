@@ -522,6 +522,17 @@
     },
     "regional": {
       "heading": "Régional"
+    },
+    "gameFilters": {
+      "heading": "Listes de jeux",
+      "fields": "Champs de filtre",
+      "fieldsHelp": "{{shown}} champs sur {{total}} affichés dans la fenêtre Filtres. Enregistré sur votre compte.",
+      "customizeButton": "Personnaliser",
+      "customizeTitle": "Champs de filtre",
+      "customizeDescription": "Désactivez les champs que vous n'utilisez jamais. Le filtre d'un champ masqué est conservé et peut toujours être retiré depuis sa puce.",
+      "showAll": "Tout afficher",
+      "saved": "Vues enregistrées",
+      "savedHelp": "Créées depuis le bouton Vues des listes de jeux. Modifiez-en une pour la renommer ou la supprimer."
     }
   },
   "auth": {
@@ -972,6 +983,20 @@
     "detail": {
       "aboutTitle": "À propos",
       "platformsReleaseDatesTitle": "Plateformes et dates de sortie"
+    },
+    "savedViews": {
+      "button": "Vues",
+      "modifiedLabel": "{{name}} (modifiée)",
+      "empty": "Aucune vue pour l'instant",
+      "saveCurrent": "Enregistrer les filtres actuels…",
+      "saveAsNew": "Enregistrer comme nouvelle vue…",
+      "update": "Mettre à jour « {{name}} »",
+      "saveTitle": "Enregistrer ces filtres",
+      "editTitle": "Modifier la vue",
+      "editAria": "Modifier {{name}}",
+      "nameLabel": "Nom",
+      "replaceHelp": "Remplace la vue enregistrée sous ce nom.",
+      "deleted": "Vue « {{name}} » supprimée"
     }
   },
   "events": {

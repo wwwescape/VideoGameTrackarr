@@ -522,6 +522,17 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "gameFilters": {
+      "heading": "Listas de jogos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visíveis na janela Filtros. Guardado na sua conta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desative os campos que nunca usa. O filtro de um campo oculto mantém-se e ainda pode ser removido a partir do seu chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Predefinições guardadas",
+      "savedHelp": "Criadas no botão Predefinições das listas de jogos. Edite uma para a renomear ou eliminar."
     }
   },
   "auth": {
@@ -972,6 +983,20 @@
     "detail": {
       "aboutTitle": "Sobre",
       "platformsReleaseDatesTitle": "Plataformas e datas de lançamento"
+    },
+    "savedViews": {
+      "button": "Predefinições",
+      "modifiedLabel": "{{name}} (alterada)",
+      "empty": "Ainda sem predefinições",
+      "saveCurrent": "Guardar os filtros atuais…",
+      "saveAsNew": "Guardar como nova predefinição…",
+      "update": "Atualizar «{{name}}»",
+      "saveTitle": "Guardar estes filtros",
+      "editTitle": "Editar predefinição",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nome",
+      "replaceHelp": "Substitui a predefinição com este nome.",
+      "deleted": "Predefinição «{{name}}» eliminada"
     }
   },
   "events": {

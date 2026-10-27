@@ -129,13 +129,22 @@ REUSE_GRACE_SECONDS = 30
 
 
 def set_preferences(
-    db: Session, user: User, currency: str | None = None, overview_layout: list[dict] | None = None
+    db: Session,
+    user: User,
+    currency: str | None = None,
+    overview_layout: list[dict] | None = None,
+    game_filter_fields: list[dict] | None = None,
+    saved_game_filters: list[dict] | None = None,
 ) -> User:
     """Changes only what's given (None leaves a preference as it is)."""
     if currency is not None:
         user.currency = currency
     if overview_layout is not None:
         user.overview_layout = overview_layout
+    if game_filter_fields is not None:
+        user.game_filter_fields = game_filter_fields
+    if saved_game_filters is not None:
+        user.saved_game_filters = saved_game_filters
     db.commit()
     db.refresh(user)
     return user

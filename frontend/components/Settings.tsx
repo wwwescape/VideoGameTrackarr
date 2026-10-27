@@ -17,6 +17,7 @@ import AutocompleteSelect from "./AutocompleteSelect";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import DangerZoneSection from "./DangerZoneSection";
 import DataManagementSection from "./DataManagementSection";
+import GameFilterSettings from "./GameFilterSettings";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 import ShareSection from "./ShareSection";
@@ -109,6 +110,10 @@ const Settings = () => {
               sx={{ width: { xs: "100%", md: 300 } }}
             />
           </SettingRow>
+        </SettingsGroup>
+
+        <SettingsGroup title={t("settings.gameFilters.heading")}>
+          <GameFilterSettings />
         </SettingsGroup>
 
         <SettingsGroup title={t("settings.data.heading")}>

@@ -248,6 +248,8 @@ class BackupSettings(_BackupRow):
 
     currency: str | None = None
     overview_layout: list[dict] | None = None
+    game_filter_fields: list[dict] | None = None
+    saved_game_filters: list[dict] | None = None
     steam_id_64: str | None = None
 
 
