@@ -180,7 +180,6 @@ class GameProgress(TimestampMixin, Base):
 
     play_status: Mapped[PlayStatus] = mapped_column(enum_column(PlayStatus), nullable=False, default=PlayStatus.NONE)
     playtime_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    rating: Mapped[float | None] = mapped_column()
     review: Mapped[str | None] = mapped_column(Text)
 
     started_at: Mapped[date | None] = mapped_column(Date)

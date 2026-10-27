@@ -653,7 +653,18 @@
       "count_one": "{{count}} platform",
       "count_other": "{{count}} platforms"
     },
+    "rating": {
+      "title": "Your Rating",
+      "clear": "Clear",
+      "starsLabel_one": "{{count}} star",
+      "starsLabel_other": "{{count}} stars",
+      "saveErrorToast": "Couldn't save your rating. Please try again."
+    },
     "about": {
+      "igdbMemberRatingLabel": "IGDB members {{rating}}",
+      "igdbCriticRatingLabel": "Critics {{rating}}",
+      "igdbRatingCountTooltip_one": "Based on {{count}} rating on IGDB",
+      "igdbRatingCountTooltip_other": "Based on {{count}} ratings on IGDB",
       "regionEurope": "Europe",
       "regionNorthAmerica": "North America",
       "regionAustralia": "Australia",
@@ -664,7 +675,6 @@
       "regionWorldwide": "Worldwide",
       "customTooltip": "Added by hand, not linked to an IGDB entry — use Link to IGDB in the toolbar to link it.",
       "customLabel": "Custom",
-      "igdbRatingLabel": "IGDB Rating: {{rating}}/100",
       "forConnector": " for ",
       "externalParentTooltip": "Not in your library — opens the original's IGDB page",
       "availableOnLabel": "Available on: {{platforms}}",
@@ -1397,7 +1407,6 @@
   "progress": {
     "title": "Progress",
     "playtimeColumn": "Playtime",
-    "ratingColumn": "Rating",
     "lastPlayedColumn": "Last Played",
     "addDialogTitle": "Add Progress",
     "updateDialogTitle": "Update Progress",
@@ -1405,7 +1414,6 @@
     "statusLabel": "Status",
     "playtimeLabel": "Playtime (minutes)",
     "playtimeHelperText": "≈ {{hours}} hours",
-    "ratingLabel": "Your rating",
     "ratingValue": "{{rating}}/10",
     "unrated": "Unrated",
     "startedLabel": "Started",

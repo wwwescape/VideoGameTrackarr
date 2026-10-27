@@ -16,7 +16,10 @@ const about = (overrides: Partial<GameAboutData> = {}): GameAboutData =>
     summary: null,
     storyline: null,
     edition: null,
-    rating: 91.4,
+    igdbRating: 88.61,
+    igdbRatingCount: 193,
+    igdbCriticRating: 77.67,
+    igdbCriticRatingCount: 3,
     parentGameId: null,
     parentGameName: null,
     parentGameSlug: null,
@@ -79,9 +82,12 @@ describe("game hero", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Celeste" })).toBeInTheDocument();
     expect(screen.getByText("Maddy Makes Games")).toBeInTheDocument();
-    for (const pill of ["In your collection", "Playing", "On Sale", "IGDB Rating: 91/100", "Switch", "PC"]) {
+    for (const pill of ["In your collection", "Playing", "On Sale", "IGDB members 8.9", "Critics 7.8", "Switch", "PC"]) {
       expect(screen.getByText(pill)).toBeInTheDocument();
     }
+    // IGDB's ratings on its own 10-point scale, with how many each is based on.
+    expect(screen.getByTitle("Based on 193 ratings on IGDB")).toHaveTextContent("IGDB members 8.9");
+    expect(screen.getByTitle("Based on 3 ratings on IGDB")).toHaveTextContent("Critics 7.8");
     expect(screen.getByRole("link", { name: /Series: Celeste/ })).toHaveAttribute("href", "/games/series/celeste");
     expect(screen.getByRole("link", { name: "Games" })).toHaveAttribute("href", "/games");
   });

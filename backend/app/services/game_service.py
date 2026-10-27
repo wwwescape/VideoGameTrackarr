@@ -206,6 +206,16 @@ def claim_discovered_game(db: Session, game_id: int) -> GameWithStatus:
     return get_game_detail(db, game_id)
 
 
+def set_user_rating(db: Session, game_id: int, rating: int | None) -> int | None:
+    """Your overall rating for a game (1-10 stars), or None to clear it."""
+    game = db.get(Game, game_id)
+    if game is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    game.user_rating = rating
+    db.commit()
+    return game.user_rating
+
+
 def delete_game(db: Session, game_id: int) -> None:
     game_with_status = get_game_detail(db, game_id)
     rom_filenames = game_repository.delete_game_with_addons(db, game_with_status.game)
@@ -456,6 +466,10 @@ def _upsert_from_igdb_payload(
         external_parent_name=external_parent_name,
         external_parent_igdb_url=external_parent_igdb_url,
         similar_game_igdb_ids=igdb_game.get("similar_games"),
+        igdb_rating=igdb_game.get("rating"),
+        igdb_rating_count=igdb_game.get("rating_count"),
+        igdb_critic_rating=igdb_game.get("aggregated_rating"),
+        igdb_critic_rating_count=igdb_game.get("aggregated_rating_count"),
         **extract_store_urls(igdb_game),
     )
 

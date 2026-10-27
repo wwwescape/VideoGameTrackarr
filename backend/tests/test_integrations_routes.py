@@ -222,7 +222,7 @@ def test_sync_steam_entries_preserves_progress_on_another_platform(auth_client, 
     # must keep its PS5 progress untouched when Steam Sync applies PC playtime data.
     game = _seed_matched_entry(db_session, steam_playtime_minutes=754)
     db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
-    db_session.add(GameProgress(game_id=game.id, platform_id=seed_platform.id, playtime_minutes=200, rating=9))
+    db_session.add(GameProgress(game_id=game.id, platform_id=seed_platform.id, playtime_minutes=200, review="Great"))
     db_session.commit()
 
     response = auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
@@ -234,7 +234,7 @@ def test_sync_steam_entries_preserves_progress_on_another_platform(auth_client, 
         .one()
     )
     assert ps5_progress.playtime_minutes == 200  # untouched
-    assert ps5_progress.rating == 9
+    assert ps5_progress.review == "Great"
 
     pc_progress = (
         db_session.query(GameProgress)

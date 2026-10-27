@@ -12,7 +12,6 @@ from app.repositories.game_repository import (
     _is_browsable_game,
     _owned_exists,
     _play_status_subquery,
-    _rating_subquery,
     _row_to_game_with_status,
     _wishlisted_exists,
     platform_copy_exists,
@@ -115,7 +114,7 @@ def list_addons_for_platform(
         _owned_exists(Game.id),
         _wishlisted_exists(Game.id),
         _play_status_subquery(Game.id),
-        _rating_subquery(Game.id),
+        Game.user_rating,
     ).where(
         Game.parent_game_id.is_not(None),
         platform_copy_exists(Game.id, platform_id, media_format, storefront),

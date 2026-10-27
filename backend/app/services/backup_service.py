@@ -113,6 +113,7 @@ def build_backup_payload(db: Session, include_files: bool = False) -> BackupPayl
                 category=g.category.value if g.category else None,
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
+                user_rating=g.user_rating,
             )
             for g in db.scalars(select(Game))
         ],
@@ -139,7 +140,6 @@ def build_backup_payload(db: Session, include_files: bool = False) -> BackupPayl
                 platform_id=gp.platform_id,
                 play_status=gp.play_status.value,
                 playtime_minutes=gp.playtime_minutes,
-                rating=gp.rating,
                 review=gp.review,
                 started_at=gp.started_at.isoformat() if gp.started_at else None,
                 completed_at=gp.completed_at.isoformat() if gp.completed_at else None,
@@ -452,6 +452,22 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         db.add(Tag(id=t.id, name=t.name, color=t.color))
     db.flush()
 
+    # A backup from before the overall rating has ratings per platform instead: each game gets
+    # their average, rounded to whole stars (the same rule as the migration that moved them).
+    legacy_ratings: dict[int, list[float]] = {}
+    for gp in payload.game_progress:
+        if gp.rating is not None:
+            legacy_ratings.setdefault(gp.game_id, []).append(gp.rating)
+
+    def user_rating_for(g: BackupGame) -> int | None:
+        if g.user_rating is not None:
+            return g.user_rating
+        ratings = legacy_ratings.get(g.id)
+        if not ratings:
+            return None
+        # Half up, like SQL ROUND (Python's round() would make 8.5 an 8).
+        return int(sum(ratings) / len(ratings) + 0.5) or None
+
     for g in payload.games:
         db.add(
             Game(
@@ -467,6 +483,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 category=GameCategory(g.category) if g.category else None,
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
+                user_rating=user_rating_for(g),
             )
         )
     db.flush()
@@ -500,7 +517,6 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 platform_id=gp.platform_id,
                 play_status=PlayStatus(gp.play_status),
                 playtime_minutes=gp.playtime_minutes,
-                rating=gp.rating,
                 review=gp.review,
                 started_at=date.fromisoformat(gp.started_at) if gp.started_at else None,
                 completed_at=date.fromisoformat(gp.completed_at) if gp.completed_at else None,

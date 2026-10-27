@@ -154,12 +154,6 @@ const GameProgressSection = ({
 
   // The summary across every tracked platform.
   const totalMinutes = visibleProgress.reduce((total, row) => total + row.playtimeMinutes, 0);
-  const ratings = visibleProgress
-    .map((row) => row.rating)
-    .filter((rating): rating is number => rating !== null);
-  const averageRating = ratings.length
-    ? ratings.reduce((total, rating) => total + rating, 0) / ratings.length
-    : null;
   const lastPlayed = visibleProgress
     .map((row) => row.lastPlayedAt)
     .filter((date): date is string => date !== null)
@@ -279,12 +273,6 @@ const GameProgressSection = ({
               playStatus && playStatus !== "none" ? statusLabels[playStatus] : t("progress.notSet"),
             ],
             [t("progress.playtimeColumn"), totalMinutes ? formatDuration(totalMinutes) : "—"],
-            [
-              t("progress.ratingColumn"),
-              averageRating !== null
-                ? t("progress.ratingValue", { rating: Math.round(averageRating * 10) / 10 })
-                : "—",
-            ],
             [t("progress.lastPlayedColumn"), formatDay(lastPlayed ?? null) ?? "—"],
           ]}
         />
@@ -303,9 +291,6 @@ const GameProgressSection = ({
                   subtitle={
                     [
                       row.playtimeMinutes ? formatDuration(row.playtimeMinutes) : null,
-                      row.rating !== null
-                        ? t("progress.ratingValue", { rating: row.rating })
-                        : null,
                       row.lastPlayedAt
                         ? t("progress.lastPlayedOn", { date: formatDay(row.lastPlayedAt) })
                         : null,

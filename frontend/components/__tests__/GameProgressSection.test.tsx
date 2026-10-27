@@ -38,7 +38,6 @@ const row = (overrides: Partial<GameProgress>): GameProgress => ({
   platformName: "PlayStation 5",
   playStatus: "playing",
   playtimeMinutes: 90,
-  rating: 8,
   review: null,
   startedAt: null,
   completedAt: null,
@@ -59,16 +58,17 @@ const section = (id: string) => document.getElementById(id) as HTMLElement;
 
 describe("GameProgressSection", () => {
   it("sums up progress across platforms, then lists each platform", () => {
-    progress = [row({}), row({ id: 2, platformId: 2, platformName: "PC", playStatus: "completed", playtimeMinutes: 30, rating: 6, lastPlayedAt: "2026-09-01" })];
+    progress = [row({}), row({ id: 2, platformId: 2, platformName: "PC", playStatus: "completed", playtimeMinutes: 30, lastPlayedAt: "2026-09-01" })];
     sessions = [];
     renderSection();
 
     const progressSection = section("progress");
     expect(within(progressSection).getByText("Playing", { selector: "div" })).toBeInTheDocument();
     expect(within(progressSection).getByText("2h 0m")).toBeInTheDocument();
-    expect(within(progressSection).getByText("7/10")).toBeInTheDocument();
+    // Your rating is per game now (Your Rating), not per platform.
+    expect(within(progressSection).queryByText(/\/10/)).toBeNull();
     const ps5 = within(progressSection).getByRole("button", { name: "PlayStation 5" });
-    expect(within(ps5).getByText(/1h 30m · 8\/10 · last played/)).toBeInTheDocument();
+    expect(within(ps5).getByText(/1h 30m · last played/)).toBeInTheDocument();
     expect(within(progressSection).getByRole("button", { name: "PC" })).toHaveTextContent("Completed");
     expect(within(section("play-sessions")).getByText("No sessions logged yet.")).toBeInTheDocument();
   });

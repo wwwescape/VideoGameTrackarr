@@ -52,8 +52,8 @@ class PublicGameDetailResponse(PublicGameSummaryResponse):
     summary: str | None
     storyline: str | None
     edition: str | None
-    # Always null: the About section's rating chip is the owner's own rating (progress data).
-    rating: float | None
+    # Always null: the owner's own rating isn't shared. IGDB's ratings below are public facts.
+    rating: int | None
     # Always null: only top-level games are public, so there's never a hierarchical parent.
     parent_game_id: int | None
     parent_game_name: str | None
@@ -65,6 +65,12 @@ class PublicGameDetailResponse(PublicGameSummaryResponse):
     display_parent_game_uuid: str | None
     external_parent_name: str | None
     external_parent_igdb_url: str | None
+    # IGDB's members' and critics' ratings (0-100) and how many each is based on — the hero's
+    # two rating chips.
+    igdb_rating: float | None
+    igdb_rating_count: int | None
+    igdb_critic_rating: float | None
+    igdb_critic_rating_count: int | None
     genres: list[CatalogRefResponse]
     companies: list[GameCompanyResponse]
     franchises: list[CatalogRefResponse]
@@ -106,6 +112,10 @@ def public_game_detail_from_orm(status: GameWithStatus) -> PublicGameDetailRespo
         display_parent_game_uuid=display_parent.uuid if display_parent else None,
         external_parent_name=game.external_parent_name,
         external_parent_igdb_url=game.external_parent_igdb_url,
+        igdb_rating=game.igdb_rating,
+        igdb_rating_count=game.igdb_rating_count,
+        igdb_critic_rating=game.igdb_critic_rating,
+        igdb_critic_rating_count=game.igdb_critic_rating_count,
         genres=[genre_ref_from_orm(gg.genre) for gg in game.genres],
         companies=[game_company_from_orm(gc) for gc in game.companies],
         franchises=[franchise_ref_from_orm(gf.franchise) for gf in game.franchises],

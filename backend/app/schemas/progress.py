@@ -13,7 +13,6 @@ class GameProgressResponse(CamelModel):
     platform_name: str | None
     play_status: PlayStatus
     playtime_minutes: int
-    rating: float | None
     review: str | None
     started_at: date | None
     completed_at: date | None
@@ -33,7 +32,6 @@ def game_progress_from_orm(game_id: int, progress: GameProgress | None) -> GameP
             platform_name=None,
             play_status=PlayStatus.NONE,
             playtime_minutes=0,
-            rating=None,
             review=None,
             started_at=None,
             completed_at=None,
@@ -46,7 +44,6 @@ def game_progress_from_orm(game_id: int, progress: GameProgress | None) -> GameP
         platform_name=progress.platform.name if progress.platform else None,
         play_status=progress.play_status,
         playtime_minutes=progress.playtime_minutes,
-        rating=progress.rating,
         review=progress.review,
         started_at=progress.started_at,
         completed_at=progress.completed_at,
@@ -58,7 +55,6 @@ class GameProgressCreateRequest(CamelModel):
     platform_id: int
     play_status: PlayStatus = PlayStatus.NONE
     playtime_minutes: int = Field(default=0, ge=0)
-    rating: float | None = Field(default=None, ge=0, le=10)
     review: str | None = None
     started_at: date | None = None
     completed_at: date | None = None
@@ -68,7 +64,6 @@ class GameProgressCreateRequest(CamelModel):
 class GameProgressUpdateRequest(CamelModel):
     play_status: PlayStatus | None = None
     playtime_minutes: int | None = Field(default=None, ge=0)
-    rating: float | None = Field(default=None, ge=0, le=10)
     review: str | None = None
     started_at: date | None = None
     completed_at: date | None = None

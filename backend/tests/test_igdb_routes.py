@@ -190,6 +190,40 @@ def test_import_game_creates_game_and_addons(auth_client, db_session, igdb_clien
 
 
 @respx.mock
+def test_import_game_stores_igdb_member_and_critic_ratings(auth_client, db_session, igdb_client):
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/games").mock(
+        side_effect=[
+            httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": 1950,
+                        "name": "Age of Empires II: Definitive Edition",
+                        "category": 0,
+                        "rating": 88.61,
+                        "rating_count": 193,
+                        "aggregated_rating": 77.67,
+                        "aggregated_rating_count": 3,
+                        "total_rating": 83.14,
+                    }
+                ],
+            ),
+            httpx.Response(200, json=[]),
+        ]
+    )
+
+    response = auth_client.post("/api/games", json={"igdbId": 1950})
+
+    assert response.status_code == 201
+    body = response.json()
+    assert (body["igdbRating"], body["igdbRatingCount"]) == (88.61, 193)
+    assert (body["igdbCriticRating"], body["igdbCriticRatingCount"]) == (77.67, 3)
+    # IGDB's ratings are separate from yours, which starts unrated.
+    assert body["rating"] is None
+
+
+@respx.mock
 def test_import_game_cascade_discovered_standalone_expansion_is_display_only(auth_client, db_session, igdb_client):
     # get_addons_by_parent_igdb_id now filters to hierarchical game_types server-side, so
     # IGDB shouldn't actually return a standalone expansion here in practice — but this
@@ -597,6 +631,24 @@ def test_merge_into_igdb_moves_user_data_and_deletes_source(auth_client, db_sess
     assert db_session.query(Note).filter_by(game_id=seed_game.id).one().body == "My placeholder notes"
 
 
+def test_merge_into_igdb_carries_your_rating_unless_the_target_has_one(auth_client, db_session, seed_game):
+    rated = Game(name="Rated Custom", category=None, user_rating=7)
+    db_session.add(rated)
+    db_session.commit()
+
+    auth_client.post(f"/api/games/{rated.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+    db_session.refresh(seed_game)
+    assert seed_game.user_rating == 7
+
+    another = Game(name="Another Custom", category=None, user_rating=3)
+    db_session.add(another)
+    db_session.commit()
+
+    auth_client.post(f"/api/games/{another.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
+    db_session.refresh(seed_game)
+    assert seed_game.user_rating == 7
+
+
 def test_merge_into_igdb_dedupes_a_tag_shared_by_both_entries(auth_client, db_session, seed_game):
     manual_game = Game(name="Custom Duplicate", category=None)
     db_session.add(manual_game)
@@ -621,8 +673,8 @@ def test_merge_into_igdb_conflict_when_both_entries_have_progress(auth_client, d
     manual_game = Game(name="Custom Duplicate", category=None)
     db_session.add(manual_game)
     db_session.commit()
-    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, rating=8))
-    db_session.add(GameProgress(game_id=manual_game.id, platform_id=seed_platform.id, rating=9))
+    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, playtime_minutes=80))
+    db_session.add(GameProgress(game_id=manual_game.id, platform_id=seed_platform.id, playtime_minutes=90))
     db_session.commit()
 
     response = auth_client.post(f"/api/games/{manual_game.id}/merge-into-igdb", json={"igdbId": seed_game.igdb_id})
@@ -630,7 +682,7 @@ def test_merge_into_igdb_conflict_when_both_entries_have_progress(auth_client, d
     assert response.status_code == 409
     # Refused before touching anything — both rows still exist, untouched.
     assert db_session.get(Game, manual_game.id) is not None
-    assert db_session.query(GameProgress).filter_by(game_id=seed_game.id).one().rating == 8
+    assert db_session.query(GameProgress).filter_by(game_id=seed_game.id).one().playtime_minutes == 80
 
 
 def test_merge_into_igdb_404_when_igdb_id_not_in_library(auth_client, db_session):

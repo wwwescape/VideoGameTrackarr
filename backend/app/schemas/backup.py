@@ -58,6 +58,9 @@ class BackupGame(_BackupRow):
     category: str | None = None
     igdb_category_id: int | None = None
     parent_game_id: int | None = None
+    # Your overall rating (1-10). Backups from before it existed carry ratings per platform on
+    # game_progress instead, which restore folds into this (see backup_service.restore_backup).
+    user_rating: int | None = None
 
 
 class BackupLibraryItem(_BackupRow):
@@ -82,6 +85,8 @@ class BackupGameProgress(_BackupRow):
     platform_id: int | None = None
     play_status: str
     playtime_minutes: int = 0
+    # Only in backups from before the overall rating (Game.user_rating); read on restore, never
+    # written.
     rating: float | None = None
     review: str | None = None
     started_at: str | None = None

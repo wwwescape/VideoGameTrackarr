@@ -58,6 +58,7 @@ export interface GameSummary {
   owned: boolean;
   wishlisted: boolean;
   playStatus: PlayStatus | null;
+  // Your overall rating, 1-10 stars (null = not rated). IGDB's ratings are on GameDetail.
   rating: number | null;
   isOnSale: boolean;
   // True only for a game (or addon) that only exists locally because a Collection/Series
@@ -87,7 +88,6 @@ export interface GameProgress {
   platformName: string | null;
   playStatus: PlayStatus;
   playtimeMinutes: number;
-  rating: number | null;
   review: string | null;
   startedAt: string | null;
   completedAt: string | null;
@@ -98,7 +98,6 @@ export interface GameProgressCreateInput {
   platformId: number;
   playStatus?: PlayStatus;
   playtimeMinutes?: number;
-  rating?: number | null;
   review?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
@@ -108,7 +107,6 @@ export interface GameProgressCreateInput {
 export interface GameProgressUpdateInput {
   playStatus?: PlayStatus;
   playtimeMinutes?: number;
-  rating?: number | null;
   review?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
@@ -275,6 +273,12 @@ export interface GameDetail extends GameSummary {
   displayParentGameUuid: string | null;
   externalParentName: string | null;
   externalParentIgdbUrl: string | null;
+  // IGDB's members' and critics' ratings (0-100; shown /10 like IGDB) and how many each is
+  // based on — null when IGDB has none.
+  igdbRating: number | null;
+  igdbRatingCount: number | null;
+  igdbCriticRating: number | null;
+  igdbCriticRatingCount: number | null;
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];
@@ -300,7 +304,10 @@ export type GameAboutData = Pick<
   | "summary"
   | "storyline"
   | "edition"
-  | "rating"
+  | "igdbRating"
+  | "igdbRatingCount"
+  | "igdbCriticRating"
+  | "igdbCriticRatingCount"
   | "parentGameId"
   | "parentGameName"
   | "parentGameSlug"

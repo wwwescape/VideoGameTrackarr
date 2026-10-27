@@ -156,13 +156,19 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken }:
     pills.push(<Pill key="custom" title={t("games.about.customTooltip")}>{t("games.about.customLabel")}</Pill>);
   }
   if (status.isOnSale) pills.push(<Pill key="sale" tone="success" icon={<SellIcon />}>{t("games.card.onSaleLabel")}</Pill>);
-  if (game.rating !== null) {
+  // IGDB's two ratings as its own game page shows them: out of 10, one decimal, each with how
+  // many ratings it's based on in its tooltip.
+  const igdbRatingPill = (key: string, label: string, rating: number | null, count: number | null) => {
+    if (rating === null) return;
+    const score = (Math.round(rating) / 10).toFixed(1);
     pills.push(
-      <Pill key="rating" icon={<StarIcon />}>
-        {t("games.about.igdbRatingLabel", { rating: Math.round(game.rating) })}
+      <Pill key={key} icon={<StarIcon />} title={t("games.about.igdbRatingCountTooltip", { count: count ?? 0 })}>
+        {t(label, { rating: score })}
       </Pill>
     );
-  }
+  };
+  igdbRatingPill("igdb-members", "games.about.igdbMemberRatingLabel", game.igdbRating, game.igdbRatingCount);
+  igdbRatingPill("igdb-critics", "games.about.igdbCriticRatingLabel", game.igdbCriticRating, game.igdbCriticRatingCount);
   (status.copyPlatforms ?? []).forEach((platform) =>
     pills.push(<Pill key={`platform-${platform}`} icon={<VideogameAssetIcon />}>{platform}</Pill>)
   );

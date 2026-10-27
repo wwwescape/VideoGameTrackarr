@@ -1,5 +1,7 @@
 from typing import Any
 
+from pydantic import Field
+
 from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion
 from app.models.library import GameProgress, PlayStatus, Tag
 from app.repositories.game_repository import GameWithStatus
@@ -37,7 +39,8 @@ class GameSummaryResponse(CamelModel):
     owned: bool
     wishlisted: bool
     play_status: PlayStatus | None
-    rating: float | None
+    # Your overall rating (1-10 stars), not IGDB's.
+    rating: int | None
     is_on_sale: bool
     # True only for a game (or addon) that only exists locally because a Collection/Series
     # "what's missing" resync discovered it, and hasn't been claimed since — see
@@ -75,6 +78,12 @@ class GameDetailResponse(GameSummaryResponse):
     display_parent_game_uuid: str | None
     external_parent_name: str | None
     external_parent_igdb_url: str | None
+    # IGDB's members' and critics' ratings (0-100) and how many each is based on — the hero's
+    # two rating chips.
+    igdb_rating: float | None
+    igdb_rating_count: int | None
+    igdb_critic_rating: float | None
+    igdb_critic_rating_count: int | None
     progress: GameProgressResponse
     tags: list[TagResponse]
     genres: list[CatalogRefResponse]
@@ -153,6 +162,10 @@ def game_detail_from_orm(
         display_parent_game_uuid=game.display_parent_game.uuid if game.display_parent_game else None,
         external_parent_name=game.external_parent_name,
         external_parent_igdb_url=game.external_parent_igdb_url,
+        igdb_rating=game.igdb_rating,
+        igdb_rating_count=game.igdb_rating_count,
+        igdb_critic_rating=game.igdb_critic_rating,
+        igdb_critic_rating_count=game.igdb_critic_rating_count,
         progress=game_progress_from_orm(game.id, progress),
         tags=[tag_from_orm(tag) for tag in tags],
         genres=[genre_ref_from_orm(gg.genre) for gg in game.genres],
@@ -165,6 +178,15 @@ def game_detail_from_orm(
         videos=[game_video_from_orm(v) for v in game.videos],
         release_dates=[release_date_from_orm(rd) for rd in game.release_dates],
     )
+
+
+class GameRatingRequest(CamelModel):
+    # 1-10 stars; null clears it.
+    rating: int | None = Field(default=None, ge=1, le=10)
+
+
+class GameRatingResponse(CamelModel):
+    rating: int | None
 
 
 class GameImportRequest(CamelModel):
@@ -225,6 +247,10 @@ class IgdbGamePreviewResponse(CamelModel):
     display_parent_game_uuid: None = None
     external_parent_name: str | None
     external_parent_igdb_url: str | None
+    igdb_rating: float | None = None
+    igdb_rating_count: int | None = None
+    igdb_critic_rating: float | None = None
+    igdb_critic_rating_count: int | None = None
     genres: list[CatalogRefResponse]
     companies: list[GameCompanyResponse]
     franchises: list[CatalogRefResponse]
@@ -298,6 +324,10 @@ def igdb_game_preview_from_payload(
         igdb_url=igdb_game.get("url"),
         external_parent_name=external_parent_name,
         external_parent_igdb_url=external_parent_igdb_url,
+        igdb_rating=igdb_game.get("rating"),
+        igdb_rating_count=igdb_game.get("rating_count"),
+        igdb_critic_rating=igdb_game.get("aggregated_rating"),
+        igdb_critic_rating_count=igdb_game.get("aggregated_rating_count"),
         genres=_refs(igdb_game.get("genres")),
         companies=sorted(companies.values(), key=lambda c: (c.name.lower(), c.role.value)),
         franchises=_refs(igdb_game.get("franchises")),

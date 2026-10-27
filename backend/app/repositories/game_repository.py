@@ -48,7 +48,8 @@ class GameWithStatus:
     owned: bool
     wishlisted: bool
     play_status: PlayStatus | None
-    rating: float | None
+    # Your overall rating (Game.user_rating), 1-10.
+    rating: int | None
 
 
 def platform_copy_exists(
@@ -96,18 +97,6 @@ _PLAY_STATUS_PRIORITY = case(
 def _play_status_subquery(game_id_column: ColumnElement[int]) -> ColumnElement[PlayStatus | None]:
     return (
         select(GameProgress.play_status)
-        .where(GameProgress.game_id == game_id_column)
-        .order_by(_PLAY_STATUS_PRIORITY)
-        .limit(1)
-        .scalar_subquery()
-    )
-
-
-def _rating_subquery(game_id_column: ColumnElement[int]) -> ColumnElement[float | None]:
-    # Rides along with the same representative row as _play_status_subquery, so a game's
-    # card badge and "your rating" reflect the same platform's progress consistently.
-    return (
-        select(GameProgress.rating)
         .where(GameProgress.game_id == game_id_column)
         .order_by(_PLAY_STATUS_PRIORITY)
         .limit(1)
@@ -263,7 +252,7 @@ def _order_by_for_sort(sort: GameSortOption) -> list[ColumnElement[Any]]:
     elif sort in (GameSortOption.PLAY_STATUS_ASC, GameSortOption.PLAY_STATUS_DESC):
         value = _rank(_play_status_subquery(Game.id), _PLAY_STATUS_ORDER)
     elif sort in (GameSortOption.RATING_ASC, GameSortOption.RATING_DESC):
-        value = _rating_subquery(Game.id)
+        value = Game.user_rating
     elif sort in (GameSortOption.LIBRARY_ASC, GameSortOption.LIBRARY_DESC):
         value = _library_rank(Game.id)
     else:
@@ -458,7 +447,7 @@ def list_top_level_games(
         _owned_exists(Game.id),
         _wishlisted_exists(Game.id),
         _play_status_subquery(Game.id),
-        _rating_subquery(Game.id),
+        Game.user_rating,
     ).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
     # Always-applied AND-scope, independent of the user-editable collection_ids/franchise_ids
     # OR-filter above/below — this is what lets a Collection/Series detail page hard-scope to
@@ -542,7 +531,7 @@ def get_game(db: Session, game_id: int) -> GameWithStatus | None:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .options(*_get_game_options())
         .where(Game.id == game_id)
@@ -560,7 +549,7 @@ def get_game_by_uuid(db: Session, game_uuid: str) -> GameWithStatus | None:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .options(*_get_game_options())
         .where(Game.uuid == game_uuid)
@@ -576,7 +565,7 @@ def get_game_by_slug(db: Session, slug: str) -> GameWithStatus | None:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .options(*_get_game_options())
         .where(Game.slug == slug)
@@ -604,7 +593,7 @@ def list_addons(db: Session, parent_game_id: int) -> list[GameWithStatus]:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .where(Game.parent_game_id == parent_game_id)
         .order_by(Game.name)
@@ -676,6 +665,9 @@ def merge_game(db: Session, source: Game, target: Game) -> None:
     db.execute(update(Note).where(Note.game_id == source.id).values(game_id=target.id))
     db.execute(update(GameTag).where(GameTag.game_id == source.id).values(game_id=target.id))
     db.execute(update(Game).where(Game.parent_game_id == source.id).values(parent_game_id=target.id))
+    # Your rating lives on the game row itself: the target keeps its own, else takes source's.
+    if target.user_rating is None:
+        target.user_rating = source.user_rating
     db.delete(source)
     db.flush()
 

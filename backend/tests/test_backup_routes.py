@@ -46,9 +46,8 @@ def test_export_backup_contains_every_section(auth_client, db_session, seed_game
             game_id=seed_game.id, platform_id=seed_platform.id, region_id=seed_region.id, status=LibraryStatus.OWNED
         )
     )
-    db_session.add(
-        GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING, rating=8)
-    )
+    seed_game.user_rating = 8
+    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING))
     db_session.add(Note(game_id=seed_game.id, body="a note"))
     tag = Tag(name="Backup Test Tag")
     db_session.add(tag)
@@ -65,6 +64,8 @@ def test_export_backup_contains_every_section(auth_client, db_session, seed_game
     body = response.json()
     assert body["version"] == 2
     assert len(body["games"]) == 1
+    assert body["games"][0]["user_rating"] == 8
+    assert body["game_progress"][0]["rating"] is None
     assert len(body["library_items"]) == 1
     assert len(body["game_progress"]) == 1
     assert len(body["notes"]) == 1
@@ -162,7 +163,8 @@ def test_restore_backup_replaces_existing_data(auth_client, db_session, seed_gam
 
     progress = db_session.query(GameProgress).filter_by(game_id=100).one()
     assert progress.play_status == PlayStatus.COMPLETED
-    assert progress.rating == 9
+    # A backup from before the overall rating: its per-platform rating becomes the game's.
+    assert restored.user_rating == 9
 
     note = db_session.query(Note).filter_by(id=400).one()
     assert note.body == "Restored note"

@@ -5,10 +5,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
-import Rating from "@mui/material/Rating";
-import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameProgress, PlatformResponse, PlayStatus } from "../api/types";
 import AutocompleteSelect from "./AutocompleteSelect";
@@ -27,7 +24,6 @@ export interface ProgressFormValues {
   platformId: number;
   playStatus: PlayStatus;
   playtimeMinutes: number;
-  rating: number | null;
   review: string | null;
   startedAt: string | null;
   completedAt: string | null;
@@ -53,7 +49,6 @@ function toFormState(
 ): Omit<ProgressFormValues, "platformId" | "playtimeMinutes"> {
   return {
     playStatus: progress?.playStatus ?? "none",
-    rating: progress?.rating ?? null,
     review: progress?.review ?? null,
     startedAt: progress?.startedAt ?? null,
     completedAt: progress?.completedAt ?? null,
@@ -170,26 +165,6 @@ const ProgressDialog = ({
               }
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", height: "100%" }}>
-              <Typography component="legend" variant="body2" color="text.secondary">
-                {t("progress.ratingLabel")}
-              </Typography>
-              <Rating
-                value={rest.rating !== null ? rest.rating / 2 : null}
-                precision={0.5}
-                onChange={(_event, value) =>
-                  setRest((prev) => ({ ...prev, rating: value !== null ? value * 2 : null }))
-                }
-              />
-              <Typography variant="body2" color="text.secondary">
-                {rest.rating !== null
-                  ? t("progress.ratingValue", { rating: rest.rating })
-                  : t("progress.unrated")}
-              </Typography>
-            </Stack>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }} />
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
               label={t("progress.startedLabel")}

@@ -14,6 +14,7 @@ import {
   listGames,
   mergeGameIntoIgdb,
   resyncGame,
+  setGameRating,
   startBulkImport,
   updateManualGame,
   type GameListFilters,
@@ -156,6 +157,19 @@ export function useResyncGame(gameId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games", gameId] });
       queryClient.invalidateQueries({ queryKey: ["games", gameId, "addons"] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+// The game page, every list's Rating column and sort, and Insights' average all read it.
+export function useSetGameRating(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rating: number | null) => setGameRating(gameId, rating),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });

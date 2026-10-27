@@ -192,6 +192,12 @@ export async function resyncGame(gameId: number): Promise<GameDetail> {
   return response.data;
 }
 
+// Your overall rating, 1-10 stars; null clears it.
+export async function setGameRating(gameId: number, rating: number | null): Promise<number | null> {
+  const response = await apiClient.put<{ rating: number | null }>(`/api/games/${gameId}/rating`, { rating });
+  return response.data.rating;
+}
+
 export async function claimDiscoveredGame(gameId: number): Promise<GameDetail> {
   const response = await apiClient.post<GameDetail>(`/api/games/${gameId}/claim`);
   return response.data;

@@ -766,13 +766,13 @@ def test_list_games_sort_by_play_status_and_rating(auth_client, db_session, seed
     db_session.flush()
     db_session.add_all(
         [
-            GameProgress(game_id=games["Playing"].id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING, rating=6),
+            GameProgress(game_id=games["Playing"].id, platform_id=seed_platform.id, play_status=PlayStatus.PLAYING),
             GameProgress(game_id=games["Backlog"].id, platform_id=seed_platform.id, play_status=PlayStatus.BACKLOG),
-            GameProgress(
-                game_id=games["Completed"].id, platform_id=seed_platform.id, play_status=PlayStatus.COMPLETED, rating=9
-            ),
+            GameProgress(game_id=games["Completed"].id, platform_id=seed_platform.id, play_status=PlayStatus.COMPLETED),
         ]
     )
+    games["Playing"].user_rating = 6
+    games["Completed"].user_rating = 9
     db_session.commit()
 
     assert _sorted_names(auth_client, "play_status_asc") == ["Playing", "Backlog", "Completed", "Untracked"]
@@ -975,7 +975,7 @@ def test_delete_game_404_for_missing_game(auth_client):
 
 
 def test_delete_game_cascades_to_progress_sessions_notes_and_tags(auth_client, db_session, seed_game, seed_platform):
-    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id, rating=9))
+    db_session.add(GameProgress(game_id=seed_game.id, platform_id=seed_platform.id))
     db_session.add(
         PlaySession(
             game_id=seed_game.id, platform_id=seed_platform.id, started_at=datetime(2026, 1, 1, 10, 0, tzinfo=UTC)

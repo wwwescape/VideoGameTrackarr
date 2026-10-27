@@ -24,7 +24,6 @@ from app.repositories.game_repository import (
     _is_browsable_game,
     _owned_exists,
     _play_status_subquery,
-    _rating_subquery,
     _row_to_game_with_status,
     _wishlisted_exists,
 )
@@ -71,7 +70,7 @@ def get_stats(db: Session) -> DashboardStatsData:
         or 0
     )
     total_playtime_minutes = db.scalar(select(func.coalesce(func.sum(GameProgress.playtime_minutes), 0))) or 0
-    average_rating = db.scalar(select(func.avg(GameProgress.rating)).where(GameProgress.rating.is_not(None)))
+    average_rating = db.scalar(select(func.avg(Game.user_rating)).where(Game.user_rating.is_not(None)))
 
     # Counted per-game via the same derived-priority status as _play_status_subquery, not a
     # raw GROUP BY over game_progress rows — a game with progress on multiple platforms must
@@ -116,7 +115,7 @@ def get_stats(db: Session) -> DashboardStatsData:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .where(
             Game.parent_game_id.is_(None),
@@ -132,7 +131,7 @@ def get_stats(db: Session) -> DashboardStatsData:
 
     # Filtering/ordering by last_played_at through a correlated scalar subquery (rather
     # than joining GameProgress into the main FROM) keeps this consistent with
-    # _play_status_subquery/_rating_subquery above — joining the same table they
+    # _play_status_subquery above — joining the same table it
     # implicitly reference would make SQLAlchemy auto-correlate it away entirely.
     last_played_subquery = select(GameProgress.last_played_at).where(GameProgress.game_id == Game.id).scalar_subquery()
     recently_played_stmt = (
@@ -141,7 +140,7 @@ def get_stats(db: Session) -> DashboardStatsData:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .where(last_played_subquery.is_not(None))
         .order_by(last_played_subquery.desc())
@@ -175,7 +174,7 @@ def list_upcoming_releases(db: Session, now: datetime) -> list[GameWithStatus]:
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .where(
             Game.parent_game_id.is_(None),

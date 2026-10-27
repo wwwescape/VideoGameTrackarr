@@ -653,7 +653,18 @@
       "count_one": "{{count}} plateforme",
       "count_other": "{{count}} plateformes"
     },
+    "rating": {
+      "title": "Votre note",
+      "clear": "Effacer",
+      "starsLabel_one": "{{count}} étoile",
+      "starsLabel_other": "{{count}} étoiles",
+      "saveErrorToast": "Impossible d'enregistrer votre note. Réessayez."
+    },
     "about": {
+      "igdbMemberRatingLabel": "Membres IGDB {{rating}}",
+      "igdbCriticRatingLabel": "Critiques {{rating}}",
+      "igdbRatingCountTooltip_one": "Basé sur {{count}} note sur IGDB",
+      "igdbRatingCountTooltip_other": "Basé sur {{count}} notes sur IGDB",
       "regionEurope": "Europe",
       "regionNorthAmerica": "Amérique du Nord",
       "regionAustralia": "Australie",
@@ -664,7 +675,6 @@
       "regionWorldwide": "Monde entier",
       "customTooltip": "Ajouté manuellement, non lié à une entrée IGDB — utilisez « Lier à IGDB » dans la barre d'outils pour le lier.",
       "customLabel": "Personnalisé",
-      "igdbRatingLabel": "Note IGDB : {{rating}}/100",
       "forConnector": " pour ",
       "externalParentTooltip": "Absent de votre bibliothèque — ouvre la page IGDB de l'original",
       "availableOnLabel": "Disponible sur : {{platforms}}",
@@ -1397,7 +1407,6 @@
   "progress": {
     "title": "Progression",
     "playtimeColumn": "Temps de jeu",
-    "ratingColumn": "Note",
     "lastPlayedColumn": "Dernière session",
     "addDialogTitle": "Ajouter une progression",
     "updateDialogTitle": "Mettre à jour la progression",
@@ -1405,7 +1414,6 @@
     "statusLabel": "Statut",
     "playtimeLabel": "Temps de jeu (minutes)",
     "playtimeHelperText": "≈ {{hours}} heures",
-    "ratingLabel": "Votre note",
     "ratingValue": "{{rating}}/10",
     "unrated": "Non noté",
     "startedLabel": "Débuté",

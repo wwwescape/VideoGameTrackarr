@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import JSON, BigInteger, Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -158,6 +158,18 @@ class Game(TimestampMixin, Base):
     # fetched live, same as similar_game_igdb_ids below.
     external_parent_name: Mapped[str | None] = mapped_column(String(512))
     external_parent_igdb_url: Mapped[str | None] = mapped_column(String(1024))
+
+    # IGDB's two ratings as its own game page shows them (0-100 here, shown /10): members'
+    # average (`rating`) and critics' (`aggregated_rating`), each with how many it's based on.
+    # Refreshed on every import/resync.
+    igdb_rating: Mapped[float | None] = mapped_column(Float)
+    igdb_rating_count: Mapped[int | None] = mapped_column(Integer)
+    igdb_critic_rating: Mapped[float | None] = mapped_column(Float)
+    igdb_critic_rating_count: Mapped[int | None] = mapped_column(Integer)
+
+    # Your overall rating, 1-10 stars (null = not rated). One per game, whichever platforms you
+    # own it on; never touched by a resync.
+    user_rating: Mapped[int | None] = mapped_column(Integer)
 
     similar_game_igdb_ids: Mapped[list[int] | None] = mapped_column(
         JSON, comment="IGDB's similar_games field, cached at import/resync time — powers recommendations (M8)"

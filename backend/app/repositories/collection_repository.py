@@ -11,7 +11,6 @@ from app.repositories.game_repository import (
     _is_browsable_game,
     _owned_exists,
     _play_status_subquery,
-    _rating_subquery,
     _row_to_game_with_status,
     _wishlisted_exists,
 )
@@ -79,7 +78,7 @@ def list_games_for_collection(db: Session, collection_id: int) -> list[GameWithS
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .join(GameCollection, GameCollection.game_id == Game.id)
         .where(
@@ -150,7 +149,7 @@ def list_addons_for_collection(
             _owned_exists(Game.id),
             _wishlisted_exists(Game.id),
             _play_status_subquery(Game.id),
-            _rating_subquery(Game.id),
+            Game.user_rating,
         )
         .where(Game.parent_game_id.in_(parent_ids))
     )

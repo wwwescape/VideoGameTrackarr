@@ -63,9 +63,9 @@ def test_stats_counts_and_breakdowns(auth_client, db_session, seed_game, seed_pl
             platform_id=seed_platform.id,
             play_status=PlayStatus.PLAYING,
             playtime_minutes=120,
-            rating=8,
         )
     )
+    seed_game.user_rating = 8
     db_session.commit()
 
     response = auth_client.get("/api/dashboard/stats")

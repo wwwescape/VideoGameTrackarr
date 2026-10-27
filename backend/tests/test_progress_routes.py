@@ -38,14 +38,15 @@ def test_create_progress_on_an_owned_platform(auth_client, db_session, seed_game
 
     response = auth_client.post(
         f"/api/games/{seed_game.id}/progress",
-        json={"platformId": seed_platform.id, "playStatus": "playing", "rating": 8.5},
+        json={"platformId": seed_platform.id, "playStatus": "playing"},
     )
 
     assert response.status_code == 201
     body = response.json()
     assert body["platformId"] == seed_platform.id
     assert body["playStatus"] == "playing"
-    assert body["rating"] == 8.5
+    # Your rating is per game now (PUT /api/games/{id}/rating), not per platform.
+    assert "rating" not in body
     assert db_session.query(GameProgress).filter_by(game_id=seed_game.id).count() == 1
 
 
@@ -64,7 +65,7 @@ def test_update_progress_partial_update_does_not_clobber_other_fields(
     _own_platform(db_session, seed_game.id, seed_platform.id)
     create_response = auth_client.post(
         f"/api/games/{seed_game.id}/progress",
-        json={"platformId": seed_platform.id, "playStatus": "playing", "rating": 7},
+        json={"platformId": seed_platform.id, "playStatus": "playing", "review": "Loving it"},
     )
     progress_id = create_response.json()["id"]
 
@@ -73,22 +74,33 @@ def test_update_progress_partial_update_does_not_clobber_other_fields(
     assert response.status_code == 200
     body = response.json()
     assert body["playStatus"] == "playing"
-    assert body["rating"] == 7
+    assert body["review"] == "Loving it"
     assert body["playtimeMinutes"] == 120
 
 
-def test_update_progress_rejects_out_of_range_rating(auth_client, db_session, seed_game, seed_platform):
-    _own_platform(db_session, seed_game.id, seed_platform.id)
-    create_response = auth_client.post(f"/api/games/{seed_game.id}/progress", json={"platformId": seed_platform.id})
-    progress_id = create_response.json()["id"]
+def test_set_rating_sets_and_clears_your_rating(auth_client, db_session, seed_game):
+    response = auth_client.put(f"/api/games/{seed_game.id}/rating", json={"rating": 8})
 
-    response = auth_client.put(f"/api/progress/{progress_id}", json={"rating": 11})
+    assert response.status_code == 200
+    assert response.json() == {"rating": 8}
+    db_session.refresh(seed_game)
+    assert seed_game.user_rating == 8
 
-    assert response.status_code == 422
+    response = auth_client.put(f"/api/games/{seed_game.id}/rating", json={"rating": None})
+
+    assert response.json() == {"rating": None}
+    db_session.refresh(seed_game)
+    assert seed_game.user_rating is None
+
+
+def test_set_rating_rejects_out_of_range_and_unknown_games(auth_client, seed_game):
+    for rating in (0, 11, 7.5):
+        assert auth_client.put(f"/api/games/{seed_game.id}/rating", json={"rating": rating}).status_code == 422
+    assert auth_client.put("/api/games/999999/rating", json={"rating": 5}).status_code == 404
 
 
 def test_update_progress_404_for_missing_row(auth_client):
-    response = auth_client.put("/api/progress/999999", json={"rating": 5})
+    response = auth_client.put("/api/progress/999999", json={"playtimeMinutes": 5})
 
     assert response.status_code == 404
 
@@ -116,8 +128,9 @@ def test_game_summary_and_detail_expose_derived_play_status_and_rating(
     _own_platform(db_session, seed_game.id, seed_platform.id)
     auth_client.post(
         f"/api/games/{seed_game.id}/progress",
-        json={"platformId": seed_platform.id, "playStatus": "completed", "rating": 9},
+        json={"platformId": seed_platform.id, "playStatus": "completed"},
     )
+    auth_client.put(f"/api/games/{seed_game.id}/rating", json={"rating": 9})
 
     list_response = auth_client.get("/api/games")
     detail_response = auth_client.get(f"/api/games/{seed_game.slug}")
@@ -137,18 +150,17 @@ def test_derived_status_prioritizes_playing_over_backlog_across_platforms(
     _own_platform(db_session, seed_game.id, seed_pc_platform.id)
     auth_client.post(
         f"/api/games/{seed_game.id}/progress",
-        json={"platformId": seed_pc_platform.id, "playStatus": "backlog", "rating": 5},
+        json={"platformId": seed_pc_platform.id, "playStatus": "backlog"},
     )
     auth_client.post(
         f"/api/games/{seed_game.id}/progress",
-        json={"platformId": seed_platform.id, "playStatus": "playing", "rating": 8},
+        json={"platformId": seed_platform.id, "playStatus": "playing"},
     )
 
     list_response = auth_client.get("/api/games")
     detail_response = auth_client.get(f"/api/games/{seed_game.slug}")
 
     assert list_response.json()[0]["playStatus"] == "playing"
-    assert list_response.json()[0]["rating"] == 8
     assert detail_response.json()["progress"]["playStatus"] == "playing"
 
 
