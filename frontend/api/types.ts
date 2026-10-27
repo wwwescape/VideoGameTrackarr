@@ -44,6 +44,17 @@ export interface RegionResponse {
 // Where a game's metadata comes from: imported from IGDB, or added by hand (igdbId null).
 export type GameSource = "igdb" | "custom";
 
+// Released vs not out yet; a game with no release date (announced/TBA) counts as upcoming.
+export type ReleaseStatus = "released" | "upcoming";
+
+// A genre at least one owned or wishlisted game has — the Genre filter's options.
+export interface GenreSummary {
+  id: number;
+  name: string;
+  slug: string | null;
+  gameCount: number;
+}
+
 export type PlayStatus = "none" | "backlog" | "playing" | "completed" | "abandoned";
 
 export interface GameSummary {

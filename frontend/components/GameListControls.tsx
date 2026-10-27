@@ -26,8 +26,10 @@ import GameFilterDialog, {
   GAME_TYPE_OPTIONS,
   OWNERSHIP_OPTIONS,
   PLAY_STATUS_OPTIONS,
-  platformOptionLabel,
+  RELEASE_STATUS_OPTIONS,
   SOURCE_OPTIONS,
+  TIME_TO_BEAT_OPTIONS,
+  timeToBeatLabel,
 } from "./GameFilterDialog";
 import type { GameListView } from "./GameListViews";
 import { CardSizeSlider, ChoiceMenuItem, ListSearchField, SortMenu } from "./ListControls";
@@ -89,7 +91,7 @@ export function useGameListControls(
 
   const activeFilterCount = countActiveFilters({
     ownershipStatuses: fields.ownershipStatuses,
-    platformIds: hidePlatformsField ? [] : fields.platformIds,
+    platformKeys: hidePlatformsField ? [] : fields.platformKeys,
     tagIds: fields.tagIds,
     collectionIds: hideCollectionsField ? [] : fields.collectionIds,
     franchiseIds: hideFranchisesField ? [] : fields.franchiseIds,
@@ -99,6 +101,15 @@ export function useGameListControls(
     playStatuses: fields.playStatuses,
     sources: fields.sources,
     steelbookOnly: fields.steelbookOnly,
+    genreIds: fields.genreIds,
+    releaseStatuses: fields.releaseStatuses,
+    releaseYearFrom: fields.releaseYearFrom,
+    releaseYearTo: fields.releaseYearTo,
+    localPlayersMin: fields.localPlayersMin,
+    onlineMultiplayerOnly: fields.onlineMultiplayerOnly,
+    coopOnly: fields.coopOnly,
+    timeToBeat: fields.timeToBeat,
+    ratingMin: fields.ratingMin,
   });
 
   // Remove-one-value chips under the breadcrumbs. An Exclude flag on a field shows on its chips
@@ -128,10 +139,7 @@ export function useGameListControls(
   addChips("ownership", fields.ownershipStatuses, fields.ownershipExclude, (value) => t(OWNERSHIP_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onOwnershipStatusesChange, fields.onOwnershipExcludeChange);
   addChips("playStatus", fields.playStatuses, fields.playStatusExclude, (value) => t(PLAY_STATUS_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onPlayStatusesChange, fields.onPlayStatusExcludeChange);
   if (!hidePlatformsField) {
-    addChips("platform", fields.platformIds, fields.platformExclude, (id) => {
-      const platform = fields.platformOptions.find((p) => p.id === id);
-      return platform ? platformOptionLabel(platform) : undefined;
-    }, fields.onPlatformIdsChange, fields.onPlatformExcludeChange);
+    addChips("platform", fields.platformKeys, fields.platformExclude, (key) => fields.platformOptions.find((p) => p.id === key)?.label, fields.onPlatformKeysChange, fields.onPlatformExcludeChange);
   }
   addChips("tag", fields.tagIds, fields.tagExclude, (id) => fields.tagOptions.find((tag) => tag.id === id)?.name, fields.onTagIdsChange, fields.onTagExcludeChange);
   if (!hideCollectionsField) {
@@ -146,6 +154,20 @@ export function useGameListControls(
   if (fields.sources && fields.onSourcesChange) {
     addChips("source", fields.sources, fields.sourceExclude, (value) => t(SOURCE_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onSourcesChange, fields.onSourceExcludeChange);
   }
+  addChips("genre", fields.genreIds, fields.genreExclude, (id) => fields.genreOptions.find((genre) => genre.id === id)?.name, fields.onGenreIdsChange, fields.onGenreExcludeChange);
+  addChips("release", fields.releaseStatuses, false, (value) => t(RELEASE_STATUS_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onReleaseStatusesChange);
+  // Single-value fields: one chip each, cleared back to "not filtering".
+  const addSingleChip = (key: string, show: boolean, label: string, clear: () => void) => {
+    if (show) chips.push({ key, label, onRemove: clear });
+  };
+  addSingleChip("releaseYearFrom", fields.releaseYearFrom !== null, t("games.listToolbar.releaseYearFromChip", { year: fields.releaseYearFrom }), () => fields.onReleaseYearFromChange(null));
+  addSingleChip("releaseYearTo", fields.releaseYearTo !== null, t("games.listToolbar.releaseYearToChip", { year: fields.releaseYearTo }), () => fields.onReleaseYearToChange(null));
+  addSingleChip("localPlayers", fields.localPlayersMin !== null, t("games.listToolbar.localPlayersOption", { count: fields.localPlayersMin ?? 0 }), () => fields.onLocalPlayersMinChange(null));
+  addSingleChip("online", fields.onlineMultiplayerOnly, t("games.listToolbar.onlineMultiplayerOnlyLabel"), () => fields.onOnlineMultiplayerOnlyChange(false));
+  addSingleChip("coop", fields.coopOnly, t("games.listToolbar.coopOnlyLabel"), () => fields.onCoopOnlyChange(false));
+  const timeToBeatOption = TIME_TO_BEAT_OPTIONS.find((option) => option.value === fields.timeToBeat);
+  addSingleChip("timeToBeat", Boolean(timeToBeatOption), timeToBeatOption ? timeToBeatLabel(timeToBeatOption, t) : "", () => fields.onTimeToBeatChange(null));
+  addSingleChip("rating", fields.ratingMin !== null, t("games.listToolbar.ratingOption", { min: (fields.ratingMin ?? 0) / 10 }), () => fields.onRatingMinChange(null));
   if (fields.steelbookOnly && fields.onSteelbookOnlyChange) {
     const clear = fields.onSteelbookOnlyChange;
     chips.push({ key: "steelbook", label: t("games.listToolbar.steelbookOnlyLabel"), onRemove: () => clear(false) });
