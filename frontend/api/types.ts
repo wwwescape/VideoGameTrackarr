@@ -293,6 +293,14 @@ export interface GameDetail extends GameSummary {
   // Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
   // Never shown as custom.
   linkedFromCustom: boolean;
+  // How it's played, from IGDB (null = IGDB doesn't say), and the local player count set by
+  // hand over IGDB's — the Players section.
+  localPlayers: number | null;
+  localPlayersOverride: number | null;
+  onlineMultiplayer: boolean | null;
+  coop: boolean | null;
+  // Main story, in seconds.
+  timeToBeatMain: number | null;
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];

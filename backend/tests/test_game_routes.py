@@ -1370,3 +1370,33 @@ def test_list_games_filters_by_players_time_to_beat_and_rating(auth_client, db_s
     assert names(timeToBeatMax=15) == ["Test Game"]
     assert names(timeToBeatMin=40) == ["Solo Game"]
     assert names(ratingMin=80) == ["Test Game"]
+
+
+def test_a_local_player_count_set_by_hand_wins_over_igdb_and_other_sources(auth_client, db_session, seed_game):
+    seed_game.local_players = 1
+    fallback_only = Game(igdb_id=2309, name="Fallback Game", category=GameCategory.MAIN_GAME)
+    fallback_only.local_players_fallback = 8
+    fallback_only.local_players_fallback_source = "pcgamingwiki"
+    db_session.add(fallback_only)
+    db_session.commit()
+
+    def couch_games():
+        return [g["name"] for g in auth_client.get("/api/games", params={"localPlayersMin": 2}).json()]
+
+    # IGDB says 1, another source says 8 for the game IGDB knows nothing about.
+    assert couch_games() == ["Fallback Game"]
+
+    response = auth_client.put(f"/api/games/{seed_game.id}/local-players", json={"localPlayers": 4})
+    assert response.json() == {"localPlayersOverride": 4}
+    assert couch_games() == ["Fallback Game", "Test Game"]
+    detail = auth_client.get(f"/api/games/{seed_game.uuid}").json()
+    assert (detail["localPlayers"], detail["localPlayersOverride"]) == (1, 4)
+
+    # Cleared: back to IGDB's count.
+    auth_client.put(f"/api/games/{seed_game.id}/local-players", json={"localPlayers": None})
+    assert couch_games() == ["Fallback Game"]
+
+
+def test_a_local_player_count_must_be_sensible(auth_client, seed_game):
+    assert auth_client.put(f"/api/games/{seed_game.id}/local-players", json={"localPlayers": 0}).status_code == 422
+    assert auth_client.put("/api/games/999999/local-players", json={"localPlayers": 2}).status_code == 404

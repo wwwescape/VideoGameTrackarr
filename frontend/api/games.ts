@@ -242,6 +242,14 @@ export async function setGameRating(gameId: number, rating: number | null): Prom
   return response.data.rating;
 }
 
+// Players on one console or screen, set by hand over IGDB's count; null goes back to IGDB's.
+export async function setGameLocalPlayers(gameId: number, localPlayers: number | null): Promise<number | null> {
+  const response = await apiClient.put<{ localPlayersOverride: number | null }>(`/api/games/${gameId}/local-players`, {
+    localPlayers,
+  });
+  return response.data.localPlayersOverride;
+}
+
 // Unlink from IGDB: a game linked from custom becomes custom again (its add-ons are removed).
 export async function unlinkGameFromIgdb(gameId: number): Promise<GameDetail> {
   const response = await apiClient.post<GameDetail>(`/api/games/${gameId}/unlink-igdb`);

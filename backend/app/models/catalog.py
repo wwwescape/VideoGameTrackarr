@@ -194,6 +194,9 @@ class Game(TimestampMixin, Base):
     local_players: Mapped[int | None] = mapped_column(
         Integer, comment="Most players on one console/screen (offline max/coop max), 1 for single-player-only games"
     )
+    # Set by hand on the game page when IGDB has no count or a wrong one; wins over
+    # local_players in the Players filter and is never touched by a resync.
+    local_players_override: Mapped[int | None] = mapped_column(Integer)
     online_multiplayer: Mapped[bool | None] = mapped_column(Boolean)
     coop: Mapped[bool | None] = mapped_column(Boolean, comment="Any co-op mode: local, online or campaign")
     time_to_beat_main: Mapped[int | None] = mapped_column(Integer, comment="Seconds, IGDB's 'normally' estimate")

@@ -130,6 +130,7 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=g.user_rating,
+                local_players_override=g.local_players_override,
             )
             for g in db.scalars(select(Game))
         ],
@@ -563,6 +564,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=user_rating_for(g),
+                local_players_override=g.local_players_override,
             )
         )
     db.flush()

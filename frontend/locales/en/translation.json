@@ -997,6 +997,26 @@
       "nameLabel": "Name",
       "replaceHelp": "Replaces the preset with this name.",
       "deleted": "Preset “{{name}}” deleted"
+    },
+    "players": {
+      "title": "Players",
+      "localLabel": "Local players",
+      "localCount_one": "{{count}} player",
+      "localCount_other": "Up to {{count}} players",
+      "sameAsIgdb": "Same as IGDB",
+      "fromIgdb_one": "IGDB: {{count}} player",
+      "fromIgdb_other": "IGDB: up to {{count}} players",
+      "notOnIgdb": "IGDB has no player count for this game: pick one to use it in the Players filter.",
+      "setByHand": "Set by hand (IGDB has no count).",
+      "setByHandIgdb_one": "Set by hand (IGDB: {{count}}).",
+      "setByHandIgdb_other": "Set by hand (IGDB: up to {{count}}).",
+      "online": "Online multiplayer",
+      "coop": "Co-op",
+      "timeToBeat": "Main story",
+      "hours_one": "About {{count}} hour",
+      "hours_other": "About {{count}} hours",
+      "unknown": "Not on IGDB",
+      "saveErrorToast": "Couldn't save the player count. Please try again."
     }
   },
   "events": {

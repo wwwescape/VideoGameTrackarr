@@ -483,7 +483,7 @@ def _apply_optional_game_filters(
     # The IGDB-backed columns below are NULL when IGDB has no data, and a NULL never satisfies
     # a comparison — so each of these filters only keeps games IGDB actually knows about.
     if local_players_min is not None:
-        stmt = stmt.where(Game.local_players >= local_players_min)
+        stmt = stmt.where(func.coalesce(Game.local_players_override, Game.local_players) >= local_players_min)
     if online_multiplayer_only:
         stmt = stmt.where(Game.online_multiplayer.is_(True))
     if coop_only:

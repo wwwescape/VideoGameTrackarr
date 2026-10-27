@@ -242,6 +242,16 @@ def set_user_rating(db: Session, game_id: int, rating: int | None) -> int | None
     return game.user_rating
 
 
+def set_local_players(db: Session, game_id: int, local_players: int | None) -> int | None:
+    """The local player count set by hand over IGDB's, or None to go back to IGDB's."""
+    game = db.get(Game, game_id)
+    if game is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    game.local_players_override = local_players
+    db.commit()
+    return game.local_players_override
+
+
 def delete_game(db: Session, game_id: int) -> None:
     game_with_status = get_game_detail(db, game_id)
     rom_filenames = game_repository.delete_game_with_addons(db, game_with_status.game)

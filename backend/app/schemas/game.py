@@ -86,6 +86,13 @@ class GameDetailResponse(GameSummaryResponse):
     igdb_critic_rating_count: int | None
     # Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
     linked_from_custom: bool
+    # How it's played, from IGDB (null = IGDB doesn't say), and the local player count set by
+    # hand over IGDB's — the game page's Players section.
+    local_players: int | None
+    local_players_override: int | None
+    online_multiplayer: bool | None
+    coop: bool | None
+    time_to_beat_main: int | None
     progress: GameProgressResponse
     tags: list[TagResponse]
     genres: list[CatalogRefResponse]
@@ -169,6 +176,11 @@ def game_detail_from_orm(
         igdb_critic_rating=game.igdb_critic_rating,
         igdb_critic_rating_count=game.igdb_critic_rating_count,
         linked_from_custom=game.linked_from_custom,
+        local_players=game.local_players,
+        local_players_override=game.local_players_override,
+        online_multiplayer=game.online_multiplayer,
+        coop=game.coop,
+        time_to_beat_main=game.time_to_beat_main,
         progress=game_progress_from_orm(game.id, progress),
         tags=[tag_from_orm(tag) for tag in tags],
         genres=[genre_ref_from_orm(gg.genre) for gg in game.genres],
@@ -190,6 +202,15 @@ class GameRatingRequest(CamelModel):
 
 class GameRatingResponse(CamelModel):
     rating: int | None
+
+
+class GameLocalPlayersRequest(CamelModel):
+    # Players on one console or screen; null goes back to IGDB's count.
+    local_players: int | None = Field(default=None, ge=1, le=16)
+
+
+class GameLocalPlayersResponse(CamelModel):
+    local_players_override: int | None
 
 
 class GameImportRequest(CamelModel):

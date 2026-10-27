@@ -997,6 +997,26 @@
       "nameLabel": "Nome",
       "replaceHelp": "Substitui a predefinição com este nome.",
       "deleted": "Predefinição «{{name}}» eliminada"
+    },
+    "players": {
+      "title": "Jogadores",
+      "localLabel": "Jogadores locais",
+      "localCount_one": "{{count}} jogador",
+      "localCount_other": "Até {{count}} jogadores",
+      "sameAsIgdb": "Como no IGDB",
+      "fromIgdb_one": "IGDB: {{count}} jogador",
+      "fromIgdb_other": "IGDB: até {{count}} jogadores",
+      "notOnIgdb": "O IGDB não indica o número de jogadores deste jogo: escolha um para o usar no filtro Jogadores.",
+      "setByHand": "Definido à mão (o IGDB não indica).",
+      "setByHandIgdb_one": "Definido à mão (IGDB: {{count}}).",
+      "setByHandIgdb_other": "Definido à mão (IGDB: até {{count}}).",
+      "online": "Multijogador online",
+      "coop": "Cooperativo",
+      "timeToBeat": "História principal",
+      "hours_one": "Cerca de {{count}} hora",
+      "hours_other": "Cerca de {{count}} horas",
+      "unknown": "Não está no IGDB",
+      "saveErrorToast": "Não foi possível guardar o número de jogadores. Tente novamente."
     }
   },
   "events": {

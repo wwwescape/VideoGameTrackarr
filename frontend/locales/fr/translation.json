@@ -997,6 +997,26 @@
       "nameLabel": "Nom",
       "replaceHelp": "Remplace la vue enregistrée sous ce nom.",
       "deleted": "Vue « {{name}} » supprimée"
+    },
+    "players": {
+      "title": "Joueurs",
+      "localLabel": "Joueurs en local",
+      "localCount_one": "{{count}} joueur",
+      "localCount_other": "Jusqu'à {{count}} joueurs",
+      "sameAsIgdb": "Comme IGDB",
+      "fromIgdb_one": "IGDB : {{count}} joueur",
+      "fromIgdb_other": "IGDB : jusqu'à {{count}} joueurs",
+      "notOnIgdb": "IGDB n'indique pas de nombre de joueurs pour ce jeu : choisissez-en un pour qu'il compte dans le filtre Joueurs.",
+      "setByHand": "Saisi à la main (IGDB n'indique rien).",
+      "setByHandIgdb_one": "Saisi à la main (IGDB : {{count}}).",
+      "setByHandIgdb_other": "Saisi à la main (IGDB : jusqu'à {{count}}).",
+      "online": "Multijoueur en ligne",
+      "coop": "Coopération",
+      "timeToBeat": "Histoire principale",
+      "hours_one": "Environ {{count}} heure",
+      "hours_other": "Environ {{count}} heures",
+      "unknown": "Pas sur IGDB",
+      "saveErrorToast": "Impossible d'enregistrer le nombre de joueurs. Veuillez réessayer."
     }
   },
   "events": {

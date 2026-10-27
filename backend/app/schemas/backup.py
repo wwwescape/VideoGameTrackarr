@@ -62,6 +62,8 @@ class BackupGame(_BackupRow):
     # Your overall rating (1-10). Backups from before it existed carry ratings per platform on
     # game_progress instead, which restore folds into this (see backup_service.restore_backup).
     user_rating: int | None = None
+    # The local player count set by hand (the IGDB-backed counts come back with a resync).
+    local_players_override: int | None = None
 
 
 class BackupLibraryItem(_BackupRow):
