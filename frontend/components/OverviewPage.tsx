@@ -21,7 +21,8 @@ import { formatCurrency } from "../utils/currency";
 import { gameIdentifier, hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import CustomizeOverviewDialog from "./CustomizeOverviewDialog";
-import { Section, Strip } from "./Detail";
+import CardCarousel from "./CardCarousel";
+import { Section } from "./Detail";
 import EventsTeaserSection from "./EventsTeaserSection";
 import GameCard from "./GameCard";
 import HardwareCard from "./HardwareCard";
@@ -207,48 +208,70 @@ const OverviewPage = () => {
     hardwareCalendar: hasHardwareReleases ? (
       <ReleaseCalendarSection scope="hardware" title={labels.hardwareCalendar} columnWidth={STRIP_COLUMN + 20} />
     ) : null,
-    nowPlaying: (
+    // Every row of cards is a CardCarousel: < and > page through it, with no scrollbar.
+    nowPlaying: playing?.length ? (
+      <CardCarousel
+        id="now-playing"
+        title={t("overview.nowPlaying")}
+        items={playing}
+        getItemKey={(game) => game.id}
+        renderItem={gameCard}
+        columnWidth={STRIP_COLUMN}
+        actions={
+          <>
+            <SectionLink onClick={() => openGames({ playStatuses: ["backlog"] })}>
+              {t("overview.backlogLink", { count: backlog })}
+            </SectionLink>
+            <SectionLink onClick={() => openGames({ playStatuses: ["playing"] })}>{t("common.viewAll")}</SectionLink>
+          </>
+        }
+      />
+    ) : (
       <Section
         id="now-playing"
         title={t("overview.nowPlaying")}
         action={
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <SectionLink onClick={() => openGames({ playStatuses: ["backlog"] })}>
-              {t("overview.backlogLink", { count: backlog })}
-            </SectionLink>
-            {playing?.length ? (
-              <SectionLink onClick={() => openGames({ playStatuses: ["playing"] })}>{t("common.viewAll")}</SectionLink>
-            ) : null}
-          </Box>
+          <SectionLink onClick={() => openGames({ playStatuses: ["backlog"] })}>
+            {t("overview.backlogLink", { count: backlog })}
+          </SectionLink>
         }
       >
-        {playing?.length ? (
-          <Strip columnWidth={STRIP_COLUMN}>{playing.map(gameCard)}</Strip>
-        ) : (
-          <Typography variant="body2" sx={{ color: "vgt.text3" }}>
-            {t("overview.nothingPlaying")}
-          </Typography>
-        )}
+        <Typography variant="body2" sx={{ color: "vgt.text3" }}>
+          {t("overview.nothingPlaying")}
+        </Typography>
       </Section>
     ),
     recentlyPlayed: stats?.recentlyPlayed.length ? (
-      <Section id="recently-played" title={t("overview.recentlyPlayed")}>
-        <Strip columnWidth={STRIP_COLUMN}>{stats.recentlyPlayed.map(gameCard)}</Strip>
-      </Section>
+      <CardCarousel
+        id="recently-played"
+        title={t("overview.recentlyPlayed")}
+        items={stats.recentlyPlayed}
+        getItemKey={(game) => game.id}
+        renderItem={gameCard}
+        columnWidth={STRIP_COLUMN}
+      />
     ) : null,
     recentlyAddedGames: stats?.recentlyAdded.length ? (
-      <Section id="recently-added" title={t("overview.recentlyAddedGames")} action={<SectionLink to="/games">{t("common.viewAll")}</SectionLink>}>
-        <Strip columnWidth={STRIP_COLUMN}>{stats.recentlyAdded.map(gameCard)}</Strip>
-      </Section>
+      <CardCarousel
+        id="recently-added"
+        title={t("overview.recentlyAddedGames")}
+        items={stats.recentlyAdded}
+        getItemKey={(game) => game.id}
+        renderItem={gameCard}
+        columnWidth={STRIP_COLUMN}
+        viewAllHref="/games"
+      />
     ) : null,
     recentlyAddedHardware: hardwareStats?.recentlyAdded.length ? (
-      <Section
+      <CardCarousel
         id="recently-added-hardware"
         title={t("overview.recentlyAddedHardware")}
-        action={<SectionLink to="/hardware">{t("common.viewAll")}</SectionLink>}
-      >
-        <Strip columnWidth={STRIP_COLUMN + 20}>{hardwareStats.recentlyAdded.map(hardwareCard)}</Strip>
-      </Section>
+        items={hardwareStats.recentlyAdded}
+        getItemKey={(item) => `${item.kind}-${item.device?.id ?? item.accessory?.id}`}
+        renderItem={hardwareCard}
+        columnWidth={STRIP_COLUMN + 20}
+        viewAllHref="/hardware"
+      />
     ) : null,
     needsAttention: (
       <Section id="needs-attention" title={t("overview.needsAttention")}>

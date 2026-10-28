@@ -149,6 +149,17 @@ describe("OverviewPage", () => {
     expect(within(section).getByRole("button", { name: "Celeste" })).toBeInTheDocument();
   });
 
+  it("pages every row of cards with < and > buttons", () => {
+    renderPage();
+
+    for (const id of ["now-playing", "recently-added"]) {
+      const section = document.getElementById(id) as HTMLElement;
+      expect(within(section).getByRole("button", { name: "Scroll previous" })).toBeInTheDocument();
+      expect(within(section).getByRole("button", { name: "Scroll next" })).toBeInTheDocument();
+    }
+    expect(within(document.getElementById("now-playing") as HTMLElement).getByText("Backlog · 7")).toBeInTheDocument();
+  });
+
   it("counts what needs attention and links each to its list", async () => {
     const user = renderPage();
 

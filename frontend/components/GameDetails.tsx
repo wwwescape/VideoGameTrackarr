@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
@@ -12,7 +13,7 @@ import { useRegions } from "../hooks/useRegions";
 import { useAttachTag, useDetachTag } from "../hooks/useTags";
 import { gameIdentifier } from "../utils/identifiers";
 import { useCanonicalAddress, useDetailBack } from "../utils/navState";
-import { DetailColumns, Section, Strip } from "./Detail";
+import { DetailColumns, Section } from "./Detail";
 import GameActionButtons from "./GameActionButtons";
 import GameCard from "./GameCard";
 import { ADDON_DISPLAY_CATEGORIES, GameAboutBlock, GameHero, GameMediaSections } from "./GameDetailParts";
@@ -157,11 +158,19 @@ const GameDetails = () => {
                     {t("games.addons.empty")}
                   </Typography>
                 ) : (
-                  <Strip>
+                  // Wraps like the Screenshots and Videos grids: two columns on phones, then as
+                  // many cards as fit.
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(auto-fill, minmax(150px, 1fr))" },
+                      gap: "18px 14px",
+                    }}
+                  >
                     {displayedAddons.map((addon) => (
                       <GameCard key={addon.id} game={addon} context="addon" contextFunction={() => handleAddonClick(addon)} />
                     ))}
-                  </Strip>
+                  </Box>
                 )}
               </Section>
             ) : null}

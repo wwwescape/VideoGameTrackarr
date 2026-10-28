@@ -29,9 +29,11 @@ interface CardCarouselProps<T> {
   viewAllHref?: string;
   // In-page anchor for the section.
   id?: string;
-  // A fixed card width in px instead of the grid's per-breakpoint share of the row, so a
-  // carousel can sit among the Overview's fixed-width strips at the same card size.
+  // A fixed card width in px instead of the grid's per-breakpoint share of the row, as the
+  // Overview's rows use.
   columnWidth?: number;
+  // More links beside the title, before "View all" (Now Playing's Backlog link).
+  actions?: ReactNode;
 }
 
 function CardCarousel<T>({
@@ -42,6 +44,7 @@ function CardCarousel<T>({
   viewAllHref,
   id,
   columnWidth,
+  actions,
 }: CardCarouselProps<T>) {
   const { t } = useTranslation();
   const columns = useResponsiveColumns();
@@ -64,6 +67,13 @@ function CardCarousel<T>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length, columns]);
 
+  // With fixed-width cards the column count doesn't change on resize, but whether the row
+  // overflows (and so whether > is enabled) does.
+  useEffect(() => {
+    window.addEventListener("resize", updateScrollState);
+    return () => window.removeEventListener("resize", updateScrollState);
+  }, []);
+
   const scrollByPage = (direction: 1 | -1) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -80,6 +90,7 @@ function CardCarousel<T>({
       title={title}
       action={
         <Stack direction="row" spacing={0.25} sx={{ alignItems: "center" }}>
+          {actions}
           {viewAllHref ? (
             <Box
               component={Link}

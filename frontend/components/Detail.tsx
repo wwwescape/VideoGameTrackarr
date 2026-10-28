@@ -245,23 +245,6 @@ export const Facts = ({ facts }: { facts: [string, ReactNode][] }) => (
   </Box>
 );
 
-// A sideways-scrolling row of related items (add-ons, linked accessories, an event's games).
-export const Strip = ({ columnWidth = 150, children }: { columnWidth?: number; children: ReactNode }) => (
-  <Box
-    sx={{
-      display: "grid",
-      gridAutoFlow: "column",
-      gridAutoColumns: columnWidth,
-      gap: 1.5,
-      overflowX: "auto",
-      pb: 1,
-      scrollbarWidth: "thin",
-    }}
-  >
-    {children}
-  </Box>
-);
-
 // The two-column body under a hero: wide content on the left, the user's own data (library,
 // progress, tags, notes) on the right; one column on phones, or when there's no side content
 // (a discovered game has nothing of the user's to show yet).
