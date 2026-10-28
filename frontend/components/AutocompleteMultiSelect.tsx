@@ -1,13 +1,11 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
-import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
-import ListItemText from "@mui/material/ListItemText";
-import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import type { AutocompleteGetItemProps } from "@mui/material/useAutocomplete";
 import { useTouchScreen } from "../hooks/useTouchScreen";
+import TouchPickerSheet from "./TouchPickerSheet";
 
 interface AutocompleteMultiSelectProps<T> {
   label: string;
@@ -29,10 +27,11 @@ interface AutocompleteMultiSelectProps<T> {
 // is optional and forwarded as-is to MUI's Autocomplete — omitted, every existing caller
 // (e.g. the Console/Platform filter) keeps MUI's default chip rendering unchanged.
 //
-// On a touch screen it's a plain select with checkboxes instead: an Autocomplete focuses its
-// text input on every tap, which raises the on-screen keyboard over the list. The same chips
-// (and the caller's renderValue) show the selection, each still removable from its cross; the
-// label sits in the empty field, as the Autocomplete's does, so the placeholder isn't needed.
+// On a touch screen, tapping the field opens a picker sheet with checkboxes instead
+// (TouchPickerSheet): an Autocomplete focuses its text input on every tap, which raises the
+// on-screen keyboard over the list. The same chips (and the caller's renderValue) show the
+// selection, built from `value`, each still removable from its cross; the label sits in the empty
+// field, as the Autocomplete's does, so the placeholder isn't needed.
 function AutocompleteMultiSelect<T>({
   label,
   options,
@@ -47,57 +46,63 @@ function AutocompleteMultiSelect<T>({
   renderValue,
 }: AutocompleteMultiSelectProps<T>) {
   const touchScreen = useTouchScreen();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   if (touchScreen) {
-    const isSelected = (option: T) =>
-      value.some((selected) => (isOptionEqualToValue ? isOptionEqualToValue(option, selected) : option === selected));
-    // The select works on option indexes: options are objects, and its value must be a primitive.
-    const selectedIndexes = options.flatMap((option, index) => (isSelected(option) ? [index] : []));
+    const matches = (option: T, selected: T) =>
+      isOptionEqualToValue ? isOptionEqualToValue(option, selected) : option === selected;
+    const isSelected = (option: T) => value.some((selected) => matches(option, selected));
+    const toggle = (option: T) =>
+      onChange(isSelected(option) ? value.filter((selected) => !matches(option, selected)) : [...value, option]);
     const remove = (index: number) => onChange(value.filter((_selected, valueIndex) => valueIndex !== index));
     const getItemProps = (({ index }: { index: number }) => ({
       key: index,
       tabIndex: -1,
       "data-item-index": index,
       onDelete: () => remove(index),
-      // The chips sit inside the select, which would otherwise open on the cross's mousedown.
+      // The chips sit inside the field, which would otherwise open the sheet on the cross's mousedown.
       onMouseDown: (event: { stopPropagation: () => void }) => event.stopPropagation(),
     })) as unknown as AutocompleteGetItemProps<true>;
 
     return (
-      <TextField
-        select
-        label={label}
-        value={selectedIndexes}
-        onChange={(event) => {
-          const indexes = event.target.value as unknown as number[];
-          onChange(indexes.map((index) => options[index]));
-        }}
-        disabled={disabled}
-        fullWidth={fullWidth}
-        sx={sx}
-        slotProps={{
-          select: {
-            multiple: true,
-            renderValue: () => (
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                {renderValue
-                  ? renderValue(value, getItemProps)
-                  : value.map((option, index) => {
-                      const { key, ...itemProps } = getItemProps({ index });
-                      return <Chip key={key} size="small" label={getOptionLabel(option)} {...itemProps} />;
-                    })}
-              </Box>
-            ),
-          },
-        }}
-      >
-        {options.map((option, index) => (
-          <MenuItem key={index} value={index}>
-            <Checkbox size="small" checked={selectedIndexes.includes(index)} sx={{ py: 0, pl: 0 }} />
-            <ListItemText primary={getOptionLabel(option)} />
-          </MenuItem>
-        ))}
-      </TextField>
+      <>
+        {/* A select that never opens its own menu: it renders no text input (so no keyboard). */}
+        <TextField
+          select
+          label={label}
+          value={value.map((_option, index) => index)}
+          disabled={disabled}
+          fullWidth={fullWidth}
+          sx={sx}
+          slotProps={{
+            select: {
+              multiple: true,
+              open: false,
+              onOpen: () => setSheetOpen(true),
+              renderValue: () => (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                  {renderValue
+                    ? renderValue(value, getItemProps)
+                    : value.map((option, index) => {
+                        const { key, ...itemProps } = getItemProps({ index });
+                        return <Chip key={key} size="small" label={getOptionLabel(option)} {...itemProps} />;
+                      })}
+                </Box>
+              ),
+            },
+          }}
+        />
+        <TouchPickerSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          label={label}
+          options={options}
+          getOptionLabel={getOptionLabel}
+          isSelected={isSelected}
+          multiple
+          onToggle={toggle}
+        />
+      </>
     );
   }
 

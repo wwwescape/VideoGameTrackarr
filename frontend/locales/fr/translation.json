@@ -11,6 +11,8 @@
     "back": "Retour",
     "loading": "Chargement...",
     "search": "Rechercher",
+    "done": "Terminé",
+    "noOptions": "Aucune option",
     "yes": "Oui",
     "no": "Non",
     "required": "Obligatoire",

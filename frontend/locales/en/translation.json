@@ -11,6 +11,8 @@
     "back": "Back",
     "loading": "Loading...",
     "search": "Search",
+    "done": "Done",
+    "noOptions": "No options",
     "yes": "Yes",
     "no": "No",
     "required": "Required",
