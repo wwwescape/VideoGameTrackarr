@@ -429,6 +429,10 @@
         "playersFill": {
           "name": "Completar o número de jogadores",
           "description": "Procura o número de jogadores locais no PCGamingWiki e depois na loja Steam para os jogos sem número no IGDB. Uma pesquisa por segundo; uma ressincronização nunca apaga o que encontra."
+        },
+        "nintendoTitledb": {
+          "name": "Atualizar a lista de títulos da Nintendo",
+          "description": "Descarrega a base de títulos da Nintendo Switch com que os conectores NX Remote Launcher traduzem identificadores em nomes e número de jogadores."
         }
       },
       "runHeading": "Executar",
@@ -1022,7 +1026,11 @@
       "from_steam_one": "Loja Steam: um jogador (o IGDB não indica).",
       "from_steam_other": "Loja Steam: mesmo ecrã, 2 ou mais (o IGDB não indica).",
       "notKnown": "Nem o IGDB, nem o PCGamingWiki, nem a Steam indicam o número de jogadores: escolha um para o usar no filtro Jogadores.",
-      "setByHand": "Definido à mão."
+      "setByHand": "Definido à mão.",
+      "from_nintendo_other": "eShop da Nintendo: até {{count}} jogadores (o IGDB não indica).",
+      "from_nintendo_one": "eShop da Nintendo: {{count}} jogador (o IGDB não indica).",
+      "from_connector_other": "Conector: até {{count}} jogadores (o IGDB não indica).",
+      "from_connector_one": "Conector: {{count}} jogador (o IGDB não indica)."
     }
   },
   "events": {
@@ -1736,6 +1744,73 @@
       "reset": "Repor predefinição",
       "saveError": "Não foi possível guardar a disposição da Visão geral. Tente novamente.",
       "allHidden": "Todas as secções estão ocultas. Use Personalizar para voltar a mostrar algumas."
+    }
+  },
+  "connectors": {
+    "heading": "Conectores",
+    "description": "Os conectores permitem que outro software adicione jogos à sua biblioteca: um homebrew de Switch, um script, um atalho no telemóvel. Cada um tem o seu endereço e predefinições, e um dispositivo emparelha-se uma vez mostrando um código que aprova aqui.",
+    "add": "Adicionar um conector",
+    "editAria": "Editar {{name}}",
+    "deleteAria": "Eliminar {{name}}",
+    "deleteTitle": "Eliminar {{name}}?",
+    "deleteDescription": "Os seus dispositivos deixam de sincronizar de imediato. Os jogos e cópias que adicionou ficam na sua biblioteca.",
+    "saveError": "Não foi possível guardar o conector. O endereço já está em uso?",
+    "deleteError": "Não foi possível eliminar o conector. Tente novamente.",
+    "revokeError": "Não foi possível desemparelhar o dispositivo. Tente novamente.",
+    "lastSync": "Última sincronização {{date}}: {{present}} jogos, {{absent}} já não reportados.",
+    "neverSynced": "Ainda não sincronizado.",
+    "devices": "Dispositivos emparelhados",
+    "noDevices": "Ainda sem dispositivos emparelhados.",
+    "deviceLastSeen": "visto {{date}}",
+    "deviceNeverSeen": "nunca sincronizado",
+    "revoke": "Desemparelhar",
+    "kinds": {
+      "custom": {
+        "name": "Personalizado",
+        "description": "Anything that can send a list of games over HTTP: names, its own ids, IGDB ids when it has them."
+      },
+      "nx_remote_launcher": {
+        "name": "NX Remote Launcher",
+        "description": "A Nintendo Switch sending its installed title IDs; names and player counts come from the Nintendo title database."
+      }
+    },
+    "absentModes": {
+      "keep": "Manter os jogos que já não reporta",
+      "note": "Adicionar uma nota à cópia",
+      "remove": "Remover a cópia"
+    },
+    "dialog": {
+      "addTitle": "Adicionar um conector",
+      "editTitle": "Editar conector",
+      "kind": "Tipo",
+      "name": "Nome",
+      "slug": "Endereço",
+      "slugHelp": "Minúsculas, algarismos e hífenes. Os dispositivos falam com {{url}}",
+      "platform": "Plataforma das suas cópias",
+      "format": "Formato",
+      "storefront": "Loja",
+      "wishlist": "Adicionar à lista de desejos em vez de aos jogos possuídos",
+      "absentMode": "Quando uma sincronização completa já não lista um jogo"
+    },
+    "help": {
+      "show": "How to connect a device",
+      "hide": "Hide",
+      "pair": "1. Pair once: the device asks for a code, shows it (or its approveUrl as a link or QR code), and polls until someone approves it in the app. It then gets its token.",
+      "sync": "2. Send games with that token. id is the device's own id for a game (anything stable); name is required; igdbId links it to IGDB straight away; players is the most players on one screen.",
+      "syncNx": "2. Send the installed title IDs with that token: names and player counts come from the Nintendo title database.",
+      "complete": "\"complete\": true means the list is everything the device has, so games it no longer lists are handled as set above; false only adds. New games without an IGDB id appear in Settings -> IGDB Import to be matched."
+    },
+    "approve": {
+      "heading": "Aprovar um dispositivo",
+      "question": "Let “{{device}}” sync games into {{connector}}? Check that the device shows {{code}}.",
+      "button": "Aprovar",
+      "done": "{{device}} can now sync into {{connector}}.",
+      "error": "Couldn't approve it: the code may have expired. Ask the device for a new one.",
+      "codeLabel": "Código",
+      "codeHelp": "The code the device shows, like ABCD-EF23.",
+      "unknownCode": "Código desconhecido ou expirado.",
+      "check": "Continuar",
+      "backToIntegrations": "Voltar às Integrações"
     }
   }
 }

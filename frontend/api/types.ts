@@ -299,7 +299,7 @@ export interface GameDetail extends GameSummary {
   localPlayersOverride: number | null;
   // IGDB had no count: another source's (see the players_fill job).
   localPlayersFallback: number | null;
-  localPlayersFallbackSource: "pcgamingwiki" | "steam" | null;
+  localPlayersFallbackSource: "pcgamingwiki" | "steam" | "nintendo" | "connector" | null;
   onlineMultiplayer: boolean | null;
   coop: boolean | null;
   // Main story, in seconds.
@@ -1093,4 +1093,46 @@ export interface EventDetail extends EventSummary {
   videos: EventVideo[];
   networks: EventNetwork[];
   games: EventGameTile[];
+}
+
+export type ConnectorKind = "custom" | "nx_remote_launcher";
+// What a complete sync does with a game the device no longer reports.
+export type ConnectorAbsentMode = "keep" | "note" | "remove";
+
+export interface ConnectorDevice {
+  id: number;
+  name: string;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
+export interface Connector {
+  id: number;
+  name: string;
+  // The {slug} in /api/connect/{slug}/...
+  slug: string;
+  kind: ConnectorKind;
+  platformId: number | null;
+  mediaFormat: MediaFormat | null;
+  digitalStorefront: string | null;
+  wishlist: boolean;
+  absentMode: ConnectorAbsentMode;
+  lastSyncAt: string | null;
+  lastSyncResult: { added: number; existing: number; absent: number; unknown: string[] } | null;
+  devices: ConnectorDevice[];
+  presentCount: number;
+  absentCount: number;
+}
+
+export type ConnectorInput = Pick<
+  Connector,
+  "name" | "slug" | "platformId" | "mediaFormat" | "digitalStorefront" | "wishlist" | "absentMode"
+> & { kind?: ConnectorKind };
+
+export interface ConnectorPairing {
+  code: string;
+  deviceName: string;
+  connectorId: number;
+  connectorName: string;
+  expiresAt: string;
 }

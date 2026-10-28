@@ -4,13 +4,15 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.repositories import game_repository
+from app.repositories import connector_repository, game_repository
+from app.services import nintendo_titledb
 from app.services.job_registry import JobDefinition
 from app.services.pcgamingwiki_client import PCGamingWikiClient
 from app.services.steam_store_client import SteamStoreClient
 
 JOB_PLAYERS_FILL = "players_fill"
 
+SOURCE_NINTENDO = "nintendo"
 SOURCE_PCGAMINGWIKI = "pcgamingwiki"
 SOURCE_STEAM = "steam"
 
@@ -32,23 +34,29 @@ def run(
 
 
 async def _fill(db: Session, report_progress: Callable[[int, int], None]) -> dict[str, Any]:
-    """Looks up a local player count for every library game IGDB has none for: PCGamingWiki
-    first for a PC game (it counts players), then the Steam store's categories for a game
-    matched to Steam (they only say whether it's played on one screen, so "2 or more").
+    """Looks up a local player count for every library game IGDB has none for: the Nintendo
+    title database for a game an NX Remote Launcher connector reported (no network call),
+    PCGamingWiki for a PC game (it counts players), then the Steam store's categories for a
+    game matched to Steam (they only say whether it's played on one screen, so "2 or more").
     What's found goes in local_players_fallback, never local_players, so the next IGDB
     resync doesn't erase it; a game found nowhere keeps no fallback rather than a stale one."""
     games = game_repository.list_games_missing_local_players(db)
+    switch_titles = connector_repository.nintendo_title_ids_by_game(db)
     wiki = PCGamingWikiClient()
     store = SteamStoreClient()
     found = 0
     failures: list[dict[str, Any]] = []
     try:
         for index, game in enumerate(games):
-            if index > 0:
-                await asyncio.sleep(_PACE_DELAY_SECONDS)
             try:
                 local_players, source = None, None
-                if game.on_pc or game.steam_app_id is not None:
+                titles = [nintendo_titledb.get_title(title_id) for title_id in switch_titles.get(game.id, [])]
+                counts = [title.players for title in titles if title and title.players]
+                if counts:
+                    local_players, source = max(counts), SOURCE_NINTENDO
+                elif game.on_pc or game.steam_app_id is not None:
+                    if index > 0:
+                        await asyncio.sleep(_PACE_DELAY_SECONDS)
                     local_players = await wiki.get_local_players(game.name, game.steam_app_id)
                     source = SOURCE_PCGAMINGWIKI
                 if local_players is None and game.steam_app_id is not None:

@@ -236,6 +236,12 @@ export const integrationsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.integrations") },
 ];
 
+export const connectorApproveCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.integrations"), to: "/settings/integrations" },
+  { label: t("connectors.approve.heading") },
+];
+
 export const emulationCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.emulation") },

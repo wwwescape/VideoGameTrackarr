@@ -23,6 +23,7 @@ from app.models.catalog import (  # noqa: F401
     ReleaseDate,
     Screenshot,
 )
+from app.models.connector import Connector, ConnectorDevice, ConnectorGame, ConnectorPairing  # noqa: F401
 from app.models.events import Event, EventGame, EventNetwork, EventVideo  # noqa: F401
 from app.models.hardware import (  # noqa: F401
     Accessory,

@@ -429,6 +429,10 @@
         "playersFill": {
           "name": "Fill in player counts",
           "description": "Looks up a local player count on PCGamingWiki, then the Steam store, for the games IGDB has none for. One lookup a second; a resync never erases what it finds."
+        },
+        "nintendoTitledb": {
+          "name": "Update the Nintendo title list",
+          "description": "Downloads the Nintendo Switch title database NX Remote Launcher connectors turn title IDs into names and player counts with. A few minutes; weekly is plenty."
         }
       },
       "runHeading": "Run",
@@ -1022,7 +1026,11 @@
       "from_steam_one": "Steam store: single-player (IGDB has no count).",
       "from_steam_other": "Steam store: same-screen play, 2 or more (IGDB has no count).",
       "notKnown": "No player count on IGDB, PCGamingWiki or Steam: pick one to use it in the Players filter.",
-      "setByHand": "Set by hand."
+      "setByHand": "Set by hand.",
+      "from_nintendo_other": "Nintendo eShop: up to {{count}} players (IGDB has no count).",
+      "from_nintendo_one": "Nintendo eShop: {{count}} player (IGDB has no count).",
+      "from_connector_other": "Connector: up to {{count}} players (IGDB has no count).",
+      "from_connector_one": "Connector: {{count}} player (IGDB has no count)."
     }
   },
   "events": {
@@ -1736,6 +1744,73 @@
       "reset": "Reset to default",
       "saveError": "Couldn't save the Overview layout. Please try again.",
       "allHidden": "Every section is hidden. Use Customize to show some again."
+    }
+  },
+  "connectors": {
+    "heading": "Connectors",
+    "description": "Connectors let other software add games to your library: a Switch homebrew, a script, a phone shortcut. Each has its own address and defaults (platform, format, storefront), and a device pairs with it once by showing a code you approve here.",
+    "add": "Add a connector",
+    "editAria": "Edit {{name}}",
+    "deleteAria": "Delete {{name}}",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteDescription": "Its devices stop syncing at once. The games and copies it added stay in your library.",
+    "saveError": "Couldn't save the connector. Is its address already used?",
+    "deleteError": "Couldn't delete the connector. Please try again.",
+    "revokeError": "Couldn't unpair the device. Please try again.",
+    "lastSync": "Last sync {{date}}: {{present}} games reported, {{absent}} no longer reported.",
+    "neverSynced": "Never synced yet.",
+    "devices": "Paired devices",
+    "noDevices": "No device paired yet.",
+    "deviceLastSeen": "last seen {{date}}",
+    "deviceNeverSeen": "never synced",
+    "revoke": "Unpair",
+    "kinds": {
+      "custom": {
+        "name": "Custom",
+        "description": "Anything that can send a list of games over HTTP: names, its own ids, IGDB ids when it has them."
+      },
+      "nx_remote_launcher": {
+        "name": "NX Remote Launcher",
+        "description": "A Nintendo Switch sending its installed title IDs; names and player counts come from the Nintendo title database."
+      }
+    },
+    "absentModes": {
+      "keep": "Keep games it no longer reports",
+      "note": "Add a note to their copy",
+      "remove": "Remove their copy"
+    },
+    "dialog": {
+      "addTitle": "Add a connector",
+      "editTitle": "Edit connector",
+      "kind": "Type",
+      "name": "Name",
+      "slug": "Address",
+      "slugHelp": "Lowercase letters, digits and dashes. Devices talk to {{url}}",
+      "platform": "Platform for its copies",
+      "format": "Format",
+      "storefront": "Storefront",
+      "wishlist": "Add to the wishlist instead of owned",
+      "absentMode": "When a full sync no longer lists a game"
+    },
+    "help": {
+      "show": "How to connect a device",
+      "hide": "Hide",
+      "pair": "1. Pair once: the device asks for a code, shows it (or its approveUrl as a link or QR code), and polls until someone approves it in the app. It then gets its token.",
+      "sync": "2. Send games with that token. id is the device's own id for a game (anything stable); name is required; igdbId links it to IGDB straight away; players is the most players on one screen.",
+      "syncNx": "2. Send the installed title IDs with that token: names and player counts come from the Nintendo title database.",
+      "complete": "\"complete\": true means the list is everything the device has, so games it no longer lists are handled as set above; false only adds. New games without an IGDB id appear in Settings -> IGDB Import to be matched."
+    },
+    "approve": {
+      "heading": "Approve a device",
+      "question": "Let “{{device}}” sync games into {{connector}}? Check that the device shows {{code}}.",
+      "button": "Approve",
+      "done": "{{device}} can now sync into {{connector}}.",
+      "error": "Couldn't approve it: the code may have expired. Ask the device for a new one.",
+      "codeLabel": "Code",
+      "codeHelp": "The code the device shows, like ABCD-EF23.",
+      "unknownCode": "Unknown or expired code.",
+      "check": "Continue",
+      "backToIntegrations": "Back to Integrations"
     }
   }
 }

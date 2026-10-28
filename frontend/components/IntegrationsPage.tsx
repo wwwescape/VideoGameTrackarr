@@ -15,6 +15,7 @@ import platpricesLogo from "../assets/platprices-logo.png";
 import steamLogo from "../assets/steam-logo.png";
 import { useIntegrationsStatus, useUpdateSteamId } from "../hooks/useIntegrations";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import ConnectorsSection from "./ConnectorsSection";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 
@@ -178,6 +179,7 @@ const IntegrationsPage = () => {
             </Typography>
           </SettingRow>
         </SettingsGroup>
+        <ConnectorsSection />
       </SettingsColumn>
     </SettingsFrame>
   );
