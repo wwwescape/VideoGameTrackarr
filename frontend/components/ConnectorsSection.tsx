@@ -226,6 +226,8 @@ const ConnectorCard = ({
   const { t, i18n } = useTranslation();
   const revoke = useRevokeConnectorDevice();
   const [showHelp, setShowHelp] = useState(connector.devices.length === 0);
+  // The Nintendo Switch connector is built in (the app recreates it): it can't be deleted.
+  const builtIn = connector.kind === "nx_remote_launcher";
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(
       new Date(value)
@@ -243,6 +245,7 @@ const ConnectorCard = ({
             variant="outlined"
             label={t(`connectors.kinds.${connector.kind}.name`)}
           />
+          {builtIn ? <Chip size="small" label={t("connectors.builtIn")} /> : null}
           <Box sx={{ ml: "auto", display: "flex" }}>
             <IconButton
               size="small"
@@ -251,13 +254,15 @@ const ConnectorCard = ({
             >
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
-            <IconButton
-              size="small"
-              onClick={onDelete}
-              aria-label={t("connectors.deleteAria", { name: connector.name })}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
+            {builtIn ? null : (
+              <IconButton
+                size="small"
+                onClick={onDelete}
+                aria-label={t("connectors.deleteAria", { name: connector.name })}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            )}
           </Box>
         </Box>
         {connector.kind === "custom" || connector.kind === "nx_remote_launcher" ? (

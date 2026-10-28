@@ -156,7 +156,7 @@ def test_a_complete_sync_handles_games_no_longer_reported(auth_client, db_sessio
 def test_nx_remote_launcher_names_title_ids_from_the_nintendo_title_database(auth_client, db_session, monkeypatch):
     index = {"01004EA00DF70000": {"name": "PICO PARK", "players": 8}}
     monkeypatch.setattr(nintendo_titledb, "load_index", lambda: index)
-    _create(auth_client, kind="nx_remote_launcher", slug="switch")
+    connector_service.ensure_builtin_connectors(db_session)
     token = _pair(auth_client, "switch")
 
     response = auth_client.post(
@@ -169,6 +169,30 @@ def test_nx_remote_launcher_names_title_ids_from_the_nintendo_title_database(aut
     assert response.json() == {"added": 1, "existing": 0, "absent": 0, "unknown": ["0100FFFFFFFFF000"]}
     pico = db_session.query(Game).filter_by(name="PICO PARK").one()
     assert (pico.local_players_fallback, pico.local_players_fallback_source) == (8, "nintendo")
+
+
+def test_the_nintendo_switch_connector_is_built_in(auth_client, db_session):
+    connector_service.ensure_builtin_connectors(db_session)
+    connector_service.ensure_builtin_connectors(db_session)
+    builtin = db_session.query(Connector).filter_by(kind=ConnectorKind.NX_REMOTE_LAUNCHER).one()
+    assert (builtin.name, builtin.slug, builtin.absent_mode) == ("Nintendo Switch", "switch", ConnectorAbsentMode.NOTE)
+
+    # It can't be deleted, nor can a second one be made; it can still be renamed.
+    assert auth_client.delete(f"/api/connectors/{builtin.id}").status_code == 409
+    second = {"name": "Switch 2", "slug": "switch-2", "kind": "nx_remote_launcher"}
+    assert auth_client.post("/api/connectors", json=second).status_code == 409
+    edited = auth_client.put(f"/api/connectors/{builtin.id}", json={"name": "Ma Switch", "slug": "ma-switch"})
+    assert (edited.status_code, edited.json()["slug"]) == (200, "ma-switch")
+
+
+def test_the_built_in_connector_comes_back_if_missing_and_avoids_a_taken_address(db_session):
+    db_session.add(Connector(name="Mine", slug="switch", kind=ConnectorKind.CUSTOM))
+    db_session.commit()
+
+    connector_service.ensure_builtin_connectors(db_session)
+
+    builtin = db_session.query(Connector).filter_by(kind=ConnectorKind.NX_REMOTE_LAUNCHER).one()
+    assert builtin.slug == "nintendo-switch"
 
 
 def test_a_csv_connector_only_adds_the_file_games(auth_client, db_session):

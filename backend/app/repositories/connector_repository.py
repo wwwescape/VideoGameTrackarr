@@ -16,6 +16,10 @@ def get_connector(db: Session, connector_id: int) -> Connector | None:
     return db.get(Connector, connector_id)
 
 
+def get_connector_by_kind(db: Session, kind: ConnectorKind) -> Connector | None:
+    return db.scalars(select(Connector).where(Connector.kind == kind).order_by(Connector.id)).first()
+
+
 def get_connector_by_slug(db: Session, slug: str) -> Connector | None:
     return db.scalars(select(Connector).where(Connector.slug == slug)).first()
 

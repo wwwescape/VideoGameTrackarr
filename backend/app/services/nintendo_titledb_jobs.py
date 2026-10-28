@@ -4,7 +4,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.services import nintendo_titledb
+from app.services import job_registry, nintendo_titledb
+from app.services.exceptions import ConflictError
 from app.services.job_registry import JobDefinition
 
 JOB_NINTENDO_TITLEDB = "nintendo_titledb"
@@ -20,3 +21,14 @@ def run(
 
 
 DEFINITION_NINTENDO_TITLEDB = JobDefinition(id=JOB_NINTENDO_TITLEDB, run=run)
+
+
+def fetch_index_if_missing(session_factory: Callable[[], Session]) -> None:
+    """The built-in Nintendo Switch connector needs the title list before its first sync;
+    the weekly job would otherwise only fetch it on Monday."""
+    if nintendo_titledb.load_index():
+        return
+    try:
+        job_registry.trigger_run(JOB_NINTENDO_TITLEDB, session_factory)
+    except ConflictError:
+        pass

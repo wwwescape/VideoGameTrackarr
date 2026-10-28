@@ -22,13 +22,9 @@ import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import AutocompleteSelect from "./AutocompleteSelect";
 import { FORMAT_OPTIONS } from "./GameFilterDialog";
 
-export const CONNECTOR_KINDS: ConnectorKind[] = [
-  "custom",
-  "nx_remote_launcher",
-  "epic",
-  "gog",
-  "csv",
-];
+// The Nintendo Switch (NX Remote Launcher) connector isn't offered: it's built in, there's always
+// exactly one.
+export const CONNECTOR_KINDS: ConnectorKind[] = ["custom", "epic", "gog", "csv"];
 
 // What a new connector of each kind starts with (all changeable): its name, address and
 // where its copies go.
@@ -44,7 +40,6 @@ const KIND_DEFAULTS: Partial<
     }
   >
 > = {
-  nx_remote_launcher: { name: "Nintendo Switch", slug: "switch", platformSlug: "switch" },
   epic: {
     name: "Epic Games Store",
     slug: "epic",

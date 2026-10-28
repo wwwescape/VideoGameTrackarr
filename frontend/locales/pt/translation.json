@@ -1751,6 +1751,7 @@
     }
   },
   "connectors": {
+    "builtIn": "Integrado",
     "heading": "Conectores",
     "description": "Os conectores permitem que outro software adicione jogos à sua biblioteca: um homebrew de Switch, um script, um atalho no telemóvel. Cada um tem o seu endereço e predefinições, e um dispositivo emparelha-se uma vez mostrando um código que aprova aqui.",
     "add": "Adicionar um conector",

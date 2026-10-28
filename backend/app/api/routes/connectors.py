@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_session_factory
-from app.models.connector import Connector, ConnectorKind
+from app.models.connector import Connector
 from app.repositories import connector_repository
 from app.schemas.connector import (
     ConnectorCreateRequest,
@@ -18,15 +18,8 @@ from app.schemas.connector import (
     StoreSignInRequest,
     SyncResponse,
 )
-from app.services import (
-    connector_pull_jobs,
-    connector_service,
-    job_registry,
-    nintendo_titledb,
-    nintendo_titledb_jobs,
-)
+from app.services import connector_pull_jobs, connector_service, job_registry
 from app.services.connector_service import ReportedGame
-from app.services.exceptions import ConflictError
 from app.services.store_clients import StoreLoginError
 
 router = APIRouter(prefix="/api/connectors", tags=["connectors"], dependencies=[Depends(get_current_user)])
@@ -64,19 +57,8 @@ def list_connectors(db: Session = Depends(get_db)) -> list[ConnectorResponse]:
 
 
 @router.post("", response_model=ConnectorResponse, status_code=status.HTTP_201_CREATED)
-def create_connector(
-    body: ConnectorCreateRequest,
-    db: Session = Depends(get_db),
-    session_factory: Callable[[], Session] = Depends(get_session_factory),
-) -> ConnectorResponse:
-    connector = connector_service.create_connector(db, kind=body.kind, **_fields(body))
-    # An NX Remote Launcher connector needs the Nintendo title list before its first sync.
-    if connector.kind == ConnectorKind.NX_REMOTE_LAUNCHER and not nintendo_titledb.load_index():
-        try:
-            job_registry.trigger_run(nintendo_titledb_jobs.JOB_NINTENDO_TITLEDB, session_factory)
-        except ConflictError:
-            pass
-    return _response(db, connector)
+def create_connector(body: ConnectorCreateRequest, db: Session = Depends(get_db)) -> ConnectorResponse:
+    return _response(db, connector_service.create_connector(db, kind=body.kind, **_fields(body)))
 
 
 @router.put("/{connector_id}", response_model=ConnectorResponse)

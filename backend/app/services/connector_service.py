@@ -19,7 +19,7 @@ from app.models.connector import (
 )
 from app.models.igdb_import import IgdbImportEntry
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
-from app.repositories import connector_repository, game_repository, library_item_repository
+from app.repositories import connector_repository, game_repository, library_item_repository, platform_repository
 from app.services import igdb_import_jobs, job_registry, library_service, manual_game_service, nintendo_titledb
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import EXTERNAL_SOURCE_EPIC, EXTERNAL_SOURCE_GOG, IGDBClient
@@ -61,7 +61,30 @@ def list_connectors(db: Session) -> list[Connector]:
     return connector_repository.list_connectors(db)
 
 
+def ensure_builtin_connectors(db: Session) -> None:
+    """The Nintendo Switch connector is built in, like the Steam integration: there's always
+    exactly one, so a console can always pair with it. Recreated at startup if it's missing."""
+    if connector_repository.get_connector_by_kind(db, ConnectorKind.NX_REMOTE_LAUNCHER) is not None:
+        return
+    slug = "switch"
+    if connector_repository.get_connector_by_slug(db, slug) is not None:
+        slug = "nintendo-switch"
+    platform = platform_repository.get_by_slug_or_id(db, "switch")
+    db.add(
+        Connector(
+            name="Nintendo Switch",
+            slug=slug,
+            kind=ConnectorKind.NX_REMOTE_LAUNCHER,
+            platform_id=platform.id if platform else None,
+            absent_mode=ConnectorAbsentMode.NOTE,
+        )
+    )
+    db.commit()
+
+
 def create_connector(db: Session, **fields: Any) -> Connector:
+    if fields.get("kind") == ConnectorKind.NX_REMOTE_LAUNCHER:
+        raise ConflictError("The Nintendo Switch connector is built in: there's already one")
     if connector_repository.get_connector_by_slug(db, fields["slug"]) is not None:
         raise ConflictError(f"A connector already uses {fields['slug']}")
     connector = Connector(**fields)
@@ -85,8 +108,12 @@ def update_connector(db: Session, connector_id: int, **fields: Any) -> Connector
 
 
 def delete_connector(db: Session, connector_id: int) -> None:
-    """Its devices stop working at once; the games and copies it added stay in the library."""
-    db.delete(_require(db, connector_id))
+    """Its devices stop working at once; the games and copies it added stay in the library.
+    The built-in Nintendo Switch connector can't be deleted, only have its devices unpaired."""
+    connector = _require(db, connector_id)
+    if connector.kind == ConnectorKind.NX_REMOTE_LAUNCHER:
+        raise ConflictError("The Nintendo Switch connector is built in and can't be deleted")
+    db.delete(connector)
     db.commit()
 
 

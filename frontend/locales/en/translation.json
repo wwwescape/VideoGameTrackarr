@@ -1751,6 +1751,7 @@
     }
   },
   "connectors": {
+    "builtIn": "Built in",
     "heading": "Connectors",
     "description": "Connectors let other software add games to your library: a Switch homebrew, a script, a phone shortcut. Each has its own address and defaults (platform, format, storefront), and a device pairs with it once by showing a code you approve here.",
     "add": "Add a connector",

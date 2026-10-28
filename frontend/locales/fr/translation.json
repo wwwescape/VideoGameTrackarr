@@ -1751,6 +1751,7 @@
     }
   },
   "connectors": {
+    "builtIn": "Intégré",
     "heading": "Connecteurs",
     "description": "Les connecteurs permettent à d'autres logiciels d'ajouter des jeux à votre bibliothèque : un homebrew Switch, un script, un raccourci sur téléphone. Chacun a sa propre adresse et ses options par défaut (plateforme, format, boutique), et un appareil s'y appaire une fois en affichant un code que vous approuvez ici.",
     "add": "Ajouter un connecteur",

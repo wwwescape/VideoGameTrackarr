@@ -55,7 +55,15 @@ from app.core.limiter import limiter
 from app.core.logging import configure_logging
 from app.core.security import weak_secret_warning
 from app.db.session import SessionLocal
-from app.services import auth_service, job_definitions, job_scheduler, platprices_service, rom_service
+from app.services import (
+    auth_service,
+    connector_service,
+    job_definitions,
+    job_scheduler,
+    nintendo_titledb_jobs,
+    platprices_service,
+    rom_service,
+)
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, IGDBCredentialsError
 
@@ -187,9 +195,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     db = SessionLocal()
     try:
         auth_service.announce_setup_code(db)
+        connector_service.ensure_builtin_connectors(db)
         if warning := weak_secret_warning():
             logger.warning(warning)
         job_scheduler.start(db, SessionLocal)
+        nintendo_titledb_jobs.fetch_index_if_missing(SessionLocal)
         try:
             cleared = platprices_service.clear_prices_from_other_regions(db)
             if cleared:
