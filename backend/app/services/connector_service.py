@@ -22,7 +22,9 @@ from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.repositories import connector_repository, game_repository, library_item_repository
 from app.services import igdb_import_jobs, job_registry, library_service, manual_game_service, nintendo_titledb
 from app.services.exceptions import ConflictError, NotFoundError
+from app.services.igdb_client import EXTERNAL_SOURCE_EPIC, EXTERNAL_SOURCE_GOG, IGDBClient
 from app.services.igdb_import_service import normalize_name
+from app.services.store_clients import EpicClient, GogClient, StoreLoginError, code_from_paste
 
 PAIRING_LIFETIME = timedelta(minutes=10)
 # No 0/O or 1/I: a code is read off one screen and typed on another.
@@ -356,3 +358,76 @@ def sync(
                 except ConflictError:
                     pass  # Already running; it'll be picked up on the next run.
     return result
+
+
+# --- Store connectors (Epic, GOG): the app reads the library itself ---
+
+
+def _store_client(connector: Connector) -> EpicClient | GogClient:
+    if connector.kind == ConnectorKind.EPIC:
+        return EpicClient()
+    if connector.kind == ConnectorKind.GOG:
+        return GogClient()
+    raise ConflictError(f"{connector.name} isn't a store connector")
+
+
+def login_url(db: Session, connector_id: int) -> str:
+    connector = _require(db, connector_id)
+    if connector.kind == ConnectorKind.EPIC:
+        return EpicClient.LOGIN_URL
+    if connector.kind == ConnectorKind.GOG:
+        return GogClient.LOGIN_URL
+    raise ConflictError(f"{connector.name} isn't a store connector")
+
+
+async def sign_in(db: Session, connector_id: int, pasted: str) -> Connector:
+    """Exchanges what the store's sign-in page gave (the code, its JSON or its final URL)
+    for a refresh token, kept on the connector."""
+    connector = _require(db, connector_id)
+    client = _store_client(connector)
+    try:
+        code = code_from_paste(pasted, "authorizationCode" if connector.kind == ConnectorKind.EPIC else "code")
+        session = await client.start_session(code=code)
+    finally:
+        await client.aclose()
+    connector.credentials = {"refresh_token": session.refresh_token}
+    db.commit()
+    db.refresh(connector)
+    return connector
+
+
+async def pull(
+    db: Session, connector: Connector, igdb_client: IGDBClient, session_factory: Callable[[], Session] | None = None
+) -> SyncResult:
+    """Reads the store account's games and syncs them like a device would, as a complete
+    list. Each new game is looked up on IGDB by its store id first (external_games), so most
+    link straight away instead of waiting on a name search."""
+    if not connector.credentials:
+        raise StoreLoginError(f"{connector.name} isn't signed in")
+    client = _store_client(connector)
+    try:
+        session = await client.start_session(refresh_token=connector.credentials["refresh_token"])
+        connector.credentials = {"refresh_token": session.refresh_token}
+        db.commit()
+        owned = await client.owned_games(session.access_token)
+    finally:
+        await client.aclose()
+    known = connector_repository.games_by_external_id(db, connector.id)
+    source = EXTERNAL_SOURCE_EPIC if connector.kind == ConnectorKind.EPIC else EXTERNAL_SOURCE_GOG
+    reported: list[ReportedGame] = []
+    for game in owned:
+        igdb_id = None
+        if game.id not in known or known[game.id].game_id is None:
+            igdb_id = await igdb_client.get_igdb_id_for_external(source, game.id)
+        reported.append(ReportedGame(external_id=game.id, name=game.title, igdb_id=igdb_id))
+    return sync(db, connector, reported, complete=True, session_factory=session_factory)
+
+
+def import_games(
+    db: Session, connector_id: int, games: list[ReportedGame], session_factory: Callable[[], Session] | None = None
+) -> SyncResult:
+    """A CSV connector's rows: only adds (a file is rarely the whole list)."""
+    connector = _require(db, connector_id)
+    if connector.kind != ConnectorKind.CSV:
+        raise ConflictError(f"{connector.name} isn't a CSV connector")
+    return sync(db, connector, games, complete=False, session_factory=session_factory)

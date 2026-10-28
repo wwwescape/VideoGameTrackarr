@@ -31,7 +31,10 @@ const ConnectorApprovePage = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CheckCircleIcon color="success" />
                 <Typography>
-                  {t("connectors.approve.done", { device: pairing.data?.deviceName, connector: pairing.data?.connectorName })}
+                  {t("connectors.approve.done", {
+                    device: pairing.data?.deviceName,
+                    connector: pairing.data?.connectorName,
+                  })}
                 </Typography>
               </Box>
             ) : pairing.data ? (
@@ -43,7 +46,11 @@ const ConnectorApprovePage = () => {
                     code: pairing.data.code,
                   })}
                 </Typography>
-                <Button variant="contained" disabled={approve.isPending} onClick={() => approve.mutate(code)}>
+                <Button
+                  variant="contained"
+                  disabled={approve.isPending}
+                  onClick={() => approve.mutate(code)}
+                >
                   {t("connectors.approve.button")}
                 </Button>
                 {approve.isError ? (
@@ -59,17 +66,29 @@ const ConnectorApprovePage = () => {
                   value={typed}
                   onChange={(event) => setTyped(event.target.value.toUpperCase())}
                   error={pairing.isError}
-                  helperText={pairing.isError ? t("connectors.approve.unknownCode") : t("connectors.approve.codeHelp")}
+                  helperText={
+                    pairing.isError
+                      ? t("connectors.approve.unknownCode")
+                      : t("connectors.approve.codeHelp")
+                  }
                   slotProps={{ htmlInput: { maxLength: 9 } }}
                 />
-                <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setParams({ code: typed.trim() })}>
+                <Button
+                  variant="outlined"
+                  sx={{ mt: 1 }}
+                  onClick={() => setParams({ code: typed.trim() })}
+                >
                   {t("connectors.approve.check")}
                 </Button>
               </Box>
             )}
           </SettingRow>
           <SettingRow stacked>
-            <Button component={RouterLink} to="/settings/integrations" sx={{ alignSelf: "flex-start", px: 0 }}>
+            <Button
+              component={RouterLink}
+              to="/settings/integrations"
+              sx={{ alignSelf: "flex-start", px: 0 }}
+            >
               {t("connectors.approve.backToIntegrations")}
             </Button>
           </SettingRow>

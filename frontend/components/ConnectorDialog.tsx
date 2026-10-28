@@ -22,7 +22,38 @@ import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import AutocompleteSelect from "./AutocompleteSelect";
 import { FORMAT_OPTIONS } from "./GameFilterDialog";
 
-export const CONNECTOR_KINDS: ConnectorKind[] = ["custom", "nx_remote_launcher"];
+export const CONNECTOR_KINDS: ConnectorKind[] = [
+  "custom",
+  "nx_remote_launcher",
+  "epic",
+  "gog",
+  "csv",
+];
+
+// What a new connector of each kind starts with (all changeable): its name, address and
+// where its copies go.
+const KIND_DEFAULTS: Partial<
+  Record<
+    ConnectorKind,
+    {
+      name: string;
+      slug: string;
+      platformSlug: string;
+      mediaFormat?: MediaFormat;
+      storefront?: string;
+    }
+  >
+> = {
+  nx_remote_launcher: { name: "Nintendo Switch", slug: "switch", platformSlug: "switch" },
+  epic: {
+    name: "Epic Games Store",
+    slug: "epic",
+    platformSlug: "win",
+    mediaFormat: "digital",
+    storefront: "Epic Games Store",
+  },
+  gog: { name: "GOG", slug: "gog", platformSlug: "win", mediaFormat: "digital", storefront: "GOG" },
+};
 const ABSENT_MODES: ConnectorAbsentMode[] = ["keep", "note", "remove"];
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,59}$/;
 
@@ -55,20 +86,29 @@ const ConnectorDialog = ({ connector, saving, onClose, onSave }: ConnectorDialog
   const [slug, setSlug] = useState(connector?.slug ?? "");
   const [slugEdited, setSlugEdited] = useState(Boolean(connector));
   const [platformId, setPlatformId] = useState<number | null>(connector?.platformId ?? null);
-  const [mediaFormat, setMediaFormat] = useState<MediaFormat | null>(connector?.mediaFormat ?? null);
+  const [mediaFormat, setMediaFormat] = useState<MediaFormat | null>(
+    connector?.mediaFormat ?? null
+  );
   const [storefront, setStorefront] = useState<string | null>(connector?.digitalStorefront ?? null);
   const [wishlist, setWishlist] = useState(connector?.wishlist ?? false);
-  const [absentMode, setAbsentMode] = useState<ConnectorAbsentMode>(connector?.absentMode ?? "keep");
+  const [absentMode, setAbsentMode] = useState<ConnectorAbsentMode>(
+    connector?.absentMode ?? "keep"
+  );
 
   const changeKind = (next: ConnectorKind) => {
     setKind(next);
-    // A Switch connector's copies are Switch copies; picked for you, still changeable.
-    if (next === "nx_remote_launcher" && platformId === null) {
-      setPlatformId(platforms.find((platform) => platform.slug === "switch")?.id ?? null);
-      if (!name) {
-        setName("Nintendo Switch");
-        if (!slugEdited) setSlug("switch");
-      }
+    // A Switch connector's copies are Switch copies, an Epic one's digital Epic Games Store
+    // copies on PC...: picked for you, still changeable.
+    const defaults = KIND_DEFAULTS[next];
+    if (!defaults) return;
+    setPlatformId(
+      platforms.find((platform) => platform.slug === defaults.platformSlug)?.id ?? null
+    );
+    setMediaFormat(defaults.mediaFormat ?? null);
+    setStorefront(defaults.storefront ?? null);
+    if (!name || Object.values(KIND_DEFAULTS).some((other) => other?.name === name)) {
+      setName(defaults.name);
+      if (!slugEdited) setSlug(defaults.slug);
     }
   };
   const valid = name.trim().length > 0 && SLUG_PATTERN.test(slug);
@@ -87,7 +127,9 @@ const ConnectorDialog = ({ connector, saving, onClose, onSave }: ConnectorDialog
 
   return (
     <Dialog open onClose={saving ? undefined : onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{connector ? t("connectors.dialog.editTitle") : t("connectors.dialog.addTitle")}</DialogTitle>
+      <DialogTitle>
+        {connector ? t("connectors.dialog.editTitle") : t("connectors.dialog.addTitle")}
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {!connector ? (
@@ -120,7 +162,9 @@ const ConnectorDialog = ({ connector, saving, onClose, onSave }: ConnectorDialog
               setSlug(event.target.value.toLowerCase());
             }}
             error={slug.length > 0 && !SLUG_PATTERN.test(slug)}
-            helperText={t("connectors.dialog.slugHelp", { url: `${window.location.origin}/api/connect/${slug || "…"}` })}
+            helperText={t("connectors.dialog.slugHelp", {
+              url: `${window.location.origin}/api/connect/${slug || "…"}`,
+            })}
             fullWidth
           />
           <AutocompleteSelect<PlatformResponse>
@@ -137,7 +181,9 @@ const ConnectorDialog = ({ connector, saving, onClose, onSave }: ConnectorDialog
             options={FORMAT_OPTIONS.map((option) => option.value)}
             value={mediaFormat}
             onChange={setMediaFormat}
-            getOptionLabel={(value) => FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? value}
+            getOptionLabel={(value) =>
+              FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? value
+            }
             fullWidth
           />
           {mediaFormat === "digital" ? (
@@ -151,7 +197,9 @@ const ConnectorDialog = ({ connector, saving, onClose, onSave }: ConnectorDialog
             />
           ) : null}
           <FormControlLabel
-            control={<Switch checked={wishlist} onChange={(event) => setWishlist(event.target.checked)} />}
+            control={
+              <Switch checked={wishlist} onChange={(event) => setWishlist(event.target.checked)} />
+            }
             label={t("connectors.dialog.wishlist")}
           />
           <AutocompleteSelect<ConnectorAbsentMode>

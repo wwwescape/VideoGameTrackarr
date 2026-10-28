@@ -14,6 +14,17 @@ class ConnectorKind(enum.Enum):
     # A Nintendo Switch homebrew (NX Remote Launcher) sending installed title IDs, which the
     # Nintendo title database turns into names and player counts.
     NX_REMOTE_LAUNCHER = "nx_remote_launcher"
+    # The app reads the account's library itself, once signed in (see store_clients.py).
+    EPIC = "epic"
+    GOG = "gog"
+    # Games from a CSV file picked in the app (Battle.net, EA app and other stores with no
+    # API): a name per row, an IGDB id when known.
+    CSV = "csv"
+
+
+# The connectors the app syncs itself, nightly (connector_pull_jobs.py), rather than waiting
+# for a device to send games.
+STORE_KINDS = {ConnectorKind.EPIC, ConnectorKind.GOG}
 
 
 class ConnectorAbsentMode(enum.Enum):
@@ -47,6 +58,9 @@ class Connector(TimestampMixin, Base):
     )
     last_sync_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     last_sync_result: Mapped[dict | None] = mapped_column(JSON)
+    # A store connector's sign-in ({"refresh_token": ...}), renewed on every sync; never sent
+    # to the browser (ConnectorResponse only says whether there is one).
+    credentials: Mapped[dict | None] = mapped_column(JSON)
 
     devices: Mapped[list["ConnectorDevice"]] = relationship(
         back_populates="connector", cascade="all, delete-orphan", order_by="ConnectorDevice.id"

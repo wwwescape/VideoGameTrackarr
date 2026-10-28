@@ -45,6 +45,8 @@ class ConnectorResponse(CamelModel):
     last_sync_at: datetime | None
     last_sync_result: dict[str, Any] | None
     devices: list[ConnectorDeviceResponse]
+    # A store connector signed in to its store (the token itself never leaves the server).
+    signed_in: bool
     # Games it reports now, and ones a complete sync no longer listed.
     present_count: int
     absent_count: int
@@ -63,6 +65,15 @@ class PairingInfoResponse(CamelModel):
     connector_id: int
     connector_name: str
     expires_at: datetime
+
+
+class StoreLoginUrlResponse(CamelModel):
+    url: str
+
+
+class StoreSignInRequest(CamelModel):
+    # What the store's sign-in page ended on: the code, its JSON or the URL.
+    code: str = Field(min_length=1, max_length=4000)
 
 
 # --- The device-facing API (app/api/routes/connect.py) ---
@@ -112,3 +123,8 @@ class SyncResponse(CamelModel):
     absent: int
     # Ids that couldn't be turned into a game (an unknown Switch title ID with no name).
     unknown: list[str]
+
+
+class ImportGamesRequest(CamelModel):
+    # A CSV connector's rows, read from the file in the browser.
+    games: list[ReportedGameRequest] = Field(max_length=5000)

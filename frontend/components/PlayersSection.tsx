@@ -67,7 +67,9 @@ const PlayersSection = ({
     [t("games.players.coop"), yesNo(coop)],
     [
       t("games.players.timeToBeat"),
-      timeToBeatMain ? t("games.players.hours", { count: Math.round(timeToBeatMain / 3600) }) : t("games.players.unknown"),
+      timeToBeatMain
+        ? t("games.players.hours", { count: Math.round(timeToBeatMain / 3600) })
+        : t("games.players.unknown"),
     ],
   ];
 
@@ -83,7 +85,17 @@ const PlayersSection = ({
         helperText={value !== null ? `${t("games.players.setByHand")} ${known}` : known}
         fullWidth
       />
-      <Box component="dl" sx={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 2, rowGap: 0.5, mt: 1.5, mb: 0 }}>
+      <Box
+        component="dl"
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          columnGap: 2,
+          rowGap: 0.5,
+          mt: 1.5,
+          mb: 0,
+        }}
+      >
         {facts.map(([label, fact]) => (
           <Box key={label} sx={{ display: "contents" }}>
             <Typography component="dt" variant="body2" color="text.secondary">

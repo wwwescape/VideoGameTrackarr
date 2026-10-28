@@ -37,7 +37,14 @@ interface ViewNameDialogProps {
 
 // Name a new view, or rename/delete one. Mounted only while open, so it starts from
 // initialName each time.
-export const ViewNameDialog = ({ title, initialName, takenNames, onClose, onSave, onDelete }: ViewNameDialogProps) => {
+export const ViewNameDialog = ({
+  title,
+  initialName,
+  takenNames,
+  onClose,
+  onSave,
+  onDelete,
+}: ViewNameDialogProps) => {
   const { t } = useTranslation();
   const [name, setName] = useState(initialName);
   const trimmed = name.trim();
@@ -104,7 +111,11 @@ export function useViewEditor(onRenamed?: (from: string, to: string) => void) {
         const deleted = editing;
         deleteFilter(deleted.name);
         setEditing(null);
-        showUndoToast(t("games.savedViews.deleted", { name: deleted.name }), () => restoreFilter(deleted), UNDO_DELAY_MS);
+        showUndoToast(
+          t("games.savedViews.deleted", { name: deleted.name }),
+          () => restoreFilter(deleted),
+          UNDO_DELAY_MS
+        );
       }}
     />
   ) : null;
@@ -131,7 +142,9 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
   const [naming, setNaming] = useState(false);
 
   // Clearing every filter leaves the view rather than "modifying" it.
-  const active = canSave ? (savedFilters.find((saved) => saved.name === state.activeView) ?? null) : null;
+  const active = canSave
+    ? (savedFilters.find((saved) => saved.name === state.activeView) ?? null)
+    : null;
   const modified = active !== null && !state.matchesFilters(active.filters);
 
   const close = () => setAnchor(null);
@@ -145,7 +158,13 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
     <>
       <ToolbarButton
         icon={active ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-        label={active ? (modified ? t("games.savedViews.modifiedLabel", { name: active.name }) : active.name) : t("games.savedViews.button")}
+        label={
+          active
+            ? modified
+              ? t("games.savedViews.modifiedLabel", { name: active.name })
+              : active.name
+            : t("games.savedViews.button")
+        }
         active={active !== null}
         onClick={(event: MouseEvent<HTMLButtonElement>) => setAnchor(event.currentTarget)}
         aria-haspopup="menu"
@@ -153,8 +172,15 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
       <Menu anchorEl={anchor} open={anchor !== null} onClose={close}>
         {savedFilters.length ? (
           savedFilters.map((saved) => (
-            <MenuItem key={saved.name} selected={saved.name === active?.name} onClick={() => apply(saved)} sx={{ pr: 0.5 }}>
-              <ListItemIcon>{saved.name === active?.name ? <CheckIcon fontSize="small" /> : null}</ListItemIcon>
+            <MenuItem
+              key={saved.name}
+              selected={saved.name === active?.name}
+              onClick={() => apply(saved)}
+              sx={{ pr: 0.5 }}
+            >
+              <ListItemIcon>
+                {saved.name === active?.name ? <CheckIcon fontSize="small" /> : null}
+              </ListItemIcon>
               <ListItemText primary={saved.name} />
               <IconButton
                 size="small"
@@ -194,7 +220,9 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
             setNaming(true);
           }}
         >
-          <ListItemText primary={modified ? t("games.savedViews.saveAsNew") : t("games.savedViews.saveCurrent")} />
+          <ListItemText
+            primary={modified ? t("games.savedViews.saveAsNew") : t("games.savedViews.saveCurrent")}
+          />
         </MenuItem>
       </Menu>
       {naming ? (

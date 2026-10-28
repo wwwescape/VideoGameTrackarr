@@ -3,22 +3,31 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import SyncIcon from "@mui/icons-material/Sync";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import { getConnectorLoginUrl } from "../api/connectors";
 import type { Connector, ConnectorInput } from "../api/types";
 import {
   useConnectors,
   useCreateConnector,
   useDeleteConnector,
+  useImportConnectorGames,
   useRevokeConnectorDevice,
+  useSignInConnector,
+  useSyncStoreConnectors,
   useUpdateConnector,
 } from "../hooks/useConnectors";
+import { gamesFromCsv } from "../utils/csv";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
 import ConnectorDialog from "./ConnectorDialog";
@@ -64,12 +73,163 @@ const ConnectorApiHelp = ({ connector }: { connector: Connector }) => {
   );
 };
 
-const ConnectorCard = ({ connector, onEdit, onDelete }: { connector: Connector; onEdit: () => void; onDelete: () => void }) => {
+// Epic/GOG: open the store's sign-in page, paste what it ends on (its code, JSON or URL).
+// Once signed in, the store sync job reads the library nightly; Sync now runs it at once.
+const StoreSignIn = ({ connector }: { connector: Connector }) => {
+  const { t } = useTranslation();
+  const signIn = useSignInConnector();
+  const syncStores = useSyncStoreConnectors();
+  const [pasted, setPasted] = useState("");
+  const [signingIn, setSigningIn] = useState(!connector.signedIn);
+
+  const openLogin = async () => {
+    // Opened before the request so the browser doesn't treat it as a pop-up.
+    const tab = window.open("about:blank", "_blank");
+    try {
+      const url = await getConnectorLoginUrl(connector.id);
+      if (tab) tab.location.href = url;
+    } catch {
+      tab?.close();
+      toast.error(t("connectors.store.loginUrlError"), TOAST_OPTIONS);
+    }
+  };
+
+  if (!signingIn) {
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mt: 1 }}>
+        <Chip size="small" color="success" label={t("connectors.store.signedIn")} />
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<SyncIcon />}
+          disabled={syncStores.isPending}
+          onClick={() =>
+            syncStores.mutate(undefined, {
+              onSuccess: () => toast.success(t("connectors.store.syncStarted"), TOAST_OPTIONS),
+              onError: () => toast.error(t("connectors.store.syncError"), TOAST_OPTIONS),
+            })
+          }
+        >
+          {t("connectors.store.syncNow")}
+        </Button>
+        <Button size="small" onClick={() => setSigningIn(true)}>
+          {t("connectors.store.signInAgain")}
+        </Button>
+      </Box>
+    );
+  }
+  return (
+    <Stack spacing={1} sx={{ mt: 1 }}>
+      <Typography variant="body2" color="text.secondary">
+        {t(`connectors.store.steps_${connector.kind}`)}
+      </Typography>
+      <Box>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<OpenInNewIcon />}
+          onClick={() => void openLogin()}
+        >
+          {t("connectors.store.openLogin")}
+        </Button>
+      </Box>
+      <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+        <TextField
+          size="small"
+          fullWidth
+          label={t("connectors.store.pasteLabel")}
+          value={pasted}
+          onChange={(event) => setPasted(event.target.value)}
+        />
+        <Button
+          variant="contained"
+          disabled={!pasted.trim() || signIn.isPending}
+          onClick={() =>
+            signIn.mutate(
+              { id: connector.id, code: pasted.trim() },
+              {
+                onSuccess: () => {
+                  setPasted("");
+                  setSigningIn(false);
+                  toast.success(t("connectors.store.signInDone"), TOAST_OPTIONS);
+                },
+                onError: () => toast.error(t("connectors.store.signInError"), TOAST_OPTIONS),
+              }
+            )
+          }
+        >
+          {t("connectors.store.signIn")}
+        </Button>
+      </Box>
+    </Stack>
+  );
+};
+
+// CSV: pick a file; its games are added with the connector's defaults (nothing is removed).
+const CsvImport = ({ connector }: { connector: Connector }) => {
+  const { t } = useTranslation();
+  const importGames = useImportConnectorGames();
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    const games = gamesFromCsv(await file.text());
+    if (!games.length) {
+      toast.error(t("connectors.csv.empty"), TOAST_OPTIONS);
+      return;
+    }
+    importGames.mutate(
+      { id: connector.id, games },
+      {
+        onSuccess: (result) =>
+          toast.success(t("connectors.csv.done", { added: result.added, existing: result.existing }), TOAST_OPTIONS),
+        onError: () => toast.error(t("connectors.csv.error"), TOAST_OPTIONS),
+      }
+    );
+  };
+  return (
+    <Stack spacing={1} sx={{ mt: 1 }}>
+      <Typography variant="body2" color="text.secondary">
+        {t("connectors.csv.format")}
+      </Typography>
+      <Box>
+        <Button
+          component="label"
+          size="small"
+          variant="outlined"
+          startIcon={<UploadFileIcon />}
+          disabled={importGames.isPending}
+        >
+          {t("connectors.csv.pick")}
+          <input
+            hidden
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(event) => {
+              void pick(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </Button>
+      </Box>
+    </Stack>
+  );
+};
+
+const ConnectorCard = ({
+  connector,
+  onEdit,
+  onDelete,
+}: {
+  connector: Connector;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
   const { t, i18n } = useTranslation();
   const revoke = useRevokeConnectorDevice();
   const [showHelp, setShowHelp] = useState(connector.devices.length === 0);
   const formatDate = (value: string) =>
-    new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+    new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(
+      new Date(value)
+    );
 
   return (
     <SettingRow stacked>
@@ -78,19 +238,33 @@ const ConnectorCard = ({ connector, onEdit, onDelete }: { connector: Connector; 
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             {connector.name}
           </Typography>
-          <Chip size="small" variant="outlined" label={t(`connectors.kinds.${connector.kind}.name`)} />
+          <Chip
+            size="small"
+            variant="outlined"
+            label={t(`connectors.kinds.${connector.kind}.name`)}
+          />
           <Box sx={{ ml: "auto", display: "flex" }}>
-            <IconButton size="small" onClick={onEdit} aria-label={t("connectors.editAria", { name: connector.name })}>
+            <IconButton
+              size="small"
+              onClick={onEdit}
+              aria-label={t("connectors.editAria", { name: connector.name })}
+            >
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" onClick={onDelete} aria-label={t("connectors.deleteAria", { name: connector.name })}>
+            <IconButton
+              size="small"
+              onClick={onDelete}
+              aria-label={t("connectors.deleteAria", { name: connector.name })}
+            >
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
           </Box>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
-          {`${window.location.origin}/api/connect/${connector.slug}`}
-        </Typography>
+        {connector.kind === "custom" || connector.kind === "nx_remote_launcher" ? (
+          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
+            {`${window.location.origin}/api/connect/${connector.slug}`}
+          </Typography>
+        ) : null}
         <Typography variant="body2" sx={{ mt: 0.75 }}>
           {connector.lastSyncAt
             ? t("connectors.lastSync", {
@@ -100,41 +274,53 @@ const ConnectorCard = ({ connector, onEdit, onDelete }: { connector: Connector; 
               })
             : t("connectors.neverSynced")}
         </Typography>
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {connector.devices.length ? t("connectors.devices") : t("connectors.noDevices")}
-          </Typography>
-          {connector.devices.map((device) => (
-            <Box key={device.id} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="body2" sx={{ flex: 1 }}>
-                {device.name}
-                <Box component="span" sx={{ color: "text.secondary" }}>
-                  {" · "}
-                  {device.lastSeenAt
-                    ? t("connectors.deviceLastSeen", { date: formatDate(device.lastSeenAt) })
-                    : t("connectors.deviceNeverSeen")}
-                </Box>
+        {connector.kind === "epic" || connector.kind === "gog" ? (
+          <StoreSignIn connector={connector} />
+        ) : null}
+        {connector.kind === "csv" ? <CsvImport connector={connector} /> : null}
+        {connector.kind === "custom" || connector.kind === "nx_remote_launcher" ? (
+          <>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                {connector.devices.length ? t("connectors.devices") : t("connectors.noDevices")}
               </Typography>
-              <Button
-                size="small"
-                color="error"
-                startIcon={<LinkOffIcon />}
-                onClick={() =>
-                  revoke.mutate(
-                    { connectorId: connector.id, deviceId: device.id },
-                    { onError: () => toast.error(t("connectors.revokeError"), TOAST_OPTIONS) }
-                  )
-                }
-              >
-                {t("connectors.revoke")}
-              </Button>
+              {connector.devices.map((device) => (
+                <Box key={device.id} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography variant="body2" sx={{ flex: 1 }}>
+                    {device.name}
+                    <Box component="span" sx={{ color: "text.secondary" }}>
+                      {" · "}
+                      {device.lastSeenAt
+                        ? t("connectors.deviceLastSeen", { date: formatDate(device.lastSeenAt) })
+                        : t("connectors.deviceNeverSeen")}
+                    </Box>
+                  </Typography>
+                  <Button
+                    size="small"
+                    color="error"
+                    startIcon={<LinkOffIcon />}
+                    onClick={() =>
+                      revoke.mutate(
+                        { connectorId: connector.id, deviceId: device.id },
+                        { onError: () => toast.error(t("connectors.revokeError"), TOAST_OPTIONS) }
+                      )
+                    }
+                  >
+                    {t("connectors.revoke")}
+                  </Button>
+                </Box>
+              ))}
             </Box>
-          ))}
-        </Box>
-        <Button size="small" sx={{ mt: 1, px: 0 }} onClick={() => setShowHelp((shown) => !shown)}>
-          {showHelp ? t("connectors.help.hide") : t("connectors.help.show")}
-        </Button>
-        {showHelp ? <ConnectorApiHelp connector={connector} /> : null}
+            <Button
+              size="small"
+              sx={{ mt: 1, px: 0 }}
+              onClick={() => setShowHelp((shown) => !shown)}
+            >
+              {showHelp ? t("connectors.help.hide") : t("connectors.help.show")}
+            </Button>
+            {showHelp ? <ConnectorApiHelp connector={connector} /> : null}
+          </>
+        ) : null}
       </Box>
     </SettingRow>
   );

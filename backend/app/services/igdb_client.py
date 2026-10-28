@@ -123,6 +123,11 @@ def extract_store_urls(igdb_game: dict) -> dict[str, str | None]:
     return result
 
 
+# IGDB's external_game_source ids for the stores connectors read (Steam is 1, see
+# get_igdb_id_for_steam_appid).
+EXTERNAL_SOURCE_GOG = 5
+EXTERNAL_SOURCE_EPIC = 26
+
 # IGDB's game_modes ids: 1 Single player, 2 Multiplayer, 3 Co-operative, 4 Split screen,
 # 5 MMO, 6 Battle Royale.
 _SINGLE_PLAYER_MODE = 1
@@ -342,6 +347,17 @@ class IGDBClient:
         headers = await self._auth_headers()
         escaped_appid = _escape_apicalypse_string(str(steam_app_id))
         body = f'fields game;\nwhere uid = "{escaped_appid}" & external_game_source = 1;\nlimit 1;'
+        response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
+        matches = response.json()
+        return matches[0]["game"] if matches and "game" in matches[0] else None
+
+    async def get_igdb_id_for_external(self, source: int, uid: str) -> int | None:
+        """Matches a store's own id to an IGDB game id via external_games, like
+        get_igdb_id_for_steam_appid: EXTERNAL_SOURCE_GOG (product id) or EXTERNAL_SOURCE_EPIC
+        (catalog item id)."""
+        headers = await self._auth_headers()
+        escaped_uid = _escape_apicalypse_string(uid)
+        body = f'fields game;\nwhere uid = "{escaped_uid}" & external_game_source = {source};\nlimit 1;'
         response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
         matches = response.json()
         return matches[0]["game"] if matches and "game" in matches[0] else None

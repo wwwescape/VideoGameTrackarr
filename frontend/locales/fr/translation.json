@@ -433,6 +433,10 @@
         "nintendoTitledb": {
           "name": "Mettre à jour la liste des titres Nintendo",
           "description": "Télécharge la base de titres Nintendo Switch qui permet aux connecteurs NX Remote Launcher de traduire les identifiants en noms et en nombre de joueurs. Quelques minutes ; une fois par semaine suffit."
+        },
+        "connectorsPull": {
+          "name": "Synchroniser les boutiques",
+          "description": "Lit la bibliothèque de chaque connecteur Epic Games Store et GOG connecté et ajoute ce qui est nouveau."
         }
       },
       "runHeading": "Exécuter",
@@ -1772,6 +1776,18 @@
       "nx_remote_launcher": {
         "name": "NX Remote Launcher",
         "description": "Une Nintendo Switch qui envoie les identifiants de ses titres installés ; les noms et le nombre de joueurs viennent de la base de titres Nintendo."
+      },
+      "epic": {
+        "name": "Epic Games Store",
+        "description": "Lit votre bibliothèque Epic Games Store une fois connecté (jeux seulement, sans contenus additionnels), chaque nuit."
+      },
+      "gog": {
+        "name": "GOG",
+        "description": "Lit votre bibliothèque GOG une fois connecté, chaque nuit."
+      },
+      "csv": {
+        "name": "Import CSV",
+        "description": "Ajoute les jeux d'un fichier CSV que vous choisissez : Battle.net, EA app ou n'importe quelle liste."
       }
     },
     "absentModes": {
@@ -1811,6 +1827,28 @@
       "unknownCode": "Code inconnu ou expiré.",
       "check": "Continuer",
       "backToIntegrations": "Retour aux Intégrations"
+    },
+    "store": {
+      "steps_epic": "1. Ouvrez la page de connexion Epic et connectez-vous. 2. Elle se termine sur une page de texte : copiez la valeur authorizationCode (ou toute la page) et collez-la ici.",
+      "steps_gog": "1. Ouvrez la page de connexion GOG et connectez-vous. 2. Elle se termine sur une page blanche : copiez son adresse (elle contient code=...) et collez-la ici.",
+      "openLogin": "Ouvrir la page de connexion",
+      "pasteLabel": "Code, page ou adresse",
+      "signIn": "Connecter",
+      "signInDone": "Connecté. La première synchronisation se fait à la prochaine synchro des boutiques.",
+      "signInError": "La boutique a refusé : le code a peut-être expiré. Rouvrez la page de connexion.",
+      "loginUrlError": "Impossible d'ouvrir la page de connexion.",
+      "signedIn": "Connecté",
+      "syncNow": "Synchroniser maintenant",
+      "syncStarted": "Synchronisation des boutiques lancée : son avancement s'affiche dans Paramètres -> Tâches.",
+      "syncError": "Impossible de lancer la synchronisation. Est-elle déjà en cours ?",
+      "signInAgain": "Se reconnecter"
+    },
+    "csv": {
+      "format": "Un fichier CSV avec une colonne name (ou title), et en option igdb_id et id. Sans ligne d'en-tête, la première colonne est le nom. Les jeux sont ajoutés avec les options de ce connecteur ; rien n'est retiré.",
+      "pick": "Importer un fichier CSV",
+      "empty": "Aucun jeu trouvé dans ce fichier.",
+      "done": "{{added}} ajoutés, {{existing}} déjà présents.",
+      "error": "Impossible d'importer ce fichier."
     }
   }
 }

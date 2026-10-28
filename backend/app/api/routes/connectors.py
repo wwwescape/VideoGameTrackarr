@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_session_factory
@@ -12,10 +12,22 @@ from app.schemas.connector import (
     ConnectorGameResponse,
     ConnectorRequest,
     ConnectorResponse,
+    ImportGamesRequest,
     PairingInfoResponse,
+    StoreLoginUrlResponse,
+    StoreSignInRequest,
+    SyncResponse,
 )
-from app.services import connector_service, job_registry, nintendo_titledb, nintendo_titledb_jobs
+from app.services import (
+    connector_pull_jobs,
+    connector_service,
+    job_registry,
+    nintendo_titledb,
+    nintendo_titledb_jobs,
+)
+from app.services.connector_service import ReportedGame
 from app.services.exceptions import ConflictError
+from app.services.store_clients import StoreLoginError
 
 router = APIRouter(prefix="/api/connectors", tags=["connectors"], dependencies=[Depends(get_current_user)])
 
@@ -34,6 +46,7 @@ def _response(db: Session, connector: Connector) -> ConnectorResponse:
         last_sync_at=connector.last_sync_at,
         last_sync_result=connector.last_sync_result,
         devices=[ConnectorDeviceResponse.model_validate(device, from_attributes=True) for device in connector.devices],
+        signed_in=bool(connector.credentials),
         present_count=connector_repository.count_games(db, connector.id, present=True),
         absent_count=connector_repository.count_games(db, connector.id, present=False),
     )
@@ -106,3 +119,38 @@ def get_pairing(code: str, db: Session = Depends(get_db)) -> PairingInfoResponse
 @router.post("/pairings/{code}/approve", response_model=ConnectorDeviceResponse)
 def approve_pairing(code: str, db: Session = Depends(get_db)) -> ConnectorDeviceResponse:
     return ConnectorDeviceResponse.model_validate(connector_service.approve_pairing(db, code), from_attributes=True)
+
+
+@router.get("/{connector_id}/login-url", response_model=StoreLoginUrlResponse)
+def store_login_url(connector_id: int, db: Session = Depends(get_db)) -> StoreLoginUrlResponse:
+    return StoreLoginUrlResponse(url=connector_service.login_url(db, connector_id))
+
+
+@router.post("/{connector_id}/sign-in", response_model=ConnectorResponse)
+async def store_sign_in(
+    connector_id: int, body: StoreSignInRequest, db: Session = Depends(get_db)
+) -> ConnectorResponse:
+    try:
+        connector = await connector_service.sign_in(db, connector_id, body.code)
+    except StoreLoginError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return _response(db, connector)
+
+
+@router.post("/sync-stores", status_code=status.HTTP_202_ACCEPTED)
+def sync_stores(session_factory: Callable[[], Session] = Depends(get_session_factory)) -> Response:
+    """Starts the store sync job now (every signed-in Epic/GOG connector), as the Jobs page
+    would; its progress shows there."""
+    job_registry.trigger_run(connector_pull_jobs.JOB_CONNECTORS_PULL, session_factory)
+    return Response(status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post("/{connector_id}/import", response_model=SyncResponse)
+def import_games(
+    connector_id: int,
+    body: ImportGamesRequest,
+    db: Session = Depends(get_db),
+    session_factory: Callable[[], Session] = Depends(get_session_factory),
+) -> SyncResponse:
+    games = [ReportedGame(external_id=g.id, name=g.name, igdb_id=g.igdb_id, players=g.players) for g in body.games]
+    return SyncResponse(**connector_service.import_games(db, connector_id, games, session_factory).as_dict())

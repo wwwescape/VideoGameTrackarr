@@ -4,11 +4,14 @@ import {
   createConnector,
   deleteConnector,
   getConnectorPairing,
+  importConnectorGames,
   listConnectors,
   revokeConnectorDevice,
+  signInConnector,
+  syncStoreConnectors,
   updateConnector,
 } from "../api/connectors";
-import type { ConnectorInput } from "../api/types";
+import type { ConnectorInput, ReportedGame } from "../api/types";
 
 export const connectorsQueryKey = ["connectors"] as const;
 
@@ -17,7 +20,7 @@ export function useConnectors() {
 }
 
 // Every change refetches the list: a sync, a device or a pairing all show up there.
-function useConnectorMutation<T>(mutationFn: (variables: T) => Promise<unknown>) {
+function useConnectorMutation<T, R>(mutationFn: (variables: T) => Promise<R>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
@@ -25,10 +28,13 @@ function useConnectorMutation<T>(mutationFn: (variables: T) => Promise<unknown>)
   });
 }
 
-export const useCreateConnector = () => useConnectorMutation((input: ConnectorInput) => createConnector(input));
+export const useCreateConnector = () =>
+  useConnectorMutation((input: ConnectorInput) => createConnector(input));
 
 export const useUpdateConnector = () =>
-  useConnectorMutation(({ id, input }: { id: number; input: ConnectorInput }) => updateConnector(id, input));
+  useConnectorMutation(({ id, input }: { id: number; input: ConnectorInput }) =>
+    updateConnector(id, input)
+  );
 
 export const useDeleteConnector = () => useConnectorMutation((id: number) => deleteConnector(id));
 
@@ -46,4 +52,15 @@ export function useConnectorPairing(code: string) {
   });
 }
 
-export const useApproveConnectorPairing = () => useConnectorMutation((code: string) => approveConnectorPairing(code));
+export const useApproveConnectorPairing = () =>
+  useConnectorMutation((code: string) => approveConnectorPairing(code));
+
+export const useSignInConnector = () =>
+  useConnectorMutation(({ id, code }: { id: number; code: string }) => signInConnector(id, code));
+
+export const useSyncStoreConnectors = () => useConnectorMutation(() => syncStoreConnectors());
+
+export const useImportConnectorGames = () =>
+  useConnectorMutation(({ id, games }: { id: number; games: ReportedGame[] }) =>
+    importConnectorGames(id, games)
+  );

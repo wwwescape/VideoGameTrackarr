@@ -433,6 +433,10 @@
         "nintendoTitledb": {
           "name": "Update the Nintendo title list",
           "description": "Downloads the Nintendo Switch title database NX Remote Launcher connectors turn title IDs into names and player counts with. A few minutes; weekly is plenty."
+        },
+        "connectorsPull": {
+          "name": "Sync store connectors",
+          "description": "Reads the library of every signed-in Epic Games Store and GOG connector and adds what's new."
         }
       },
       "runHeading": "Run",
@@ -1772,6 +1776,18 @@
       "nx_remote_launcher": {
         "name": "NX Remote Launcher",
         "description": "A Nintendo Switch sending its installed title IDs; names and player counts come from the Nintendo title database."
+      },
+      "epic": {
+        "name": "Epic Games Store",
+        "description": "Reads your Epic Games Store library once you sign in (games only, no add-ons), nightly."
+      },
+      "gog": {
+        "name": "GOG",
+        "description": "Reads your GOG library once you sign in, nightly."
+      },
+      "csv": {
+        "name": "CSV import",
+        "description": "Adds the games of a CSV file you pick: Battle.net, EA app or any list."
       }
     },
     "absentModes": {
@@ -1811,6 +1827,28 @@
       "unknownCode": "Unknown or expired code.",
       "check": "Continue",
       "backToIntegrations": "Back to Integrations"
+    },
+    "store": {
+      "steps_epic": "1. Open the Epic sign-in page and sign in. 2. It ends on a page of text: copy the authorizationCode value (or the whole page) and paste it here.",
+      "steps_gog": "1. Open the GOG sign-in page and sign in. 2. It ends on a blank page: copy its address (it contains code=...) and paste it here.",
+      "openLogin": "Open the sign-in page",
+      "pasteLabel": "Code, page or address",
+      "signIn": "Connect",
+      "signInDone": "Connected. The first sync starts with the next store sync.",
+      "signInError": "The store refused it: the code may have expired. Open the sign-in page again.",
+      "loginUrlError": "Couldn't open the sign-in page.",
+      "signedIn": "Connected",
+      "syncNow": "Sync now",
+      "syncStarted": "Store sync started: its progress shows in Settings -> Jobs.",
+      "syncError": "Couldn't start the store sync. Is it already running?",
+      "signInAgain": "Sign in again"
+    },
+    "csv": {
+      "format": "A CSV file with a name column (or title), and optionally igdb_id and id. Without a header row, the first column is the name. Games are added with this connector's defaults; nothing is removed.",
+      "pick": "Import a CSV file",
+      "empty": "No game found in this file.",
+      "done": "{{added}} added, {{existing}} already there.",
+      "error": "Couldn't import this file."
     }
   }
 }

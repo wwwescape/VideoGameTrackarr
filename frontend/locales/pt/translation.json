@@ -433,6 +433,10 @@
         "nintendoTitledb": {
           "name": "Atualizar a lista de títulos da Nintendo",
           "description": "Descarrega a base de títulos da Nintendo Switch com que os conectores NX Remote Launcher traduzem identificadores em nomes e número de jogadores."
+        },
+        "connectorsPull": {
+          "name": "Sincronizar as lojas",
+          "description": "Lê a biblioteca de cada conector Epic Games Store e GOG ligado e adiciona o que é novo."
         }
       },
       "runHeading": "Executar",
@@ -1772,6 +1776,18 @@
       "nx_remote_launcher": {
         "name": "NX Remote Launcher",
         "description": "A Nintendo Switch sending its installed title IDs; names and player counts come from the Nintendo title database."
+      },
+      "epic": {
+        "name": "Epic Games Store",
+        "description": "Lê a sua biblioteca da Epic Games Store depois de ligar a conta (só jogos), todas as noites."
+      },
+      "gog": {
+        "name": "GOG",
+        "description": "Lê a sua biblioteca GOG depois de ligar a conta, todas as noites."
+      },
+      "csv": {
+        "name": "Importação CSV",
+        "description": "Adiciona os jogos de um ficheiro CSV: Battle.net, EA app ou qualquer lista."
       }
     },
     "absentModes": {
@@ -1793,24 +1809,46 @@
       "absentMode": "Quando uma sincronização completa já não lista um jogo"
     },
     "help": {
-      "show": "How to connect a device",
-      "hide": "Hide",
-      "pair": "1. Pair once: the device asks for a code, shows it (or its approveUrl as a link or QR code), and polls until someone approves it in the app. It then gets its token.",
-      "sync": "2. Send games with that token. id is the device's own id for a game (anything stable); name is required; igdbId links it to IGDB straight away; players is the most players on one screen.",
-      "syncNx": "2. Send the installed title IDs with that token: names and player counts come from the Nintendo title database.",
-      "complete": "\"complete\": true means the list is everything the device has, so games it no longer lists are handled as set above; false only adds. New games without an IGDB id appear in Settings -> IGDB Import to be matched."
+      "show": "Como ligar um dispositivo",
+      "hide": "Ocultar",
+      "pair": "1. Emparelhar uma vez: o dispositivo pede um código, mostra-o (ou o approveUrl como ligação ou código QR) e consulta até alguém o aprovar na aplicação. Recebe então o seu token.",
+      "sync": "2. Enviar os jogos com esse token. id é o identificador do jogo para o dispositivo (qualquer coisa estável); name é obrigatório; igdbId liga-o ao IGDB de imediato; players é o máximo de jogadores no mesmo ecrã.",
+      "syncNx": "2. Enviar os identificadores dos títulos instalados com esse token: os nomes e o número de jogadores vêm da base de títulos da Nintendo.",
+      "complete": "\"complete\": true significa que a lista é tudo o que o dispositivo tem, por isso os jogos que deixam de aparecer são tratados como definido acima; false só adiciona. Os jogos novos sem identificador IGDB aparecem em Definições -> Importação IGDB para serem ligados."
     },
     "approve": {
       "heading": "Aprovar um dispositivo",
-      "question": "Let “{{device}}” sync games into {{connector}}? Check that the device shows {{code}}.",
+      "question": "Permitir que «{{device}}» sincronize jogos em {{connector}}? Confirme que o dispositivo mostra {{code}}.",
       "button": "Aprovar",
-      "done": "{{device}} can now sync into {{connector}}.",
-      "error": "Couldn't approve it: the code may have expired. Ask the device for a new one.",
+      "done": "{{device}} já pode sincronizar em {{connector}}.",
+      "error": "Não foi possível aprovar: o código pode ter expirado. Peça um novo ao dispositivo.",
       "codeLabel": "Código",
-      "codeHelp": "The code the device shows, like ABCD-EF23.",
+      "codeHelp": "O código mostrado pelo dispositivo, como ABCD-EF23.",
       "unknownCode": "Código desconhecido ou expirado.",
       "check": "Continuar",
       "backToIntegrations": "Voltar às Integrações"
+    },
+    "store": {
+      "steps_epic": "1. Abra a página de início de sessão da Epic e entre. 2. Termina numa página de texto: copie o valor authorizationCode (ou a página inteira) e cole-o aqui.",
+      "steps_gog": "1. Abra a página de início de sessão da GOG e entre. 2. Termina numa página em branco: copie o endereço (contém code=...) e cole-o aqui.",
+      "openLogin": "Abrir a página de início de sessão",
+      "pasteLabel": "Código, página ou endereço",
+      "signIn": "Ligar",
+      "signInDone": "Ligado. A primeira sincronização acontece na próxima sincronização das lojas.",
+      "signInError": "A loja recusou: o código pode ter expirado.",
+      "loginUrlError": "Não foi possível abrir a página de início de sessão.",
+      "signedIn": "Ligado",
+      "syncNow": "Sincronizar agora",
+      "syncStarted": "Sincronização das lojas iniciada: o progresso aparece em Definições -> Tarefas.",
+      "syncError": "Não foi possível iniciar a sincronização.",
+      "signInAgain": "Voltar a ligar"
+    },
+    "csv": {
+      "format": "Um ficheiro CSV com uma coluna name (ou title) e, opcionalmente, igdb_id e id. Sem linha de cabeçalho, a primeira coluna é o nome. Os jogos são adicionados com as predefinições deste conector; nada é removido.",
+      "pick": "Importar um ficheiro CSV",
+      "empty": "Nenhum jogo encontrado neste ficheiro.",
+      "done": "{{added}} adicionados, {{existing}} já existentes.",
+      "error": "Não foi possível importar este ficheiro."
     }
   }
 }

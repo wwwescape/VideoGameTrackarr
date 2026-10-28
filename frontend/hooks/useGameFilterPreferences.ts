@@ -62,7 +62,9 @@ export function useGameFilterPreferences() {
         (user?.gameFilterFields ?? [])
           .filter((field) => field.hidden)
           .map((field) => field.key)
-          .filter((key): key is GameFilterFieldKey => (GAME_FILTER_FIELD_KEYS as readonly string[]).includes(key))
+          .filter((key): key is GameFilterFieldKey =>
+            (GAME_FILTER_FIELD_KEYS as readonly string[]).includes(key)
+          )
       ),
     [user?.gameFilterFields]
   );
@@ -73,14 +75,20 @@ export function useGameFilterPreferences() {
   });
 
   const setHiddenFields = (hidden: Set<GameFilterFieldKey>) =>
-    save.mutate({ gameFilterFields: GAME_FILTER_FIELD_KEYS.map((key) => ({ key, hidden: hidden.has(key) })) });
+    save.mutate({
+      gameFilterFields: GAME_FILTER_FIELD_KEYS.map((key) => ({ key, hidden: hidden.has(key) })),
+    });
 
-  const sorted = (filters: SavedGameFilter[]) => [...filters].sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = (filters: SavedGameFilter[]) =>
+    [...filters].sort((a, b) => a.name.localeCompare(b.name));
 
   // Saving under a name that's already taken replaces that view.
   const saveFilter = (name: string, filters: Record<string, unknown>) =>
     save.mutate({
-      savedGameFilters: sorted([...savedFilters.filter((saved) => saved.name !== name), { name, filters }]),
+      savedGameFilters: sorted([
+        ...savedFilters.filter((saved) => saved.name !== name),
+        { name, filters },
+      ]),
     });
 
   // Renaming onto another view's name replaces that one, the same as saving over it.

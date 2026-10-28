@@ -29,7 +29,12 @@ interface CustomizeFilterFieldsDialogProps {
 
 // Switch Filter dialog fields on and off. Nothing changes until Save; mounted only while open,
 // so each opening starts from what's saved.
-const CustomizeFilterFieldsDialog = ({ hidden, saving, onClose, onSave }: CustomizeFilterFieldsDialogProps) => {
+const CustomizeFilterFieldsDialog = ({
+  hidden,
+  saving,
+  onClose,
+  onSave,
+}: CustomizeFilterFieldsDialogProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(() => new Set(hidden));
 
@@ -51,7 +56,9 @@ const CustomizeFilterFieldsDialog = ({ hidden, saving, onClose, onSave }: Custom
           {GAME_FILTER_FIELD_KEYS.map((key) => (
             <FormControlLabel
               key={key}
-              control={<Switch size="small" checked={!draft.has(key)} onChange={() => toggle(key)} />}
+              control={
+                <Switch size="small" checked={!draft.has(key)} onChange={() => toggle(key)} />
+              }
               label={t(GAME_FILTER_FIELD_LABEL_KEYS[key])}
             />
           ))}
@@ -87,13 +94,19 @@ const GameFilterSettings = () => {
     <>
       <SettingRow
         name={t("settings.gameFilters.fields")}
-        description={t("settings.gameFilters.fieldsHelp", { shown: shownCount, total: GAME_FILTER_FIELD_KEYS.length })}
+        description={t("settings.gameFilters.fieldsHelp", {
+          shown: shownCount,
+          total: GAME_FILTER_FIELD_KEYS.length,
+        })}
       >
         <Button variant="outlined" startIcon={<TuneIcon />} onClick={() => setCustomizing(true)}>
           {t("settings.gameFilters.customizeButton")}
         </Button>
       </SettingRow>
-      <SettingRow name={t("settings.gameFilters.saved")} description={t("settings.gameFilters.savedHelp")}>
+      <SettingRow
+        name={t("settings.gameFilters.saved")}
+        description={t("settings.gameFilters.savedHelp")}
+      >
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "flex-end" }}>
           {savedFilters.length ? (
             savedFilters.map((saved) => (
