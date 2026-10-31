@@ -427,6 +427,10 @@
         "eventsSync": {
           "name": "Sync Events",
           "description": "Fetches currently-upcoming gaming-industry events from IGDB and drops any previously-synced event that has since ended — powers the Events page and Overview teaser."
+        },
+        "playersFill": {
+          "name": "Fill in player counts",
+          "description": "Looks up a local player count on PCGamingWiki, then the Steam store, for the games IGDB has none for. One lookup a second; a resync never erases what it finds."
         }
       },
       "runHeading": "Run",
@@ -524,6 +528,17 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "gameFilters": {
+      "heading": "Game lists",
+      "fields": "Filter fields",
+      "fieldsHelp": "{{shown}} of {{total}} fields shown in the Filter dialog. Saved to your account.",
+      "customizeButton": "Customize",
+      "customizeTitle": "Filter fields",
+      "customizeDescription": "Switch off the fields you never use. A hidden field's filter is kept, and can still be cleared from its chip.",
+      "showAll": "Show all",
+      "saved": "Saved presets",
+      "savedHelp": "Made from the Presets button on the game lists. Edit one to rename or delete it."
     }
   },
   "auth": {
@@ -652,7 +667,26 @@
       "showMissingLabel": "Show what I am missing?",
       "steelbookOnlyLabel": "Steelbooks only",
       "clearFiltersButton": "Clear filters",
-      "noSearchMatches": "No matches found."
+      "noSearchMatches": "No matches found.",
+      "genreLabel": "Genres",
+      "releaseStatusLabel": "Release",
+      "releaseReleased": "Released",
+      "releaseUpcoming": "Upcoming",
+      "releaseYearFromLabel": "Released from",
+      "releaseYearToLabel": "Released until",
+      "releaseYearFromChip": "From {{year}}",
+      "releaseYearToChip": "Until {{year}}",
+      "localPlayersLabel": "Local players",
+      "localPlayersOption_one": "{{count}}+ player",
+      "localPlayersOption_other": "{{count}}+ players",
+      "onlineMultiplayerOnlyLabel": "Online multiplayer",
+      "coopOnlyLabel": "Co-op",
+      "timeToBeatLabel": "Time to beat",
+      "timeToBeatUnder": "Under {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h or more",
+      "ratingLabel": "Rating",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -955,6 +989,42 @@
     "detail": {
       "aboutTitle": "About",
       "platformsReleaseDatesTitle": "Platforms & release dates"
+    },
+    "savedViews": {
+      "button": "Presets",
+      "modifiedLabel": "{{name}} (changed)",
+      "empty": "No presets yet",
+      "saveCurrent": "Save current filters…",
+      "saveAsNew": "Save as a new preset…",
+      "update": "Update “{{name}}”",
+      "saveTitle": "Save these filters",
+      "editTitle": "Edit preset",
+      "editAria": "Edit {{name}}",
+      "nameLabel": "Name",
+      "replaceHelp": "Replaces the preset with this name.",
+      "deleted": "Preset “{{name}}” deleted"
+    },
+    "players": {
+      "title": "Players",
+      "localLabel": "Local players",
+      "localCount_one": "{{count}} player",
+      "localCount_other": "Up to {{count}} players",
+      "sameAsIgdb": "Same as IGDB",
+      "online": "Online multiplayer",
+      "coop": "Co-op",
+      "timeToBeat": "Main story",
+      "hours_one": "About {{count}} hour",
+      "hours_other": "About {{count}} hours",
+      "unknown": "Not on IGDB",
+      "saveErrorToast": "Couldn't save the player count. Please try again.",
+      "fromIgdb_one": "IGDB: {{count}} player.",
+      "fromIgdb_other": "IGDB: up to {{count}} players.",
+      "from_pcgamingwiki_one": "PCGamingWiki: {{count}} player (IGDB has no count).",
+      "from_pcgamingwiki_other": "PCGamingWiki: up to {{count}} players (IGDB has no count).",
+      "from_steam_one": "Steam store: single-player (IGDB has no count).",
+      "from_steam_other": "Steam store: same-screen play, 2 or more (IGDB has no count).",
+      "notKnown": "No player count on IGDB, PCGamingWiki or Steam: pick one to use it in the Players filter.",
+      "setByHand": "Set by hand."
     }
   },
   "events": {

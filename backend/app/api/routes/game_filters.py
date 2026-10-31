@@ -1,10 +1,16 @@
 from dataclasses import dataclass
+from typing import Annotated
 
 from fastapi import Query
+from pydantic import StringConstraints
 
 from app.models.catalog import GameCategory
 from app.models.library import MediaFormat, PlayStatus
-from app.repositories.game_repository import GameSortOption, GameSource
+from app.repositories.game_repository import GameSortOption, GameSource, ReleaseStatus
+
+# "<platform id>" or "<platform id>:<format>:<storefront>" — checked per value, so a malformed
+# one is a 422 rather than reaching _platform_scope_clause.
+PlatformScope = Annotated[str, StringConstraints(pattern=r"^\d+(:[a-z]*(:.*)?)?$")]
 
 
 @dataclass
@@ -45,4 +51,21 @@ class GameFilterParams:
     steelbook_only: bool = Query(default=False, alias="steelbookOnly")
     sources: list[GameSource] | None = Query(default=None, alias="source")
     source_exclude: bool = Query(default=False, alias="sourceExclude")
+    # A Platforms-page card ("<id>" or "<id>:<format>:<storefront>", e.g. PC · Steam), sharing
+    # platformExclude/platformMatchAll with platformId — see _platform_scope_clause.
+    platform_scopes: list[PlatformScope] | None = Query(default=None, alias="platformScope")
+    genre_ids: list[int] | None = Query(default=None, alias="genreId")
+    genre_exclude: bool = Query(default=False, alias="genreExclude")
+    genre_match_all: bool = Query(default=False, alias="genreMatchAll")
+    release_statuses: list[ReleaseStatus] | None = Query(default=None, alias="releaseStatus")
+    release_year_from: int | None = Query(default=None, alias="releaseYearFrom", ge=1950, le=2100)
+    release_year_to: int | None = Query(default=None, alias="releaseYearTo", ge=1950, le=2100)
+    # Single thresholds rather than lists: "at least N players"/"under N hours" is how these
+    # get asked, and a game only has one value for each.
+    local_players_min: int | None = Query(default=None, alias="localPlayersMin", ge=1, le=16)
+    online_multiplayer_only: bool = Query(default=False, alias="onlineMultiplayerOnly")
+    coop_only: bool = Query(default=False, alias="coopOnly")
+    time_to_beat_min: int | None = Query(default=None, alias="timeToBeatMin", ge=0, le=1000)
+    time_to_beat_max: int | None = Query(default=None, alias="timeToBeatMax", ge=1, le=1000)
+    rating_min: int | None = Query(default=None, alias="ratingMin", ge=0, le=100)
     sort: GameSortOption = Query(default=GameSortOption.NAME_ASC)

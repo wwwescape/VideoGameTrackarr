@@ -22,6 +22,25 @@ _retryable = retry(
 )
 
 
+# Steam store categories: 2 Single-player; 24 Shared/Split Screen, 37 Shared/Split Screen
+# PvP, 39 Shared/Split Screen Co-op (more than one player on the same screen); the rest of
+# the multiplayer ones (Multi-player, Co-op, Online/LAN PvP and Co-op, Remote Play Together).
+# Every store page also lists unrelated ones (achievements, cloud saves, Family Sharing).
+_SINGLE_PLAYER_CATEGORY = 2
+_SAME_SCREEN_CATEGORIES = {24, 37, 39}
+_MULTIPLAYER_CATEGORIES = _SAME_SCREEN_CATEGORIES | {1, 9, 36, 38, 44, 47, 48, 49}
+
+
+def local_players_from_categories(category_ids: set[int]) -> int | None:
+    """Steam doesn't count players, only says whether a game is played on one screen: so 2
+    at least when it is, 1 when it's single-player with no multiplayer at all, else None."""
+    if category_ids & _SAME_SCREEN_CATEGORIES:
+        return 2
+    if _SINGLE_PLAYER_CATEGORY in category_ids and not category_ids & _MULTIPLAYER_CATEGORIES:
+        return 1
+    return None
+
+
 @dataclass
 class SteamStoreDetails:
     name: str
@@ -34,7 +53,9 @@ class SteamStoreClient:
     unauthenticated Store API instead, a different base URL and response shape with no key
     involved at all. Used lazily, on-demand only (when a user clicks "Add as custom game"
     for an unmatched entry), never during Import — this API has informal, undocumented rate
-    limits and there's no reason to hit it for entries nobody asks about."""
+    limits and there's no reason to hit it for entries nobody asks about. The one bulk caller
+    is the players fill job, which only asks about games IGDB and PCGamingWiki have no count
+    for, and paces itself."""
 
     def __init__(self, http_client: httpx.AsyncClient | None = None) -> None:
         self._http = http_client or httpx.AsyncClient(timeout=10.0)
@@ -68,6 +89,16 @@ class SteamStoreClient:
             summary=app.get("short_description") or None,
             cover_url=await self._resolve_cover_url(app_id, app.get("header_image")),
         )
+
+    async def get_local_players(self, app_id: int) -> int | None:
+        response = await self._request(
+            "GET", f"{STEAM_STORE_API_BASE}/appdetails", params={"appids": app_id, "filters": "categories"}
+        )
+        payload = response.json().get(str(app_id))
+        if not payload or not payload.get("success") or not isinstance(payload.get("data"), dict):
+            return None
+        category_ids = {category["id"] for category in payload["data"].get("categories") or []}
+        return local_players_from_categories(category_ids)
 
     async def _resolve_cover_url(self, app_id: int, fallback: str | None) -> str | None:
         portrait_url = _LIBRARY_COVER_URL.format(app_id=app_id)

@@ -427,6 +427,10 @@
         "eventsSync": {
           "name": "Sincronizar eventos",
           "description": "Obtém os eventos da indústria de jogos atualmente próximos a partir do IGDB e remove qualquer evento previamente sincronizado que já tenha terminado — alimenta a página Eventos e a Visão geral."
+        },
+        "playersFill": {
+          "name": "Completar o número de jogadores",
+          "description": "Procura o número de jogadores locais no PCGamingWiki e depois na loja Steam para os jogos sem número no IGDB. Uma pesquisa por segundo; uma ressincronização nunca apaga o que encontra."
         }
       },
       "runHeading": "Executar",
@@ -524,6 +528,17 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "gameFilters": {
+      "heading": "Listas de jogos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visíveis na janela Filtros. Guardado na sua conta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desative os campos que nunca usa. O filtro de um campo oculto mantém-se e ainda pode ser removido a partir do seu chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Predefinições guardadas",
+      "savedHelp": "Criadas no botão Predefinições das listas de jogos. Edite uma para a renomear ou eliminar."
     }
   },
   "auth": {
@@ -652,7 +667,26 @@
       "showMissingLabel": "Mostrar o que me falta?",
       "steelbookOnlyLabel": "Somente Steelbooks",
       "clearFiltersButton": "Limpar filtros",
-      "noSearchMatches": "Nenhum resultado encontrado."
+      "noSearchMatches": "Nenhum resultado encontrado.",
+      "genreLabel": "Gêneros",
+      "releaseStatusLabel": "Lançamento",
+      "releaseReleased": "Lançado",
+      "releaseUpcoming": "Em breve",
+      "releaseYearFromLabel": "Lançado a partir de",
+      "releaseYearToLabel": "Lançado até",
+      "releaseYearFromChip": "A partir de {{year}}",
+      "releaseYearToChip": "Até {{year}}",
+      "localPlayersLabel": "Jogadores locais",
+      "localPlayersOption_one": "{{count}}+ jogador",
+      "localPlayersOption_other": "{{count}}+ jogadores",
+      "onlineMultiplayerOnlyLabel": "Multijogador online",
+      "coopOnlyLabel": "Cooperativo",
+      "timeToBeatLabel": "Tempo para zerar",
+      "timeToBeatUnder": "Menos de {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h ou mais",
+      "ratingLabel": "Avaliação",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -955,6 +989,42 @@
     "detail": {
       "aboutTitle": "Sobre",
       "platformsReleaseDatesTitle": "Plataformas e datas de lançamento"
+    },
+    "savedViews": {
+      "button": "Predefinições",
+      "modifiedLabel": "{{name}} (alterada)",
+      "empty": "Ainda sem predefinições",
+      "saveCurrent": "Guardar os filtros atuais…",
+      "saveAsNew": "Guardar como nova predefinição…",
+      "update": "Atualizar «{{name}}»",
+      "saveTitle": "Guardar estes filtros",
+      "editTitle": "Editar predefinição",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nome",
+      "replaceHelp": "Substitui a predefinição com este nome.",
+      "deleted": "Predefinição «{{name}}» eliminada"
+    },
+    "players": {
+      "title": "Jogadores",
+      "localLabel": "Jogadores locais",
+      "localCount_one": "{{count}} jogador",
+      "localCount_other": "Até {{count}} jogadores",
+      "sameAsIgdb": "Como no IGDB",
+      "online": "Multijogador online",
+      "coop": "Cooperativo",
+      "timeToBeat": "História principal",
+      "hours_one": "Cerca de {{count}} hora",
+      "hours_other": "Cerca de {{count}} horas",
+      "unknown": "Não está no IGDB",
+      "saveErrorToast": "Não foi possível guardar o número de jogadores. Tente novamente.",
+      "fromIgdb_one": "IGDB: {{count}} jogador.",
+      "fromIgdb_other": "IGDB: até {{count}} jogadores.",
+      "from_pcgamingwiki_one": "PCGamingWiki: {{count}} jogador (o IGDB não indica).",
+      "from_pcgamingwiki_other": "PCGamingWiki: até {{count}} jogadores (o IGDB não indica).",
+      "from_steam_one": "Loja Steam: um jogador (o IGDB não indica).",
+      "from_steam_other": "Loja Steam: mesmo ecrã, 2 ou mais (o IGDB não indica).",
+      "notKnown": "Nem o IGDB, nem o PCGamingWiki, nem a Steam indicam o número de jogadores: escolha um para o usar no filtro Jogadores.",
+      "setByHand": "Definido à mão."
     }
   },
   "events": {

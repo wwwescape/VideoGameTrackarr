@@ -44,6 +44,17 @@ export interface RegionResponse {
 // Where a game's metadata comes from: imported from IGDB, or added by hand (igdbId null).
 export type GameSource = "igdb" | "custom";
 
+// Released vs not out yet; a game with no release date (announced/TBA) counts as upcoming.
+export type ReleaseStatus = "released" | "upcoming";
+
+// A genre at least one owned or wishlisted game has — the Genre filter's options.
+export interface GenreSummary {
+  id: number;
+  name: string;
+  slug: string | null;
+  gameCount: number;
+}
+
 export type PlayStatus = "none" | "backlog" | "playing" | "completed" | "abandoned";
 
 export interface GameSummary {
@@ -282,6 +293,17 @@ export interface GameDetail extends GameSummary {
   // Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
   // Never shown as custom.
   linkedFromCustom: boolean;
+  // How it's played, from IGDB (null = IGDB doesn't say), and the local player count set by
+  // hand over IGDB's — the Players section.
+  localPlayers: number | null;
+  localPlayersOverride: number | null;
+  // IGDB had no count: another source's (see the players_fill job).
+  localPlayersFallback: number | null;
+  localPlayersFallbackSource: "pcgamingwiki" | "steam" | null;
+  onlineMultiplayer: boolean | null;
+  coop: boolean | null;
+  // Main story, in seconds.
+  timeToBeatMain: number | null;
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];
@@ -789,11 +811,26 @@ export interface CurrentUser {
   currency: string | null;
   // The Overview's sections in order; null until customised (see hooks/useOverviewLayout.ts).
   overviewLayout: OverviewSectionSetting[] | null;
+  // The game list Filter dialog's hidden fields and named filters; null until first used (see
+  // hooks/useGameFilterPreferences.ts).
+  gameFilterFields: GameFilterFieldSetting[] | null;
+  savedGameFilters: SavedGameFilter[] | null;
 }
 
 export interface OverviewSectionSetting {
   key: string;
   hidden: boolean;
+}
+
+export interface GameFilterFieldSetting {
+  key: string;
+  hidden: boolean;
+}
+
+export interface SavedGameFilter {
+  name: string;
+  // The game list's filter state as useGameListState keeps it; the server stores it as-is.
+  filters: Record<string, unknown>;
 }
 
 export interface SetupStatus {

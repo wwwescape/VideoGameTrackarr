@@ -331,6 +331,8 @@ def test_backup_round_trips_target_prices_ignored_lookups_and_settings(
     db_session.add(ItadPriceCache(game_id=seed_game.id, ignored=True))
     test_user.currency = "EUR"
     test_user.overview_layout = [{"key": "quickAdd", "hidden": True}]
+    test_user.game_filter_fields = [{"key": "format", "hidden": True}]
+    test_user.saved_game_filters = [{"name": "Couch", "filters": {"localPlayersMin": 2}}]
     test_user.steam_id_64 = "76561197960287930"
     db_session.commit()
     seed_game_id = seed_game.id
@@ -346,6 +348,8 @@ def test_backup_round_trips_target_prices_ignored_lookups_and_settings(
     db_session.add(PlatPricesCache(game_id=seed_game_id, current_price_amount=5.0))
     test_user.currency = "USD"
     test_user.overview_layout = None
+    test_user.game_filter_fields = None
+    test_user.saved_game_filters = None
     test_user.steam_id_64 = None
     db_session.commit()
 
@@ -364,3 +368,5 @@ def test_backup_round_trips_target_prices_ignored_lookups_and_settings(
         [{"key": "quickAdd", "hidden": True}],
         "76561197960287930",
     )
+    assert user.game_filter_fields == [{"key": "format", "hidden": True}]
+    assert user.saved_game_filters == [{"name": "Couch", "filters": {"localPlayersMin": 2}}]

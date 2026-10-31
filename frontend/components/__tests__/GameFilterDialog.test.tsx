@@ -20,8 +20,8 @@ function renderToolbar(overrides: Partial<ComponentProps<typeof GameFilterDialog
     ownershipExclude: false,
     onOwnershipExcludeChange: vi.fn(),
     platformOptions: [],
-    platformIds: [],
-    onPlatformIdsChange: vi.fn(),
+    platformKeys: [],
+    onPlatformKeysChange: vi.fn(),
     platformExclude: false,
     onPlatformExcludeChange: vi.fn(),
     tagOptions: tags,
@@ -58,6 +58,27 @@ function renderToolbar(overrides: Partial<ComponentProps<typeof GameFilterDialog
     onPlayStatusExcludeChange: vi.fn(),
     matchAll: {},
     onMatchAllChange: vi.fn(),
+    genreOptions: [],
+    genreIds: [],
+    onGenreIdsChange: vi.fn(),
+    genreExclude: false,
+    onGenreExcludeChange: vi.fn(),
+    releaseStatuses: [],
+    onReleaseStatusesChange: vi.fn(),
+    releaseYearFrom: null,
+    onReleaseYearFromChange: vi.fn(),
+    releaseYearTo: null,
+    onReleaseYearToChange: vi.fn(),
+    localPlayersMin: null,
+    onLocalPlayersMinChange: vi.fn(),
+    onlineMultiplayerOnly: false,
+    onOnlineMultiplayerOnlyChange: vi.fn(),
+    coopOnly: false,
+    onCoopOnlyChange: vi.fn(),
+    timeToBeat: null,
+    onTimeToBeatChange: vi.fn(),
+    ratingMin: null,
+    onRatingMinChange: vi.fn(),
     ...overrides,
   };
   render(<GameFilterDialog {...props} />);
@@ -99,8 +120,8 @@ describe("GameFilterDialog match mode", () => {
     const { dialog } = await openFilters();
 
     // One toggle per field except Game Types: Tags, Ownership, Play Status, Platforms,
-    // Formats, Collections, Series (Storefront only shows once Digital is picked).
-    expect(within(dialog).getAllByRole("group", { name: "Match any or all of the selected values" })).toHaveLength(7);
+    // Formats, Collections, Series, Genres (Storefront only shows once Digital is picked).
+    expect(within(dialog).getAllByRole("group", { name: "Match any or all of the selected values" })).toHaveLength(8);
   });
 
   it("lists the play statuses, including Not started", async () => {
@@ -192,5 +213,74 @@ describe("GameFilterDialog Source filter", () => {
       sourceExclude: true,
     });
     expect(buildGameFilterParams({ sourceExclude: true }).sourceExclude).toBeUndefined();
+  });
+});
+
+describe("GameFilterDialog library and play filters", () => {
+  it("offers the library's platform cards, PC split per storefront", async () => {
+    const onPlatformKeysChange = vi.fn();
+    renderToolbar({
+      platformOptions: [
+        { id: "6:digital:Steam", label: "PC · Steam" },
+        { id: "130", label: "Nintendo Switch" },
+      ],
+      onPlatformKeysChange,
+    });
+    const { user, dialog } = await openFilters();
+
+    await user.click(within(dialog).getByLabelText("Platforms"));
+    await user.click(await screen.findByRole("option", { name: "PC · Steam" }));
+
+    expect(onPlatformKeysChange).toHaveBeenCalledWith(["6:digital:Steam"]);
+  });
+
+  it("clears the play filters along with the rest", async () => {
+    const props = renderToolbar({ genreIds: [4], localPlayersMin: 2, coopOnly: true, timeToBeat: "5to15" });
+    const { user, dialog } = await openFilters();
+
+    await user.click(within(dialog).getByRole("button", { name: "Clear filters" }));
+
+    expect(props.onGenreIdsChange).toHaveBeenCalledWith([]);
+    expect(props.onLocalPlayersMinChange).toHaveBeenCalledWith(null);
+    expect(props.onCoopOnlyChange).toHaveBeenCalledWith(false);
+    expect(props.onTimeToBeatChange).toHaveBeenCalledWith(null);
+  });
+});
+
+describe("buildGameFilterParams play filters", () => {
+  it("sends platform cards as platformScope and keeps the shared Exclude", () => {
+    const params = buildGameFilterParams({ platformScopes: ["6:digital:GOG"], platformExclude: true });
+
+    expect(params.platformScope).toEqual(["6:digital:GOG"]);
+    expect(params.platformId).toBeUndefined();
+    expect(params.platformExclude).toBe(true);
+  });
+
+  it("only sends the toggles and thresholds that are set", () => {
+    const params = buildGameFilterParams({
+      genreIds: [4],
+      localPlayersMin: 2,
+      onlineMultiplayerOnly: false,
+      coopOnly: true,
+      timeToBeatMax: 5,
+    });
+
+    expect(params.genreId).toEqual([4]);
+    expect(params.localPlayersMin).toBe(2);
+    expect(params.onlineMultiplayerOnly).toBeUndefined();
+    expect(params.coopOnly).toBe(true);
+    expect(params.timeToBeatMin).toBeUndefined();
+    expect(params.timeToBeatMax).toBe(5);
+  });
+});
+
+describe("GameFilterDialog fields switched off in Settings", () => {
+  it("leaves out the hidden fields and keeps the others", () => {
+    renderToolbar({ hiddenFields: new Set(["format", "coop"] as const) });
+
+    expect(screen.queryByRole("combobox", { name: "Formats" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Co-op" })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Genres" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Online multiplayer" })).toBeInTheDocument();
   });
 });
