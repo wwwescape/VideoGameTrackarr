@@ -1,5 +1,8 @@
+import { useState } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import { useTouchScreen } from "../hooks/useTouchScreen";
+import TouchPickerSheet from "./TouchPickerSheet";
 
 interface AutocompleteSelectProps<T> {
   label: string;
@@ -20,6 +23,12 @@ interface AutocompleteSelectProps<T> {
 // Type-to-filter replacement for the `<TextField select><MenuItem>` dropdown pattern — the
 // non-freeSolo sibling of FreeSoloLookupField (picks an existing option only, no typing in
 // a new value).
+//
+// On a touch screen, tapping the field opens a picker sheet instead (TouchPickerSheet): an
+// Autocomplete focuses its text input on every tap, which raises the on-screen keyboard over the
+// list. Unless disableClearable, the sheet's list starts with the placeholder (or a dash), which
+// clears the value like the Autocomplete's clear button; an empty field just shows its label, as
+// the Autocomplete's does.
 function AutocompleteSelect<T>({
   label,
   options,
@@ -35,6 +44,48 @@ function AutocompleteSelect<T>({
   disableClearable,
   sx,
 }: AutocompleteSelectProps<T>) {
+  const touchScreen = useTouchScreen();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  if (touchScreen) {
+    const isSelected = (option: T) =>
+      value !== null && (isOptionEqualToValue ? isOptionEqualToValue(option, value) : option === value);
+    return (
+      <>
+        {/* A select that never opens its own menu: it renders no text input (so no keyboard), and
+            shows the value straight from `value`, even one that isn't in the options yet. */}
+        <TextField
+          select
+          label={label}
+          value={value === null ? [] : [0]}
+          disabled={disabled}
+          required={required}
+          fullWidth={fullWidth}
+          helperText={helperText}
+          sx={sx}
+          slotProps={{
+            select: {
+              multiple: true,
+              open: false,
+              onOpen: () => setSheetOpen(true),
+              renderValue: () => (value === null ? "" : getOptionLabel(value)),
+            },
+          }}
+        />
+        <TouchPickerSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          label={label}
+          options={options}
+          getOptionLabel={getOptionLabel}
+          isSelected={isSelected}
+          onPick={onChange}
+          clearLabel={disableClearable ? null : (placeholder ?? "—")}
+        />
+      </>
+    );
+  }
+
   return (
     <Autocomplete
       options={options}
