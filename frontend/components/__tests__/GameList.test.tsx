@@ -61,7 +61,11 @@ vi.mock("../../hooks/useGames", () => ({
   useGames: (...args: unknown[]) => useGamesMock(...args),
   useDeleteGame: () => ({ mutateAsync: vi.fn() }),
 }));
-vi.mock("../../hooks/usePlatforms", () => ({ usePlatforms: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/usePlatforms", () => ({
+  usePlatforms: () => ({ data: [], isSuccess: true }),
+  useLibraryPlatforms: () => ({ data: [], isSuccess: true }),
+}));
+vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
 vi.mock("../../hooks/useTags", () => ({
   useTags: () => ({ data: [], isSuccess: true }),
   useCreateTag: () => ({ mutateAsync: vi.fn(), isPending: false }),

@@ -59,6 +59,12 @@ GAME_FIELDS = (
     # discovered via its parent's relation arrays, still carries its conceptual parent's
     # name/url, even when we don't have that parent imported locally ourselves.
     "parent_game.name,parent_game.slug,parent_game.url,"
+    # Players and co-op support (see extract_play_fields) — per-platform rows, so a
+    # game that's 4-player split-screen on Switch but single-player on PC keeps both.
+    "multiplayer_modes.offlinemax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,"
+    "multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoop,"
+    "multiplayer_modes.campaigncoop,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,"
+    "multiplayer_modes.platform,"
     # Store page links (see extract_store_urls) — expanded here rather than fetched via a
     # separate request, same free-ride-on-the-existing-query treatment as every other
     # relation above. Deliberately the `websites` relation, not `external_games`:
@@ -115,6 +121,59 @@ def extract_store_urls(igdb_game: dict) -> dict[str, str | None]:
         preferred = next((url for url in candidates if "xbox.com" in url), None)
         result[field_name] = preferred or (candidates[0] if candidates else None)
     return result
+
+
+# IGDB's game_modes ids: 1 Single player, 2 Multiplayer, 3 Co-operative, 4 Split screen,
+# 5 MMO, 6 Battle Royale.
+_SINGLE_PLAYER_MODE = 1
+# Plain "Multiplayer" says nothing about where (Pico Park is a couch game), so only these
+# count as online on their own.
+_ONLINE_ONLY_MODES = {5, 6}
+_COOP_MODE = 3
+_SPLIT_SCREEN_MODE = 4
+
+
+def extract_play_fields(igdb_game: dict) -> dict[str, int | bool | None]:
+    """The Game columns behind the Players and Time to beat filters, out of a game payload's
+    multiplayer_modes/game_modes (see GAME_FIELDS) and the time_to_beat row
+    _attach_time_to_beats adds. local_players takes the best of every platform's row — the
+    Games list filters a game, not one copy of it."""
+    modes = igdb_game.get("multiplayer_modes") or []
+    game_modes = set(igdb_game.get("game_modes") or [])
+    # IGDB's offline counts include LAN play: a row that's LAN co-op without split screen
+    # (Counter-Strike 2's 99, Age of Empires II's 8) says nothing about one console or screen.
+    local_players = max(
+        (
+            max(mode.get("offlinemax") or 0, mode.get("offlinecoopmax") or 0)
+            for mode in modes
+            if mode.get("splitscreen") or not mode.get("lancoop")
+        ),
+        default=0,
+    )
+    if not local_players and game_modes == {_SINGLE_PLAYER_MODE}:
+        local_players = 1
+    # Split screen with no count (LEGO 2K Drive) is still two players on one screen at least.
+    if not local_players and _SPLIT_SCREEN_MODE in game_modes:
+        local_players = 2
+    if modes:
+        online = any(max(mode.get("onlinemax") or 0, mode.get("onlinecoopmax") or 0) > 1 for mode in modes) or bool(
+            game_modes & _ONLINE_ONLY_MODES
+        )
+    elif game_modes & _ONLINE_ONLY_MODES:
+        online = True
+    elif game_modes == {_SINGLE_PLAYER_MODE}:
+        online = False
+    else:
+        online = None
+    coop = any(mode.get("offlinecoop") or mode.get("onlinecoop") or mode.get("campaigncoop") for mode in modes)
+    time_to_beat = igdb_game.get("time_to_beat") or {}
+    return {
+        "local_players": local_players or None,
+        "online_multiplayer": online,
+        "coop": (coop or _COOP_MODE in game_modes) if (modes or game_modes) else None,
+        "time_to_beat_main": time_to_beat.get("normally"),
+        "time_to_beat_complete": time_to_beat.get("completely"),
+    }
 
 # IGDB/Twitch hiccups and transient network errors are worth retrying; a 4xx (bad
 # credentials, malformed query) never gets better on retry, so only retry on
@@ -244,6 +303,7 @@ class IGDBClient:
         games = response.json()
 
         await self._attach_covers(games, headers)
+        await self._attach_time_to_beats(games, headers)
         _normalize_nested_image_urls(games)
         return games
 
@@ -268,6 +328,7 @@ class IGDBClient:
         addons = response.json()
 
         await self._attach_covers(addons, headers)
+        await self._attach_time_to_beats(addons, headers)
         _normalize_nested_image_urls(addons)
         return addons
 
@@ -355,6 +416,21 @@ class IGDBClient:
         for game in games:
             if game.get("cover"):
                 game["cover_url"] = cover_urls.get(game["cover"])
+
+    async def _attach_time_to_beats(self, games: list[dict], headers: dict[str, str]) -> None:
+        """IGDB keeps length estimates in their own endpoint, keyed by game id rather than
+        expandable from /games — one batched request per call, like the covers above."""
+        game_ids = [game["id"] for game in games if game.get("id")]
+        if not game_ids:
+            return
+
+        id_list = ",".join(str(int(i)) for i in game_ids)
+        body = f"fields game_id,normally,completely;\nwhere game_id = ({id_list});\nlimit {len(game_ids)};"
+        response = await self._request("POST", f"{IGDB_API_BASE}/game_time_to_beats", headers=headers, content=body)
+        by_game = {row["game_id"]: row for row in response.json()}
+        for game in games:
+            if game.get("id") in by_game:
+                game["time_to_beat"] = by_game[game["id"]]
 
     async def get_covers_by_ids(
         self, cover_ids: list[int], headers: dict[str, str] | None = None

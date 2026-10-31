@@ -1,7 +1,17 @@
 import time
 from datetime import UTC, datetime
 
-from app.models.catalog import Collection, Franchise, Game, GameCategory, GameCollection, GameFranchise, Platform
+from app.models.catalog import (
+    Collection,
+    Franchise,
+    Game,
+    GameCategory,
+    GameCollection,
+    GameFranchise,
+    GameGenre,
+    Genre,
+    Platform,
+)
 from app.models.itad import ItadPriceCache
 from app.models.library import (
     GameProgress,
@@ -1222,3 +1232,141 @@ def test_other_summary_endpoints_leave_platforms_and_playable_empty(auth_client,
     [listed_addon] = auth_client.get(f"/api/games/{seed_game.id}/addons").json()
     assert listed_addon["libraryPlatforms"] == []
     assert listed_addon["playable"] is False
+
+
+def _own(db_session, game, platform, **fields):
+    db_session.add(LibraryItem(game_id=game.id, platform_id=platform.id, status=LibraryStatus.OWNED, **fields))
+    db_session.commit()
+
+
+def test_list_games_filters_by_platform_scope_tells_pc_storefronts_apart(
+    auth_client, db_session, seed_game, seed_pc_platform, seed_platform
+):
+    gog_game = Game(igdb_id=2301, name="GOG Game", category=GameCategory.MAIN_GAME)
+    console_game = Game(igdb_id=2302, name="Console Game", category=GameCategory.MAIN_GAME)
+    db_session.add_all([gog_game, console_game])
+    db_session.commit()
+    _own(db_session, seed_game, seed_pc_platform, format=MediaFormat.DIGITAL, digital_storefront="Steam")
+    _own(db_session, gog_game, seed_pc_platform, format=MediaFormat.DIGITAL, digital_storefront="GOG")
+    _own(db_session, console_game, seed_platform, format=MediaFormat.PHYSICAL)
+
+    steam = auth_client.get("/api/games", params={"platformScope": f"{seed_pc_platform.id}:digital:Steam"})
+    assert [g["name"] for g in steam.json()] == ["Test Game"]
+
+    either = auth_client.get(
+        "/api/games",
+        params={"platformScope": [f"{seed_pc_platform.id}:digital:GOG", str(seed_platform.id)]},
+    )
+    assert [g["name"] for g in either.json()] == ["Console Game", "GOG Game"]
+
+    not_steam = auth_client.get(
+        "/api/games",
+        params={"platformScope": f"{seed_pc_platform.id}:digital:Steam", "platformExclude": True},
+    )
+    assert [g["name"] for g in not_steam.json()] == ["Console Game", "GOG Game"]
+
+
+def test_list_games_rejects_a_malformed_platform_scope(auth_client):
+    response = auth_client.get("/api/games", params={"platformScope": "steam"})
+    assert response.status_code == 422
+
+
+def test_list_games_filters_by_genre(auth_client, db_session, seed_game):
+    other_game = Game(igdb_id=2303, name="Other Game", category=GameCategory.MAIN_GAME)
+    rpg = Genre(igdb_id=12, name="Role-playing (RPG)", slug="role-playing-rpg")
+    puzzle = Genre(igdb_id=9, name="Puzzle", slug="puzzle")
+    db_session.add_all([other_game, rpg, puzzle])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameGenre(game_id=seed_game.id, genre_id=rpg.id),
+            GameGenre(game_id=other_game.id, genre_id=puzzle.id),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"genreId": rpg.id})
+    assert [g["name"] for g in response.json()] == ["Test Game"]
+
+    excluded = auth_client.get("/api/games", params={"genreId": rpg.id, "genreExclude": True})
+    assert [g["name"] for g in excluded.json()] == ["Other Game"]
+
+
+def test_list_genres_only_offers_genres_of_library_games(auth_client, db_session, seed_game, seed_platform):
+    catalog_only = Game(igdb_id=2304, name="Catalog Only", category=GameCategory.MAIN_GAME)
+    owned_genre = Genre(igdb_id=31, name="Adventure", slug="adventure")
+    unused_genre = Genre(igdb_id=5, name="Shooter", slug="shooter")
+    db_session.add_all([catalog_only, owned_genre, unused_genre])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameGenre(game_id=seed_game.id, genre_id=owned_genre.id),
+            GameGenre(game_id=catalog_only.id, genre_id=unused_genre.id),
+        ]
+    )
+    db_session.commit()
+    _own(db_session, seed_game, seed_platform)
+
+    response = auth_client.get("/api/genres")
+    assert response.json() == [{"id": owned_genre.id, "name": "Adventure", "slug": "adventure", "gameCount": 1}]
+
+
+def test_list_games_filters_by_release_status_and_year(auth_client, db_session, seed_game):
+    seed_game.first_release_date = int(datetime(2017, 3, 3, tzinfo=UTC).timestamp())
+    upcoming = Game(
+        igdb_id=2305,
+        name="Upcoming Game",
+        category=GameCategory.MAIN_GAME,
+        first_release_date=int(time.time()) + 90 * 86400,
+    )
+    announced = Game(igdb_id=2306, name="Announced Game", category=GameCategory.MAIN_GAME)
+    # Added by hand without a date: nothing says it isn't out, so it's neither.
+    undated_custom = Game(name="Custom Game", category=GameCategory.MAIN_GAME)
+    db_session.add_all([upcoming, announced, undated_custom])
+    db_session.commit()
+
+    released = auth_client.get("/api/games", params={"releaseStatus": "released"})
+    assert [g["name"] for g in released.json()] == ["Test Game"]
+
+    # No release date at all means announced/TBA on IGDB, which is still "upcoming".
+    not_out = auth_client.get("/api/games", params={"releaseStatus": "upcoming"})
+    assert [g["name"] for g in not_out.json()] == ["Announced Game", "Upcoming Game"]
+
+    in_2017 = auth_client.get("/api/games", params={"releaseYearFrom": 2017, "releaseYearTo": 2017})
+    assert [g["name"] for g in in_2017.json()] == ["Test Game"]
+
+    from_2018 = auth_client.get("/api/games", params={"releaseYearFrom": 2018})
+    assert [g["name"] for g in from_2018.json()] == ["Upcoming Game"]
+
+
+def test_list_games_filters_by_players_time_to_beat_and_rating(auth_client, db_session, seed_game):
+    seed_game.local_players = 4
+    seed_game.coop = True
+    seed_game.online_multiplayer = False
+    seed_game.time_to_beat_main = 12 * 3600
+    seed_game.igdb_rating = 88.5
+    solo = Game(
+        igdb_id=2307,
+        name="Solo Game",
+        category=GameCategory.MAIN_GAME,
+        local_players=1,
+        coop=False,
+        online_multiplayer=True,
+        time_to_beat_main=60 * 3600,
+        igdb_rating=70.0,
+    )
+    unknown = Game(igdb_id=2308, name="Unknown Game", category=GameCategory.MAIN_GAME)
+    db_session.add_all([solo, unknown])
+    db_session.commit()
+
+    def names(**params):
+        return [g["name"] for g in auth_client.get("/api/games", params=params).json()]
+
+    # A game IGDB has no data for (Unknown Game) never matches any of these thresholds.
+    assert names(localPlayersMin=2) == ["Test Game"]
+    assert names(localPlayersMin=1) == ["Solo Game", "Test Game"]
+    assert names(coopOnly=True) == ["Test Game"]
+    assert names(onlineMultiplayerOnly=True) == ["Solo Game"]
+    assert names(timeToBeatMax=15) == ["Test Game"]
+    assert names(timeToBeatMin=40) == ["Solo Game"]
+    assert names(ratingMin=80) == ["Test Game"]

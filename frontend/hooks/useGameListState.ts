@@ -1,12 +1,15 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { MatchAllFilters } from "../api/games";
-import type { GameCategory, GameSortOption, GameSource, MediaFormat, PlayStatus } from "../api/types";
-import type { OwnershipStatus } from "../components/GameFilterDialog";
+import type { GameCategory, GameSortOption, GameSource, MediaFormat, PlayStatus, ReleaseStatus } from "../api/types";
+import { TIME_TO_BEAT_OPTIONS, type OwnershipStatus, type PlatformFilterOption, type TimeToBeatRange } from "../components/GameFilterDialog";
+import { platformDisplayName, platformScopeKey } from "../utils/platformScope";
 import { writeSessionValue } from "../utils/sessionViewState";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import { useCollections, useFranchises } from "./useCatalogBrowse";
 import { useDebouncedValue } from "./useDebouncedValue";
-import { usePlatforms } from "./usePlatforms";
+import { useGenres } from "./useGenres";
+import { useLibraryPlatforms } from "./usePlatforms";
 import { usePruneStaleIds, useSessionState } from "./useSessionState";
 import { useStorefronts } from "./useStorefronts";
 import { useTags } from "./useTags";
@@ -48,6 +51,17 @@ const CLEARED_FILTERS = {
   steelbookOnly: false,
   sources: [] as GameSource[],
   sourceExclude: false,
+  platformScopes: [] as string[],
+  genreIds: [] as number[],
+  genreExclude: false,
+  releaseStatuses: [] as ReleaseStatus[],
+  releaseYearFrom: null as number | null,
+  releaseYearTo: null as number | null,
+  localPlayersMin: null as number | null,
+  onlineMultiplayerOnly: false,
+  coopOnly: false,
+  timeToBeat: null as TimeToBeatRange | null,
+  ratingMin: null as number | null,
 };
 
 export type GameListPreset = Partial<typeof CLEARED_FILTERS>;
@@ -89,6 +103,17 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
   const [steelbookValue, setSteelbookOnly] = useSessionState(key("steelbookOnly"), false);
   const [sourceValues, setSources] = useSessionState<GameSource[]>(key("sources"), []);
   const [sourceExclude, setSourceExclude] = useSessionState(key("sourceExclude"), false);
+  const [platformScopes, setPlatformScopes] = useSessionState<string[]>(key("platformScopes"), []);
+  const [genreIds, setGenreIds] = useSessionState<number[]>(key("genreIds"), []);
+  const [genreExclude, setGenreExclude] = useSessionState(key("genreExclude"), false);
+  const [releaseStatuses, setReleaseStatuses] = useSessionState<ReleaseStatus[]>(key("releaseStatuses"), []);
+  const [releaseYearFrom, setReleaseYearFrom] = useSessionState<number | null>(key("releaseYearFrom"), null);
+  const [releaseYearTo, setReleaseYearTo] = useSessionState<number | null>(key("releaseYearTo"), null);
+  const [localPlayersMin, setLocalPlayersMin] = useSessionState<number | null>(key("localPlayersMin"), null);
+  const [onlineMultiplayerOnly, setOnlineMultiplayerOnly] = useSessionState(key("onlineMultiplayerOnly"), false);
+  const [coopOnly, setCoopOnly] = useSessionState(key("coopOnly"), false);
+  const [timeToBeat, setTimeToBeat] = useSessionState<TimeToBeatRange | null>(key("timeToBeat"), null);
+  const [ratingMin, setRatingMin] = useSessionState<number | null>(key("ratingMin"), null);
   const [sort, setSort] = useSessionState<GameSortOption>(key("sort"), "name_asc");
   // A page without a field ignores whatever was once remembered for it.
   const gameTypesList = useMemo(() => (gameTypes ? gameTypeValues : []), [gameTypes, gameTypeValues]);
@@ -100,11 +125,39 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
   const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
   const isPendingDebounce = trimmedKeyword.length >= MIN_SEARCH_LENGTH && trimmedKeyword !== debouncedKeyword;
 
-  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
+  const { t } = useTranslation();
+  // Only the Platforms-page cards the library actually has — PC split per storefront the same
+  // way — rather than every platform IGDB has ever attached to an imported game.
+  const { data: libraryPlatforms = [], isSuccess: platformsLoaded } = useLibraryPlatforms();
+  const platformOptions = useMemo<PlatformFilterOption[]>(
+    () =>
+      libraryPlatforms.map((platform) => {
+        const scope = { format: platform.format ?? undefined, storefront: platform.storefront ?? undefined };
+        return { id: platformScopeKey(platform.id, scope), label: platformDisplayName(platform, scope, t) };
+      }),
+    [libraryPlatforms, t]
+  );
+  const platformIdOptions = useMemo(() => libraryPlatforms.map((platform) => ({ id: platform.id })), [libraryPlatforms]);
+  // An Insights row or Overview link still presets plain platformIds; the dialog edits both as
+  // one list of card keys and writes them back as scopes.
+  const platformKeys = useMemo(
+    () => [...platformIds.map(String), ...platformScopes],
+    [platformIds, platformScopes]
+  );
+  const setPlatformKeys = useCallback(
+    (keys: string[]) => {
+      setPlatformIds([]);
+      setPlatformScopes(keys);
+    },
+    [setPlatformIds, setPlatformScopes]
+  );
+  const { data: genres = [], isSuccess: genresLoaded } = useGenres();
   const { data: tags = [], isSuccess: tagsLoaded } = useTags();
   const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
   const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
-  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
+  usePruneStaleIds(platformIds, setPlatformIds, platformIdOptions, platformsLoaded);
+  usePruneStaleIds(platformScopes, setPlatformScopes, platformOptions, platformsLoaded);
+  usePruneStaleIds(genreIds, setGenreIds, genres, genresLoaded);
   usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
   usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
   usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
@@ -141,6 +194,18 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
       matchAll,
       ...(steelbook ? { steelbookOnly } : {}),
       ...(sources ? { sources: sourcesList.length > 0 ? sourcesList : undefined, sourceExclude } : {}),
+      platformScopes: platformScopes.length > 0 ? platformScopes : undefined,
+      genreIds: genreIds.length > 0 ? genreIds : undefined,
+      genreExclude,
+      releaseStatuses: releaseStatuses.length > 0 ? releaseStatuses : undefined,
+      releaseYearFrom: releaseYearFrom ?? undefined,
+      releaseYearTo: releaseYearTo ?? undefined,
+      localPlayersMin: localPlayersMin ?? undefined,
+      onlineMultiplayerOnly,
+      coopOnly,
+      timeToBeatMin: TIME_TO_BEAT_OPTIONS.find((option) => option.value === timeToBeat)?.min,
+      timeToBeatMax: TIME_TO_BEAT_OPTIONS.find((option) => option.value === timeToBeat)?.max,
+      ratingMin: ratingMin ?? undefined,
       sort,
     }),
     [
@@ -169,6 +234,17 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
       sources,
       sourcesList,
       sourceExclude,
+      platformScopes,
+      genreIds,
+      genreExclude,
+      releaseStatuses,
+      releaseYearFrom,
+      releaseYearTo,
+      localPlayersMin,
+      onlineMultiplayerOnly,
+      coopOnly,
+      timeToBeat,
+      ratingMin,
       sort,
     ]
   );
@@ -179,9 +255,9 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
     onOwnershipStatusesChange: setOwnershipStatuses,
     ownershipExclude,
     onOwnershipExcludeChange: setOwnershipExclude,
-    platformOptions: platforms,
-    platformIds,
-    onPlatformIdsChange: setPlatformIds,
+    platformOptions,
+    platformKeys,
+    onPlatformKeysChange: setPlatformKeys,
     platformExclude,
     onPlatformExcludeChange: setPlatformExclude,
     tagOptions: tags,
@@ -221,6 +297,27 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
     onPlayStatusExcludeChange: setPlayStatusExclude,
     matchAll,
     onMatchAllChange: setMatchAll,
+    genreOptions: genres,
+    genreIds,
+    onGenreIdsChange: setGenreIds,
+    genreExclude,
+    onGenreExcludeChange: setGenreExclude,
+    releaseStatuses,
+    onReleaseStatusesChange: setReleaseStatuses,
+    releaseYearFrom,
+    onReleaseYearFromChange: setReleaseYearFrom,
+    releaseYearTo,
+    onReleaseYearToChange: setReleaseYearTo,
+    localPlayersMin,
+    onLocalPlayersMinChange: setLocalPlayersMin,
+    onlineMultiplayerOnly,
+    onOnlineMultiplayerOnlyChange: setOnlineMultiplayerOnly,
+    coopOnly,
+    onCoopOnlyChange: setCoopOnly,
+    timeToBeat,
+    onTimeToBeatChange: setTimeToBeat,
+    ratingMin,
+    onRatingMinChange: setRatingMin,
   };
 
   return {
