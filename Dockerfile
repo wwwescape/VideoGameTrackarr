@@ -18,6 +18,12 @@ WORKDIR /app/backend
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# tini is PID 1 (see ENTRYPOINT) so exited processes get reaped — without it, every
+# health check Docker killed on timeout stayed behind as a zombie.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tini \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -44,8 +50,11 @@ RUN mkdir -p db uploads \
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).status == 200 else 1)"
+# Generous timeout/start period: starting Python alone can take several seconds on a busy
+# Raspberry Pi, and a check Docker times out is reported unhealthy even when /healthz is fine.
+HEALTHCHECK --interval=30s --timeout=20s --start-period=30s --retries=3 \
+    CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5).status == 200 else 1)"
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+# -s (subreaper) keeps tini reaping even when it isn't PID 1, e.g. under `init: true`.
+ENTRYPOINT ["tini", "-s", "--", "./docker-entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
