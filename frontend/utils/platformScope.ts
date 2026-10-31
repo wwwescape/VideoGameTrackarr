@@ -44,6 +44,12 @@ export function platformScopeLabel(scope: PlatformScope, t: TFunction): string |
   return scope.storefront ?? t(FORMAT_LABEL_KEYS[scope.format]);
 }
 
+// A card as a Games-list filter value (the backend's platformScope param): "<id>" for a whole
+// platform, "<id>:<format>:<storefront>" for a PC storefront/format card.
+export function platformScopeKey(platformId: number, scope: PlatformScope): string {
+  return scope.format ? `${platformId}:${scope.format}:${scope.storefront ?? ""}` : String(platformId);
+}
+
 // "PC · Steam" for a scoped card, otherwise the platform's own name.
 export function platformDisplayName(
   platform: { name: string; abbreviation: string | null },

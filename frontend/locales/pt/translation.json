@@ -524,6 +524,17 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "gameFilters": {
+      "heading": "Listas de jogos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visíveis na janela Filtros. Guardado na sua conta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desative os campos que nunca usa. O filtro de um campo oculto mantém-se e ainda pode ser removido a partir do seu chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Predefinições guardadas",
+      "savedHelp": "Criadas no botão Predefinições das listas de jogos. Edite uma para a renomear ou eliminar."
     }
   },
   "auth": {
@@ -652,7 +663,26 @@
       "showMissingLabel": "Mostrar o que me falta?",
       "steelbookOnlyLabel": "Somente Steelbooks",
       "clearFiltersButton": "Limpar filtros",
-      "noSearchMatches": "Nenhum resultado encontrado."
+      "noSearchMatches": "Nenhum resultado encontrado.",
+      "genreLabel": "Gêneros",
+      "releaseStatusLabel": "Lançamento",
+      "releaseReleased": "Lançado",
+      "releaseUpcoming": "Em breve",
+      "releaseYearFromLabel": "Lançado a partir de",
+      "releaseYearToLabel": "Lançado até",
+      "releaseYearFromChip": "A partir de {{year}}",
+      "releaseYearToChip": "Até {{year}}",
+      "localPlayersLabel": "Jogadores locais",
+      "localPlayersOption_one": "{{count}}+ jogador",
+      "localPlayersOption_other": "{{count}}+ jogadores",
+      "onlineMultiplayerOnlyLabel": "Multijogador online",
+      "coopOnlyLabel": "Cooperativo",
+      "timeToBeatLabel": "Tempo para zerar",
+      "timeToBeatUnder": "Menos de {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h ou mais",
+      "ratingLabel": "Avaliação",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -955,6 +985,20 @@
     "detail": {
       "aboutTitle": "Sobre",
       "platformsReleaseDatesTitle": "Plataformas e datas de lançamento"
+    },
+    "savedViews": {
+      "button": "Predefinições",
+      "modifiedLabel": "{{name}} (alterada)",
+      "empty": "Ainda sem predefinições",
+      "saveCurrent": "Guardar os filtros atuais…",
+      "saveAsNew": "Guardar como nova predefinição…",
+      "update": "Atualizar «{{name}}»",
+      "saveTitle": "Guardar estes filtros",
+      "editTitle": "Editar predefinição",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nome",
+      "replaceHelp": "Substitui a predefinição com este nome.",
+      "deleted": "Predefinição «{{name}}» eliminada"
     }
   },
   "events": {

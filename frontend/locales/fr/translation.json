@@ -524,6 +524,17 @@
     },
     "regional": {
       "heading": "Régional"
+    },
+    "gameFilters": {
+      "heading": "Listes de jeux",
+      "fields": "Champs de filtre",
+      "fieldsHelp": "{{shown}} champs sur {{total}} affichés dans la fenêtre Filtres. Enregistré sur votre compte.",
+      "customizeButton": "Personnaliser",
+      "customizeTitle": "Champs de filtre",
+      "customizeDescription": "Désactivez les champs que vous n'utilisez jamais. Le filtre d'un champ masqué est conservé et peut toujours être retiré depuis sa puce.",
+      "showAll": "Tout afficher",
+      "saved": "Vues enregistrées",
+      "savedHelp": "Créées depuis le bouton Vues des listes de jeux. Modifiez-en une pour la renommer ou la supprimer."
     }
   },
   "auth": {
@@ -652,7 +663,26 @@
       "showMissingLabel": "Afficher ce qu'il me manque ?",
       "steelbookOnlyLabel": "Steelbooks uniquement",
       "clearFiltersButton": "Effacer les filtres",
-      "noSearchMatches": "Aucun résultat trouvé."
+      "noSearchMatches": "Aucun résultat trouvé.",
+      "genreLabel": "Genres",
+      "releaseStatusLabel": "Sortie",
+      "releaseReleased": "Sorti",
+      "releaseUpcoming": "À venir",
+      "releaseYearFromLabel": "Sorti à partir de",
+      "releaseYearToLabel": "Sorti jusqu'en",
+      "releaseYearFromChip": "À partir de {{year}}",
+      "releaseYearToChip": "Jusqu'en {{year}}",
+      "localPlayersLabel": "Joueurs en local",
+      "localPlayersOption_one": "{{count}}+ joueur",
+      "localPlayersOption_other": "{{count}}+ joueurs",
+      "onlineMultiplayerOnlyLabel": "Multijoueur en ligne",
+      "coopOnlyLabel": "Coopération",
+      "timeToBeatLabel": "Durée de vie",
+      "timeToBeatUnder": "Moins de {{max}} h",
+      "timeToBeatBetween": "{{min}} à {{max}} h",
+      "timeToBeatOver": "{{min}} h ou plus",
+      "ratingLabel": "Note",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "À faire",
@@ -955,6 +985,20 @@
     "detail": {
       "aboutTitle": "À propos",
       "platformsReleaseDatesTitle": "Plateformes et dates de sortie"
+    },
+    "savedViews": {
+      "button": "Vues",
+      "modifiedLabel": "{{name}} (modifiée)",
+      "empty": "Aucune vue pour l'instant",
+      "saveCurrent": "Enregistrer les filtres actuels…",
+      "saveAsNew": "Enregistrer comme nouvelle vue…",
+      "update": "Mettre à jour « {{name}} »",
+      "saveTitle": "Enregistrer ces filtres",
+      "editTitle": "Modifier la vue",
+      "editAria": "Modifier {{name}}",
+      "nameLabel": "Nom",
+      "replaceHelp": "Remplace la vue enregistrée sous ce nom.",
+      "deleted": "Vue « {{name}} » supprimée"
     }
   },
   "events": {

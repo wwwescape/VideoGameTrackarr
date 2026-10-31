@@ -45,7 +45,14 @@ def test_me_returns_current_user_with_valid_access_token(client, test_user):
     response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {access_token}"})
 
     assert response.status_code == 200
-    assert response.json() == {"id": test_user.id, "username": "admin", "currency": None, "overviewLayout": None}
+    assert response.json() == {
+        "id": test_user.id,
+        "username": "admin",
+        "currency": None,
+        "overviewLayout": None,
+        "gameFilterFields": None,
+        "savedGameFilters": None,
+    }
 
 
 def test_me_rejects_garbage_token(client):
@@ -361,3 +368,32 @@ def test_overview_layout_keys_are_validated(auth_client):
     response = auth_client.put("/api/auth/me/preferences", json={"overviewLayout": layout})
 
     assert response.status_code == 422
+
+
+def test_game_filter_fields_are_saved_on_the_account(auth_client):
+    fields = [{"key": "format", "hidden": True}, {"key": "genre", "hidden": False}]
+
+    response = auth_client.put("/api/auth/me/preferences", json={"gameFilterFields": fields})
+
+    assert response.status_code == 200
+    assert auth_client.get("/api/auth/me").json()["gameFilterFields"] == fields
+
+
+def test_saved_game_filters_are_kept_as_sent(auth_client):
+    saved = [{"name": "Couch Switch", "filters": {"platformScopes": ["130"], "localPlayersMin": 2, "coopOnly": True}}]
+
+    response = auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": saved})
+
+    assert response.status_code == 200
+    me = auth_client.get("/api/auth/me").json()
+    assert me["savedGameFilters"] == saved
+    # Saving filters leaves the other preferences alone.
+    assert me["gameFilterFields"] is None
+
+
+def test_saved_game_filters_need_a_name_and_stay_small(auth_client):
+    unnamed = [{"name": "", "filters": {}}]
+    huge = [{"name": "Huge", "filters": {"tagIds": list(range(5000))}}]
+
+    assert auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": unnamed}).status_code == 422
+    assert auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": huge}).status_code == 422

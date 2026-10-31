@@ -46,6 +46,7 @@ vi.mock("../../theme/ColorModeProvider", () => ({
 vi.mock("../DataManagementSection", () => ({ default: () => <div>Backup panel</div> }));
 vi.mock("../ShareSection", () => ({ default: () => <div>Share panel</div> }));
 vi.mock("../DangerZoneSection", () => ({ default: () => <div>Danger Zone panel</div> }));
+vi.mock("../GameFilterSettings", () => ({ default: () => <div>Game filter settings</div> }));
 
 function renderPage() {
   render(
