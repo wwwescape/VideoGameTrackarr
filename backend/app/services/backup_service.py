@@ -130,6 +130,7 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=g.user_rating,
+                local_players_override=g.local_players_override,
             )
             for g in db.scalars(select(Game))
         ],
@@ -259,7 +260,13 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
             ),
         ],
         settings=(
-            BackupSettings(currency=user.currency, overview_layout=user.overview_layout, steam_id_64=user.steam_id_64)
+            BackupSettings(
+                currency=user.currency,
+                overview_layout=user.overview_layout,
+                game_filter_fields=user.game_filter_fields,
+                saved_game_filters=user.saved_game_filters,
+                steam_id_64=user.steam_id_64,
+            )
             if user
             else None
         ),
@@ -557,6 +564,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=user_rating_for(g),
+                local_players_override=g.local_players_override,
             )
         )
     db.flush()
@@ -703,6 +711,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     if user is not None and payload.settings is not None:
         user.currency = payload.settings.currency
         user.overview_layout = payload.settings.overview_layout
+        user.game_filter_fields = payload.settings.game_filter_fields
+        user.saved_game_filters = payload.settings.saved_game_filters
         user.steam_id_64 = payload.settings.steam_id_64
 
     restored_items = {li.id: li for li in payload.library_items}

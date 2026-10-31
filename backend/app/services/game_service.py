@@ -18,7 +18,7 @@ from app.repositories import (
 from app.repositories.game_repository import GameWithStatus
 from app.services import rom_service, upload_service
 from app.services.exceptions import ConflictError, NotFoundError
-from app.services.igdb_client import IGDBClient, extract_store_urls
+from app.services.igdb_client import IGDBClient, extract_play_fields, extract_store_urls
 
 _COMPANY_ROLE_FLAGS = (
     ("developer", CompanyRole.DEVELOPER),
@@ -79,6 +79,19 @@ def search_local_games(
     steelbook_only: bool = False,
     sources: list[game_repository.GameSource] | None = None,
     source_exclude: bool = False,
+    platform_scopes: list[str] | None = None,
+    genre_ids: list[int] | None = None,
+    genre_exclude: bool = False,
+    genre_match_all: bool = False,
+    release_statuses: list[game_repository.ReleaseStatus] | None = None,
+    release_year_from: int | None = None,
+    release_year_to: int | None = None,
+    local_players_min: int | None = None,
+    online_multiplayer_only: bool = False,
+    coop_only: bool = False,
+    time_to_beat_min: int | None = None,
+    time_to_beat_max: int | None = None,
+    rating_min: int | None = None,
     sort: game_repository.GameSortOption = game_repository.GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
@@ -115,6 +128,19 @@ def search_local_games(
         steelbook_only=steelbook_only,
         sources=sources,
         source_exclude=source_exclude,
+        platform_scopes=platform_scopes,
+        genre_ids=genre_ids,
+        genre_exclude=genre_exclude,
+        genre_match_all=genre_match_all,
+        release_statuses=release_statuses,
+        release_year_from=release_year_from,
+        release_year_to=release_year_to,
+        local_players_min=local_players_min,
+        online_multiplayer_only=online_multiplayer_only,
+        coop_only=coop_only,
+        time_to_beat_min=time_to_beat_min,
+        time_to_beat_max=time_to_beat_max,
+        rating_min=rating_min,
         sort=sort,
         required_collection_id=required_collection_id,
         required_franchise_id=required_franchise_id,
@@ -214,6 +240,16 @@ def set_user_rating(db: Session, game_id: int, rating: int | None) -> int | None
     game.user_rating = rating
     db.commit()
     return game.user_rating
+
+
+def set_local_players(db: Session, game_id: int, local_players: int | None) -> int | None:
+    """The local player count set by hand over IGDB's, or None to go back to IGDB's."""
+    game = db.get(Game, game_id)
+    if game is None:
+        raise NotFoundError(f"Game {game_id} not found")
+    game.local_players_override = local_players
+    db.commit()
+    return game.local_players_override
 
 
 def delete_game(db: Session, game_id: int) -> None:
@@ -534,6 +570,7 @@ def _upsert_from_igdb_payload(
         igdb_critic_rating=igdb_game.get("aggregated_rating"),
         igdb_critic_rating_count=igdb_game.get("aggregated_rating_count"),
         **extract_store_urls(igdb_game),
+        **extract_play_fields(igdb_game),
     )
 
     _sync_catalog_richness(db, game, igdb_game, scope=scope)

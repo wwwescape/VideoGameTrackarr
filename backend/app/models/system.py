@@ -28,6 +28,12 @@ class User(TimestampMixin, Base):
     overview_layout: Mapped[list[dict] | None] = mapped_column(
         JSON, comment="Overview page sections in display order, each {key, hidden}; null = the default layout"
     )
+    game_filter_fields: Mapped[list[dict] | None] = mapped_column(
+        JSON, comment="Game list Filter dialog fields, each {key, hidden}; null = every field shown"
+    )
+    saved_game_filters: Mapped[list[dict] | None] = mapped_column(
+        JSON, comment="Named game list filters, each {name, filters}; filters is the frontend's own state"
+    )
 
 
 class RefreshToken(Base):

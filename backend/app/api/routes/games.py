@@ -12,6 +12,8 @@ from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
 from app.schemas.game import (
     GameDetailResponse,
     GameImportRequest,
+    GameLocalPlayersRequest,
+    GameLocalPlayersResponse,
     GameRatingRequest,
     GameRatingResponse,
     GameSummaryResponse,
@@ -137,6 +139,15 @@ def claim_discovered_game(game_id: int, db: Session = Depends(get_db)) -> GameDe
 @router.put("/{game_id}/rating", response_model=GameRatingResponse)
 def set_rating(game_id: int, body: GameRatingRequest, db: Session = Depends(get_db)) -> GameRatingResponse:
     return GameRatingResponse(rating=game_service.set_user_rating(db, game_id, body.rating))
+
+
+@router.put("/{game_id}/local-players", response_model=GameLocalPlayersResponse)
+def set_local_players(
+    game_id: int, body: GameLocalPlayersRequest, db: Session = Depends(get_db)
+) -> GameLocalPlayersResponse:
+    return GameLocalPlayersResponse(
+        local_players_override=game_service.set_local_players(db, game_id, body.local_players)
+    )
 
 
 @router.get("/{game_id}/addons", response_model=list[GameSummaryResponse])

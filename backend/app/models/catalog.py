@@ -187,6 +187,27 @@ class Game(TimestampMixin, Base):
         ),
     )
 
+    # Players and length, cached at import/resync time from IGDB's multiplayer_modes, game_modes
+    # and game_time_to_beats — what the Games list's Players and Time to beat filters query (its
+    # Rating filter reads igdb_rating above). NULL means IGDB has no data, not "zero", so a filter
+    # on any of them leaves those games out rather than guessing.
+    local_players: Mapped[int | None] = mapped_column(
+        Integer, comment="Most players on one console/screen (offline max/coop max), 1 for single-player-only games"
+    )
+    # Set by hand on the game page when IGDB has no count or a wrong one; wins over
+    # local_players in the Players filter and is never touched by a resync.
+    local_players_override: Mapped[int | None] = mapped_column(Integer)
+    # From another source when IGDB has no count (see players_fill_jobs.py): kept apart from
+    # local_players so an IGDB resync, which rewrites that, doesn't wipe it.
+    local_players_fallback: Mapped[int | None] = mapped_column(Integer)
+    local_players_fallback_source: Mapped[str | None] = mapped_column(
+        String(20), comment="Where local_players_fallback came from: pcgamingwiki or steam"
+    )
+    online_multiplayer: Mapped[bool | None] = mapped_column(Boolean)
+    coop: Mapped[bool | None] = mapped_column(Boolean, comment="Any co-op mode: local, online or campaign")
+    time_to_beat_main: Mapped[int | None] = mapped_column(Integer, comment="Seconds, IGDB's 'normally' estimate")
+    time_to_beat_complete: Mapped[int | None] = mapped_column(Integer, comment="Seconds, IGDB's 'completely' estimate")
+
     auto_discovered: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

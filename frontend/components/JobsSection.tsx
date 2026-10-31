@@ -47,6 +47,18 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
     nameKey: "settings.jobs.jobs.resyncSeries.name",
     descriptionKey: "settings.jobs.jobs.resyncSeries.description",
   },
+  players_fill: {
+    nameKey: "settings.jobs.jobs.playersFill.name",
+    descriptionKey: "settings.jobs.jobs.playersFill.description",
+  },
+  connectors_pull: {
+    nameKey: "settings.jobs.jobs.connectorsPull.name",
+    descriptionKey: "settings.jobs.jobs.connectorsPull.description",
+  },
+  nintendo_titledb: {
+    nameKey: "settings.jobs.jobs.nintendoTitledb.name",
+    descriptionKey: "settings.jobs.jobs.nintendoTitledb.description",
+  },
   igdb_match: {
     nameKey: "settings.jobs.jobs.igdbMatch.name",
     descriptionKey: "settings.jobs.jobs.igdbMatch.description",

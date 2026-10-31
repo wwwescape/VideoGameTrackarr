@@ -427,6 +427,18 @@
         "eventsSync": {
           "name": "Sincronizar eventos",
           "description": "Obtém os eventos da indústria de jogos atualmente próximos a partir do IGDB e remove qualquer evento previamente sincronizado que já tenha terminado — alimenta a página Eventos e a Visão geral."
+        },
+        "playersFill": {
+          "name": "Completar o número de jogadores",
+          "description": "Procura o número de jogadores locais no PCGamingWiki e depois na loja Steam para os jogos sem número no IGDB. Uma pesquisa por segundo; uma ressincronização nunca apaga o que encontra."
+        },
+        "nintendoTitledb": {
+          "name": "Atualizar a lista de títulos da Nintendo",
+          "description": "Descarrega a base de títulos da Nintendo Switch com que os conectores NX Remote Launcher traduzem identificadores em nomes e número de jogadores."
+        },
+        "connectorsPull": {
+          "name": "Sincronizar as lojas",
+          "description": "Lê a biblioteca de cada conector Epic Games Store e GOG ligado e adiciona o que é novo."
         }
       },
       "runHeading": "Executar",
@@ -524,6 +536,17 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "gameFilters": {
+      "heading": "Listas de jogos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visíveis na janela Filtros. Guardado na sua conta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desative os campos que nunca usa. O filtro de um campo oculto mantém-se e ainda pode ser removido a partir do seu chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Predefinições guardadas",
+      "savedHelp": "Criadas no botão Predefinições das listas de jogos. Edite uma para a renomear ou eliminar."
     }
   },
   "auth": {
@@ -652,7 +675,26 @@
       "showMissingLabel": "Mostrar o que me falta?",
       "steelbookOnlyLabel": "Somente Steelbooks",
       "clearFiltersButton": "Limpar filtros",
-      "noSearchMatches": "Nenhum resultado encontrado."
+      "noSearchMatches": "Nenhum resultado encontrado.",
+      "genreLabel": "Gêneros",
+      "releaseStatusLabel": "Lançamento",
+      "releaseReleased": "Lançado",
+      "releaseUpcoming": "Em breve",
+      "releaseYearFromLabel": "Lançado a partir de",
+      "releaseYearToLabel": "Lançado até",
+      "releaseYearFromChip": "A partir de {{year}}",
+      "releaseYearToChip": "Até {{year}}",
+      "localPlayersLabel": "Jogadores locais",
+      "localPlayersOption_one": "{{count}}+ jogador",
+      "localPlayersOption_other": "{{count}}+ jogadores",
+      "onlineMultiplayerOnlyLabel": "Multijogador online",
+      "coopOnlyLabel": "Cooperativo",
+      "timeToBeatLabel": "Tempo para zerar",
+      "timeToBeatUnder": "Menos de {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h ou mais",
+      "ratingLabel": "Avaliação",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -955,6 +997,46 @@
     "detail": {
       "aboutTitle": "Sobre",
       "platformsReleaseDatesTitle": "Plataformas e datas de lançamento"
+    },
+    "savedViews": {
+      "button": "Predefinições",
+      "modifiedLabel": "{{name}} (alterada)",
+      "empty": "Ainda sem predefinições",
+      "saveCurrent": "Guardar os filtros atuais…",
+      "saveAsNew": "Guardar como nova predefinição…",
+      "update": "Atualizar «{{name}}»",
+      "saveTitle": "Guardar estes filtros",
+      "editTitle": "Editar predefinição",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nome",
+      "replaceHelp": "Substitui a predefinição com este nome.",
+      "deleted": "Predefinição «{{name}}» eliminada"
+    },
+    "players": {
+      "title": "Jogadores",
+      "localLabel": "Jogadores locais",
+      "localCount_one": "{{count}} jogador",
+      "localCount_other": "Até {{count}} jogadores",
+      "sameAsIgdb": "Como no IGDB",
+      "online": "Multijogador online",
+      "coop": "Cooperativo",
+      "timeToBeat": "História principal",
+      "hours_one": "Cerca de {{count}} hora",
+      "hours_other": "Cerca de {{count}} horas",
+      "unknown": "Não está no IGDB",
+      "saveErrorToast": "Não foi possível guardar o número de jogadores. Tente novamente.",
+      "fromIgdb_one": "IGDB: {{count}} jogador.",
+      "fromIgdb_other": "IGDB: até {{count}} jogadores.",
+      "from_pcgamingwiki_one": "PCGamingWiki: {{count}} jogador (o IGDB não indica).",
+      "from_pcgamingwiki_other": "PCGamingWiki: até {{count}} jogadores (o IGDB não indica).",
+      "from_steam_one": "Loja Steam: um jogador (o IGDB não indica).",
+      "from_steam_other": "Loja Steam: mesmo ecrã, 2 ou mais (o IGDB não indica).",
+      "notKnown": "Nem o IGDB, nem o PCGamingWiki, nem a Steam indicam o número de jogadores: escolha um para o usar no filtro Jogadores.",
+      "setByHand": "Definido à mão.",
+      "from_nintendo_other": "eShop da Nintendo: até {{count}} jogadores (o IGDB não indica).",
+      "from_nintendo_one": "eShop da Nintendo: {{count}} jogador (o IGDB não indica).",
+      "from_connector_other": "Conector: até {{count}} jogadores (o IGDB não indica).",
+      "from_connector_one": "Conector: {{count}} jogador (o IGDB não indica)."
     }
   },
   "events": {
@@ -1668,6 +1750,108 @@
       "reset": "Repor predefinição",
       "saveError": "Não foi possível guardar a disposição da Visão geral. Tente novamente.",
       "allHidden": "Todas as secções estão ocultas. Use Personalizar para voltar a mostrar algumas."
+    }
+  },
+  "connectors": {
+    "builtIn": "Integrado",
+    "heading": "Conectores",
+    "description": "Os conectores permitem que outro software adicione jogos à sua biblioteca: um homebrew de Switch, um script, um atalho no telemóvel. Cada um tem o seu endereço e predefinições, e um dispositivo emparelha-se uma vez mostrando um código que aprova aqui.",
+    "add": "Adicionar um conector",
+    "editAria": "Editar {{name}}",
+    "deleteAria": "Eliminar {{name}}",
+    "deleteTitle": "Eliminar {{name}}?",
+    "deleteDescription": "Os seus dispositivos deixam de sincronizar de imediato. Os jogos e cópias que adicionou ficam na sua biblioteca.",
+    "saveError": "Não foi possível guardar o conector. O endereço já está em uso?",
+    "deleteError": "Não foi possível eliminar o conector. Tente novamente.",
+    "revokeError": "Não foi possível desemparelhar o dispositivo. Tente novamente.",
+    "lastSync": "Última sincronização {{date}}: {{present}} jogos, {{absent}} já não reportados.",
+    "neverSynced": "Ainda não sincronizado.",
+    "devices": "Dispositivos emparelhados",
+    "noDevices": "Ainda sem dispositivos emparelhados.",
+    "deviceLastSeen": "visto {{date}}",
+    "deviceNeverSeen": "nunca sincronizado",
+    "revoke": "Desemparelhar",
+    "kinds": {
+      "custom": {
+        "name": "Personalizado",
+        "description": "Anything that can send a list of games over HTTP: names, its own ids, IGDB ids when it has them."
+      },
+      "nx_remote_launcher": {
+        "name": "NX Remote Launcher",
+        "description": "A Nintendo Switch sending its installed title IDs; names and player counts come from the Nintendo title database."
+      },
+      "epic": {
+        "name": "Epic Games Store",
+        "description": "Lê a sua biblioteca da Epic Games Store depois de ligar a conta (só jogos), todas as noites."
+      },
+      "gog": {
+        "name": "GOG",
+        "description": "Lê a sua biblioteca GOG depois de ligar a conta, todas as noites."
+      },
+      "csv": {
+        "name": "Importação CSV",
+        "description": "Adiciona os jogos de um ficheiro CSV: Battle.net, EA app ou qualquer lista."
+      }
+    },
+    "absentModes": {
+      "keep": "Manter os jogos que já não reporta",
+      "note": "Adicionar uma nota à cópia",
+      "remove": "Remover a cópia"
+    },
+    "dialog": {
+      "addTitle": "Adicionar um conector",
+      "editTitle": "Editar conector",
+      "kind": "Tipo",
+      "name": "Nome",
+      "slug": "Endereço",
+      "slugHelp": "Minúsculas, algarismos e hífenes. Os dispositivos falam com {{url}}",
+      "platform": "Plataforma das suas cópias",
+      "format": "Formato",
+      "storefront": "Loja",
+      "wishlist": "Adicionar à lista de desejos em vez de aos jogos possuídos",
+      "absentMode": "Quando uma sincronização completa já não lista um jogo"
+    },
+    "help": {
+      "show": "Como ligar um dispositivo",
+      "hide": "Ocultar",
+      "pair": "1. Emparelhar uma vez: o dispositivo pede um código, mostra-o (ou o approveUrl como ligação ou código QR) e consulta até alguém o aprovar na aplicação. Recebe então o seu token.",
+      "sync": "2. Enviar os jogos com esse token. id é o identificador do jogo para o dispositivo (qualquer coisa estável); name é obrigatório; igdbId liga-o ao IGDB de imediato; players é o máximo de jogadores no mesmo ecrã.",
+      "syncNx": "2. Enviar os identificadores dos títulos instalados com esse token: os nomes e o número de jogadores vêm da base de títulos da Nintendo.",
+      "complete": "\"complete\": true significa que a lista é tudo o que o dispositivo tem, por isso os jogos que deixam de aparecer são tratados como definido acima; false só adiciona. Os jogos novos sem identificador IGDB aparecem em Definições -> Importação IGDB para serem ligados."
+    },
+    "approve": {
+      "heading": "Aprovar um dispositivo",
+      "question": "Permitir que «{{device}}» sincronize jogos em {{connector}}? Confirme que o dispositivo mostra {{code}}.",
+      "button": "Aprovar",
+      "done": "{{device}} já pode sincronizar em {{connector}}.",
+      "error": "Não foi possível aprovar: o código pode ter expirado. Peça um novo ao dispositivo.",
+      "codeLabel": "Código",
+      "codeHelp": "O código mostrado pelo dispositivo, como ABCD-EF23.",
+      "unknownCode": "Código desconhecido ou expirado.",
+      "check": "Continuar",
+      "backToIntegrations": "Voltar às Integrações"
+    },
+    "store": {
+      "steps_epic": "1. Abra a página de início de sessão da Epic e entre. 2. Termina numa página de texto: copie o valor authorizationCode (ou a página inteira) e cole-o aqui.",
+      "steps_gog": "1. Abra a página de início de sessão da GOG e entre. 2. Termina numa página em branco: copie o endereço (contém code=...) e cole-o aqui.",
+      "openLogin": "Abrir a página de início de sessão",
+      "pasteLabel": "Código, página ou endereço",
+      "signIn": "Ligar",
+      "signInDone": "Ligado. A primeira sincronização acontece na próxima sincronização das lojas.",
+      "signInError": "A loja recusou: o código pode ter expirado.",
+      "loginUrlError": "Não foi possível abrir a página de início de sessão.",
+      "signedIn": "Ligado",
+      "syncNow": "Sincronizar agora",
+      "syncStarted": "Sincronização das lojas iniciada: o progresso aparece em Definições -> Tarefas.",
+      "syncError": "Não foi possível iniciar a sincronização.",
+      "signInAgain": "Voltar a ligar"
+    },
+    "csv": {
+      "format": "Um ficheiro CSV com uma coluna name (ou title) e, opcionalmente, igdb_id e id. Sem linha de cabeçalho, a primeira coluna é o nome. Os jogos são adicionados com as predefinições deste conector; nada é removido.",
+      "pick": "Importar um ficheiro CSV",
+      "empty": "Nenhum jogo encontrado neste ficheiro.",
+      "done": "{{added}} adicionados, {{existing}} já existentes.",
+      "error": "Não foi possível importar este ficheiro."
     }
   }
 }

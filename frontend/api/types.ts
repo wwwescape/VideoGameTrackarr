@@ -44,6 +44,17 @@ export interface RegionResponse {
 // Where a game's metadata comes from: imported from IGDB, or added by hand (igdbId null).
 export type GameSource = "igdb" | "custom";
 
+// Released vs not out yet; a game with no release date (announced/TBA) counts as upcoming.
+export type ReleaseStatus = "released" | "upcoming";
+
+// A genre at least one owned or wishlisted game has — the Genre filter's options.
+export interface GenreSummary {
+  id: number;
+  name: string;
+  slug: string | null;
+  gameCount: number;
+}
+
 export type PlayStatus = "none" | "backlog" | "playing" | "completed" | "abandoned";
 
 export interface GameSummary {
@@ -282,6 +293,17 @@ export interface GameDetail extends GameSummary {
   // Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
   // Never shown as custom.
   linkedFromCustom: boolean;
+  // How it's played, from IGDB (null = IGDB doesn't say), and the local player count set by
+  // hand over IGDB's — the Players section.
+  localPlayers: number | null;
+  localPlayersOverride: number | null;
+  // IGDB had no count: another source's (see the players_fill job).
+  localPlayersFallback: number | null;
+  localPlayersFallbackSource: "pcgamingwiki" | "steam" | "nintendo" | "connector" | null;
+  onlineMultiplayer: boolean | null;
+  coop: boolean | null;
+  // Main story, in seconds.
+  timeToBeatMain: number | null;
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];
@@ -789,11 +811,26 @@ export interface CurrentUser {
   currency: string | null;
   // The Overview's sections in order; null until customised (see hooks/useOverviewLayout.ts).
   overviewLayout: OverviewSectionSetting[] | null;
+  // The game list Filter dialog's hidden fields and named filters; null until first used (see
+  // hooks/useGameFilterPreferences.ts).
+  gameFilterFields: GameFilterFieldSetting[] | null;
+  savedGameFilters: SavedGameFilter[] | null;
 }
 
 export interface OverviewSectionSetting {
   key: string;
   hidden: boolean;
+}
+
+export interface GameFilterFieldSetting {
+  key: string;
+  hidden: boolean;
+}
+
+export interface SavedGameFilter {
+  name: string;
+  // The game list's filter state as useGameListState keeps it; the server stores it as-is.
+  filters: Record<string, unknown>;
 }
 
 export interface SetupStatus {
@@ -1056,4 +1093,64 @@ export interface EventDetail extends EventSummary {
   videos: EventVideo[];
   networks: EventNetwork[];
   games: EventGameTile[];
+}
+
+export type ConnectorKind = "custom" | "nx_remote_launcher" | "epic" | "gog" | "csv";
+// What a complete sync does with a game the device no longer reports.
+export type ConnectorAbsentMode = "keep" | "note" | "remove";
+
+export interface ConnectorDevice {
+  id: number;
+  name: string;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
+export interface Connector {
+  id: number;
+  name: string;
+  // The {slug} in /api/connect/{slug}/...
+  slug: string;
+  kind: ConnectorKind;
+  platformId: number | null;
+  mediaFormat: MediaFormat | null;
+  digitalStorefront: string | null;
+  wishlist: boolean;
+  absentMode: ConnectorAbsentMode;
+  lastSyncAt: string | null;
+  lastSyncResult: { added: number; existing: number; absent: number; unknown: string[] } | null;
+  devices: ConnectorDevice[];
+  // A store connector (Epic, GOG) signed in to its store.
+  signedIn: boolean;
+  presentCount: number;
+  absentCount: number;
+}
+
+export type ConnectorInput = Pick<
+  Connector,
+  "name" | "slug" | "platformId" | "mediaFormat" | "digitalStorefront" | "wishlist" | "absentMode"
+> & { kind?: ConnectorKind };
+
+export interface ConnectorSyncResult {
+  added: number;
+  existing: number;
+  absent: number;
+  unknown: string[];
+}
+
+// One game for a connector: the device's (or file's) own id for it, a name, an IGDB id when
+// known, and the most players on one screen.
+export interface ReportedGame {
+  id: string;
+  name?: string;
+  igdbId?: number;
+  players?: number;
+}
+
+export interface ConnectorPairing {
+  code: string;
+  deviceName: string;
+  connectorId: number;
+  connectorName: string;
+  expiresAt: string;
 }

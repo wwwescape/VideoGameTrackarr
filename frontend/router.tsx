@@ -21,6 +21,7 @@ import GameList from "./components/GameList";
 import HardwarePage from "./components/HardwarePage";
 import InsightsPage from "./components/InsightsPage";
 import IntegrationsPage from "./components/IntegrationsPage";
+import ConnectorApprovePage from "./components/ConnectorApprovePage";
 import MissingAddonsPage from "./components/MissingAddonsPage";
 import NotFoundPage from "./components/NotFoundPage";
 import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
@@ -67,6 +68,7 @@ import {
   hardwareCrumbs,
   insightsCrumbs,
   integrationsCrumbs,
+  connectorApproveCrumbs,
   jobsCrumbs,
   emulationCrumbs,
   missingAddonsCrumbs,
@@ -239,6 +241,11 @@ const router = createBrowserRouter([
             path: "/settings/integrations",
             element: <IntegrationsPage />,
             handle: { crumbs: integrationsCrumbs },
+          },
+          {
+            path: "/connectors/approve",
+            element: <ConnectorApprovePage />,
+            handle: { crumbs: connectorApproveCrumbs },
           },
           {
             path: "/settings/emulation",

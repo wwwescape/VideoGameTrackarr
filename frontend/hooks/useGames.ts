@@ -14,6 +14,7 @@ import {
   listGames,
   mergeGameIntoIgdb,
   resyncGame,
+  setGameLocalPlayers,
   setGameRating,
   startBulkImport,
   unlinkGameFromIgdb,
@@ -175,6 +176,15 @@ export function useSetGameRating(gameId: number) {
       queryClient.invalidateQueries({ queryKey: ["insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
+  });
+}
+
+// The game page and the lists' Players filter read it.
+export function useSetGameLocalPlayers(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (localPlayers: number | null) => setGameLocalPlayers(gameId, localPlayers),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["games"] }),
   });
 }
 
