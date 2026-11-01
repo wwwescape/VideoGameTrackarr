@@ -703,7 +703,6 @@ def test_restore_keeps_saves_of_surviving_rom_with_its_id(
     assert len(_all_files(_isolate_rom_storage)) == 4  # the dropped ROM and its saves are gone
 
 
-
 # --- Phase 3: more systems ------------------------------------------------------------------
 
 PHASE3_PLAYABLE = [
@@ -795,3 +794,23 @@ def test_vendored_cores_match_core_map():
     vendored = set(re.findall(r'core:\s*"([a-z0-9_]+)"', script.read_text(encoding="utf-8")))
 
     assert vendored == {c.core for c in emulation_cores.CORES}
+
+
+def test_rom_content_is_never_gzipped_and_keeps_ranges(client, auth_client, db_session, seed_game, nes_platform):
+    # A large, very compressible ROM: the gzip middleware must still pass it through untouched,
+    # with its length (the emulator's progress) and range support.
+    big_rom = b"NES\x1a" + b"\x00" * 200_000
+    item = _add_item(db_session, seed_game, nes_platform)
+    rom = _upload(auth_client, item.id, "Big.nes", big_rom).json()["roms"][-1]
+    url = auth_client.post(f"/api/roms/{rom['id']}/play-session").json()["romUrl"]
+
+    full = client.get(url, headers={"Accept-Encoding": "gzip"})
+    part = client.get(url, headers={"Accept-Encoding": "gzip", "Range": "bytes=0-99"})
+
+    assert full.status_code == 200
+    assert "content-encoding" not in full.headers
+    assert full.headers["content-length"] == str(len(big_rom))
+    assert full.content == big_rom
+    assert part.status_code == 206
+    assert "content-encoding" not in part.headers
+    assert part.content == big_rom[:100]

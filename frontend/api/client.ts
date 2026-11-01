@@ -23,6 +23,30 @@ export function resolveAssetUrl(url: string | null): string | null {
   return `${API_BASE_URL}${url}`;
 }
 
+// IGDB serves every size of an image from the same id, picked by the size segment in its
+// address (…/image/upload/t_720p/co1abc.jpg). Covers are stored at t_720p (540×720), which
+// game cards and detail pages show as is: a smaller card size saves almost nothing, and
+// sharing one size keeps a cover cached once. Rows, avatars and cover grids show covers far
+// smaller, so they ask IGDB for a smaller size. The cover sizes keep the whole image (no
+// crop), like t_720p. Anything else (an uploaded /uploads/ image, another site's image) goes
+// through resolveAssetUrl unchanged.
+export type IgdbImageSize =
+  // 90×128 (~4 KB against t_720p's ~80 KB): tiny row thumbnails, avatars and search results.
+  | "t_cover_small"
+  // 264×374 (~22 KB): small rows, Compare, and the Series/Collections cover grids.
+  | "t_cover_big"
+  // 889×500, cropped to 16:9 like the event cards that use it (event logos are t_1080p).
+  | "t_screenshot_big";
+
+const IGDB_SIZED_URL = /^(https?:\/\/images\.igdb\.com\/igdb\/image\/upload\/)t_[a-z0-9_]+\//i;
+
+export function resolveImageUrl(url: string | null, size: IgdbImageSize): string | null {
+  if (url && IGDB_SIZED_URL.test(url)) {
+    return url.replace(IGDB_SIZED_URL, `$1${size}/`);
+  }
+  return resolveAssetUrl(url);
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccessToken();
   if (token) {

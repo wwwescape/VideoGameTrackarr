@@ -116,12 +116,14 @@ export function useBulkImportStatus(enabled: boolean) {
   });
 }
 
+// Called once a bulk import has finished (see AddGame.tsx). The import added games, and with
+// them platforms, series, collections and Overview numbers, so everything is refetched.
 export function useAcknowledgeBulkImportStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: acknowledgeBulkImportStatus,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bulkImportStatusQueryKey });
+      queryClient.invalidateQueries();
     },
   });
 }

@@ -4,10 +4,11 @@ import { getCollection, listCollectionAddons, listCollections } from "../api/col
 import { getFranchise, listFranchiseAddons, listFranchises } from "../api/franchises";
 import type { GameListFilters } from "../api/games";
 
-export function useFranchises() {
+export function useFranchises(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["franchises"],
     queryFn: () => listFranchises(),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -33,10 +34,11 @@ export function useFranchiseAddons(slug: string | undefined, filters: GameListFi
   });
 }
 
-export function useCollections() {
+export function useCollections(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["collections"],
     queryFn: () => listCollections(),
+    enabled: options?.enabled ?? true,
   });
 }
 

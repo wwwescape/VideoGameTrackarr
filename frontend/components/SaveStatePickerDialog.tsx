@@ -54,6 +54,7 @@ const SaveStateThumbnail = ({ romId, state }: { romId: number; state: SaveState 
       {url ? (
         <Box
           component="img"
+          loading="lazy"
           src={url}
           alt={t("games.play.saveStateScreenshotAlt")}
           sx={{ width: "100%", height: "100%", objectFit: "contain", imageRendering: "pixelated" }}

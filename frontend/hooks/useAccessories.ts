@@ -10,10 +10,14 @@ import {
 } from "../api/accessories";
 import type { AccessoryInput } from "../api/types";
 
-export function useAccessoryList(params: AccessoryListParams = {}) {
+export function useAccessoryList(
+  params: AccessoryListParams = {},
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ["accessories", params],
     queryFn: () => listAccessories(params),
+    enabled: options?.enabled ?? true,
   });
 }
 

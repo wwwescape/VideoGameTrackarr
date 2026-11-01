@@ -19,7 +19,7 @@ export const PlatformLogo = ({ platform, scope, height }: { platform: LibraryPla
   const logoUrl = scope.storefront ? storefrontLogoUrl(scope.storefront) : platformLogoUrl(platform.slug);
   const badgeText = scope.storefront ?? (platform.abbreviation || platform.name);
   return logoUrl ? (
-    <Box component="img" src={logoUrl} alt="" sx={{ maxHeight: height, maxWidth: "100%", objectFit: "contain", display: "block" }} />
+    <Box component="img" loading="lazy" src={logoUrl} alt="" sx={{ maxHeight: height, maxWidth: "100%", objectFit: "contain", display: "block" }} />
   ) : (
     <Box
       aria-hidden

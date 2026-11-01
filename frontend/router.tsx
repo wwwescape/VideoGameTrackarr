@@ -1,47 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import AppShell from "./AppShell";
-import AccessoryDetails from "./components/AccessoryDetails";
-import AddAccessoryPage from "./components/AddAccessoryPage";
-import AddDevicePage from "./components/AddDevicePage";
-import AddGame from "./components/AddGame";
-import IgdbGamePreviewPage from "./components/IgdbGamePreviewPage";
-import CollectionPage from "./components/CollectionPage";
-import CollectionsPage from "./components/CollectionsPage";
-import ComparePage from "./components/ComparePage";
 import OverviewPage from "./components/OverviewPage";
-import DeviceDetails from "./components/DeviceDetails";
-import DuplicatesPage from "./components/DuplicatesPage";
-import EditAccessoryPage from "./components/EditAccessoryPage";
-import EditDevicePage from "./components/EditDevicePage";
-import EditGamePage from "./components/EditGamePage";
-import EventDetails from "./components/EventDetails";
-import EventsPage from "./components/EventsPage";
-import GameDetails from "./components/GameDetails";
-import GameList from "./components/GameList";
-import HardwarePage from "./components/HardwarePage";
-import InsightsPage from "./components/InsightsPage";
-import IntegrationsPage from "./components/IntegrationsPage";
-import MissingAddonsPage from "./components/MissingAddonsPage";
 import NotFoundPage from "./components/NotFoundPage";
-import OrphanedAccessoriesPage from "./components/OrphanedAccessoriesPage";
 import RouteErrorBoundary from "./components/RouteErrorBoundary";
-import PlatformDetailPage from "./components/PlatformDetailPage";
-import PlatformsPage from "./components/PlatformsPage";
-import SeriesDetailPage from "./components/SeriesDetailPage";
-import SeriesPage from "./components/SeriesPage";
-import About from "./components/About";
-import EmulationPage from "./components/EmulationPage";
-import JobsPage from "./components/JobsPage";
-import PublicGameDetailsPage from "./components/PublicGameDetailsPage";
-import PublicGamesPage from "./components/PublicGamesPage";
-import PublicHardwarePage from "./components/PublicHardwarePage";
-import Settings from "./components/Settings";
-import SalesIgnoredListPage from "./components/SalesIgnoredListPage";
-import SaleTrackedPage from "./components/SaleTrackedPage";
-import IgdbImportPage from "./components/IgdbImportPage";
-import SteamSyncPage from "./components/SteamSyncPage";
-import OnSalePage from "./components/OnSalePage";
-import TagManagerPage from "./components/TagManagerPage";
 import PublicShell from "./PublicShell";
 import {
   accessoryCrumbs,
@@ -84,6 +45,7 @@ import {
   tagManagerCrumbs,
 } from "./navigation/breadcrumbConfig";
 import Login from "./pages/Login";
+import { page, preloadPages } from "./routes/lazyPage";
 import ProtectedLayout from "./routes/ProtectedLayout";
 import { useTranslation } from "react-i18next";
 
@@ -112,9 +74,15 @@ const router = createBrowserRouter([
     element: <PublicShell />,
     errorElement: <RouteErrorBoundary />,
     children: [
-      { path: "/public/:token/games", element: <PublicGamesPage /> },
-      { path: "/public/:token/games/:gameId", element: <PublicGameDetailsPage /> },
-      { path: "/public/:token/hardware", element: <PublicHardwarePage /> },
+      { path: "/public/:token/games", lazy: page(() => import("./components/PublicGamesPage")) },
+      {
+        path: "/public/:token/games/:gameId",
+        lazy: page(() => import("./components/PublicGameDetailsPage")),
+      },
+      {
+        path: "/public/:token/hardware",
+        lazy: page(() => import("./components/PublicHardwarePage")),
+      },
     ],
   },
   {
@@ -125,152 +93,202 @@ const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { path: "/", element: <OverviewPage />, handle: { crumbs: dashboardCrumbs } },
-          { path: "/events", element: <EventsPage />, handle: { crumbs: eventsCrumbs } },
+          {
+            path: "/events",
+            lazy: page(() => import("./components/EventsPage")),
+            handle: { crumbs: eventsCrumbs },
+          },
           {
             path: "/events/:identifier",
-            element: <EventDetails />,
+            lazy: page(() => import("./components/EventDetails")),
             handle: { crumbs: eventDetailCrumbs },
           },
-          { path: "/games", element: <GameList />, handle: { crumbs: gamesCrumbs } },
-          { path: "/games/add", element: <AddGame />, handle: { crumbs: addGameCrumbs } },
+          {
+            path: "/games",
+            lazy: page(() => import("./components/GameList")),
+            handle: { crumbs: gamesCrumbs },
+          },
+          {
+            path: "/games/add",
+            lazy: page(() => import("./components/AddGame")),
+            handle: { crumbs: addGameCrumbs },
+          },
           {
             path: "/games/add/igdb/:igdbId",
-            element: <IgdbGamePreviewPage />,
+            lazy: page(() => import("./components/IgdbGamePreviewPage")),
             handle: { crumbs: igdbPreviewCrumbs },
           },
           {
             path: "/game/:identifier",
-            element: <GameDetails />,
+            lazy: page(() => import("./components/GameDetails")),
             handle: { crumbs: gameDetailCrumbs },
           },
           {
             path: "/game/:identifier/edit",
-            element: <EditGamePage />,
+            lazy: page(() => import("./components/EditGamePage")),
             handle: { crumbs: editGameCrumbs },
           },
           {
             path: "/addon/:identifier",
-            element: <GameDetails />,
+            lazy: page(() => import("./components/GameDetails")),
             handle: { crumbs: gameDetailCrumbs },
           },
-          { path: "/games/series", element: <SeriesPage />, handle: { crumbs: seriesCrumbs } },
+          {
+            path: "/games/series",
+            lazy: page(() => import("./components/SeriesPage")),
+            handle: { crumbs: seriesCrumbs },
+          },
           {
             path: "/games/series/:seriesSlug",
-            element: <SeriesDetailPage />,
+            lazy: page(() => import("./components/SeriesDetailPage")),
             handle: { crumbs: franchiseCrumbs },
           },
-          { path: "/games/platforms", element: <PlatformsPage />, handle: { crumbs: platformsCrumbs } },
+          {
+            path: "/games/platforms",
+            lazy: page(() => import("./components/PlatformsPage")),
+            handle: { crumbs: platformsCrumbs },
+          },
           {
             path: "/games/platforms/:platformSlug",
-            element: <PlatformDetailPage />,
+            lazy: page(() => import("./components/PlatformDetailPage")),
             handle: { crumbs: platformCrumbs },
           },
           {
             path: "/games/collections",
-            element: <CollectionsPage />,
+            lazy: page(() => import("./components/CollectionsPage")),
             handle: { crumbs: collectionsCrumbs },
           },
           {
             path: "/games/collections/:collectionSlug",
-            element: <CollectionPage />,
+            lazy: page(() => import("./components/CollectionPage")),
             handle: { crumbs: collectionCrumbs },
           },
-          { path: "/hardware", element: <HardwarePage />, handle: { crumbs: hardwareCrumbs } },
+          {
+            path: "/hardware",
+            lazy: page(() => import("./components/HardwarePage")),
+            handle: { crumbs: hardwareCrumbs },
+          },
           {
             path: "/hardware/device/add",
-            element: <AddDevicePage />,
+            lazy: page(() => import("./components/AddDevicePage")),
             handle: { crumbs: addDeviceCrumbs },
           },
           {
             path: "/hardware/accessory/add",
-            element: <AddAccessoryPage />,
+            lazy: page(() => import("./components/AddAccessoryPage")),
             handle: { crumbs: addAccessoryCrumbs },
           },
           {
             path: "/hardware/device/:identifier",
-            element: <DeviceDetails />,
+            lazy: page(() => import("./components/DeviceDetails")),
             handle: { crumbs: deviceDetailCrumbs },
           },
           {
             path: "/hardware/device/:identifier/edit",
-            element: <EditDevicePage />,
+            lazy: page(() => import("./components/EditDevicePage")),
             handle: { crumbs: editDeviceCrumbs },
           },
           {
             path: "/hardware/accessory/:identifier",
-            element: <AccessoryDetails />,
+            lazy: page(() => import("./components/AccessoryDetails")),
             handle: { crumbs: accessoryCrumbs },
           },
           {
             path: "/hardware/accessory/:identifier/edit",
-            element: <EditAccessoryPage />,
+            lazy: page(() => import("./components/EditAccessoryPage")),
             handle: { crumbs: editAccessoryCrumbs },
           },
-          { path: "/insights", element: <InsightsPage />, handle: { crumbs: insightsCrumbs } },
+          {
+            path: "/insights",
+            lazy: page(() => import("./components/InsightsPage")),
+            handle: { crumbs: insightsCrumbs },
+          },
           {
             path: "/insights/duplicates",
-            element: <DuplicatesPage />,
+            lazy: page(() => import("./components/DuplicatesPage")),
             handle: { crumbs: duplicatesCrumbs },
           },
           {
             path: "/insights/missing-addons",
-            element: <MissingAddonsPage />,
+            lazy: page(() => import("./components/MissingAddonsPage")),
             handle: { crumbs: missingAddonsCrumbs },
           },
           {
             path: "/insights/orphaned-accessories",
-            element: <OrphanedAccessoriesPage />,
+            lazy: page(() => import("./components/OrphanedAccessoriesPage")),
             handle: { crumbs: orphanedAccessoriesCrumbs },
           },
           {
             path: "/insights/on-sale",
-            element: <OnSalePage />,
+            lazy: page(() => import("./components/OnSalePage")),
             handle: { crumbs: onSaleCrumbs },
           },
-          { path: "/compare", element: <ComparePage />, handle: { crumbs: compareCrumbs } },
-          { path: "/settings", element: <Settings />, handle: { crumbs: settingsCrumbs } },
+          {
+            path: "/compare",
+            lazy: page(() => import("./components/ComparePage")),
+            handle: { crumbs: compareCrumbs },
+          },
+          {
+            path: "/settings",
+            lazy: page(() => import("./components/Settings")),
+            handle: { crumbs: settingsCrumbs },
+          },
           {
             path: "/settings/tags",
-            element: <TagManagerPage />,
+            lazy: page(() => import("./components/TagManagerPage")),
             handle: { crumbs: tagManagerCrumbs },
           },
-          { path: "/settings/jobs", element: <JobsPage />, handle: { crumbs: jobsCrumbs } },
+          {
+            path: "/settings/jobs",
+            lazy: page(() => import("./components/JobsPage")),
+            handle: { crumbs: jobsCrumbs },
+          },
           {
             path: "/settings/integrations",
-            element: <IntegrationsPage />,
+            lazy: page(() => import("./components/IntegrationsPage")),
             handle: { crumbs: integrationsCrumbs },
           },
           {
             path: "/settings/emulation",
-            element: <EmulationPage />,
+            lazy: page(() => import("./components/EmulationPage")),
             handle: { crumbs: emulationCrumbs },
           },
           {
             path: "/settings/igdb-import",
-            element: <IgdbImportPage />,
+            lazy: page(() => import("./components/IgdbImportPage")),
             handle: { crumbs: igdbImportCrumbs },
           },
           {
             path: "/settings/steam-sync",
-            element: <SteamSyncPage />,
+            lazy: page(() => import("./components/SteamSyncPage")),
             handle: { crumbs: steamSyncCrumbs },
           },
           {
             path: "/settings/sale-tracked",
-            element: <SaleTrackedPage />,
+            lazy: page(() => import("./components/SaleTrackedPage")),
             handle: { crumbs: saleTrackedCrumbs },
           },
           {
             path: "/settings/sales-ignored",
-            element: <SalesIgnoredListPage />,
+            lazy: page(() => import("./components/SalesIgnoredListPage")),
             handle: { crumbs: salesIgnoredCrumbs },
           },
-          { path: "/about", element: <About />, handle: { crumbs: aboutCrumbs } },
+          {
+            path: "/about",
+            lazy: page(() => import("./components/About")),
+            handle: { crumbs: aboutCrumbs },
+          },
           { path: "*", element: <NotFoundRouteElement />, handle: { crumbs: notFoundCrumbs } },
         ],
       },
     ],
   },
 ]);
+
+// Once the first screen is up, fetch every other page's code in the background. Skipped on
+// share pages, whose visitors never see the app.
+if (!window.location.pathname.startsWith("/public/")) {
+  window.addEventListener("load", () => setTimeout(preloadPages, 1500));
+}
 
 export default router;

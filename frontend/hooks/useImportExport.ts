@@ -54,7 +54,7 @@ export function useRestoreStatus() {
     queryFn: fetchRestoreStatus,
     refetchInterval: 3000,
     // The app's offline persister (offline/queryPersistence.ts) rehydrates queries from
-    // IndexedDB on load, and the global default staleTime is 30s — without overriding it
+    // IndexedDB on load, and the global default staleTime is 5 minutes — without overriding it
     // here, a page refresh could briefly show a stale cached "idle" (persisted from before
     // this session) instead of immediately refetching real status, letting the blocking
     // overlay flash absent right when it matters most.

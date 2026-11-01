@@ -56,6 +56,7 @@ import { SortHeaderCell } from "./ListControls";
 import LinkToIgdbDialog from "./LinkToIgdbDialog";
 import { ToolbarButton } from "./Page";
 import SettingsFrame from "./SettingsFrame";
+import { resolveImageUrl } from "../api/client";
 
 // What Link and Link selected can act on without the user picking a game.
 const LINKABLE: IgdbImportStatus[] = ["match_found", "in_library"];
@@ -234,7 +235,7 @@ const IgdbImportPage = () => {
     const year = getReleaseYear(entry.matchFirstReleaseDate);
     return (
       <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", minWidth: 0 }}>
-        <Avatar variant="rounded" src={entry.matchCoverUrl ?? undefined} sx={{ width: 32, height: 44 }}>
+        <Avatar variant="rounded" slotProps={{ img: { loading: "lazy" } }} src={resolveImageUrl(entry.matchCoverUrl, "t_cover_small") ?? undefined} sx={{ width: 32, height: 44 }}>
           {entry.matchName?.charAt(0)}
         </Avatar>
         <Box sx={{ minWidth: 0 }}>
@@ -418,7 +419,7 @@ const IgdbImportPage = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <Avatar variant="rounded" src={entry.gameCoverUrl ?? undefined} sx={{ width: 32, height: 44 }}>
+                          <Avatar variant="rounded" slotProps={{ img: { loading: "lazy" } }} src={resolveImageUrl(entry.gameCoverUrl, "t_cover_small") ?? undefined} sx={{ width: 32, height: 44 }}>
                             {entry.gameName.charAt(0)}
                           </Avatar>
                         </TableCell>

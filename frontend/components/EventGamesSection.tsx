@@ -29,6 +29,7 @@ const GameTile = ({ game }: { game: EventGameTile }) => {
         {game.coverUrl ? (
           <Box
             component="img"
+            loading="lazy"
             src={resolveAssetUrl(game.coverUrl) ?? undefined}
             alt={game.name ?? ""}
             sx={{

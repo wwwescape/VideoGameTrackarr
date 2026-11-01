@@ -63,6 +63,7 @@ import { SortHeaderCell } from "./ListControls";
 import RelinkSteamEntryDialog, { type RelinkTarget } from "./RelinkSteamEntryDialog";
 import SettingsFrame from "./SettingsFrame";
 import { ToolbarButton } from "./Page";
+import { resolveImageUrl } from "../api/client";
 
 const STEAM_IMPORT_JOB_ID = "steam_import";
 
@@ -825,8 +826,9 @@ const SteamSyncPage = () => {
                         </TableCell>
                         <TableCell>
                           <Avatar
+                            slotProps={{ img: { loading: "lazy" } }}
                             variant="rounded"
-                            src={tree.row.entry.gameCoverUrl ?? undefined}
+                            src={resolveImageUrl(tree.row.entry.gameCoverUrl, "t_cover_small") ?? undefined}
                             sx={{ width: 32, height: 44 }}
                           >
                             {tree.row.entry.steamName.charAt(0)}
@@ -886,8 +888,9 @@ const SteamSyncPage = () => {
                               <TableCell padding="checkbox" />
                               <TableCell>
                                 <Avatar
+                                  slotProps={{ img: { loading: "lazy" } }}
                                   variant="rounded"
-                                  src={child.entry.gameCoverUrl ?? undefined}
+                                  src={resolveImageUrl(child.entry.gameCoverUrl, "t_cover_small") ?? undefined}
                                   sx={{ width: 28, height: 38 }}
                                 >
                                   {child.entry.steamName.charAt(0)}

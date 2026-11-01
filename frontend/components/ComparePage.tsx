@@ -13,6 +13,7 @@ import type { GameDetail } from "../api/types";
 import { useGamesByIds } from "../hooks/useGames";
 import { getReleaseYear } from "../utils/utils";
 import Page from "./Page";
+import { resolveImageUrl } from "../api/client";
 
 function companiesFor(game: GameDetail, role: string): string {
   const names = game.companies.filter((company) => company.role === role).map((company) => company.name);
@@ -71,7 +72,7 @@ const ComparePage = () => {
                 <TableCell key={game.id} align="center">
                   <Avatar
                     variant="rounded"
-                    src={game.coverUrl ?? undefined}
+                    src={resolveImageUrl(game.coverUrl, "t_cover_big") ?? undefined}
                     alt={game.name}
                     sx={{ width: 80, height: 107, mx: "auto", mb: 1 }}
                   />

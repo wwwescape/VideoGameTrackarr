@@ -11,7 +11,8 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.types import Scope
+from starlette.middleware.gzip import DEFAULT_EXCLUDED_CONTENT_TYPES, GZipMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.api.routes import (
     accessories,
@@ -165,6 +166,54 @@ def security_headers_for(path: str) -> dict[str, str]:
     return headers
 
 
+# How long browsers (and Cloudflare, in front of a tunnel) may keep a response. Built assets
+# have content-hashed names, and uploaded covers and accessory photos get a new UUID name on
+# every upload (upload_service.py; a restore writes the same bytes back under the same name),
+# so they never change and can be kept for a year. Everything else that isn't the API —
+# index.html, the service worker, the manifest, the emulator's unhashed files, the hardware
+# reference photos (named after the product, so a release can replace one) — is checked on
+# every load, so a new release shows up straight away. The API sets its own (the ROM and BIOS
+# routes send private, no-store). Errors never get one; a 304 repeats what the 200 would have
+# said, as HTTP expects of a revalidation.
+IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
+CACHED_FOREVER_PREFIXES = ("/assets/", "/uploads/covers/", "/uploads/accessory-images/")
+
+
+def cache_control_for(path: str) -> str | None:
+    if path.startswith(CACHED_FOREVER_PREFIXES):
+        return IMMUTABLE_CACHE
+    if path.startswith("/api/") or path == "/healthz":
+        return None
+    return "no-cache"
+
+
+# Compresses JSON, JS, CSS and HTML for everyone who reaches the app directly (LAN,
+# Tailscale); Cloudflare already compresses for visitors through a tunnel. Level 5, not
+# Starlette's 9: nearly as small, at a fraction of the CPU on a Raspberry Pi. Starlette skips
+# range (206) responses and images and zips by type; the emulator's multi-MB cores, ROMs,
+# BIOS files, save states and full backups are passed through by path as well, since they
+# are already compressed or binary and gzipping them per request would cost the Pi far more
+# than it saves (and drop the Content-Length the emulator's download progress uses).
+UNCOMPRESSED_PATH_PREFIXES = ("/emulatorjs/", "/api/roms/", "/api/emulation/bios/", "/api/export/backup/full/")
+UNCOMPRESSED_CONTENT_TYPES = (
+    *DEFAULT_EXCLUDED_CONTENT_TYPES,
+    "application/octet-stream",
+    "application/wasm",
+    "application/x-7z-compressed",
+)
+
+
+class SelectiveGZipMiddleware(GZipMiddleware):
+    def __init__(self, app: ASGIApp) -> None:
+        super().__init__(app, minimum_size=1024, compresslevel=5, exclude_content_types=UNCOMPRESSED_CONTENT_TYPES)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope["path"].startswith(UNCOMPRESSED_PATH_PREFIXES):
+            await self.app(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
+
+
 def isolation_headers_for(requested_path: str, threads: str | None) -> dict[str, str]:
     if requested_path == "player-isolated.html" or (requested_path == "emulatorjs/player.html" and threads == "1"):
         return dict(CROSS_ORIGIN_ISOLATION_HEADERS)
@@ -205,6 +254,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
+# Added first, so it's the innermost middleware and sees each route's whole response: the
+# security-headers middleware below re-streams every body, which would make every response
+# look like a stream to gzip (compressing even tiny ones and dropping Content-Length).
+app.add_middleware(SelectiveGZipMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -219,6 +272,9 @@ async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     for name, value in security_headers_for(request.url.path).items():
         response.headers.setdefault(name, value)
+    cache_control = cache_control_for(request.url.path)
+    if cache_control and response.status_code in (200, 304):
+        response.headers.setdefault("Cache-Control", cache_control)
     return response
 
 

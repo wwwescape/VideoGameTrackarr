@@ -1,7 +1,7 @@
 import ImageNotSupportedOutlinedIcon from "@mui/icons-material/ImageNotSupportedOutlined";
 import Box from "@mui/material/Box";
 import { useNavigate } from "react-router-dom";
-import { resolveAssetUrl } from "../api/client";
+import { resolveImageUrl } from "../api/client";
 import type { EventSummary } from "../api/types";
 import { formatEventDateRange } from "../utils/utils";
 import FlatTile from "./FlatTile";
@@ -26,7 +26,7 @@ const EventCard = ({ event }: EventCardProps) => {
           <Box
             component="img"
             alt={event.name}
-            src={resolveAssetUrl(event.eventLogoUrl) ?? undefined}
+            src={resolveImageUrl(event.eventLogoUrl, "t_screenshot_big") ?? undefined}
             loading="lazy"
             sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />

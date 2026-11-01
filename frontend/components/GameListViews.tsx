@@ -12,7 +12,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { useTranslation } from "react-i18next";
-import { resolveAssetUrl } from "../api/client";
+import { resolveImageUrl } from "../api/client";
 import type { GameSortOption, GameSummary, PlayStatus } from "../api/types";
 import { gameSortDirection, gameSortField, nextGameSort, type GameSortField } from "../utils/gameSortOptions";
 import { getAddonType, getReleaseYear } from "../utils/utils";
@@ -196,7 +196,7 @@ const Cover = ({ game, width }: { game: GameSummary; width: number }) => (
     {game.coverUrl ? (
       <Box
         component="img"
-        src={resolveAssetUrl(game.coverUrl) ?? undefined}
+        src={resolveImageUrl(game.coverUrl, width <= 45 ? "t_cover_small" : "t_cover_big") ?? undefined}
         alt=""
         loading="lazy"
         sx={{

@@ -25,6 +25,7 @@ import { sortRows, type SortField } from "../utils/listSort";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import { SortHeaderCell } from "./ListControls";
 import SettingsFrame from "./SettingsFrame";
+import { resolveImageUrl } from "../api/client";
 
 type TrackedSort = "name" | "platform" | "format" | "storefront" | "target";
 
@@ -118,8 +119,9 @@ const SaleTrackedPage = () => {
                   <TableRow key={row.libraryItemId} hover>
                     <TableCell>
                       <Avatar
+                        slotProps={{ img: { loading: "lazy" } }}
                         variant="rounded"
-                        src={row.gameCoverUrl ?? undefined}
+                        src={resolveImageUrl(row.gameCoverUrl, "t_cover_small") ?? undefined}
                         sx={{ width: 32, height: 44 }}
                       >
                         {row.gameName.charAt(0)}

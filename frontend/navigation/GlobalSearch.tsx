@@ -12,7 +12,7 @@ import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import { useTranslation } from "react-i18next";
-import { resolveAssetUrl } from "../api/client";
+import { resolveImageUrl } from "../api/client";
 import { useAccessoryList } from "../hooks/useAccessories";
 import { useCollections, useFranchises } from "../hooks/useCatalogBrowse";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
@@ -81,13 +81,17 @@ const GlobalSearch = () => {
   const query = input.trim();
   const debounced = useDebouncedValue(query, 250);
   const active = debounced.length >= MIN_LENGTH;
+  // The smaller lists load the first time the box gets focus (they're cached after that),
+  // not on every page whether or not anyone searches.
+  const [focused, setFocused] = useState(false);
+  const listOptions = { enabled: focused || active };
 
   // Games come from the server-side search; the smaller lists are filtered here.
   const { data: games } = useGames({ search: debounced }, { enabled: active });
-  const { data: devices } = useDeviceList();
-  const { data: accessories } = useAccessoryList();
-  const { data: franchises } = useFranchises();
-  const { data: collections } = useCollections();
+  const { data: devices } = useDeviceList({}, listOptions);
+  const { data: accessories } = useAccessoryList({}, listOptions);
+  const { data: franchises } = useFranchises(listOptions);
+  const { data: collections } = useCollections(listOptions);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -178,6 +182,7 @@ const GlobalSearch = () => {
         if (reason !== "reset") setInput(value);
       }}
       onChange={(_event, option) => choose(option)}
+      onFocus={() => setFocused(true)}
       filterOptions={(list) => list}
       groupBy={(option) => t(`search.groups.${option.kind}`)}
       getOptionLabel={(option) => (typeof option === "string" ? option : option.label)}
@@ -190,7 +195,7 @@ const GlobalSearch = () => {
           {option.imageUrl ? (
             <Box
               component="img"
-              src={resolveAssetUrl(option.imageUrl) ?? undefined}
+              src={resolveImageUrl(option.imageUrl, "t_cover_small") ?? undefined}
               alt=""
               sx={{ width: 24, height: 32, objectFit: "cover", borderRadius: 0.5, flexShrink: 0 }}
             />

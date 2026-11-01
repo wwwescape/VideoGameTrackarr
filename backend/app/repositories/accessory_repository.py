@@ -70,7 +70,7 @@ def list_accessories(
     hardware_platform_ids: list[int] | None = None,
     status: LibraryStatus | None = None,
 ) -> list[AccessoryWithStatus]:
-    stmt = select(Accessory, *_STATUS_COLUMNS)
+    stmt = select(Accessory, *_STATUS_COLUMNS).options(*_list_options())
     if search:
         stmt = stmt.outerjoin(
             HardwareReferenceEntry, Accessory.hardware_reference_entry_id == HardwareReferenceEntry.id
@@ -99,12 +99,20 @@ def list_accessories(
     return [_row_to_accessory_with_status(row) for row in db.execute(stmt)]
 
 
-def _get_accessory_options() -> tuple[Any, ...]:
+# Everything a list row shows (accessory_summary_from_orm, public_accessory_from_orm),
+# loaded with the accessories rather than one query per accessory.
+def _list_options() -> tuple[Any, ...]:
     return (
         joinedload(Accessory.manufacturer),
         joinedload(Accessory.accessory_type),
         joinedload(Accessory.color),
         joinedload(Accessory.hardware_reference_entry),
+    )
+
+
+def _get_accessory_options() -> tuple[Any, ...]:
+    return (
+        *_list_options(),
         selectinload(Accessory.compatible_platforms).joinedload(AccessoryCompatibility.hardware_platform),
         selectinload(Accessory.linked_devices).joinedload(AccessoryDeviceLink.device),
         selectinload(Accessory.linked_accessories).joinedload(AccessoryAccessoryLink.linked_accessory),

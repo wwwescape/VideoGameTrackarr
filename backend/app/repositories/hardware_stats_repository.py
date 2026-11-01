@@ -16,9 +16,11 @@ from app.models.hardware import (
 from app.models.library import LibraryStatus
 from app.repositories.accessory_repository import _STATUS_COLUMNS as _ACCESSORY_STATUS_COLUMNS
 from app.repositories.accessory_repository import AccessoryWithStatus
+from app.repositories.accessory_repository import _list_options as _accessory_list_options
 from app.repositories.accessory_repository import _row_to_accessory_with_status as _row_to_accessory
 from app.repositories.device_repository import _STATUS_COLUMNS as _DEVICE_STATUS_COLUMNS
 from app.repositories.device_repository import DeviceWithStatus
+from app.repositories.device_repository import _list_options as _device_list_options
 from app.repositories.device_repository import _row_to_device_with_status as _row_to_device
 
 BREAKDOWN_LIMIT = 10
@@ -62,6 +64,7 @@ def list_recently_added(db: Session) -> list[RecentlyAddedHardwareItem]:
     )
     device_stmt = (
         select(Device, *_DEVICE_STATUS_COLUMNS, device_added_at)
+        .options(*_device_list_options())
         .where(device_added_at.is_not(None))
         .order_by(device_added_at.desc())
         .limit(RECENT_LIMIT)
@@ -78,6 +81,7 @@ def list_recently_added(db: Session) -> list[RecentlyAddedHardwareItem]:
     )
     accessory_stmt = (
         select(Accessory, *_ACCESSORY_STATUS_COLUMNS, accessory_added_at)
+        .options(*_accessory_list_options())
         .where(accessory_added_at.is_not(None))
         .order_by(accessory_added_at.desc())
         .limit(RECENT_LIMIT)

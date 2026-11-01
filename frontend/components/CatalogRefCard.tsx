@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { resolveAssetUrl } from "../api/client";
+import { resolveImageUrl } from "../api/client";
 import FlatTile from "./FlatTile";
 
 interface CatalogRefCardProps {
@@ -50,7 +50,7 @@ const CatalogRefCard = ({ name, gameCount, coverUrls, onClick }: CatalogRefCardP
               <Box
                 key={url}
                 component="img"
-                src={resolveAssetUrl(url) ?? undefined}
+                src={resolveImageUrl(url, "t_cover_big") ?? undefined}
                 alt=""
                 loading="lazy"
                 sx={{ width: "100%", height: "100%", minHeight: 0, objectFit: "cover", display: "block" }}

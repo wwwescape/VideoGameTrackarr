@@ -70,7 +70,9 @@ export default defineConfig({
             handler: "CacheFirst",
             options: {
               cacheName: "igdb-cover-art",
-              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              // Rows, avatars and cover grids ask for smaller sizes than cards and detail
+              // pages (see resolveImageUrl), so a cover can be cached at up to three sizes.
+              expiration: { maxEntries: 1500, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
@@ -92,6 +94,23 @@ export default defineConfig({
       // Two pages: the app itself, and the DOS/PSP player tab (see crossOriginIsolation).
       // Relative to the project root (frontend/), where every build runs.
       input: { main: "index.html", playerIsolated: "player-isolated.html" },
+      output: {
+        // Libraries in their own files, so a release that only changes the app's code
+        // leaves them cached.
+        codeSplitting: {
+          groups: [
+            {
+              name: "react",
+              test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|@remix-run|scheduler)[\\/]/,
+            },
+            { name: "mui", test: /[\\/]node_modules[\\/](@mui|@emotion)[\\/]/ },
+            {
+              name: "data",
+              test: /[\\/]node_modules[\\/](@tanstack|axios|i18next|react-i18next)[\\/]/,
+            },
+          ],
+        },
+      },
     },
   },
   server: {

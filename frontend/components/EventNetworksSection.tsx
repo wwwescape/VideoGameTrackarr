@@ -62,6 +62,7 @@ const EventNetworksSection = ({ networks, hideTitle = false }: EventNetworksSect
                 style={{ color: theme.palette.text.primary }}
               >
                 <img
+                  loading="lazy"
                   src={logo}
                   alt={label}
                   style={{

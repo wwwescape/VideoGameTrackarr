@@ -3,10 +3,11 @@ import type { DetailQueryOptions } from "./detailQueryOptions";
 import { createDevice, deleteDevice, getDevice, listDevices, updateDevice, type DeviceListParams } from "../api/device";
 import type { DeviceInput } from "../api/types";
 
-export function useDeviceList(params: DeviceListParams = {}) {
+export function useDeviceList(params: DeviceListParams = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["devices", params],
     queryFn: () => listDevices(params),
+    enabled: options?.enabled ?? true,
   });
 }
 

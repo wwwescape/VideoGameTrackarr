@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useNavigation } from "react-router-dom";
 import DarkModeIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeIcon from "@mui/icons-material/LightModeOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -7,6 +7,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import Link from "@mui/material/Link";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
@@ -19,6 +20,7 @@ import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
 import RestoreGuard from "./components/RestoreGuard";
 import UpdateAvailableChip from "./components/UpdateAvailableChip";
 import { useLogout } from "./hooks/useAuth";
+import { useJobCompletionRefresh } from "./hooks/useJobCompletionRefresh";
 import { useScrollResetOnNavigate } from "./hooks/useScrollResetOnNavigate";
 import GlobalSearch from "./navigation/GlobalSearch";
 import Sidebar, { HEADER_HEIGHT, SIDEBAR_WIDTH } from "./navigation/Sidebar";
@@ -35,8 +37,11 @@ const AppShell = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  // "loading" while a page opened for the first time fetches its code (see router.tsx).
+  const navigation = useNavigation();
   const logoutMutation = useLogout();
   useScrollResetOnNavigate();
+  useJobCompletionRefresh();
 
   // A drawer left open on a phone closes when the page changes.
   useEffect(() => {
@@ -47,7 +52,7 @@ const AppShell = () => {
     // Clearing tokens/cache alone doesn't move the user off the current (now-stale)
     // protected page — ProtectedLayout only re-checks auth on navigation, and nothing
     // here triggers one. Without this, the redirect only happens once some unrelated
-    // background request 401s, which can take a while (staleTime is 30s) or never happen
+    // background request 401s, which can take a while (staleTime is 5 minutes) or never happen
     // at all if nothing refetches.
     logoutMutation.mutate(undefined, { onSuccess: () => navigate("/login") });
   };
@@ -56,6 +61,12 @@ const AppShell = () => {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      {navigation.state === "loading" ? (
+        <LinearProgress
+          aria-label={t("common.loading")}
+          sx={{ position: "fixed", top: 0, left: 0, right: 0, height: 3, zIndex: "tooltip" }}
+        />
+      ) : null}
       <RestoreGuard />
       <Link
         href="#main-content"

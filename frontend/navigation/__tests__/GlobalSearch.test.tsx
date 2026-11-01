@@ -16,13 +16,27 @@ vi.mock("../../hooks/useGames", () => ({
         : undefined,
   }),
 }));
+// The smaller lists only return data once GlobalSearch enables them, like the real hooks.
+const listEnabled = vi.hoisted(() => vi.fn());
+const enabledList = <T,>(name: string, data: T[], options?: { enabled?: boolean }) => {
+  listEnabled(name, options?.enabled ?? true);
+  return { data: options?.enabled === false ? undefined : data };
+};
 vi.mock("../../hooks/useDevice", () => ({
-  useDeviceList: () => ({ data: [{ id: 5, uuid: "d5", officialName: "Nintendo Switch", hardwarePlatformName: "Switch", manufacturerName: "Nintendo" }] }),
+  useDeviceList: (_params: unknown, options?: { enabled?: boolean }) =>
+    enabledList(
+      "devices",
+      [{ id: 5, uuid: "d5", officialName: "Nintendo Switch", hardwarePlatformName: "Switch", manufacturerName: "Nintendo" }],
+      options
+    ),
 }));
-vi.mock("../../hooks/useAccessories", () => ({ useAccessoryList: () => ({ data: [] }) }));
+vi.mock("../../hooks/useAccessories", () => ({
+  useAccessoryList: (_params: unknown, options?: { enabled?: boolean }) => enabledList("accessories", [], options),
+}));
 vi.mock("../../hooks/useCatalogBrowse", () => ({
-  useFranchises: () => ({ data: [{ id: 7, name: "The Legend of Zelda", slug: "zelda" }] }),
-  useCollections: () => ({ data: [] }),
+  useFranchises: (options?: { enabled?: boolean }) =>
+    enabledList("franchises", [{ id: 7, name: "The Legend of Zelda", slug: "zelda" }], options),
+  useCollections: (options?: { enabled?: boolean }) => enabledList("collections", [], options),
 }));
 
 const Shows = ({ label }: { label: string }) => {
@@ -94,6 +108,19 @@ describe("GlobalSearch", () => {
 
     expect(router.state.location.pathname).toBe("/games/add");
     expect(router.state.location.state).toEqual({ igdbSearch: "hades" });
+  });
+
+  it("loads the hardware, series and collection lists only once the box gets focus", async () => {
+    listEnabled.mockClear();
+    renderSearch();
+    expect(listEnabled).toHaveBeenCalled();
+    expect(listEnabled.mock.calls.every(([, enabled]) => enabled === false)).toBe(true);
+
+    listEnabled.mockClear();
+    await userEvent.click(screen.getByRole("combobox", { name: "Search" }));
+    for (const name of ["devices", "accessories", "franchises", "collections"]) {
+      expect(listEnabled).toHaveBeenCalledWith(name, true);
+    }
   });
 
   it("focuses on / from anywhere but a text field", async () => {

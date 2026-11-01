@@ -64,7 +64,7 @@ def list_devices(
     hardware_platform_ids: list[int] | None = None,
     status: LibraryStatus | None = None,
 ) -> list[DeviceWithStatus]:
-    stmt = select(Device, *_STATUS_COLUMNS)
+    stmt = select(Device, *_STATUS_COLUMNS).options(*_list_options())
     if search:
         stmt = stmt.outerjoin(
             HardwareReferenceEntry, Device.hardware_reference_entry_id == HardwareReferenceEntry.id
@@ -88,7 +88,9 @@ def list_devices(
     return [_row_to_device_with_status(row) for row in db.execute(stmt)]
 
 
-def _get_device_options() -> tuple[Any, ...]:
+# Everything a list row shows (device_summary_from_orm, public_device_from_orm), loaded with
+# the devices rather than one query per device.
+def _list_options() -> tuple[Any, ...]:
     return (
         joinedload(Device.manufacturer),
         joinedload(Device.hardware_platform),
@@ -96,6 +98,12 @@ def _get_device_options() -> tuple[Any, ...]:
         joinedload(Device.storage_variant),
         joinedload(Device.color),
         joinedload(Device.hardware_reference_entry),
+    )
+
+
+def _get_device_options() -> tuple[Any, ...]:
+    return (
+        *_list_options(),
         selectinload(Device.linked_accessories).joinedload(AccessoryDeviceLink.accessory),
     )
 
