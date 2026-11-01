@@ -41,7 +41,9 @@
     "seriesNotFoundTitle": "Série não encontrada",
     "collectionNotFoundTitle": "Coleção não encontrada",
     "platformNotFoundTitle": "Plataforma não encontrada",
-    "eventNotFoundTitle": "Evento não encontrado"
+    "eventNotFoundTitle": "Evento não encontrado",
+    "toysToLifeLineNotFoundTitle": "Linha de Toys to Life não encontrada",
+    "toyNotFoundTitle": "Pack não encontrado"
   },
   "nav": {
     "events": "Eventos",
@@ -50,6 +52,8 @@
     "collections": "Coleções",
     "series": "Séries",
     "platforms": "Plataformas",
+    "toysToLife": "Toys to Life",
+    "legoDimensions": "LEGO Dimensions",
     "hardware": "Hardware",
     "addDevice": "Adicionar Dispositivo",
     "addAccessory": "Adicionar Acessório",
@@ -87,6 +91,14 @@
     "updateAvailable": "Nova versão disponível: {{version}}",
     "lightMode": "Modo claro",
     "openMenu": "Abrir menu"
+  },
+  "whatsNew": {
+    "title": "Novidades",
+    "updatedTo": "O VideoGameTrackarr foi atualizado para a v{{version}}.",
+    "viewOnGithub": "Ver no GitHub",
+    "gotIt": "Entendi",
+    "notesUnavailable": "Não foi possível carregar as notas da versão agora.",
+    "openReleaseNotes": "Leia-as no GitHub"
   },
   "dialogs": {
     "message": {
@@ -1197,6 +1209,73 @@
       "filterNoneOwned": "Nenhum na coleção",
       "filterWithOwned": "Com jogos na coleção",
       "filterWithWishlisted": "Com jogos na lista de desejos"
+    }
+  },
+  "toysToLife": {
+    "packCount_one": "{{count}} pack",
+    "packCount_other": "{{count}} packs",
+    "collectionSummary": "{{owned}} na coleção · {{wishlist}} na lista de desejos",
+    "columnPacks": "Packs",
+    "columnOwned": "Na coleção",
+    "columnWishlisted": "Na lista de desejos",
+    "columnSetNumber": "Número do set",
+    "columnPackType": "Tipo de pack",
+    "columnFranchise": "Franquia",
+    "columnStatus": "Estado",
+    "statusOwned": "Na coleção",
+    "statusWishlist": "Na lista de desejos",
+    "statusNotOwned": "Não tem",
+    "filterPackType": "Tipo de pack",
+    "allPacks": "Todos os packs",
+    "packTypes": {
+      "starterPack": "Pack inicial",
+      "levelPack": "Pack de nível",
+      "teamPack": "Pack de equipe",
+      "funPack": "Fun Pack",
+      "storyPack": "Pack de história",
+      "polybag": "Polybag / Promoção"
+    },
+    "linesPage": {
+      "emptyMessage": "Ainda não há linhas de Toys to Life.",
+      "searchLabel": "Pesquisar linhas",
+      "searchPlaceholder": "Digite o nome da linha",
+      "count_one": "{{count}} linha",
+      "count_other": "{{count}} linhas"
+    },
+    "linePage": {
+      "emptyMessage": "Ainda não há packs nesta linha.",
+      "searchLabel": "Pesquisar packs",
+      "searchPlaceholder": "Nome, número do set ou minifigura"
+    },
+    "pack": {
+      "toyOf": "Toy to Life de {{name}}",
+      "releaseDatesTitle": "Datas de lançamento",
+      "noReleaseDates": "Data de lançamento desconhecida.",
+      "setNumberLabel": "Número do set",
+      "packTypeLabel": "Tipo de pack",
+      "franchiseLabel": "Franquia",
+      "minifiguresLabel": "Minifiguras",
+      "platformLabel": "Plataforma"
+    },
+    "collection": {
+      "title": "Sua coleção",
+      "addPack": "Adicionar pack",
+      "empty": "Ainda não está na sua coleção nem na lista de desejos.",
+      "noPrice": "Sem preço",
+      "addTitle_collection": "Adicionar à sua coleção",
+      "addTitle_wishlist": "Adicionar à sua lista de desejos",
+      "editTitle_collection": "Editar na sua coleção",
+      "editTitle_wishlist": "Editar na sua lista de desejos",
+      "priceLabel": "Preço",
+      "notesLabel": "Notas",
+      "notesPlaceholder": "Lacrado, aberto, falta uma peça…",
+      "add": "Adicionar",
+      "save": "Salvar",
+      "addedToast": "Adicionado à sua {{phrase}}",
+      "updatedToast": "Atualizado na sua {{phrase}}",
+      "movedToast": "Movido para a sua {{phrase}}",
+      "removedToast": "Removido da sua {{phrase}}",
+      "saveErrorToast": "Não foi possível salvar. Tente novamente."
     }
   },
   "hardware": {

@@ -41,6 +41,11 @@
   date. Pages remember your search, filters, and sort.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega
   catalog, with product photos.
+- **What's New** — after an upgrade, the release notes of every version you haven't seen
+  yet, shown once per account.
+- **Toys to Life** — every LEGO Dimensions pack, starter kits included, each with its own page
+  for your copies (owned or wishlisted, with a price and notes), your rating, tags, and notes;
+  the game's page lists them in place of its add-ons.
 - **Steam sync** — import your Steam library and wishlist with playtime, review every change
   before it's applied, and relink or unlink mismatched entries.
 - **Sale tracking** — opt-in wishlist price tracking via IsThereAnyDeal (PC, Mac, Linux, and

@@ -43,6 +43,9 @@ import {
   steamSyncCrumbs,
   igdbImportCrumbs,
   tagManagerCrumbs,
+  toyCrumbs,
+  toysToLifeCrumbs,
+  toysToLifeLineCrumbs,
 } from "./navigation/breadcrumbConfig";
 import Login from "./pages/Login";
 import { page, preloadPages } from "./routes/lazyPage";
@@ -162,6 +165,21 @@ const router = createBrowserRouter([
             path: "/games/collections/:collectionSlug",
             lazy: page(() => import("./components/CollectionPage")),
             handle: { crumbs: collectionCrumbs },
+          },
+          {
+            path: "/toys-to-life",
+            lazy: page(() => import("./components/ToysToLifePage")),
+            handle: { crumbs: toysToLifeCrumbs },
+          },
+          {
+            path: "/toys-to-life/:line",
+            lazy: page(() => import("./components/ToysToLifeLinePage")),
+            handle: { crumbs: toysToLifeLineCrumbs },
+          },
+          {
+            path: "/toys-to-life/:line/:pack",
+            lazy: page(() => import("./components/ToysToLifePackDetails")),
+            handle: { crumbs: toyCrumbs },
           },
           {
             path: "/hardware",

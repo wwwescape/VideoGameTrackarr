@@ -2,7 +2,7 @@
 
 Companion to [developer-guide.md](developer-guide.md) and [diagrams.md](diagrams.md). Every
 table below is a SQLAlchemy model in `backend/app/models/` (`catalog.py`, `hardware.py`,
-`library.py`, `system.py`) — schema changes always go through an Alembic migration in
+`library.py`, `system.py`, `toys_to_life.py`) — schema changes always go through an Alembic migration in
 `backend/alembic/versions/`, never a hand edit to the running DB.
 
 **Conventions used throughout:**
@@ -213,7 +213,7 @@ Free-text notes attached to a game (mirrors `device_notes`/`accessory_notes`).
 
 ### `tags`
 
-Shared vocabulary across games/devices/accessories.
+Shared vocabulary across games/devices/accessories/Toys-to-Life packs.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -351,6 +351,58 @@ is always a separate row (identified by its own `serial_number`).
 
 ---
 
+## Toys-to-Life (`toys_to_life.py`) — packs and your state on them
+
+The product lines themselves (slug, name, parent game's IGDB id, seed CSV) live in code, in
+`app/services/toys_to_life_lines.py`, not in a table. LEGO Dimensions is the only line so far.
+
+### `toys_to_life_items`
+
+One row per real-world pack, seeded from `docs/data/toys_to_life/*.csv` by a migration (and
+re-loadable with `python -m scripts.import_toys_to_life`). Pack photos have no column; they're
+resolved at read time from `backend/static/toys-to-life/<line>/<set_number>-<name-slug>.png`.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | int PK | |
+| uuid | string(36), unique | |
+| line | string(50) | Line slug, e.g. `lego-dimensions` |
+| set_number | string(20) | Unique within `line`, e.g. `71203` |
+| name | string(255) | |
+| pack_type | string(50) | e.g. `Starter Pack`, `Level Pack`, `Team Pack`, `Fun Pack`, `Story Pack`, `Polybag / Promo` |
+| franchise, minifigures | string(255), nullable | Comma-separated free text |
+| platform_name | string(100), nullable | Starter kits only — every other pack works on all platforms |
+| platform_igdb_id | bigint, nullable | IGDB platform id for `platform_name` |
+| release_date_na, release_date_eu, release_date_ww | string(10), nullable | ISO date, or a bare year when that's all that's known |
+| igdb_id | bigint, nullable | Not unique — every starter kit is the base game on IGDB |
+| igdb_url | string(1024), nullable | |
+| summary | text, nullable | |
+| user_rating | int, nullable | Your 1-10 stars; never written by an import |
+| created_at, updated_at | timestamp | |
+
+Unique: (`line`, `set_number`).
+
+### `toys_to_life_copies`
+
+Your copies of a pack (**Your Collection** on its page), like a game's library copies: as many
+as you like, owned or wishlisted. The pack counts as owned with any owned copy, else as
+wishlisted with any wishlisted one.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | int PK | |
+| item_id | FK → toys_to_life_items.id, indexed | |
+| status | enum `LibraryStatus` | `owned`, `wishlist` |
+| price | float, nullable | What you paid or would pay, in your display currency |
+| notes | text, nullable | |
+| created_at, updated_at | timestamp | |
+
+### `toys_to_life_tags`, `toys_to_life_notes`
+
+Same shape as `accessory_tags`/`accessory_notes`, scoped to `item_id`.
+
+---
+
 ## System (`system.py`) — auth
 
 ### `users`
@@ -363,6 +415,7 @@ scoped by `user_id`.
 | id | int PK | |
 | username | string(255), unique | |
 | password_hash | string(255) | |
+| last_seen_version | string(32), nullable | Newest app version whose **What's New** was closed. Set to the running version when the account is created (a new install has nothing new to show); null on an account from before What's New, which then sees the running version's notes once |
 | created_at, updated_at | timestamp | |
 
 ### `refresh_tokens`

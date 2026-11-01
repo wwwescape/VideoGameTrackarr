@@ -45,10 +45,17 @@ from app.api.routes import (
     sales_tracking,
     share,
     tags,
+    toys_to_life,
     uploads,
     version,
 )
-from app.core.config import HARDWARE_REFERENCE_IMAGES_DIR, REPO_ROOT, UPLOADS_DIR, get_settings
+from app.core.config import (
+    HARDWARE_REFERENCE_IMAGES_DIR,
+    REPO_ROOT,
+    TOYS_TO_LIFE_IMAGES_DIR,
+    UPLOADS_DIR,
+    get_settings,
+)
 from app.core.limiter import limiter
 from app.core.logging import configure_logging
 from app.core.security import weak_secret_warning
@@ -321,6 +328,7 @@ app.include_router(dashboard.router)
 app.include_router(hardware_lookups.router)
 app.include_router(device.router)
 app.include_router(accessories.router)
+app.include_router(toys_to_life.router)
 app.include_router(hardware_stats.router)
 app.include_router(companies.router)
 app.include_router(uploads.router)
@@ -347,6 +355,10 @@ app.mount(
     StaticFiles(directory=HARDWARE_REFERENCE_IMAGES_DIR),
     name="hardware-reference-images",
 )
+
+# Curated Toys-to-Life pack photos — same idea as the hardware reference shots above.
+TOYS_TO_LIFE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static/toys-to-life", StaticFiles(directory=TOYS_TO_LIFE_IMAGES_DIR), name="toys-to-life-images")
 
 # Serves the built frontend (npm run build's output) from the same origin as the API.
 # Guarded by existence so a backend-only dev run (frontend served separately by Vite on

@@ -83,3 +83,15 @@ def attach_tag_to_accessory(accessory_id: int, tag_id: int, db: Session = Depend
 def detach_tag_from_accessory(accessory_id: int, tag_id: int, db: Session = Depends(get_db)) -> list[TagResponse]:
     tags = tag_service.detach_tag_from_accessory(db, accessory_id, tag_id)
     return [tag_from_orm(tag) for tag in tags]
+
+
+@router.post("/api/toys-to-life/items/{item_id}/tags/{tag_id}", response_model=list[TagResponse])
+def attach_tag_to_toy(item_id: int, tag_id: int, db: Session = Depends(get_db)) -> list[TagResponse]:
+    tags = tag_service.attach_tag_to_toy(db, item_id, tag_id)
+    return [tag_from_orm(tag) for tag in tags]
+
+
+@router.delete("/api/toys-to-life/items/{item_id}/tags/{tag_id}", response_model=list[TagResponse])
+def detach_tag_from_toy(item_id: int, tag_id: int, db: Session = Depends(get_db)) -> list[TagResponse]:
+    tags = tag_service.detach_tag_from_toy(db, item_id, tag_id)
+    return [tag_from_orm(tag) for tag in tags]

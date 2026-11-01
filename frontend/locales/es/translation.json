@@ -41,7 +41,9 @@
     "seriesNotFoundTitle": "Serie no encontrada",
     "collectionNotFoundTitle": "Colección no encontrada",
     "platformNotFoundTitle": "Plataforma no encontrada",
-    "eventNotFoundTitle": "Evento no encontrado"
+    "eventNotFoundTitle": "Evento no encontrado",
+    "toysToLifeLineNotFoundTitle": "Línea de Toys to Life no encontrada",
+    "toyNotFoundTitle": "Pack no encontrado"
   },
   "nav": {
     "events": "Eventos",
@@ -50,6 +52,8 @@
     "collections": "Colecciones",
     "series": "Series",
     "platforms": "Plataformas",
+    "toysToLife": "Toys to Life",
+    "legoDimensions": "LEGO Dimensions",
     "hardware": "Hardware",
     "addDevice": "Añadir dispositivo",
     "addAccessory": "Añadir accesorio",
@@ -87,6 +91,14 @@
     "updateAvailable": "Nueva versión disponible: {{version}}",
     "lightMode": "Modo claro",
     "openMenu": "Abrir menú"
+  },
+  "whatsNew": {
+    "title": "Novedades",
+    "updatedTo": "VideoGameTrackarr se actualizó a la v{{version}}.",
+    "viewOnGithub": "Ver en GitHub",
+    "gotIt": "Entendido",
+    "notesUnavailable": "No se pudieron cargar las notas de la versión ahora mismo.",
+    "openReleaseNotes": "Léelas en GitHub"
   },
   "dialogs": {
     "message": {
@@ -1197,6 +1209,73 @@
       "filterNoneOwned": "Ninguno en propiedad",
       "filterWithOwned": "Con juegos en propiedad",
       "filterWithWishlisted": "Con juegos en la lista de deseos"
+    }
+  },
+  "toysToLife": {
+    "packCount_one": "{{count}} pack",
+    "packCount_other": "{{count}} packs",
+    "collectionSummary": "{{owned}} en propiedad · {{wishlist}} en la lista de deseos",
+    "columnPacks": "Packs",
+    "columnOwned": "En propiedad",
+    "columnWishlisted": "En la lista de deseos",
+    "columnSetNumber": "Número de set",
+    "columnPackType": "Tipo de pack",
+    "columnFranchise": "Franquicia",
+    "columnStatus": "Estado",
+    "statusOwned": "En propiedad",
+    "statusWishlist": "En la lista de deseos",
+    "statusNotOwned": "No lo tienes",
+    "filterPackType": "Tipo de pack",
+    "allPacks": "Todos los packs",
+    "packTypes": {
+      "starterPack": "Pack de inicio",
+      "levelPack": "Pack de nivel",
+      "teamPack": "Pack de equipo",
+      "funPack": "Fun Pack",
+      "storyPack": "Pack de historia",
+      "polybag": "Polybag / Promoción"
+    },
+    "linesPage": {
+      "emptyMessage": "Aún no hay líneas de Toys to Life.",
+      "searchLabel": "Buscar líneas",
+      "searchPlaceholder": "Escribe el nombre de la línea",
+      "count_one": "{{count}} línea",
+      "count_other": "{{count}} líneas"
+    },
+    "linePage": {
+      "emptyMessage": "Aún no hay packs en esta línea.",
+      "searchLabel": "Buscar packs",
+      "searchPlaceholder": "Nombre, número de set o minifigura"
+    },
+    "pack": {
+      "toyOf": "Toy to Life de {{name}}",
+      "releaseDatesTitle": "Fechas de lanzamiento",
+      "noReleaseDates": "No se conoce la fecha de lanzamiento.",
+      "setNumberLabel": "Número de set",
+      "packTypeLabel": "Tipo de pack",
+      "franchiseLabel": "Franquicia",
+      "minifiguresLabel": "Minifiguras",
+      "platformLabel": "Plataforma"
+    },
+    "collection": {
+      "title": "Tu colección",
+      "addPack": "Añadir pack",
+      "empty": "Aún no está en tu colección ni en tu lista de deseos.",
+      "noPrice": "Sin precio",
+      "addTitle_collection": "Añadir a tu colección",
+      "addTitle_wishlist": "Añadir a tu lista de deseos",
+      "editTitle_collection": "Editar en tu colección",
+      "editTitle_wishlist": "Editar en tu lista de deseos",
+      "priceLabel": "Precio",
+      "notesLabel": "Notas",
+      "notesPlaceholder": "Precintado, abierto, le falta una pieza…",
+      "add": "Añadir",
+      "save": "Guardar",
+      "addedToast": "Añadido a tu {{phrase}}",
+      "updatedToast": "Actualizado en tu {{phrase}}",
+      "movedToast": "Movido a tu {{phrase}}",
+      "removedToast": "Eliminado de tu {{phrase}}",
+      "saveErrorToast": "No se pudo guardar. Inténtalo de nuevo."
     }
   },
   "hardware": {

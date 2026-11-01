@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.hardware import AccessoryTag, DeviceTag
 from app.models.library import GameTag, Tag
+from app.models.toys_to_life import ToysToLifeTag
 
 
 def list_tags(db: Session) -> list[Tag]:
@@ -62,6 +63,7 @@ def delete_tag(db: Session, tag: Tag) -> None:
     db.execute(delete(GameTag).where(GameTag.tag_id == tag.id))
     db.execute(delete(DeviceTag).where(DeviceTag.tag_id == tag.id))
     db.execute(delete(AccessoryTag).where(AccessoryTag.tag_id == tag.id))
+    db.execute(delete(ToysToLifeTag).where(ToysToLifeTag.tag_id == tag.id))
     db.delete(tag)
     db.flush()
 
@@ -139,4 +141,31 @@ def attach_tag_to_accessory(db: Session, accessory_id: int, tag_id: int) -> None
 
 def detach_tag_from_accessory(db: Session, accessory_id: int, tag_id: int) -> None:
     db.execute(delete(AccessoryTag).where(AccessoryTag.accessory_id == accessory_id, AccessoryTag.tag_id == tag_id))
+    db.flush()
+
+
+def list_tags_for_toy(db: Session, item_id: int) -> list[Tag]:
+    stmt = (
+        select(Tag)
+        .join(ToysToLifeTag, ToysToLifeTag.tag_id == Tag.id)
+        .where(ToysToLifeTag.item_id == item_id)
+        .order_by(Tag.name)
+    )
+    return list(db.scalars(stmt))
+
+
+def is_tag_attached_to_toy(db: Session, item_id: int, tag_id: int) -> bool:
+    stmt = select(ToysToLifeTag).where(ToysToLifeTag.item_id == item_id, ToysToLifeTag.tag_id == tag_id)
+    return db.scalars(stmt).first() is not None
+
+
+def attach_tag_to_toy(db: Session, item_id: int, tag_id: int) -> None:
+    if is_tag_attached_to_toy(db, item_id, tag_id):
+        return
+    db.add(ToysToLifeTag(item_id=item_id, tag_id=tag_id))
+    db.flush()
+
+
+def detach_tag_from_toy(db: Session, item_id: int, tag_id: int) -> None:
+    db.execute(delete(ToysToLifeTag).where(ToysToLifeTag.item_id == item_id, ToysToLifeTag.tag_id == tag_id))
     db.flush()

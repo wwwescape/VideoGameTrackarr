@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
+from app.core.config import get_app_version, get_settings
 from app.core.security import (
     TokenError,
     TokenType,
@@ -97,7 +97,8 @@ def create_initial_admin(db: Session, username: str, password: str, setup_code: 
         if not secrets.compare_digest(_normalise_code(setup_code), _normalise_code(get_setup_code())):
             raise SetupCodeError("That setup code isn't right. It's printed in the server's log.")
 
-        user = User(username=username, password_hash=hash_password(password))
+        # A new install has nothing new to show: its What's New starts from the next upgrade.
+        user = User(username=username, password_hash=hash_password(password), last_seen_version=get_app_version())
         db.add(user)
         db.commit()
         db.refresh(user)

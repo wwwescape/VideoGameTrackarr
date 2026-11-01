@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.catalog import Game, GamePlatform, Platform
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
+from app.repositories import toys_to_life_repository
 from app.repositories.game_repository import (
     GameWithStatus,
     _apply_optional_game_filters,
@@ -118,6 +119,8 @@ def list_addons_for_platform(
     ).where(
         Game.parent_game_id.is_not(None),
         platform_copy_exists(Game.id, platform_id, media_format, storefront),
+        # Toys-to-Life packs are toys with their own pages, not add-ons (see is_toy_pack).
+        ~toys_to_life_repository.is_toy_pack(Game.igdb_id),
     )
     stmt = _apply_optional_game_filters(stmt, **filters)
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

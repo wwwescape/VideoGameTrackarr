@@ -33,6 +33,7 @@ from app.models.library import (
     RomFile,
     RomSaveState,
 )
+from app.repositories import toys_to_life_repository
 
 # Repositories only add/flush/delete — they never commit. The service (or script) that
 # calls them owns the transaction boundary, so a multi-step use case (e.g. importing a
@@ -612,7 +613,8 @@ def list_addons(db: Session, parent_game_id: int) -> list[GameWithStatus]:
             _play_status_subquery(Game.id),
             Game.user_rating,
         )
-        .where(Game.parent_game_id == parent_game_id)
+        # A Toys-to-Life pack has its own page; its IGDB add-on row stays hidden.
+        .where(Game.parent_game_id == parent_game_id, ~toys_to_life_repository.is_toy_pack(Game.igdb_id))
         .order_by(Game.name)
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

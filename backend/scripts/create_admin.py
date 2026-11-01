@@ -14,6 +14,7 @@ Usage:
 import argparse
 import getpass
 
+from app.core.config import get_app_version
 from app.core.security import hash_password
 from app.db.session import session_scope
 from app.models.system import User
@@ -25,7 +26,7 @@ def create_or_update_admin(username: str, password: str) -> str:
         password_hash = hash_password(password)
 
         if user is None:
-            session.add(User(username=username, password_hash=password_hash))
+            session.add(User(username=username, password_hash=password_hash, last_seen_version=get_app_version()))
             return f"Created admin user '{username}'."
 
         user.password_hash = password_hash

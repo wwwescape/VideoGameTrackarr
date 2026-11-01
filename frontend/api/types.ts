@@ -521,6 +521,25 @@ export interface VersionInfo {
   releaseUrl: string | null;
 }
 
+export interface WhatsNewRelease {
+  version: string;
+  name: string;
+  // The release notes, as GitHub Markdown.
+  body: string;
+  url: string;
+  publishedAt: string | null;
+}
+
+// The release notes not seen since upgrading; empty releases (and notesUnavailable false)
+// means there's nothing to show.
+export interface WhatsNewInfo {
+  currentVersion: string;
+  releases: WhatsNewRelease[];
+  // GitHub couldn't be reached: show a link to releaseUrl instead of the notes.
+  notesUnavailable: boolean;
+  releaseUrl: string;
+}
+
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
 export type GameSortOption =
@@ -1066,4 +1085,88 @@ export interface EventDetail extends EventSummary {
   videos: EventVideo[];
   networks: EventNetwork[];
   games: EventGameTile[];
+}
+
+// Toys-to-Life (LEGO Dimensions, ...): a line's packs are reference data seeded from the
+// project's CSVs; only the ownership, rating, tags and notes are yours.
+export interface ToysToLifeParentGame {
+  name: string;
+  igdbId: number;
+  // Set only when the game is in your library (its page exists).
+  slug: string | null;
+  uuid: string | null;
+  coverUrl: string | null;
+}
+
+export interface ToysToLifeLine {
+  slug: string;
+  name: string;
+  parentGame: ToysToLifeParentGame;
+  packCount: number;
+  ownedCount: number;
+  wishlistCount: number;
+}
+
+export interface ToysToLifeItemSummary {
+  id: number;
+  uuid: string;
+  line: string;
+  setNumber: string;
+  name: string;
+  packType: string;
+  franchise: string | null;
+  minifigures: string | null;
+  // Only starter kits are tied to a platform.
+  platformName: string | null;
+  platformIgdbId: number | null;
+  igdbId: number | null;
+  imageUrl: string | null;
+  // Like a game: both are true when you own one copy and want another.
+  owned: boolean;
+  wishlisted: boolean;
+  rating: number | null;
+}
+
+export type ToysToLifeReleaseRegion = "north_america" | "europe" | "worldwide";
+
+export interface ToysToLifeReleaseDate {
+  region: ToysToLifeReleaseRegion;
+  // An ISO date, or just a year when that's all that's known.
+  date: string;
+}
+
+// One copy of a pack you own or want; a pack can have several (sealed and opened, ...).
+export interface ToysToLifeCopy {
+  id: number;
+  status: LibraryStatus;
+  // What you paid (owned) or would pay (wishlisted), in your display currency.
+  price: number | null;
+  notes: string | null;
+}
+
+export interface ToysToLifeItemDetail extends ToysToLifeItemSummary {
+  // owned/wishlisted follow from these.
+  copies: ToysToLifeCopy[];
+  summary: string | null;
+  igdbUrl: string | null;
+  releaseDates: ToysToLifeReleaseDate[];
+  lineName: string;
+  parentGame: ToysToLifeParentGame;
+  tags: Tag[];
+}
+
+// The game page's Toys to Life section: its line's packs, with only the starter kits for the
+// platforms you own the game on.
+export interface ToysToLifeGameSection {
+  line: string;
+  lineName: string;
+  items: ToysToLifeItemSummary[];
+}
+
+export interface ToysToLifeNote {
+  id: number;
+  itemId: number;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
 }

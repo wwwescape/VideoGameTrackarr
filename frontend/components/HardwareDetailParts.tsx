@@ -16,11 +16,13 @@ interface HardwareHeroProps {
   crumbs: Crumb[];
   subline: ReactNode[];
   pills: ReactNode;
+  // External links (a Toys-to-Life pack's IGDB page), on their own row under the pills.
+  links?: ReactNode;
 }
 
 // Device and accessory pages: the product shot in a light 4:3 well (shots are mostly on white),
 // over a blurred copy of itself.
-export const HardwareHero = ({ name, imageUrl, owned, wishlisted, crumbs, subline, pills }: HardwareHeroProps) => {
+export const HardwareHero = ({ name, imageUrl, owned, wishlisted, crumbs, subline, pills, links }: HardwareHeroProps) => {
   const { t } = useTranslation();
   const image = resolveAssetUrl(imageUrl);
   return (
@@ -60,6 +62,7 @@ export const HardwareHero = ({ name, imageUrl, owned, wishlisted, crumbs, sublin
       title={name}
       subline={subline}
       pills={pills}
+      links={links}
     />
   );
 };

@@ -9,18 +9,19 @@ import { useSetGameRating } from "../hooks/useGames";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import { Section, SectionAction } from "./Detail";
 
-interface YourRatingSectionProps {
-  gameId: number;
+interface RatingSectionProps {
+  // The stars' form name, unique on the page ("game-12-rating").
+  name: string;
   // Your overall rating, 1-10 stars, or null.
   rating: number | null;
+  onSave: (rating: number | null) => Promise<unknown>;
 }
 
-// The game page's Your Rating: ten stars for your overall rating of the game (whichever
-// platforms you own it on), saved as soon as you pick one. Clear removes it; so does picking
-// the current star again.
-const YourRatingSection = ({ gameId, rating }: YourRatingSectionProps) => {
+// A detail page's Your Rating: ten stars, saved as soon as you pick one. Clear removes it; so
+// does picking the current star again. Entity-agnostic, like TagsSection: the page owns what
+// saving means (a game's rating, a Toys-to-Life pack's).
+export const RatingSection = ({ name, rating, onSave }: RatingSectionProps) => {
   const { t } = useTranslation();
-  const setRating = useSetGameRating(gameId);
   // Shown straight away; goes back to the saved rating if saving fails.
   const [value, setValue] = useState(rating);
   useEffect(() => setValue(rating), [rating]);
@@ -28,9 +29,9 @@ const YourRatingSection = ({ gameId, rating }: YourRatingSectionProps) => {
   const save = async (next: number | null) => {
     setValue(next);
     try {
-      await setRating.mutateAsync(next);
+      await onSave(next);
     } catch (error) {
-      console.error(`Error saving the rating for game ${gameId}:`, error);
+      console.error(`Error saving the rating ${name}:`, error);
       setValue(rating);
       toast.error(t("games.rating.saveErrorToast"), TOAST_OPTIONS);
     }
@@ -48,7 +49,7 @@ const YourRatingSection = ({ gameId, rating }: YourRatingSectionProps) => {
     >
       <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
         <Rating
-          name={`game-${gameId}-rating`}
+          name={name}
           max={10}
           value={value}
           onChange={(_event, next) => void save(next)}
@@ -61,6 +62,17 @@ const YourRatingSection = ({ gameId, rating }: YourRatingSectionProps) => {
       </Box>
     </Section>
   );
+};
+
+interface YourRatingSectionProps {
+  gameId: number;
+  rating: number | null;
+}
+
+// The game page's Your Rating: your overall rating of the game, whichever platforms you own it on.
+const YourRatingSection = ({ gameId, rating }: YourRatingSectionProps) => {
+  const setRating = useSetGameRating(gameId);
+  return <RatingSection name={`game-${gameId}-rating`} rating={rating} onSave={(next) => setRating.mutateAsync(next)} />;
 };
 
 export default YourRatingSection;

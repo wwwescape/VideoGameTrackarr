@@ -6,9 +6,10 @@ from app.schemas.base import CamelModel
 
 # 2 added the optional rom_files/rom_save_states/bios_files sections (full backups only);
 # 3 added target prices, ignored price lookups, account settings and included_files (which
-# kinds of files a .zip carries); 4 added a custom game's screenshots, artwork and videos.
+# kinds of files a .zip carries); 4 added a custom game's screenshots, artwork and videos;
+# 5 added Toys-to-Life ownership, ratings, notes and tags.
 # Older files still restore — the new parts default to empty.
-BACKUP_FORMAT_VERSION = 4
+BACKUP_FORMAT_VERSION = 5
 
 
 class _BackupRow(BaseModel):
@@ -127,6 +128,25 @@ class BackupNote(_BackupRow):
 class BackupGameTag(_BackupRow):
     game_id: int
     tag_id: int
+
+
+class BackupToysToLifeCopy(_BackupRow):
+    status: str
+    price: float | None = None
+    notes: str | None = None
+
+
+class BackupToysToLifeItem(_BackupRow):
+    """Your own state on one Toys-to-Life pack (version 5+). The packs themselves are seeded
+    reference data, so a row goes by (line, set_number) rather than an id — the same pack
+    has the same key on every install."""
+
+    line: str
+    set_number: str
+    copies: list[BackupToysToLifeCopy] = []
+    rating: int | None = None
+    notes: list[str] = []
+    tag_ids: list[int] = []
 
 
 class BackupManufacturer(_BackupRow):
@@ -295,6 +315,7 @@ class BackupPayload(_BackupRow):
     user_hardware: list[BackupUserHardware] = []
     user_accessories: list[BackupUserAccessory] = []
     sales_ignored: list[BackupSalesIgnored] = []
+    toys_to_life: list[BackupToysToLifeItem] = []
     settings: BackupSettings | None = None
     # .zip backups only (the files themselves under files/<...>). Null in a version-2 .zip,
     # which always carried ROMs and BIOS files.

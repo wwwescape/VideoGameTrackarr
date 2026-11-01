@@ -41,7 +41,9 @@
     "seriesNotFoundTitle": "Series not found",
     "collectionNotFoundTitle": "Collection not found",
     "platformNotFoundTitle": "Platform not found",
-    "eventNotFoundTitle": "Event not found"
+    "eventNotFoundTitle": "Event not found",
+    "toysToLifeLineNotFoundTitle": "Toys to Life line not found",
+    "toyNotFoundTitle": "Pack not found"
   },
   "nav": {
     "events": "Events",
@@ -50,6 +52,8 @@
     "collections": "Collections",
     "series": "Series",
     "platforms": "Platforms",
+    "toysToLife": "Toys to Life",
+    "legoDimensions": "LEGO Dimensions",
     "hardware": "Hardware",
     "addDevice": "Add Device",
     "addAccessory": "Add Accessory",
@@ -87,6 +91,14 @@
     "updateAvailable": "New version available: {{version}}",
     "lightMode": "Light Mode",
     "openMenu": "Open menu"
+  },
+  "whatsNew": {
+    "title": "What's New",
+    "updatedTo": "VideoGameTrackarr was updated to v{{version}}.",
+    "viewOnGithub": "View on GitHub",
+    "gotIt": "Got it",
+    "notesUnavailable": "The release notes couldn't be loaded right now.",
+    "openReleaseNotes": "Read them on GitHub"
   },
   "dialogs": {
     "message": {
@@ -1197,6 +1209,73 @@
       "filterNoneOwned": "None owned",
       "filterWithOwned": "With owned games",
       "filterWithWishlisted": "With wishlisted games"
+    }
+  },
+  "toysToLife": {
+    "packCount_one": "{{count}} pack",
+    "packCount_other": "{{count}} packs",
+    "collectionSummary": "{{owned}} owned · {{wishlist}} wishlisted",
+    "columnPacks": "Packs",
+    "columnOwned": "Owned",
+    "columnWishlisted": "Wishlisted",
+    "columnSetNumber": "Set number",
+    "columnPackType": "Pack type",
+    "columnFranchise": "Franchise",
+    "columnStatus": "Status",
+    "statusOwned": "Owned",
+    "statusWishlist": "Wishlisted",
+    "statusNotOwned": "Not owned",
+    "filterPackType": "Pack type",
+    "allPacks": "All packs",
+    "packTypes": {
+      "starterPack": "Starter Pack",
+      "levelPack": "Level Pack",
+      "teamPack": "Team Pack",
+      "funPack": "Fun Pack",
+      "storyPack": "Story Pack",
+      "polybag": "Polybag / Promo"
+    },
+    "linesPage": {
+      "emptyMessage": "No Toys to Life lines yet.",
+      "searchLabel": "Search lines",
+      "searchPlaceholder": "Enter line name",
+      "count_one": "{{count}} line",
+      "count_other": "{{count}} lines"
+    },
+    "linePage": {
+      "emptyMessage": "No packs in this line yet.",
+      "searchLabel": "Search packs",
+      "searchPlaceholder": "Name, set number or minifigure"
+    },
+    "pack": {
+      "toyOf": "Toy to Life of {{name}}",
+      "releaseDatesTitle": "Release Dates",
+      "noReleaseDates": "No release date known.",
+      "setNumberLabel": "Set number",
+      "packTypeLabel": "Pack type",
+      "franchiseLabel": "Franchise",
+      "minifiguresLabel": "Minifigures",
+      "platformLabel": "Platform"
+    },
+    "collection": {
+      "title": "Your Collection",
+      "addPack": "Add Pack",
+      "empty": "Not in your collection or wishlist yet.",
+      "noPrice": "No price",
+      "addTitle_collection": "Add to your collection",
+      "addTitle_wishlist": "Add to your wishlist",
+      "editTitle_collection": "Edit in your collection",
+      "editTitle_wishlist": "Edit in your wishlist",
+      "priceLabel": "Price",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Sealed, opened, missing a piece…",
+      "add": "Add",
+      "save": "Save",
+      "addedToast": "Added to your {{phrase}}",
+      "updatedToast": "Updated in your {{phrase}}",
+      "movedToast": "Moved to your {{phrase}}",
+      "removedToast": "Removed from your {{phrase}}",
+      "saveErrorToast": "Couldn't save that. Please try again."
     }
   },
   "hardware": {

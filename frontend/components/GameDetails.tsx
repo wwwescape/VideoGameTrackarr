@@ -11,6 +11,7 @@ import { useCreateNote, useDeleteNote, useNotes, useUpdateNote } from "../hooks/
 import { usePlatforms } from "../hooks/usePlatforms";
 import { useRegions } from "../hooks/useRegions";
 import { useAttachTag, useDetachTag } from "../hooks/useTags";
+import { useToysToLifeGameSection } from "../hooks/useToysToLife";
 import { gameIdentifier } from "../utils/identifiers";
 import { useCanonicalAddress, useDetailBack } from "../utils/navState";
 import { DetailColumns, Section } from "./Detail";
@@ -22,6 +23,7 @@ import GameProgressSection from "./GameProgressSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
+import ToysToLifeSection from "./ToysToLifeSection";
 import YourRatingSection from "./YourRatingSection";
 import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
@@ -36,6 +38,8 @@ const GameDetails = () => {
   const { data: game, isError } = useGame(identifier);
   const gameId = game?.id ?? NaN;
   const { data: addons } = useAddons(gameId);
+  // Set only on a Toys-to-Life line's base game (LEGO Dimensions), which shows its packs instead of Addons.
+  const { data: toysToLife } = useToysToLifeGameSection(gameId);
   const { data: libraryItems } = useLibraryItems(gameId);
   const { data: platforms } = usePlatforms();
   const { data: regions } = useRegions();
@@ -151,7 +155,8 @@ const GameDetails = () => {
           <>
             <GameAboutBlock game={game} />
             <GameMediaSections game={game} />
-            {!hasParentGame ? (
+            {!hasParentGame && toysToLife ? <ToysToLifeSection section={toysToLife} /> : null}
+            {!hasParentGame && !toysToLife ? (
               <Section id="addons" title={t("games.addons.title")}>
                 {displayedAddons.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.catalog import Collection, Game, GameCategory, GameCollection
 from app.models.library import MediaFormat, PlayStatus
+from app.repositories import toys_to_life_repository
 from app.repositories.game_repository import (
     GameSortOption,
     GameSource,
@@ -151,7 +152,8 @@ def list_addons_for_collection(
             _play_status_subquery(Game.id),
             Game.user_rating,
         )
-        .where(Game.parent_game_id.in_(parent_ids))
+        # Toys-to-Life packs are toys with their own pages, not add-ons (see is_toy_pack).
+        .where(Game.parent_game_id.in_(parent_ids), ~toys_to_life_repository.is_toy_pack(Game.igdb_id))
     )
     stmt = _apply_optional_game_filters(
         stmt,

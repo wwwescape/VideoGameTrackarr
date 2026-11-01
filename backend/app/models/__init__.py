@@ -59,5 +59,11 @@ from app.models.library import (  # noqa: F401
 from app.models.platprices import PlatPricesCache  # noqa: F401
 from app.models.steam import SteamLibraryEntry  # noqa: F401
 from app.models.system import RefreshToken, User  # noqa: F401
+from app.models.toys_to_life import (  # noqa: F401
+    ToysToLifeCopy,
+    ToysToLifeItem,
+    ToysToLifeNote,
+    ToysToLifeTag,
+)
 
 __all__ = ["Base"]

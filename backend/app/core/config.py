@@ -13,6 +13,8 @@ UPLOADS_DIR = BACKEND_DIR / "uploads"
 # UPLOADS_DIR, which is gitignored runtime storage), one file per SKU. See the seed migration
 # that backfills HardwareReferenceEntry.image_url for the naming convention.
 HARDWARE_REFERENCE_IMAGES_DIR = BACKEND_DIR / "static" / "hardware-reference"
+# Curated Toys-to-Life pack photos, one subfolder per line — see toys_to_life_image_service.py.
+TOYS_TO_LIFE_IMAGES_DIR = BACKEND_DIR / "static" / "toys-to-life"
 
 
 class Settings(BaseSettings):

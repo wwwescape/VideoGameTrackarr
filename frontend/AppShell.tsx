@@ -19,6 +19,7 @@ import ToastStyles from "./components/ToastStyles";
 import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
 import RestoreGuard from "./components/RestoreGuard";
 import UpdateAvailableChip from "./components/UpdateAvailableChip";
+import WhatsNew from "./components/WhatsNew";
 import { useLogout } from "./hooks/useAuth";
 import { useJobCompletionRefresh } from "./hooks/useJobCompletionRefresh";
 import { useScrollResetOnNavigate } from "./hooks/useScrollResetOnNavigate";
@@ -68,6 +69,7 @@ const AppShell = () => {
         />
       ) : null}
       <RestoreGuard />
+      <WhatsNew />
       <Link
         href="#main-content"
         sx={{

@@ -1,7 +1,13 @@
 from sqlalchemy.orm import Session
 
 from app.models.library import Tag
-from app.repositories import accessory_repository, device_repository, game_repository, tag_repository
+from app.repositories import (
+    accessory_repository,
+    device_repository,
+    game_repository,
+    tag_repository,
+    toys_to_life_repository,
+)
 from app.services.exceptions import ConflictError, NotFoundError
 
 
@@ -107,6 +113,26 @@ def detach_tag_from_accessory(db: Session, accessory_id: int, tag_id: int) -> li
     return tag_repository.list_tags_for_accessory(db, accessory_id)
 
 
+def list_tags_for_toy(db: Session, item_id: int) -> list[Tag]:
+    _require_toy(db, item_id)
+    return tag_repository.list_tags_for_toy(db, item_id)
+
+
+def attach_tag_to_toy(db: Session, item_id: int, tag_id: int) -> list[Tag]:
+    _require_toy(db, item_id)
+    _require_tag(db, tag_id)
+    tag_repository.attach_tag_to_toy(db, item_id, tag_id)
+    db.commit()
+    return tag_repository.list_tags_for_toy(db, item_id)
+
+
+def detach_tag_from_toy(db: Session, item_id: int, tag_id: int) -> list[Tag]:
+    _require_toy(db, item_id)
+    tag_repository.detach_tag_from_toy(db, item_id, tag_id)
+    db.commit()
+    return tag_repository.list_tags_for_toy(db, item_id)
+
+
 def _require_game(db: Session, game_id: int) -> None:
     if game_repository.get_game(db, game_id) is None:
         raise NotFoundError(f"Game {game_id} not found")
@@ -120,6 +146,11 @@ def _require_device(db: Session, device_id: int) -> None:
 def _require_accessory(db: Session, accessory_id: int) -> None:
     if accessory_repository.get_accessory(db, accessory_id) is None:
         raise NotFoundError(f"Accessory {accessory_id} not found")
+
+
+def _require_toy(db: Session, item_id: int) -> None:
+    if toys_to_life_repository.get_item(db, item_id) is None:
+        raise NotFoundError(f"Toys-to-Life item {item_id} not found")
 
 
 def _require_tag(db: Session, tag_id: int) -> Tag:

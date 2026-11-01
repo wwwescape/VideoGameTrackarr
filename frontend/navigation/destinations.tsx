@@ -17,11 +17,13 @@ import SellIcon from "@mui/icons-material/SellOutlined";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import DashboardIcon from "@mui/icons-material/SpaceDashboardOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
+import ToysIcon from "@mui/icons-material/ToysOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
 import GamesIcon from "@mui/icons-material/Games";
 import IgdbIcon from "../icons/IgdbIcon";
+import LegoDimensionsIcon from "../icons/LegoDimensionsIcon";
 import SteamIcon from "../icons/SteamIcon";
 
 export interface NavSubDestination {
@@ -74,6 +76,14 @@ export const navGroups: NavGroup[] = [
           },
           { to: "/games/series", labelKey: "nav.series", icon: <AccountTreeIcon /> },
           { to: "/games/platforms", labelKey: "nav.platforms", icon: <VideogameAssetIcon /> },
+        ],
+      },
+      {
+        to: "/toys-to-life",
+        labelKey: "nav.toysToLife",
+        icon: <ToysIcon />,
+        subItems: [
+          { to: "/toys-to-life/lego-dimensions", labelKey: "nav.legoDimensions", icon: <LegoDimensionsIcon /> },
         ],
       },
       {

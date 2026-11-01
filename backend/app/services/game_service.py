@@ -14,6 +14,7 @@ from app.repositories import (
     game_repository,
     genre_repository,
     platform_repository,
+    toys_to_life_repository,
 )
 from app.repositories.game_repository import GameWithStatus
 from app.services import rom_service, upload_service
@@ -293,7 +294,12 @@ async def import_game_from_igdb(
     # known local parent" — _upsert_from_igdb_payload still decides structural vs
     # display-only based on the *child's own* category, same as the direct-import path.
     addons = await igdb_client.get_addons_by_parent_igdb_id(igdb_id)
+    # IGDB lists Toys-to-Life packs (LEGO Dimensions' Fun Packs, ...) as add-ons too; they have
+    # their own pages, so they aren't imported as add-ons as well.
+    pack_ids = toys_to_life_repository.pack_igdb_ids(db)
     for addon in addons:
+        if addon.get("id") in pack_ids:
+            continue
         _upsert_from_igdb_payload(
             db, addon, candidate_parent_id=game.id, scope=scope, auto_discovered=auto_discovered
         )

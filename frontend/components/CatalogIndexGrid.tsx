@@ -43,11 +43,18 @@ export interface CatalogIndexColumn<T> {
   hideOnPhone?: boolean;
   // Makes the column sortable (its header and the Sort menu), highest first to start.
   sortValue?: (entry: T) => SortValue;
+  // Overrides "highest first" (a set number reads lowest first).
+  defaultDirection?: "asc" | "desc";
 }
 
 export interface CatalogIndexFilter<T> {
   label: string;
   choices: { value: string; label: string; matches: (entry: T) => boolean }[];
+}
+
+// A filter beside statusFilter (a toy's pack type), remembered under its own key.
+export interface CatalogIndexExtraFilter<T> extends CatalogIndexFilter<T> {
+  key: string;
 }
 
 interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
@@ -61,8 +68,11 @@ interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
   getHref: (entry: T) => string;
   // Defaults to the entry's id; Platforms needs its own, since PC has a card per storefront.
   getKey?: (entry: T) => number | string;
-  // The default card's and table's game count.
-  getCount: (entry: T) => number;
+  // The default card's and table's game count. Leave it out for entries that aren't groups of
+  // games (Toys-to-Life packs): no game count column or sort then.
+  getCount?: (entry: T) => number;
+  // What search matches against. Defaults to the name.
+  getSearchText?: (entry: T) => string;
   // Defaults to a plain name + game count CatalogRefCard.
   renderCard?: (entry: T, onClick: () => void) => ReactNode;
   estimateRowHeight?: (columns: number) => number;
@@ -70,6 +80,9 @@ interface CatalogIndexGridProps<T extends CatalogIndexEntry> {
   tableColumns?: CatalogIndexColumn<T>[];
   // The Filter: one pick-one choice (besides All), each saying which entries it keeps.
   statusFilter?: CatalogIndexFilter<T>;
+  extraFilters?: CatalogIndexExtraFilter<T>[];
+  // The order to start with. Defaults to the name, A-Z.
+  defaultSort?: { field: string; direction: "asc" | "desc" };
   // sessionStorage key for this page's remembered search/sort (see hooks/useSessionState.ts),
   // and the localStorage key for its view and card size.
   stateKey: string;
@@ -90,10 +103,13 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   getHref,
   getKey,
   getCount,
+  getSearchText,
   renderCard,
   estimateRowHeight,
   tableColumns,
   statusFilter,
+  extraFilters,
+  defaultSort,
   stateKey,
 }: CatalogIndexGridProps<T>) => {
   const { t } = useTranslation();
@@ -103,36 +119,58 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
   const [cardSize, setCardSize] = useLocalPreference(`${stateKey}.cardSize`, CARD_SIZE_DEFAULT);
   const [menu, setMenu] = useState<{ name: "options" | "view" | "sort"; anchor: HTMLElement } | null>(null);
   const [status, setStatus] = useSessionState(`${stateKey}.status`, "all");
+  const [extraValues, setExtraValues] = useSessionState<Record<string, string>>(`${stateKey}.filters`, {});
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeStatus = statusFilter?.choices.find((choice) => choice.value === status);
+  // Every filter with its current pick; `active` is the picked choice (none for All).
+  const filters = [
+    ...(statusFilter ? [{ ...statusFilter, key: "status", value: status, setValue: setStatus }] : []),
+    ...(extraFilters ?? []).map((filter) => ({
+      ...filter,
+      value: extraValues[filter.key] ?? "all",
+      setValue: (value: string) => setExtraValues({ ...extraValues, [filter.key]: value }),
+    })),
+  ].map((filter) => ({ ...filter, active: filter.choices.find((choice) => choice.value === filter.value) }));
+  const activeChoices = filters.flatMap((filter) => (filter.active ? [filter.active] : []));
+  const clearFilters = () => {
+    setStatus("all");
+    setExtraValues({});
+  };
 
-  const columns: CatalogIndexColumn<T>[] = tableColumns ?? [
-    { key: "games", label: t("games.listView.columnGames"), render: (entry) => getCount(entry), sortValue: getCount },
-  ];
+  const columns: CatalogIndexColumn<T>[] =
+    tableColumns ??
+    (getCount
+      ? [{ key: "games", label: t("games.listView.columnGames"), render: (entry) => getCount(entry), sortValue: getCount }]
+      : []);
   // Name, then every sortable table column (the counts), in the table's order. The game count
   // (getCount) is always offered: as its own column, or for Platforms (Owned + Wishlisted
   // columns) in the Sort menu only.
   const sortColumns = columns.filter((column) => column.sortValue);
-  const countField = sortColumns.some((column) => column.key === "games")
-    ? []
-    : [{ field: "games", label: t("games.listView.columnGames"), defaultDirection: "desc" as const }];
+  const countField =
+    !getCount || sortColumns.some((column) => column.key === "games")
+      ? []
+      : [{ field: "games", label: t("games.listView.columnGames"), defaultDirection: "desc" as const }];
   const sortFields: SortField<string>[] = [
     { field: "name", label: t("games.listView.columnName") },
-    ...sortColumns.map((column) => ({ field: column.key, label: column.label, defaultDirection: "desc" as const })),
+    ...sortColumns.map((column) => ({ field: column.key, label: column.label, defaultDirection: column.defaultDirection ?? "desc" })),
     ...countField,
   ];
-  const sort = useListSort(`${stateKey}.sortBy`, sortFields, { field: "name", direction: "asc" });
+  const sort = useListSort(`${stateKey}.sortBy`, sortFields, defaultSort ?? { field: "name", direction: "asc" });
 
   const visibleEntries = useMemo(() => {
     if (!entries) return [];
     const trimmed = searchKeyword.trim().toLowerCase();
+    const searchText = getSearchText ?? ((entry: T) => entry.name);
     const filtered = entries.filter(
-      (entry) => (!trimmed || entry.name.toLowerCase().includes(trimmed)) && (!activeStatus || activeStatus.matches(entry))
+      (entry) =>
+        (!trimmed || searchText(entry).toLowerCase().includes(trimmed)) && activeChoices.every((choice) => choice.matches(entry))
     );
-    const values: Record<string, (entry: T) => SortValue> = { name: (entry) => entry.name, games: getCount };
+    const values: Record<string, (entry: T) => SortValue> = { name: (entry) => entry.name };
+    if (getCount) values.games = getCount;
     sortColumns.forEach((column) => (values[column.key] = column.sortValue!));
     return sortRows(filtered, sort.sort, values, (entry) => entry.name);
-  }, [entries, searchKeyword, sort.sort, activeStatus, sortColumns, getCount]);
+    // activeChoices is rebuilt every render; what it holds only changes with status and extraValues.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, searchKeyword, sort.sort, status, extraValues, sortColumns, getCount, getSearchText]);
 
   const keyOf = getKey ?? ((entry: T) => entry.id);
   const viewChoices: MenuChoice<CatalogIndexView>[] = [
@@ -161,12 +199,12 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
         onClick={(event) => setMenu({ name: "sort", anchor: event.currentTarget })}
         aria-haspopup="menu"
       />
-      {statusFilter ? (
+      {filters.length ? (
         <ToolbarButton
           icon={<FilterAltOutlinedIcon />}
           label={t("games.listView.filter")}
-          count={activeStatus ? 1 : 0}
-          active={!!activeStatus}
+          count={activeChoices.length}
+          active={activeChoices.length > 0}
           onClick={() => setFiltersOpen(true)}
         />
       ) : null}
@@ -235,7 +273,9 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
       }
     >
       <FilterChips
-        chips={activeStatus ? [{ key: "status", label: activeStatus.label, onRemove: () => setStatus("all") }] : []}
+        chips={filters.flatMap((filter) =>
+          filter.active ? [{ key: filter.key, label: filter.active.label, onRemove: () => filter.setValue("all") }] : []
+        )}
       />
       {isLoading ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>{t("common.loading")}</Paper>
@@ -260,7 +300,7 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
             ) : (
               <CatalogRefCard
                 name={entry.name}
-                gameCount={getCount(entry)}
+                gameCount={getCount?.(entry) ?? 0}
                 coverUrls={entry.coverUrls ?? []}
                 onClick={onClick}
               />
@@ -281,23 +321,26 @@ const CatalogIndexGrid = <T extends CatalogIndexEntry>({
         onFieldChange={sort.pickField}
         onDirectionChange={sort.setDirection}
       />
-      {statusFilter ? (
+      {filters.length ? (
         <FilterDialog
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
-          onClear={() => setStatus("all")}
-          activeCount={activeStatus ? 1 : 0}
+          onClear={clearFilters}
+          activeCount={activeChoices.length}
         >
-          <ToggleFilter
-            id={`${stateKey}-status`}
-            label={statusFilter.label}
-            value={activeStatus ? status : "all"}
-            onChange={setStatus}
-            options={[
-              { value: "all", label: t("games.listToolbar.allOption") },
-              ...statusFilter.choices.map(({ value, label }) => ({ value, label })),
-            ]}
-          />
+          {filters.map((filter) => (
+            <ToggleFilter
+              key={filter.key}
+              id={`${stateKey}-${filter.key}`}
+              label={filter.label}
+              value={filter.active ? filter.value : "all"}
+              onChange={filter.setValue}
+              options={[
+                { value: "all", label: t("games.listToolbar.allOption") },
+                ...filter.choices.map(({ value, label }) => ({ value, label })),
+              ]}
+            />
+          ))}
         </FilterDialog>
       ) : null}
     </Page>

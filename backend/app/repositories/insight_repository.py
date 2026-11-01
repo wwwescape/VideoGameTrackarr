@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, aliased, joinedload
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory, AccessoryDeviceLink, UserAccessory, UserDevice
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PlayStatus
+from app.repositories import toys_to_life_repository
 from app.repositories.game_repository import GameSortOption, GameSource, _apply_optional_game_filters
 
 # Mirrors the frontend's ADDON_DISPLAY_CATEGORIES (GameAddonsTab.tsx) — bundles, standalone
@@ -91,6 +92,8 @@ def find_missing_addons(
             game_owned,
             ~addon_owned,
             Addon.category.in_(_DLC_LIKE_CATEGORIES),
+            # Toys-to-Life packs are tracked on their own pages, not as missing add-ons.
+            ~toys_to_life_repository.is_toy_pack(Addon.igdb_id),
         )
     )
     stmt = _apply_optional_game_filters(

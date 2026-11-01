@@ -6,7 +6,7 @@ import zipfile
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import BACKEND_DIR
@@ -58,6 +58,7 @@ from app.models.library import (
 )
 from app.models.platprices import PlatPricesCache
 from app.models.system import User
+from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote, ToysToLifeTag
 from app.schemas.backup import (
     BACKUP_FORMAT_VERSION,
     BackupAccessory,
@@ -87,10 +88,12 @@ from app.schemas.backup import (
     BackupSettings,
     BackupStorageVariant,
     BackupTag,
+    BackupToysToLifeCopy,
+    BackupToysToLifeItem,
     BackupUserAccessory,
     BackupUserHardware,
 )
-from app.services import rom_service
+from app.services import rom_service, toys_to_life_adoption
 from app.services.upload_service import (
     ACCESSORY_IMAGES_DIR,
     ACCESSORY_IMAGES_URL_PREFIX,
@@ -288,6 +291,7 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 for game_id in db.scalars(select(PlatPricesCache.game_id).where(PlatPricesCache.ignored.is_(True)))
             ),
         ],
+        toys_to_life=_toys_to_life_rows(db),
         settings=(
             BackupSettings(currency=user.currency, overview_layout=user.overview_layout, steam_id_64=user.steam_id_64)
             if user
@@ -326,12 +330,64 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
     if bios:
         payload.bios_files = [
             BackupBiosFile(
-                id=b.id, system=b.system, filename=b.filename, stored_filename=b.stored_filename,
-                size_bytes=b.size_bytes, md5=b.md5,
+                id=b.id,
+                system=b.system,
+                filename=b.filename,
+                stored_filename=b.stored_filename,
+                size_bytes=b.size_bytes,
+                md5=b.md5,
             )
             for b in db.scalars(select(BiosFile))
         ]
     return payload
+
+
+def _toys_to_life_rows(db: Session) -> list[BackupToysToLifeItem]:
+    """Only packs that carry some of your own state — the rest is reference data."""
+    notes: dict[int, list[str]] = {}
+    for note in db.scalars(select(ToysToLifeNote).order_by(ToysToLifeNote.created_at, ToysToLifeNote.id)):
+        notes.setdefault(note.item_id, []).append(note.body)
+    tag_ids: dict[int, list[int]] = {}
+    for link in db.scalars(select(ToysToLifeTag)):
+        tag_ids.setdefault(link.item_id, []).append(link.tag_id)
+    copies: dict[int, list[BackupToysToLifeCopy]] = {}
+    for copy in db.scalars(select(ToysToLifeCopy).order_by(ToysToLifeCopy.id)):
+        copies.setdefault(copy.item_id, []).append(
+            BackupToysToLifeCopy(status=copy.status.value, price=copy.price, notes=copy.notes)
+        )
+    return [
+        BackupToysToLifeItem(
+            line=item.line,
+            set_number=item.set_number,
+            copies=copies.get(item.id, []),
+            rating=item.user_rating,
+            notes=notes.get(item.id, []),
+            tag_ids=sorted(tag_ids.get(item.id, [])),
+        )
+        for item in db.scalars(select(ToysToLifeItem).order_by(ToysToLifeItem.line, ToysToLifeItem.set_number))
+        if item.id in copies or item.user_rating is not None or item.id in notes or item.id in tag_ids
+    ]
+
+
+def _restore_toys_to_life(db: Session, rows: list[BackupToysToLifeItem]) -> None:
+    """Re-applies your state to the packs by (line, set_number). A pack this install doesn't
+    have (a line added after this one was set up) is skipped, as is a tag the backup lacks."""
+    items = {(item.line, item.set_number): item.id for item in db.scalars(select(ToysToLifeItem))}
+    tag_ids = set(db.scalars(select(Tag.id)))
+    for row in rows:
+        item_id = items.get((row.line, row.set_number))
+        if item_id is None:
+            continue
+        for copy in row.copies:
+            db.add(
+                ToysToLifeCopy(item_id=item_id, status=LibraryStatus(copy.status), price=copy.price, notes=copy.notes)
+            )
+        if row.rating is not None:
+            db.execute(update(ToysToLifeItem).where(ToysToLifeItem.id == item_id).values(user_rating=row.rating))
+        for body in row.notes:
+            db.add(ToysToLifeNote(item_id=item_id, body=body))
+        for tag_id in sorted(set(row.tag_ids) & tag_ids):
+            db.add(ToysToLifeTag(item_id=item_id, tag_id=tag_id))
 
 
 def export_backup_json(db: Session) -> str:
@@ -521,6 +577,11 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
 
     db.execute(delete(GameTag))
     db.execute(delete(Note))
+    # Toys-to-Life: only your state on the packs goes — the packs are reference data.
+    db.execute(delete(ToysToLifeTag))
+    db.execute(delete(ToysToLifeNote))
+    db.execute(delete(ToysToLifeCopy))
+    db.execute(update(ToysToLifeItem).values(user_rating=None))
     # Caches keyed on game ids, which the backup's ids may now point elsewhere: they refetch
     # (the ignored-price choices come back from the backup below).
     db.execute(delete(ItadPriceCache))
@@ -655,6 +716,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         db.add(Note(id=n.id, game_id=n.game_id, body=n.body))
     for gt in payload.game_tags:
         db.add(GameTag(game_id=gt.game_id, tag_id=gt.tag_id))
+    db.flush()
+    _restore_toys_to_life(db, payload.toys_to_life)
 
     for m in payload.manufacturers:
         db.add(Manufacturer(id=m.id, name=m.name))
@@ -758,10 +821,16 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         db.flush()
         _extract_files(files_zip, _bios_file_paths(payload))
         for bios in payload.bios_files:
-            db.add(BiosFile(
-                id=bios.id, system=bios.system, filename=bios.filename, stored_filename=bios.stored_filename,
-                size_bytes=bios.size_bytes, md5=bios.md5,
-            ))
+            db.add(
+                BiosFile(
+                    id=bios.id,
+                    system=bios.system,
+                    filename=bios.filename,
+                    stored_filename=bios.stored_filename,
+                    size_bytes=bios.size_bytes,
+                    md5=bios.md5,
+                )
+            )
     if included.roms:
         # The .zip's ROMs and saves replace the current ones outright. Files are extracted
         # before the commit (same stored names are simply rewritten), and any old file the
@@ -773,21 +842,34 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         payload.rom_save_states = [s for s in payload.rom_save_states if s.rom_file_id in rom_ids]
         _extract_files(files_zip, _rom_file_paths(payload))
         for rom in payload.rom_files:
-            db.add(RomFile(
-                id=rom.id, library_item_id=rom.library_item_id, label=rom.label,
-                original_filename=rom.original_filename, stored_filename=rom.stored_filename,
-                size_bytes=rom.size_bytes, extension=rom.extension, is_archive=rom.is_archive,
-                sram_stored_filename=rom.sram_stored_filename, sram_size_bytes=rom.sram_size_bytes,
-                sram_updated_at=datetime.fromisoformat(rom.sram_updated_at) if rom.sram_updated_at else None,
-            ))
+            db.add(
+                RomFile(
+                    id=rom.id,
+                    library_item_id=rom.library_item_id,
+                    label=rom.label,
+                    original_filename=rom.original_filename,
+                    stored_filename=rom.stored_filename,
+                    size_bytes=rom.size_bytes,
+                    extension=rom.extension,
+                    is_archive=rom.is_archive,
+                    sram_stored_filename=rom.sram_stored_filename,
+                    sram_size_bytes=rom.sram_size_bytes,
+                    sram_updated_at=datetime.fromisoformat(rom.sram_updated_at) if rom.sram_updated_at else None,
+                )
+            )
         db.flush()
         for state in payload.rom_save_states:
-            db.add(RomSaveState(
-                id=state.id, rom_file_id=state.rom_file_id, stored_filename=state.stored_filename,
-                screenshot_filename=state.screenshot_filename, screenshot_media_type=state.screenshot_media_type,
-                size_bytes=state.size_bytes,
-                **({"created_at": datetime.fromisoformat(state.created_at)} if state.created_at else {}),
-            ))
+            db.add(
+                RomSaveState(
+                    id=state.id,
+                    rom_file_id=state.rom_file_id,
+                    stored_filename=state.stored_filename,
+                    screenshot_filename=state.screenshot_filename,
+                    screenshot_media_type=state.screenshot_media_type,
+                    size_bytes=state.size_bytes,
+                    **({"created_at": datetime.fromisoformat(state.created_at)} if state.created_at else {}),
+                )
+            )
         kept = set(_rom_file_paths(payload))
         orphaned_rom_files += [f for f in old_files if f not in kept]
         rom_snapshots = []
@@ -808,6 +890,12 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 db.add(RomSaveState(**state))
         else:
             orphaned_rom_files.extend(snap["files"])
+
+    # A backup from before format 5 tracked LEGO Dimensions packs as add-ons of the game (and
+    # its starter kits through the game's copies); move that onto the packs, as migration
+    # d4f6a8c0e2b3 did for the live database.
+    if payload.version < 5:
+        toys_to_life_adoption.adopt_library_state(db)
 
     db.commit()
     rom_service.delete_files(orphaned_rom_files)

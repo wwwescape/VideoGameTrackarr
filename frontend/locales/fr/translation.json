@@ -41,7 +41,9 @@
     "seriesNotFoundTitle": "Série introuvable",
     "collectionNotFoundTitle": "Collection introuvable",
     "platformNotFoundTitle": "Plateforme introuvable",
-    "eventNotFoundTitle": "Événement introuvable"
+    "eventNotFoundTitle": "Événement introuvable",
+    "toysToLifeLineNotFoundTitle": "Gamme Toys to Life introuvable",
+    "toyNotFoundTitle": "Pack introuvable"
   },
   "nav": {
     "events": "Événements",
@@ -50,6 +52,8 @@
     "collections": "Collections",
     "series": "Séries",
     "platforms": "Plateformes",
+    "toysToLife": "Toys to Life",
+    "legoDimensions": "LEGO Dimensions",
     "hardware": "Matériel",
     "addDevice": "Ajouter un appareil",
     "addAccessory": "Ajouter un accessoire",
@@ -87,6 +91,14 @@
     "updateAvailable": "Nouvelle version disponible : {{version}}",
     "lightMode": "Mode clair",
     "openMenu": "Ouvrir le menu"
+  },
+  "whatsNew": {
+    "title": "Nouveautés",
+    "updatedTo": "VideoGameTrackarr a été mis à jour vers la v{{version}}.",
+    "viewOnGithub": "Voir sur GitHub",
+    "gotIt": "Compris",
+    "notesUnavailable": "Les notes de version n'ont pas pu être chargées pour le moment.",
+    "openReleaseNotes": "Les lire sur GitHub"
   },
   "dialogs": {
     "message": {
@@ -1197,6 +1209,73 @@
       "filterNoneOwned": "Aucun possédé",
       "filterWithOwned": "Avec des jeux possédés",
       "filterWithWishlisted": "Avec des jeux souhaités"
+    }
+  },
+  "toysToLife": {
+    "packCount_one": "{{count}} pack",
+    "packCount_other": "{{count}} packs",
+    "collectionSummary": "{{owned}} possédés · {{wishlist}} en liste de souhaits",
+    "columnPacks": "Packs",
+    "columnOwned": "Possédés",
+    "columnWishlisted": "En liste de souhaits",
+    "columnSetNumber": "Numéro de set",
+    "columnPackType": "Type de pack",
+    "columnFranchise": "Franchise",
+    "columnStatus": "Statut",
+    "statusOwned": "Possédé",
+    "statusWishlist": "En liste de souhaits",
+    "statusNotOwned": "Non possédé",
+    "filterPackType": "Type de pack",
+    "allPacks": "Tous les packs",
+    "packTypes": {
+      "starterPack": "Pack de démarrage",
+      "levelPack": "Pack Aventure",
+      "teamPack": "Pack Équipe",
+      "funPack": "Pack Héros",
+      "storyPack": "Pack Histoire",
+      "polybag": "Polybag / Promo"
+    },
+    "linesPage": {
+      "emptyMessage": "Aucune gamme Toys to Life pour l'instant.",
+      "searchLabel": "Rechercher des gammes",
+      "searchPlaceholder": "Saisissez le nom de la gamme",
+      "count_one": "{{count}} gamme",
+      "count_other": "{{count}} gammes"
+    },
+    "linePage": {
+      "emptyMessage": "Aucun pack dans cette gamme pour l'instant.",
+      "searchLabel": "Rechercher des packs",
+      "searchPlaceholder": "Nom, numéro de set ou minifigurine"
+    },
+    "pack": {
+      "toyOf": "Toy to Life de {{name}}",
+      "releaseDatesTitle": "Dates de sortie",
+      "noReleaseDates": "Date de sortie inconnue.",
+      "setNumberLabel": "Numéro de set",
+      "packTypeLabel": "Type de pack",
+      "franchiseLabel": "Franchise",
+      "minifiguresLabel": "Minifigurines",
+      "platformLabel": "Plateforme"
+    },
+    "collection": {
+      "title": "Votre collection",
+      "addPack": "Ajouter un pack",
+      "empty": "Pas encore dans votre collection ni votre liste de souhaits.",
+      "noPrice": "Sans prix",
+      "addTitle_collection": "Ajouter à votre collection",
+      "addTitle_wishlist": "Ajouter à votre liste de souhaits",
+      "editTitle_collection": "Modifier dans votre collection",
+      "editTitle_wishlist": "Modifier dans votre liste de souhaits",
+      "priceLabel": "Prix",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Neuf, ouvert, il manque une pièce…",
+      "add": "Ajouter",
+      "save": "Enregistrer",
+      "addedToast": "Ajouté à votre {{phrase}}",
+      "updatedToast": "Mis à jour dans votre {{phrase}}",
+      "movedToast": "Déplacé vers votre {{phrase}}",
+      "removedToast": "Retiré de votre {{phrase}}",
+      "saveErrorToast": "Impossible d'enregistrer. Veuillez réessayer."
     }
   },
   "hardware": {

@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getVersion } from "../api/version";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getVersion, getWhatsNew, markWhatsNewSeen } from "../api/version";
 
 // Changes at most once per release — no need for interval polling like the jobs list or
 // restore status; a long staleTime just avoids refetching on every remount/focus.
@@ -29,4 +29,21 @@ export function useVersion() {
   };
 
   return { ...query, checkForUpdates };
+}
+
+// Asked once per app load: the answer only changes with an upgrade (which reloads the app)
+// or when it's marked seen (which clears it below).
+export function useWhatsNew() {
+  return useQuery({ queryKey: ["whatsNew"], queryFn: getWhatsNew, staleTime: Infinity, retry: false });
+}
+
+export function useMarkWhatsNewSeen() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markWhatsNewSeen,
+    onSuccess: () =>
+      queryClient.setQueryData(["whatsNew"], (current: Awaited<ReturnType<typeof getWhatsNew>> | undefined) =>
+        current ? { ...current, releases: [], notesUnavailable: false } : current
+      ),
+  });
 }

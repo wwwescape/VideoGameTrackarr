@@ -11,7 +11,9 @@ import { useGame } from "../hooks/useGames";
 import { useDeviceItem } from "../hooks/useDevice";
 import { useIgdbGamePreview } from "../hooks/useIgdbSearch";
 import { usePlatform } from "../hooks/usePlatforms";
+import { useToysToLifeItem, useToysToLifeLines } from "../hooks/useToysToLife";
 import { parsePlatformScope, platformDisplayName } from "../utils/platformScope";
+import { setNumberFromIdentifier } from "../utils/toysToLife";
 
 export interface Crumb {
   label: ReactNode;
@@ -184,6 +186,33 @@ export const editAccessoryCrumbs: CrumbsFn = (params, t) => [
     to: `/hardware/accessory/${params.identifier}`,
   },
   { label: t("breadcrumbs.edit") },
+];
+
+const ToysToLifeLineCrumbLabel = ({ slug }: { slug: string | undefined }) => {
+  const { t } = useTranslation();
+  const { data: lines, isError } = useToysToLifeLines();
+  const line = lines?.find((entry) => entry.slug === slug);
+  if (isError || (lines && !line)) return <>{t("errors.toysToLifeLineNotFoundTitle")}</>;
+  return <>{line?.name ?? t("common.loading")}</>;
+};
+
+const ToyCrumbLabel = ({ line, pack }: { line: string | undefined; pack: string | undefined }) => {
+  const { t } = useTranslation();
+  const { data: item, isError } = useToysToLifeItem(line, setNumberFromIdentifier(pack), DISPLAY_ONLY);
+  return <>{isError ? t("errors.toyNotFoundTitle") : (item?.name ?? t("common.loading"))}</>;
+};
+
+export const toysToLifeCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.toysToLife") }];
+
+export const toysToLifeLineCrumbs: CrumbsFn = (params, t) => [
+  { label: t("nav.toysToLife"), to: "/toys-to-life" },
+  { label: <ToysToLifeLineCrumbLabel slug={params.line} /> },
+];
+
+export const toyCrumbs: CrumbsFn = (params, t) => [
+  { label: t("nav.toysToLife"), to: "/toys-to-life" },
+  { label: <ToysToLifeLineCrumbLabel slug={params.line} />, to: `/toys-to-life/${params.line}` },
+  { label: <ToyCrumbLabel line={params.line} pack={params.pack} /> },
 ];
 
 export const insightsCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.insights") }];

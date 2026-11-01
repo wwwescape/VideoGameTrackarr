@@ -29,6 +29,7 @@ from app.models.itad import ItadPriceCache
 from app.models.library import GameProgress, GameTag, Note, PlaySession, Tag
 from app.models.platprices import PlatPricesCache
 from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
+from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote, ToysToLifeTag
 from app.repositories import game_repository
 from app.services import backup_service, rom_service, upload_service
 from app.services.exceptions import ConflictError
@@ -69,9 +70,7 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
     if action is DangerZoneAction.CLEAR_PROGRESS:
         _clear_progress(db, result)
     elif action is DangerZoneAction.CLEAR_RATINGS:
-        result.removed["ratings"] = _count(
-            db, update(Game).where(Game.user_rating.is_not(None)).values(user_rating=None)
-        )
+        _clear_ratings(db, result)
     elif action is DangerZoneAction.CLEAR_NOTES:
         _clear_notes(db, result)
     elif action is DangerZoneAction.CLEAR_TAGS:
@@ -86,6 +85,7 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
         rom_files, uploads = _reset_library(db, result)
         uploads += _reset_hardware(db, result)
         _clear_tags(db, result)
+        _reset_toys_to_life(db, result)
         _clear_sync_caches(db, result, keep_ignored=False)
     db.commit()
 
@@ -107,18 +107,30 @@ def _clear_progress(db: Session, result: DangerZoneResult) -> None:
     result.removed["playSessions"] = _count(db, delete(PlaySession))
 
 
+def _clear_ratings(db: Session, result: DangerZoneResult) -> None:
+    """Your star rating on every game and Toys-to-Life pack."""
+    result.removed["ratings"] = _count(
+        db, update(Game).where(Game.user_rating.is_not(None)).values(user_rating=None)
+    ) + _count(db, update(ToysToLifeItem).where(ToysToLifeItem.user_rating.is_not(None)).values(user_rating=None))
+
+
 def _clear_notes(db: Session, result: DangerZoneResult) -> None:
-    """Every note on a game, device or accessory. A copy's own short notes field stays."""
+    """Every note on a game, device, accessory or Toys-to-Life pack. A copy's own short notes
+    field stays."""
     result.removed["notes"] = (
-        _count(db, delete(Note)) + _count(db, delete(DeviceNote)) + _count(db, delete(AccessoryNote))
+        _count(db, delete(Note))
+        + _count(db, delete(DeviceNote))
+        + _count(db, delete(AccessoryNote))
+        + _count(db, delete(ToysToLifeNote))
     )
 
 
 def _clear_tags(db: Session, result: DangerZoneResult) -> None:
-    """Every tag, and every game, device and accessory it was on."""
+    """Every tag, and every game, device, accessory and Toys-to-Life pack it was on."""
     db.execute(delete(GameTag))
     db.execute(delete(DeviceTag))
     db.execute(delete(AccessoryTag))
+    db.execute(delete(ToysToLifeTag))
     result.removed["tags"] = result.removed.get("tags", 0) + _count(db, delete(Tag))
 
 
@@ -156,6 +168,14 @@ def _reset_library(db: Session, result: DangerZoneResult) -> tuple[list[str], li
     db.execute(delete(Franchise))
     result.removed["games"] = len(game_ids)
     return rom_files, images
+
+
+def _reset_toys_to_life(db: Session, result: DangerZoneResult) -> None:
+    """Your copies, ratings and notes on every Toys-to-Life pack (tags go with
+    _clear_tags). The packs themselves are reference data and stay."""
+    result.removed["toysToLife"] = _count(db, delete(ToysToLifeCopy))
+    db.execute(delete(ToysToLifeNote))
+    db.execute(update(ToysToLifeItem).values(user_rating=None))
 
 
 def _reset_hardware(db: Session, result: DangerZoneResult) -> list[str | None]:
