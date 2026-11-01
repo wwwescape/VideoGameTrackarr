@@ -6,24 +6,25 @@ from sqlalchemy.orm import Session
 from app.models.catalog import Artwork, GameVideo, IgdbReleaseRegion, ReleaseDate, Screenshot
 
 
-def sync_screenshots(db: Session, game_id: int, screenshots: list[tuple[int, str]]) -> None:
-    """screenshots: (igdb_id, url) pairs."""
+def sync_screenshots(db: Session, game_id: int, screenshots: list[tuple[int | None, str]]) -> None:
+    """screenshots: (igdb_id, url) pairs, in display order; igdb_id is None for an upload."""
     db.execute(delete(Screenshot).where(Screenshot.game_id == game_id))
     for igdb_id, url in screenshots:
         db.add(Screenshot(game_id=game_id, igdb_id=igdb_id, url=url))
     db.flush()
 
 
-def sync_artworks(db: Session, game_id: int, artworks: list[tuple[int, str]]) -> None:
-    """artworks: (igdb_id, url) pairs."""
+def sync_artworks(db: Session, game_id: int, artworks: list[tuple[int | None, str]]) -> None:
+    """artworks: (igdb_id, url) pairs, in display order; igdb_id is None for an upload."""
     db.execute(delete(Artwork).where(Artwork.game_id == game_id))
     for igdb_id, url in artworks:
         db.add(Artwork(game_id=game_id, igdb_id=igdb_id, url=url))
     db.flush()
 
 
-def sync_videos(db: Session, game_id: int, videos: list[tuple[int, str | None, str]]) -> None:
-    """videos: (igdb_id, name, youtube_video_id) triples."""
+def sync_videos(db: Session, game_id: int, videos: list[tuple[int | None, str | None, str]]) -> None:
+    """videos: (igdb_id, name, youtube_video_id) triples, in display order; igdb_id is None
+    for one added to a custom game."""
     db.execute(delete(GameVideo).where(GameVideo.game_id == game_id))
     for igdb_id, name, video_id in videos:
         db.add(GameVideo(game_id=game_id, igdb_id=igdb_id, name=name, video_id=video_id))

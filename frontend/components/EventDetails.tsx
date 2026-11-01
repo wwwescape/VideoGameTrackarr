@@ -2,10 +2,12 @@ import { useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventIcon from "@mui/icons-material/Event";
 import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
+import type { EventNetwork } from "../api/types";
 import { useEvent } from "../hooks/useEvents";
 import { useDetailBack } from "../utils/navState";
 import { formatEventDateTime, formatEventDateTimeRange } from "../utils/utils";
@@ -13,12 +15,17 @@ import { DetailHero, Pill, Section } from "./Detail";
 import EventActionButtons from "./EventActionButtons";
 import ExpandableText from "./ExpandableText";
 import EventGamesSection from "./EventGamesSection";
-import EventNetworksSection from "./EventNetworksSection";
 import NotFoundPage from "./NotFoundPage";
 import VideoGallery from "./VideoGallery";
 import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
-
+// IGDB's network_type is free text ("YouTube", "Twitter", "Official website"...). It still
+// calls X "Twitter", so the chip uses the current name.
+function networkLabel(network: EventNetwork): string | null {
+  const type = network.networkType?.trim();
+  if (!type) return null;
+  return type.toLowerCase() === "twitter" ? "X" : type;
+}
 
 const EventDetails = () => {
   const { t } = useTranslation();
@@ -102,6 +109,17 @@ const EventDetails = () => {
               ) : null}
             </>
           }
+          links={
+            event.networks.length ? (
+              <>
+                {event.networks.map((network) => (
+                  <Pill key={network.id} href={network.url} title={network.url} icon={<OpenInNewIcon />}>
+                    {networkLabel(network) ?? t("common.unknown")}
+                  </Pill>
+                ))}
+              </>
+            ) : undefined
+          }
         />
       }
     >
@@ -115,11 +133,6 @@ const EventDetails = () => {
       {event.videos.length > 0 ? (
         <Section id="videos" title={t("games.about.videosTitle")}>
           <VideoGallery videos={event.videos} hideTitle />
-        </Section>
-      ) : null}
-      {event.networks.length > 0 ? (
-        <Section id="networks" title={t("events.networks.heading")}>
-          <EventNetworksSection networks={event.networks} hideTitle />
         </Section>
       ) : null}
       {event.games.length > 0 ? (

@@ -10,11 +10,17 @@ COVERS_DIR = UPLOADS_DIR / "covers"
 COVERS_URL_PREFIX = "/uploads/covers/"
 ACCESSORY_IMAGES_DIR = UPLOADS_DIR / "accessory-images"
 ACCESSORY_IMAGES_URL_PREFIX = "/uploads/accessory-images/"
+# A custom game's screenshots and artwork.
+GAME_MEDIA_DIR = UPLOADS_DIR / "game-media"
+GAME_MEDIA_URL_PREFIX = "/uploads/game-media/"
 # Matches IGDB's t_720p cover size (see igdb_client.py) so uploaded covers render identically
 # to IGDB-sourced ones instead of relying on CSS object-fit to paper over a mismatched source.
 COVER_TARGET_SIZE = (540, 720)
 # Matches the curated hardware reference product shots (backend/static/hardware-reference).
 ACCESSORY_TARGET_SIZE = (400, 400)
+# Screenshots and artwork keep their own shape (a 4:3 screenshot stays 4:3), shrunk to fit in
+# IGDB's t_1080p (what imported screenshots and artwork are shown at), never enlarged.
+GAME_MEDIA_MAX_SIZE = (1920, 1080)
 JPEG_QUALITY = 85
 # Only the formats people actually upload covers and product photos in. Pillow can decode many
 # more (TIFF, PSD, PPM, ...), and its rarer decoders are where its memory-safety bugs tend to be,
@@ -25,10 +31,12 @@ ALLOWED_IMAGE_FORMATS = ["JPEG", "PNG", "WEBP", "GIF"]
 MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
 
 
-def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str, target_size: tuple[int, int]) -> str:
+def _save_optimized_image(
+    raw: bytes, directory: Path, url_prefix: str, target_size: tuple[int, int], crop: bool = True
+) -> str:
     """Center-crops an uploaded image to fill target_size exactly (upscaling if the source is
-    smaller) and re-encodes it as JPEG, saving it under `directory` and returning the URL it's
-    served at."""
+    smaller) — or, with crop=False, only shrinks it to fit inside target_size — and re-encodes
+    it as JPEG, saving it under `directory` and returning the URL it's served at."""
     try:
         image = Image.open(BytesIO(raw), formats=ALLOWED_IMAGE_FORMATS)
         image.load()
@@ -38,7 +46,10 @@ def _save_optimized_image(raw: bytes, directory: Path, url_prefix: str, target_s
         raise ValueError("Image dimensions are too large") from exc
 
     image = image.convert("RGB")
-    image = ImageOps.fit(image, target_size, method=Image.Resampling.LANCZOS)
+    if crop:
+        image = ImageOps.fit(image, target_size, method=Image.Resampling.LANCZOS)
+    else:
+        image.thumbnail(target_size, Image.Resampling.LANCZOS)
 
     directory.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4()}.jpg"
@@ -54,6 +65,17 @@ def save_accessory_image(raw: bytes) -> str:
     return _save_optimized_image(raw, ACCESSORY_IMAGES_DIR, ACCESSORY_IMAGES_URL_PREFIX, ACCESSORY_TARGET_SIZE)
 
 
+def save_game_media_image(raw: bytes) -> str:
+    return _save_optimized_image(raw, GAME_MEDIA_DIR, GAME_MEDIA_URL_PREFIX, GAME_MEDIA_MAX_SIZE, crop=False)
+
+
+def is_game_media_upload(url: str) -> bool:
+    """Whether url is a screenshot/artwork file save_game_media_image made: the folder's prefix
+    and a plain file name, nothing that could point anywhere else."""
+    name = url.removeprefix(GAME_MEDIA_URL_PREFIX)
+    return url.startswith(GAME_MEDIA_URL_PREFIX) and bool(name) and Path(name).name == name and name not in (".", "..")
+
+
 def delete_if_local_upload(url: str | None) -> None:
     """Best-effort cleanup for a cover that's about to be replaced (e.g. once a manually
     added game gets linked to IGDB and starts using IGDB's own cover instead) — a no-op for
@@ -62,11 +84,16 @@ def delete_if_local_upload(url: str | None) -> None:
     free text, not restricted to URLs save_cover_image actually generated), so resolving and
     confirming the result is still inside COVERS_DIR — rather than trusting the joined path
     directly — guards against a crafted value like "/uploads/covers/../../../etc/passwd".
-    Covers accessory photos too (the Danger Zone's resets remove both), and only ever a file
-    inside the folder, never the folder itself (an empty name)."""
+    Covers accessory photos and custom games' screenshots/artwork too (the Danger Zone's
+    resets remove them all), and only ever a file inside the folder, never the folder itself
+    (an empty name)."""
     if url is None:
         return
-    for prefix, directory in ((COVERS_URL_PREFIX, COVERS_DIR), (ACCESSORY_IMAGES_URL_PREFIX, ACCESSORY_IMAGES_DIR)):
+    for prefix, directory in (
+        (COVERS_URL_PREFIX, COVERS_DIR),
+        (ACCESSORY_IMAGES_URL_PREFIX, ACCESSORY_IMAGES_DIR),
+        (GAME_MEDIA_URL_PREFIX, GAME_MEDIA_DIR),
+    ):
         if not url.startswith(prefix):
             continue
         root = directory.resolve()

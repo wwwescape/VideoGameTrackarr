@@ -84,7 +84,7 @@ def test_plain_export_leaves_files_out(auth_client, nes_item):
 
     body = auth_client.get("/api/export/backup").json()
 
-    assert body["version"] == 3
+    assert body["version"] == 4
     assert body["included_files"] is None
     assert body["rom_files"] == [] and body["rom_save_states"] == [] and body["bios_files"] == []
 
@@ -320,6 +320,61 @@ def test_images_round_trip_in_a_zip(auth_client, db_session, scratch_images):
     assert status["result"]["restoredImages"] == 2
     assert (covers / "custom.jpg").read_bytes() == b"COVER"
     assert (accessories / "pad.jpg").read_bytes() == b"PAD"
+
+
+def test_custom_game_media_round_trips_in_a_zip(auth_client, db_session, tmp_path, monkeypatch):
+    """A custom game's screenshots, artwork and videos can't be re-fetched from IGDB, so they're
+    in the backup (format 4) with their uploaded files; an IGDB game's aren't."""
+    from app.models.catalog import Artwork, Game, GameVideo, Screenshot
+
+    game_media = tmp_path / "uploads" / "game-media"
+    monkeypatch.setattr(
+        backup_service, "_IMAGE_FOLDERS", ((backup_service.GAME_MEDIA_URL_PREFIX, "game-media", game_media),)
+    )
+    game_media.mkdir(parents=True)
+    for name in ("s1.jpg", "s2.jpg", "a1.jpg"):
+        (game_media / name).write_bytes(name.encode())
+    custom = Game(name="Homebrew")
+    from_igdb = Game(name="From IGDB", igdb_id=78)
+    db_session.add_all([custom, from_igdb])
+    db_session.flush()
+    db_session.add_all(
+        [
+            Screenshot(game_id=custom.id, url="/uploads/game-media/s2.jpg"),
+            Screenshot(game_id=custom.id, url="/uploads/game-media/s1.jpg"),
+            Artwork(game_id=custom.id, url="/uploads/game-media/a1.jpg"),
+            GameVideo(game_id=custom.id, name="Trailer", video_id="dQw4w9WgXcQ"),
+            Screenshot(game_id=from_igdb.id, igdb_id=5, url="https://images.igdb.com/s.jpg"),
+        ]
+    )
+    db_session.commit()
+    custom_id = custom.id
+
+    response = _zip_backup(auth_client, roms=False, bios=False, images=True)
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        names = set(archive.namelist())
+        games = {g["name"]: g for g in json.loads(archive.read("backup.json"))["games"]}
+    assert names == {
+        "backup.json",
+        "files/images/game-media/s1.jpg",
+        "files/images/game-media/s2.jpg",
+        "files/images/game-media/a1.jpg",
+    }
+    assert games["From IGDB"]["screenshot_urls"] == []
+
+    for name in ("s1.jpg", "s2.jpg", "a1.jpg"):
+        (game_media / name).unlink()
+    _restore_zip(auth_client, response.content)
+
+    status = _wait(auth_client)
+    assert status["status"] == "completed", status
+    assert status["result"]["restoredImages"] == 3
+    assert (game_media / "s2.jpg").read_bytes() == b"s2.jpg"
+    db_session.expire_all()
+    restored = db_session.get(Game, custom_id)
+    assert [s.url for s in restored.screenshots] == ["/uploads/game-media/s2.jpg", "/uploads/game-media/s1.jpg"]
+    assert [a.url for a in restored.artworks] == ["/uploads/game-media/a1.jpg"]
+    assert [(v.name, v.video_id) for v in restored.videos] == [("Trailer", "dQw4w9WgXcQ")]
 
 
 def test_an_image_name_that_is_not_a_plain_file_name_is_skipped(auth_client, db_session, scratch_images):

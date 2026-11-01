@@ -573,7 +573,25 @@
       "linkedGameHelperText": "¿De qué juego es esto una expansión?",
       "officialNameRequiredError": "El nombre oficial es obligatorio.",
       "linkedGameRequiredError": "El juego vinculado es obligatorio para esta categoría.",
-      "uploadCoverError": "Error al subir la imagen de portada. Inténtalo de nuevo."
+      "uploadCoverError": "Error al subir la imagen de portada. Inténtalo de nuevo.",
+      "media": {
+        "mediaHeading": "Capturas, ilustraciones y vídeos",
+        "addImagesButton": "Añadir imágenes",
+        "imageAlt": "{{title}} {{index}}",
+        "removeImageAriaLabel": "Quitar imagen {{index}}",
+        "artworkHelperText": "La primera ilustración es el fondo de la página del juego.",
+        "tooManyFiles": "Solo se pueden añadir {{count}} más aquí, así que el resto se ha omitido.",
+        "uploadError": "No se pudo subir {{name}}. Usa un JPEG, PNG, WebP o GIF de menos de 20 MB.",
+        "videosHelperText": "Vídeos de YouTube, como los tráileres que muestran los juegos de IGDB.",
+        "videoLinkLabel": "Enlace de YouTube",
+        "videoTitleLabel": "Título (opcional)",
+        "addVideoButton": "Añadir",
+        "invalidVideoLink": "No es un enlace a un vídeo de YouTube.",
+        "duplicateVideo": "Este vídeo ya está añadido.",
+        "removeVideoAriaLabel": "Quitar vídeo {{index}}",
+        "untitledVideo": "Sin título",
+        "waitForUploads": "Espera a que terminen de subirse las imágenes."
+      }
     },
     "edit": {
       "notEditableMessage": "Este juego no se puede editar. Toda la información proviene de IGDB.",
@@ -971,9 +989,6 @@
       "lastUpdatedLabel": "Última actualización: {{date}}",
       "localTimeLabel": "Hora local: {{range}}",
       "liveStreamButton": "Ver transmisión en vivo"
-    },
-    "networks": {
-      "heading": "Enlaces"
     },
     "games": {
       "heading": "Juegos destacados"

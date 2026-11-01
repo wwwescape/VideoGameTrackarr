@@ -2,11 +2,70 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.models.catalog import CompanyRole, Game, GameCategory
-from app.repositories import company_repository, game_repository, note_repository, platform_repository, steam_repository
+from app.models.catalog import Artwork, CompanyRole, Game, GameCategory, GameVideo, Screenshot
+from app.repositories import (
+    company_repository,
+    game_media_repository,
+    game_repository,
+    note_repository,
+    platform_repository,
+    steam_repository,
+)
 from app.repositories.game_repository import GameWithStatus
+from app.services import upload_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.game_service import get_game_detail
+
+MAX_MEDIA_PER_KIND = 10
+
+# (title, YouTube video id), like IGDB's videos.
+VideoInput = tuple[str | None, str]
+
+
+def _check_media(kind: str, new: list[str], existing: list[str]) -> None:
+    """Up to MAX_MEDIA_PER_KIND of each kind, and anything new must be our own upload, never an
+    address elsewhere. A game unlinked from IGDB keeps IGDB's images and may have more than
+    the limit; it can keep or remove them, just not add more."""
+    if len(set(new)) != len(new):
+        raise ConflictError(f"The same {kind} is listed twice")
+    added = [item for item in new if item not in existing]
+    if added and len(new) > MAX_MEDIA_PER_KIND:
+        raise ConflictError(f"A custom game can have up to {MAX_MEDIA_PER_KIND} {kind}")
+    if kind != "videos":
+        for url in added:
+            if not upload_service.is_game_media_upload(url):
+                raise ConflictError(f"{url!r} isn't an uploaded image")
+
+
+def _sync_media(
+    db: Session,
+    game_id: int,
+    screenshot_urls: list[str] | None,
+    artwork_urls: list[str] | None,
+    videos: list[VideoInput] | None,
+    existing: tuple[list[Screenshot], list[Artwork], list[GameVideo]] = ([], [], []),
+) -> list[str]:
+    """Saves whichever lists were given, in that order, and returns the images no longer used
+    (to delete once committed). A kept row keeps its igdb_id (an unlinked game's IGDB image)."""
+    old_screenshots, old_artworks, old_videos = existing
+    removed: list[str] = []
+    for kind, urls, rows, sync in (
+        ("screenshots", screenshot_urls, old_screenshots, game_media_repository.sync_screenshots),
+        ("artworks", artwork_urls, old_artworks, game_media_repository.sync_artworks),
+    ):
+        if urls is None:
+            continue
+        igdb_ids = {row.url: row.igdb_id for row in rows}
+        _check_media(kind, urls, list(igdb_ids))
+        sync(db, game_id, [(igdb_ids.get(url), url) for url in urls])
+        removed += [url for url in igdb_ids if url not in urls]
+    if videos is not None:
+        video_igdb_ids = {row.video_id: row.igdb_id for row in old_videos}
+        _check_media("videos", [video_id for _name, video_id in videos], list(video_igdb_ids))
+        game_media_repository.sync_videos(
+            db, game_id, [(video_igdb_ids.get(video_id), name, video_id) for name, video_id in videos]
+        )
+    return removed
 
 
 def create_manual_game(
@@ -24,6 +83,9 @@ def create_manual_game(
     platform_names: list[str] | None = None,
     notes: str | None = None,
     steam_app_id: int | None = None,
+    screenshot_urls: list[str] | None = None,
+    artwork_urls: list[str] | None = None,
+    videos: list[VideoInput] | None = None,
 ) -> GameWithStatus:
     if parent_game_id is not None and db.get(Game, parent_game_id) is None:
         raise NotFoundError(f"Game {parent_game_id} not found")
@@ -59,6 +121,8 @@ def create_manual_game(
     if notes:
         note_repository.create_note(db, game.id, notes)
 
+    _sync_media(db, game.id, screenshot_urls, artwork_urls, videos)
+
     if steam_app_id is not None:
         # Best-effort — links the originating SteamLibraryEntry (from the "Add as custom
         # game" flow on Insights → Steam Sync) so its Steam store page shows on this game's
@@ -85,6 +149,20 @@ def update_manual_game(db: Session, game_id: int, notes: str | None = None, **fi
     developed_by = fields.pop("developed_by", None)
     published_by = fields.pop("published_by", None)
     platform_names = fields.pop("platform_names", None)
+    screenshot_urls = fields.pop("screenshot_urls", None)
+    artwork_urls = fields.pop("artwork_urls", None)
+    videos = fields.pop("videos", None)
+
+    unused_images = _sync_media(
+        db,
+        game.id,
+        screenshot_urls,
+        artwork_urls,
+        videos,
+        existing=(list(game.screenshots), list(game.artworks), list(game.videos)),
+    )
+    if "cover_url" in fields and game.cover_url and fields["cover_url"] != game.cover_url:
+        unused_images.append(game.cover_url)
 
     game_repository.update_manual_game(db, game, **fields)
 
@@ -108,4 +186,7 @@ def update_manual_game(db: Session, game_id: int, notes: str | None = None, **fi
         note_repository.create_note(db, game.id, notes)
 
     db.commit()
+    # Replaced or removed uploads go only once the change is saved.
+    for url in unused_images:
+        upload_service.delete_if_local_upload(url)
     return get_game_detail(db, game.id)

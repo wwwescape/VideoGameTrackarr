@@ -573,7 +573,25 @@
       "linkedGameHelperText": "De quel jeu ceci est-il un complément ?",
       "officialNameRequiredError": "Le nom officiel est obligatoire.",
       "linkedGameRequiredError": "Un jeu lié est requis pour cette catégorie.",
-      "uploadCoverError": "Erreur lors du téléversement de la jaquette. Veuillez réessayer."
+      "uploadCoverError": "Erreur lors du téléversement de la jaquette. Veuillez réessayer.",
+      "media": {
+        "mediaHeading": "Captures, illustrations et vidéos",
+        "addImagesButton": "Ajouter des images",
+        "imageAlt": "{{title}} {{index}}",
+        "removeImageAriaLabel": "Retirer l'image {{index}}",
+        "artworkHelperText": "La première illustration sert de fond à la page du jeu.",
+        "tooManyFiles": "Seulement {{count}} de plus peuvent être ajoutées ici, le reste a été ignoré.",
+        "uploadError": "Impossible de téléverser {{name}}. Utilisez un JPEG, PNG, WebP ou GIF de moins de 20 Mo.",
+        "videosHelperText": "Des vidéos YouTube, comme les bandes-annonces des jeux IGDB.",
+        "videoLinkLabel": "Lien YouTube",
+        "videoTitleLabel": "Titre (facultatif)",
+        "addVideoButton": "Ajouter",
+        "invalidVideoLink": "Ce n'est pas un lien vers une vidéo YouTube.",
+        "duplicateVideo": "Cette vidéo est déjà ajoutée.",
+        "removeVideoAriaLabel": "Retirer la vidéo {{index}}",
+        "untitledVideo": "Sans titre",
+        "waitForUploads": "Attendez la fin du téléversement des images."
+      }
     },
     "edit": {
       "notEditableMessage": "Ce jeu ne peut pas être modifié. Toutes les informations proviennent d'IGDB.",
@@ -971,9 +989,6 @@
       "lastUpdatedLabel": "Dernière mise à jour : {{date}}",
       "localTimeLabel": "Heure locale : {{range}}",
       "liveStreamButton": "Regarder le direct"
-    },
-    "networks": {
-      "heading": "Liens"
     },
     "games": {
       "heading": "Jeux à l'honneur"

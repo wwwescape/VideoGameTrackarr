@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { uploadAccessoryImage, uploadCover } from "../api/uploads";
+import { uploadAccessoryImage, uploadCover, uploadGameMedia } from "../api/uploads";
 
 export function useUploadCover() {
   return useMutation({ mutationFn: uploadCover });
@@ -7,4 +7,8 @@ export function useUploadCover() {
 
 export function useUploadAccessoryImage() {
   return useMutation({ mutationFn: uploadAccessoryImage });
+}
+
+export function useUploadGameMedia() {
+  return useMutation({ mutationFn: uploadGameMedia });
 }

@@ -573,7 +573,25 @@
       "linkedGameHelperText": "Which game is this an addon of?",
       "officialNameRequiredError": "Official Name is required.",
       "linkedGameRequiredError": "Linked Game is required for this category.",
-      "uploadCoverError": "Error uploading cover image. Please try again."
+      "uploadCoverError": "Error uploading cover image. Please try again.",
+      "media": {
+        "mediaHeading": "Screenshots, artwork and videos",
+        "addImagesButton": "Add images",
+        "imageAlt": "{{title}} {{index}}",
+        "removeImageAriaLabel": "Remove image {{index}}",
+        "artworkHelperText": "The first artwork is the game page's background.",
+        "tooManyFiles": "Only {{count}} more can be added here, so the rest were skipped.",
+        "uploadError": "Couldn't upload {{name}}. Use a JPEG, PNG, WebP or GIF under 20 MB.",
+        "videosHelperText": "YouTube videos, like the trailers IGDB games show.",
+        "videoLinkLabel": "YouTube link",
+        "videoTitleLabel": "Title (optional)",
+        "addVideoButton": "Add",
+        "invalidVideoLink": "That isn't a YouTube video link.",
+        "duplicateVideo": "This video is already added.",
+        "removeVideoAriaLabel": "Remove video {{index}}",
+        "untitledVideo": "Untitled",
+        "waitForUploads": "Wait for the images to finish uploading."
+      }
     },
     "edit": {
       "notEditableMessage": "This game cannot be edited. All information comes from IGDB.",
@@ -971,9 +989,6 @@
       "lastUpdatedLabel": "Last updated: {{date}}",
       "localTimeLabel": "Local time: {{range}}",
       "liveStreamButton": "Watch live stream"
-    },
-    "networks": {
-      "heading": "Links"
     },
     "games": {
       "heading": "Featured Games"

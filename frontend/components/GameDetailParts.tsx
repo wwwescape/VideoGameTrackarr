@@ -50,7 +50,8 @@ export interface GameHeroStatus {
 
 // Hero backdrop order: IGDB artwork, then the first screenshot, then the cover blurred.
 export function gameBackdrop(game: Pick<GameAboutData, "artworkUrls" | "screenshotUrls">, coverUrl: string | null) {
-  const sharp = game.artworkUrls[0] ?? game.screenshotUrls[0];
+  // A custom game's first artwork/screenshot is an upload (/uploads/...), IGDB's is an address.
+  const sharp = resolveAssetUrl(game.artworkUrls[0] ?? game.screenshotUrls[0] ?? null);
   if (sharp) return { url: sharp, blur: false };
   const cover = resolveAssetUrl(coverUrl);
   return cover ? { url: cover, blur: true } : null;

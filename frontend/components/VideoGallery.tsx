@@ -8,16 +8,13 @@ import ImageListItemBar from "@mui/material/ImageListItemBar";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameVideo } from "../api/types";
+import { youtubeThumbnailUrl } from "../utils/youtube";
 import VideoDialog from "./VideoDialog";
 
 interface VideoGalleryProps {
   videos: GameVideo[];
   // Leave out the heading when the page's own section already titles it.
   hideTitle?: boolean;
-}
-
-function youtubeThumbnailUrl(videoId: string): string {
-  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 }
 
 const VideoGallery = ({ videos, hideTitle = false }: VideoGalleryProps) => {

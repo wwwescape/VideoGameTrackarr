@@ -135,3 +135,32 @@ def test_upload_cover_refuses_an_oversized_file(auth_client, monkeypatch):
     )
 
     assert response.status_code == 413
+
+
+def test_upload_game_media_keeps_its_shape_and_only_shrinks(auth_client):
+    wide = auth_client.post(
+        "/api/uploads/game-media", files={"file": ("shot.png", io.BytesIO(_image_bytes((3840, 2160))), "image/png")}
+    )
+    small = auth_client.post(
+        "/api/uploads/game-media", files={"file": ("shot.png", io.BytesIO(_image_bytes((640, 480))), "image/png")}
+    )
+
+    assert wide.status_code == small.status_code == 201
+    wide_url, small_url = wide.json()["url"], small.json()["url"]
+    assert wide_url.startswith(upload_service.GAME_MEDIA_URL_PREFIX)
+
+    def saved(url: str):
+        return upload_service.GAME_MEDIA_DIR / url.removeprefix(upload_service.GAME_MEDIA_URL_PREFIX)
+
+    with Image.open(saved(wide_url)) as image:
+        assert image.size == (1920, 1080)
+    with Image.open(saved(small_url)) as image:
+        assert image.size == (640, 480)
+
+
+def test_upload_game_media_requires_auth(client):
+    response = client.post(
+        "/api/uploads/game-media", files={"file": ("shot.png", io.BytesIO(_image_bytes()), "image/png")}
+    )
+
+    assert response.status_code == 401

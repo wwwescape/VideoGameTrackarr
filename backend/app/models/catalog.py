@@ -215,9 +215,17 @@ class Game(TimestampMixin, Base):
     companies: Mapped[list["GameCompany"]] = relationship(back_populates="game", cascade="all, delete-orphan")
     franchises: Mapped[list["GameFranchise"]] = relationship(back_populates="game", cascade="all, delete-orphan")
     collections: Mapped[list["GameCollection"]] = relationship(back_populates="game", cascade="all, delete-orphan")
-    screenshots: Mapped[list["Screenshot"]] = relationship(back_populates="game", cascade="all, delete-orphan")
-    videos: Mapped[list["GameVideo"]] = relationship(back_populates="game", cascade="all, delete-orphan")
-    artworks: Mapped[list["Artwork"]] = relationship(back_populates="game", cascade="all, delete-orphan")
+    # In the order they were saved: IGDB's own order, or a custom game's (its first artwork is
+    # the hero background).
+    screenshots: Mapped[list["Screenshot"]] = relationship(
+        back_populates="game", cascade="all, delete-orphan", order_by="Screenshot.id"
+    )
+    videos: Mapped[list["GameVideo"]] = relationship(
+        back_populates="game", cascade="all, delete-orphan", order_by="GameVideo.id"
+    )
+    artworks: Mapped[list["Artwork"]] = relationship(
+        back_populates="game", cascade="all, delete-orphan", order_by="Artwork.id"
+    )
     release_dates: Mapped[list["ReleaseDate"]] = relationship(back_populates="game", cascade="all, delete-orphan")
 
 

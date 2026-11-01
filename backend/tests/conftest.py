@@ -102,15 +102,18 @@ def _isolate_backups_and_uploads(tmp_path, monkeypatch):
 
     covers = tmp_path / "uploads" / "covers"
     accessories = tmp_path / "uploads" / "accessory-images"
+    game_media = tmp_path / "uploads" / "game-media"
     monkeypatch.setattr(backup_service, "BACKUPS_DIR", tmp_path / "backups")
     monkeypatch.setattr(upload_service, "COVERS_DIR", covers)
     monkeypatch.setattr(upload_service, "ACCESSORY_IMAGES_DIR", accessories)
+    monkeypatch.setattr(upload_service, "GAME_MEDIA_DIR", game_media)
     monkeypatch.setattr(
         backup_service,
         "_IMAGE_FOLDERS",
         (
             (backup_service.COVERS_URL_PREFIX, "covers", covers),
             (backup_service.ACCESSORY_IMAGES_URL_PREFIX, "accessory-images", accessories),
+            (backup_service.GAME_MEDIA_URL_PREFIX, "game-media", game_media),
         ),
     )
 

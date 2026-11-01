@@ -176,6 +176,9 @@ def create_manual_game(body: ManualGameCreateRequest, db: Session = Depends(get_
         platform_names=body.platform_names,
         notes=body.notes,
         steam_app_id=body.steam_app_id,
+        screenshot_urls=body.screenshot_urls,
+        artwork_urls=body.artwork_urls,
+        videos=[(video.name, video.video_id) for video in body.videos],
     )
     return _game_detail_response(db, game)
 
@@ -184,7 +187,10 @@ def create_manual_game(body: ManualGameCreateRequest, db: Session = Depends(get_
 def update_manual_game(
     game_id: int, body: ManualGameUpdateRequest, db: Session = Depends(get_db)
 ) -> GameDetailResponse:
-    game = manual_game_service.update_manual_game(db, game_id, **body.model_dump(exclude_unset=True))
+    fields = body.model_dump(exclude_unset=True)
+    if body.videos is not None:
+        fields["videos"] = [(video.name, video.video_id) for video in body.videos]
+    game = manual_game_service.update_manual_game(db, game_id, **fields)
     return _game_detail_response(db, game)
 
 

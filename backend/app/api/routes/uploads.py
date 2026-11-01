@@ -41,3 +41,9 @@ async def upload_cover(file: UploadFile = File(...)) -> UploadResponse:
 @router.post("/accessory-images", response_model=UploadResponse, status_code=201)
 async def upload_accessory_image(file: UploadFile = File(...)) -> UploadResponse:
     return await _save(file, upload_service.save_accessory_image)
+
+
+# A custom game's screenshot or artwork; saving the game is what attaches it.
+@router.post("/game-media", response_model=UploadResponse, status_code=201)
+async def upload_game_media(file: UploadFile = File(...)) -> UploadResponse:
+    return await _save(file, upload_service.save_game_media_image)

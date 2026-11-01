@@ -176,7 +176,7 @@ def security_headers_for(path: str) -> dict[str, str]:
 # routes send private, no-store). Errors never get one; a 304 repeats what the 200 would have
 # said, as HTTP expects of a revalidation.
 IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
-CACHED_FOREVER_PREFIXES = ("/assets/", "/uploads/covers/", "/uploads/accessory-images/")
+CACHED_FOREVER_PREFIXES = ("/assets/", "/uploads/covers/", "/uploads/accessory-images/", "/uploads/game-media/")
 
 
 def cache_control_for(path: str) -> str | None:

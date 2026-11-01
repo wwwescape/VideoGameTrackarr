@@ -50,11 +50,17 @@ const about = (overrides: Partial<GameAboutData> = {}): GameAboutData =>
 
 describe("game hero backdrop", () => {
   it("prefers IGDB artwork, then the first screenshot, then the cover blurred", () => {
-    expect(gameBackdrop(about({ artworkUrls: ["art.jpg"], screenshotUrls: ["shot.jpg"] }), "cover.jpg")).toEqual({
-      url: "art.jpg",
+    const art = "https://images.igdb.com/art.jpg";
+    const shot = "https://images.igdb.com/shot.jpg";
+    expect(gameBackdrop(about({ artworkUrls: [art], screenshotUrls: [shot] }), "cover.jpg")).toEqual({
+      url: art,
       blur: false,
     });
-    expect(gameBackdrop(about({ screenshotUrls: ["shot.jpg"] }), "cover.jpg")).toEqual({ url: "shot.jpg", blur: false });
+    expect(gameBackdrop(about({ screenshotUrls: [shot] }), "cover.jpg")).toEqual({ url: shot, blur: false });
+    // A custom game's uploaded artwork is served by the app.
+    expect(gameBackdrop(about({ artworkUrls: ["/uploads/game-media/a.jpg"] }), null)?.url).toMatch(
+      /^https?:\/\/.+\/uploads\/game-media\/a\.jpg$/
+    );
     expect(gameBackdrop(about(), "https://images.igdb.com/cover.jpg")).toEqual({
       url: "https://images.igdb.com/cover.jpg",
       blur: true,

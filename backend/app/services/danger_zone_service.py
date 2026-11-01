@@ -142,20 +142,20 @@ def _clear_sync_caches(db: Session, result: DangerZoneResult, keep_ignored: bool
 def _reset_library(db: Session, result: DangerZoneResult) -> tuple[list[str], list[str | None]]:
     """Every game and everything on it — copies, ROMs and saves, progress, sessions, ratings,
     notes, tags on games, add-ons, catalog details — plus the Collections and Series that only
-    existed for them. Returns the ROM files and uploaded covers to delete afterwards."""
-    games = list(db.execute(select(Game.id, Game.cover_url)))
-    covers = [cover for _id, cover in games]
+    existed for them. Returns the ROM files and uploaded images to delete afterwards."""
+    game_ids = list(db.scalars(select(Game.id)))
+    images: list[str | None] = list(game_repository.image_urls(db, game_ids))
     # Caches and links keyed on these games (Events keep their own list of IGDB games).
     db.execute(update(EventGame).values(game_id=None))
     db.execute(delete(SteamLibraryEntry))
     db.execute(delete(SteamWishlistEntry))
     db.execute(delete(ItadPriceCache))
     db.execute(delete(PlatPricesCache))
-    rom_files = game_repository._delete_games(db, [game_id for game_id, _cover in games]) if games else []
+    rom_files = game_repository._delete_games(db, game_ids) if game_ids else []
     db.execute(delete(Collection))
     db.execute(delete(Franchise))
-    result.removed["games"] = len(games)
-    return rom_files, covers
+    result.removed["games"] = len(game_ids)
+    return rom_files, images
 
 
 def _reset_hardware(db: Session, result: DangerZoneResult) -> list[str | None]:

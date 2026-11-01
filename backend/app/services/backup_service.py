@@ -68,6 +68,7 @@ from app.schemas.backup import (
     BackupGame,
     BackupGameProgress,
     BackupGameTag,
+    BackupGameVideo,
     BackupHardware,
     BackupHardwarePlatform,
     BackupHardwareType,
@@ -95,15 +96,41 @@ from app.services.upload_service import (
     ACCESSORY_IMAGES_URL_PREFIX,
     COVERS_DIR,
     COVERS_URL_PREFIX,
+    GAME_MEDIA_DIR,
+    GAME_MEDIA_URL_PREFIX,
 )
 
 BACKUPS_DIR = BACKEND_DIR / "db" / "backups"
+
+
+def _custom_game_media(db: Session) -> dict[int, tuple[list[str], list[str], list[BackupGameVideo]]]:
+    """Custom games' screenshots, artwork and videos by game id, each in display order — one
+    query per kind rather than one per game."""
+    media: dict[int, tuple[list[str], list[str], list[BackupGameVideo]]] = {}
+    custom = select(Game.id).where(Game.igdb_id.is_(None))
+    for game_id, url in db.execute(
+        select(Screenshot.game_id, Screenshot.url).where(Screenshot.game_id.in_(custom)).order_by(Screenshot.id)
+    ):
+        media.setdefault(game_id, ([], [], []))[0].append(url)
+    for game_id, url in db.execute(
+        select(Artwork.game_id, Artwork.url).where(Artwork.game_id.in_(custom)).order_by(Artwork.id)
+    ):
+        media.setdefault(game_id, ([], [], []))[1].append(url)
+    for game_id, name, video_id in db.execute(
+        select(GameVideo.game_id, GameVideo.name, GameVideo.video_id)
+        .where(GameVideo.game_id.in_(custom))
+        .order_by(GameVideo.id)
+    ):
+        media.setdefault(game_id, ([], [], []))[2].append(BackupGameVideo(name=name, video_id=video_id))
+    return media
 
 
 def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False) -> BackupPayload:
     """Everything a restore needs. `roms` / `bios` add the rows describing those files, for a
     .zip that carries the files themselves (see export_full_backup_zip)."""
     user = db.scalars(select(User)).first()
+    custom_media = _custom_game_media(db)
+    no_media: tuple[list[str], list[str], list[BackupGameVideo]] = ([], [], [])
     payload = BackupPayload(
         version=BACKUP_FORMAT_VERSION,
         exported_at=datetime.now(UTC).isoformat(),
@@ -130,6 +157,9 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=g.user_rating,
+                screenshot_urls=custom_media.get(g.id, no_media)[0],
+                artwork_urls=custom_media.get(g.id, no_media)[1],
+                videos=custom_media.get(g.id, no_media)[2],
             )
             for g in db.scalars(select(Game))
         ],
@@ -317,6 +347,7 @@ FULL_BACKUP_IMAGES_PREFIX = FULL_BACKUP_FILES_PREFIX + "images/"
 _IMAGE_FOLDERS = (
     (COVERS_URL_PREFIX, "covers", COVERS_DIR),
     (ACCESSORY_IMAGES_URL_PREFIX, "accessory-images", ACCESSORY_IMAGES_DIR),
+    (GAME_MEDIA_URL_PREFIX, "game-media", GAME_MEDIA_DIR),
 )
 
 
@@ -339,10 +370,14 @@ def _bios_file_paths(payload: BackupPayload) -> list[str]:
 
 def _uploaded_images(payload: BackupPayload) -> list[tuple[str, Path]]:
     """(zip member, file on disk) for every uploaded image the backup's rows point at: custom
-    game covers and accessory photos. IGDB covers and hardware reference photos are addresses
-    elsewhere, not files here, so they're never in this list. A name that isn't a plain file
-    name (a hand-edited backup) is skipped rather than followed."""
-    urls = [g.cover_url for g in payload.games] + [a.image_url for a in payload.accessories]
+    game covers, screenshots and artwork, and accessory photos. IGDB images and hardware
+    reference photos are addresses elsewhere, not files here, so they're never in this list. A
+    name that isn't a plain file name (a hand-edited backup) is skipped rather than followed."""
+    urls = [
+        *(g.cover_url for g in payload.games),
+        *(url for g in payload.games for url in (*g.screenshot_urls, *g.artwork_urls)),
+        *(a.image_url for a in payload.accessories),
+    ]
     images: dict[str, Path] = {}
     for url in urls:
         for prefix, folder, directory in _IMAGE_FOLDERS:
@@ -560,6 +595,11 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
             )
         )
     db.flush()
+    for g in payload.games:
+        # Only a custom game has these (see BackupGame); in order, so ids keep that order.
+        db.add_all(Screenshot(game_id=g.id, url=url) for url in g.screenshot_urls)
+        db.add_all(Artwork(game_id=g.id, url=url) for url in g.artwork_urls)
+        db.add_all(GameVideo(game_id=g.id, name=v.name, video_id=v.video_id) for v in g.videos)
 
     for li in payload.library_items:
         db.add(

@@ -691,6 +691,22 @@ def merge_game(db: Session, source: Game, target: Game) -> None:
     db.flush()
 
 
+def image_urls(db: Session, game_ids: list[int]) -> list[str]:
+    """Every cover, screenshot and artwork address these games use, for the caller to pass to
+    upload_service.delete_if_local_upload once the rows are gone or replaced (that skips
+    anything that isn't one of our own uploads, such as IGDB's images)."""
+    if not game_ids:
+        return []
+    covers = db.scalars(select(Game.cover_url).where(Game.id.in_(game_ids), Game.cover_url.is_not(None)))
+    screenshots = db.scalars(select(Screenshot.url).where(Screenshot.game_id.in_(game_ids)))
+    artworks = db.scalars(select(Artwork.url).where(Artwork.game_id.in_(game_ids)))
+    return [url for url in (*covers, *screenshots, *artworks) if url]
+
+
+def addon_ids(db: Session, game_id: int) -> list[int]:
+    return list(db.scalars(select(Game.id).where(Game.parent_game_id == game_id)))
+
+
 def delete_game_with_addons(db: Session, game: Game) -> list[str]:
     """Deletes the game, its addons, and every row that hangs off either: library_items
     (and their rom_files), game_progress, play_sessions, notes, game_tags, plus the
@@ -699,8 +715,7 @@ def delete_game_with_addons(db: Session, game: Game) -> list[str]:
 
     Returns the stored filenames of every deleted ROM and its save states/in-game save, for
     the caller to remove from disk (rom_service.delete_files) once its transaction commits."""
-    addon_ids = list(db.scalars(select(Game.id).where(Game.parent_game_id == game.id)))
-    return _delete_games(db, [game.id, *addon_ids])
+    return _delete_games(db, [game.id, *addon_ids(db, game.id)])
 
 
 def delete_addons(db: Session, game: Game) -> list[str]:

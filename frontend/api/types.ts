@@ -399,6 +399,16 @@ export interface ManualGameInput {
   platformNames?: string[];
   notes?: string | null;
   steamAppId?: number;
+  // Uploaded with uploadGameMedia, in display order (the first artwork is the hero background).
+  screenshotUrls?: string[];
+  artworkUrls?: string[];
+  videos?: ManualGameVideoInput[];
+}
+
+// A YouTube video, stored like IGDB's: its title and YouTube's video id.
+export interface ManualGameVideoInput {
+  name: string | null;
+  videoId: string;
 }
 
 export interface BackupRestoreResult {

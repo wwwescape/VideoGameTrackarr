@@ -12,6 +12,7 @@ import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
+import { resolveAssetUrl } from "../api/client";
 
 interface ScreenshotGalleryProps {
   urls: string[];
@@ -45,7 +46,7 @@ const ScreenshotGallery = ({ urls, altPrefix, title, hideTitle = false }: Screen
               sx={{ display: "block", width: "100%", borderRadius: 1 }}
             >
               <img
-                src={url}
+                src={resolveAssetUrl(url) ?? undefined}
                 alt={t("screenshotGallery.alt", { prefix: altPrefix, index: index + 1 })}
                 loading="lazy"
                 style={{ width: "100%", borderRadius: 4, display: "block" }}
@@ -58,7 +59,7 @@ const ScreenshotGallery = ({ urls, altPrefix, title, hideTitle = false }: Screen
         open={lightboxIndex !== null}
         index={lightboxIndex ?? 0}
         close={() => setLightboxIndex(null)}
-        slides={urls.map((url) => ({ src: url }))}
+        slides={urls.map((url) => ({ src: resolveAssetUrl(url) ?? url }))}
         plugins={[Thumbnails, Counter, Zoom, Fullscreen]}
       />
     </>
