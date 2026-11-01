@@ -82,6 +82,19 @@ def _wishlisted_exists(game_id_column: ColumnElement[int]) -> ColumnElement[bool
     return exists().where(LibraryItem.game_id == game_id_column, LibraryItem.status == LibraryStatus.WISHLIST)
 
 
+def _not_missing() -> ColumnElement[bool]:
+    """Not a "Missing" game: one a Collection/Series resync discovered (Game.auto_discovered)
+    that you haven't added, owned or wishlisted since. Those only exist to show what a series
+    is missing, so only the Collection/Series pages list them; every other list, count and
+    the public share page leave them out."""
+    return or_(~Game.auto_discovered, _owned_exists(Game.id), _wishlisted_exists(Game.id))
+
+
+def is_missing(status: GameWithStatus) -> bool:
+    """Python-side twin of _not_missing (negated), for a game already loaded with its status."""
+    return status.game.auto_discovered and not status.owned and not status.wishlisted
+
+
 # A game can now have GameProgress on multiple platforms (one owned copy each). Game-level
 # views (list/card/dashboard) can only show one status, so these pick a single "representative"
 # row via priority order — Playing beats Completed beats Backlog beats Abandoned beats None —
@@ -135,8 +148,8 @@ def _is_browsable_game(category_column: ColumnElement[GameCategory | None]) -> C
 
 
 def is_top_level_browsable(game: Game) -> bool:
-    """Python-side twin of list_top_level_games' base .where(): whether a loaded game would
-    appear on the main Games list (and so on the public share page)."""
+    """Python-side twin of list_top_level_games' base .where(), minus _not_missing (which
+    needs the game's copies): whether a loaded game's kind would appear on the main Games list."""
     return game.parent_game_id is None and (game.category is None or game.category in _BROWSABLE_CATEGORIES)
 
 
@@ -442,6 +455,7 @@ def list_top_level_games(
     required_platform_id: int | None = None,
     required_platform_format: MediaFormat | None = None,
     required_platform_storefront: str | None = None,
+    include_missing: bool = False,
 ) -> list[GameWithStatus]:
     stmt = select(
         Game,
@@ -450,6 +464,8 @@ def list_top_level_games(
         _play_status_subquery(Game.id),
         Game.user_rating,
     ).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
+    if not include_missing:
+        stmt = stmt.where(_not_missing())
     # Always-applied AND-scope, independent of the user-editable collection_ids/franchise_ids
     # OR-filter above/below — this is what lets a Collection/Series detail page hard-scope to
     # "games in *this* collection" while still letting the Series/Collections filter field

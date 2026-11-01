@@ -71,6 +71,9 @@ def list_games(
         required_platform_id=required_platform_id,
         required_platform_format=required_platform_format,
         required_platform_storefront=required_platform_storefront,
+        # A Collection/Series page is the one list that shows its Missing games (see
+        # game_repository._not_missing).
+        include_missing=required_collection_id is not None or required_franchise_id is not None,
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     games = game_service.sort_by_labels(games, params.sort, on_sale_game_ids)
@@ -152,7 +155,7 @@ async def import_game(
     db: Session = Depends(get_db),
     igdb_client: IGDBClient = Depends(get_igdb_client),
 ) -> GameDetailResponse:
-    game = await game_service.import_game_from_igdb(db, igdb_client, body.igdb_id)
+    game = await game_service.add_game_from_igdb(db, igdb_client, body.igdb_id)
     return _game_detail_response(db, game)
 
 

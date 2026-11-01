@@ -189,6 +189,29 @@ def test_import_game_creates_game_and_addons(auth_client, db_session, igdb_clien
 
 
 @respx.mock
+def test_import_game_claims_a_missing_game(auth_client, db_session, igdb_client):
+    """Adding a game that's already here as a Missing game (a Collection/Series discovery)
+    claims it, so it shows on the Games list."""
+    db_session.add(
+        Game(igdb_id=1960, name="Found Game", slug="found-game", category=GameCategory.MAIN_GAME, auto_discovered=True)
+    )
+    db_session.commit()
+    respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/games").mock(
+        side_effect=[
+            httpx.Response(200, json=[{"id": 1960, "name": "Found Game", "slug": "found-game", "category": 0}]),
+            httpx.Response(200, json=[]),
+        ]
+    )
+
+    response = auth_client.post("/api/games", json={"igdbId": 1960})
+
+    assert response.status_code == 201
+    assert response.json()["autoDiscovered"] is False
+    assert [g["name"] for g in auth_client.get("/api/games").json()] == ["Found Game"]
+
+
+@respx.mock
 def test_import_game_stores_igdb_member_and_critic_ratings(auth_client, db_session, igdb_client):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
     respx.post(f"{IGDB_API_BASE}/games").mock(

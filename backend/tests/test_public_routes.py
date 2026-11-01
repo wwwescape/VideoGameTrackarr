@@ -202,6 +202,19 @@ def test_public_game_detail_hides_games_the_public_list_hides(auth_client, clien
     assert client.get(f"/api/public/{token}/games/{mod.id}").status_code == 404
 
 
+def test_public_games_leave_out_missing_games(auth_client, client, db_session, seed_game):
+    # Discovered by a Collection/Series resync and never added: not part of your collection.
+    missing = Game(
+        igdb_id=1005, name="Missing Game", slug="missing-game", category=GameCategory.MAIN_GAME, auto_discovered=True
+    )
+    db_session.add(missing)
+    db_session.commit()
+    token = _get_token(auth_client)
+
+    assert [game["name"] for game in client.get(f"/api/public/{token}/games").json()] == ["Test Game"]
+    assert client.get(f"/api/public/{token}/games/{missing.id}").status_code == 404
+
+
 def test_public_game_detail_only_links_a_public_display_parent(auth_client, client, db_session, seed_game):
     mod = Game(igdb_id=1004, name="Test Mod", slug="test-mod", category=GameCategory.MOD)
     db_session.add(mod)

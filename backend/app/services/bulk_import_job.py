@@ -131,9 +131,9 @@ async def _import_all(
     try:
         for index, igdb_id in enumerate(igdb_ids):
             try:
-                game = await game_service.import_game_from_igdb(db, client, igdb_id)
+                game = await game_service.add_game_from_igdb(db, client, igdb_id)
                 # Tag/library-entry attachment happen after the game's own commit
-                # (import_game_from_igdb commits internally) — a failure here still leaves
+                # (add_game_from_igdb commits internally) — a failure here still leaves
                 # the game itself imported, just without these extras, same "one bad step
                 # doesn't undo an earlier good one" tradeoff resync_jobs.py already accepts.
                 # The failure message says so explicitly rather than implying nothing happened.

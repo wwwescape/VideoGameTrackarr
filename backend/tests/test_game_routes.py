@@ -63,13 +63,50 @@ def test_list_games_exposes_auto_discovered_on_the_summary(auth_client, db_sessi
     discovered = Game(
         igdb_id=2003, name="Discovered Game", category=GameCategory.MAIN_GAME, auto_discovered=True
     )
-    db_session.add(discovered)
+    collection = Collection(igdb_id=9003, name="Some Collection", slug="some-collection")
+    db_session.add_all([discovered, collection])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameCollection(game_id=seed_game.id, collection_id=collection.id),
+            GameCollection(game_id=discovered.id, collection_id=collection.id),
+        ]
+    )
     db_session.commit()
 
-    response = auth_client.get("/api/games")
+    response = auth_client.get("/api/games", params={"requiredCollectionId": collection.id})
 
     by_name = {g["name"]: g["autoDiscovered"] for g in response.json()}
     assert by_name == {"Test Game": False, "Discovered Game": True}
+
+
+def test_list_games_leaves_out_missing_games_except_on_collection_and_series_pages(
+    auth_client, db_session, seed_game, seed_platform
+):
+    """A Missing game (discovered by a Collection/Series resync, never added) shows only on
+    its Collection/Series page; once wishlisted (or owned, or claimed) it's on the Games list."""
+    missing = Game(igdb_id=2004, name="Missing Game", category=GameCategory.MAIN_GAME, auto_discovered=True)
+    wishlisted = Game(igdb_id=2005, name="Wishlisted Find", category=GameCategory.MAIN_GAME, auto_discovered=True)
+    collection = Collection(igdb_id=9004, name="Some Collection", slug="some-collection")
+    franchise = Franchise(igdb_id=9005, name="Some Series", slug="some-series")
+    db_session.add_all([missing, wishlisted, collection, franchise])
+    db_session.commit()
+    db_session.add_all(
+        [
+            GameCollection(game_id=missing.id, collection_id=collection.id),
+            GameFranchise(game_id=missing.id, franchise_id=franchise.id),
+            LibraryItem(game_id=wishlisted.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST),
+        ]
+    )
+    db_session.commit()
+
+    def names(**params):
+        return sorted(g["name"] for g in auth_client.get("/api/games", params=params).json())
+
+    assert names() == ["Test Game", "Wishlisted Find"]
+    assert names(search="Missing") == []
+    assert names(requiredCollectionId=collection.id) == ["Missing Game"]
+    assert names(requiredFranchiseId=franchise.id) == ["Missing Game"]
 
 
 def test_list_and_detail_expose_is_on_sale_for_a_wishlisted_itad_eligible_game(
@@ -809,12 +846,22 @@ def test_list_games_sort_by_labels(auth_client, db_session, monkeypatch):
     missing = Game(igdb_id=2361, name="Missing", category=GameCategory.MAIN_GAME, auto_discovered=True)
     custom = Game(igdb_id=None, name="Custom", category=GameCategory.MAIN_GAME)
     plain = Game(igdb_id=2362, name="A Plain Game", category=GameCategory.MAIN_GAME)
-    db_session.add_all([on_sale, missing, custom, plain])
+    # Missing games only show on a Collection/Series page, so sort that page's list.
+    collection = Collection(igdb_id=9006, name="Some Collection", slug="some-collection")
+    db_session.add_all([on_sale, missing, custom, plain, collection])
+    db_session.commit()
+    db_session.add_all(
+        [GameCollection(game_id=game.id, collection_id=collection.id) for game in (on_sale, missing, custom, plain)]
+    )
     db_session.commit()
     monkeypatch.setattr(insight_service, "get_on_sale_game_ids", lambda db: frozenset({on_sale.id}))
 
-    assert _sorted_names(auth_client, "labels_asc") == ["On Sale", "Missing", "Custom", "A Plain Game"]
-    assert _sorted_names(auth_client, "labels_desc") == ["Custom", "Missing", "On Sale", "A Plain Game"]
+    def names(sort):
+        params = {"sort": sort, "requiredCollectionId": collection.id}
+        return [g["name"] for g in auth_client.get("/api/games", params=params).json()]
+
+    assert names("labels_asc") == ["On Sale", "Missing", "Custom", "A Plain Game"]
+    assert names("labels_desc") == ["Custom", "Missing", "On Sale", "A Plain Game"]
 
 
 def test_get_game_detail_includes_parent_name(auth_client, db_session, seed_game):

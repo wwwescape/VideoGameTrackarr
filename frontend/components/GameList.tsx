@@ -58,12 +58,9 @@ const GameList = () => {
   const { statuses: ownershipStatuses, exclude: ownershipExclude, matchAll: ownershipMatchAll } = state.ownership;
   const filteredGames = useMemo(() => {
     if (!games) return [];
-    // The Games list never shows a Collection/Series "what's missing" discovery that hasn't
-    // been claimed yet — unconditionally, with no toggle to reveal it (unlike the Collection/
-    // Series detail pages, where that's the whole point). A manually-added game that just
-    // isn't owned/wishlisted yet is unaffected — it stays visible (greyscaled, no chip; see
-    // GameCard.tsx) since it was never "missing" in that sense.
-    let list = games.filter((game) => !(game.autoDiscovered && !game.owned && !game.wishlisted));
+    // GET /api/games already leaves out Missing games (a Collection/Series discovery you never
+    // added) — only the Collection/Series pages ask for them (game_repository._not_missing).
+    let list = games;
     if (ownershipStatuses.length > 0) {
       list = list.filter((game) => matchesOwnership(game, ownershipStatuses, ownershipExclude, ownershipMatchAll));
     }

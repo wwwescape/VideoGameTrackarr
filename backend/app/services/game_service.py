@@ -85,6 +85,7 @@ def search_local_games(
     required_platform_id: int | None = None,
     required_platform_format: MediaFormat | None = None,
     required_platform_storefront: str | None = None,
+    include_missing: bool = False,
 ) -> list[GameWithStatus]:
     return game_repository.list_top_level_games(
         db,
@@ -121,6 +122,7 @@ def search_local_games(
         required_platform_id=required_platform_id,
         required_platform_format=required_platform_format,
         required_platform_storefront=required_platform_storefront,
+        include_missing=include_missing,
     )
 
 
@@ -134,10 +136,9 @@ def sort_by_labels(
         return games
 
     def rank(status: GameWithStatus) -> int | None:
-        missing = status.game.auto_discovered and not status.owned and not status.wishlisted
         if status.game.id in on_sale_game_ids:
             return 0
-        if missing:
+        if game_repository.is_missing(status):
             return 1
         if status.game.igdb_id is None:
             return 2
@@ -164,9 +165,10 @@ def get_game_detail(db: Session, game_id: int) -> GameWithStatus:
 
 def get_public_game_detail(db: Session, game_id: int) -> GameWithStatus:
     """The public share page's game details: only games its list shows (top-level,
-    browsable), so an addon or a non-browsable entry can't be reached by guessing ids."""
+    browsable, not Missing), so an addon, a non-browsable entry or a Missing game can't be
+    reached by guessing ids."""
     result = game_repository.get_game(db, game_id)
-    if result is None or not game_repository.is_top_level_browsable(result.game):
+    if result is None or not game_repository.is_top_level_browsable(result.game) or game_repository.is_missing(result):
         raise NotFoundError(f"Game {game_id} not found")
     return result
 
@@ -204,6 +206,17 @@ def claim_discovered_game(db: Session, game_id: int) -> GameWithStatus:
     game.auto_discovered = False
     db.commit()
     return get_game_detail(db, game_id)
+
+
+async def add_game_from_igdb(db: Session, igdb_client: IGDBClient, igdb_id: int) -> GameWithStatus:
+    """Add Game (one game, or each game of a bulk add): import_game_from_igdb, then claim the
+    game if it was already here as a Missing game — you've now added it yourself, so it has
+    to show on the Games list. Resyncs, Link to IGDB and Steam imports call
+    import_game_from_igdb directly and leave Game.auto_discovered as it is."""
+    result = await import_game_from_igdb(db, igdb_client, igdb_id)
+    if result.game.auto_discovered:
+        return claim_discovered_game(db, result.game.id)
+    return result
 
 
 def set_user_rating(db: Session, game_id: int, rating: int | None) -> int | None:

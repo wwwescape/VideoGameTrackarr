@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime, timedelta
 
-from app.models.catalog import Game, GameCategory
+from app.models.catalog import Game, GameCategory, GameGenre, Genre
 from app.models.hardware import HardwareReferenceEntry, UserAccessory, UserDevice
 from app.models.library import GameProgress, LibraryItem, LibraryStatus, PlayStatus
 
@@ -113,6 +113,27 @@ def test_stats_recently_added_leaves_out_missing_games(auth_client, db_session, 
 
     ids = {g["id"] for g in response.json()["recentlyAdded"]}
     assert ids == {seed_game.id, claimed.id}
+
+
+def test_stats_counts_leave_out_missing_games(auth_client, db_session, seed_game):
+    """Missing games (discovered by a resync, never added) aren't yours: they don't count as
+    tracked, as Not started, or toward the genre breakdown."""
+    missing = Game(
+        igdb_id=2004, name="Discovered Game", slug="discovered-2", category=GameCategory.MAIN_GAME, auto_discovered=True
+    )
+    genre = Genre(igdb_id=31, name="Adventure", slug="adventure")
+    db_session.add_all([missing, genre])
+    db_session.commit()
+    db_session.add_all(
+        [GameGenre(game_id=seed_game.id, genre_id=genre.id), GameGenre(game_id=missing.id, genre_id=genre.id)]
+    )
+    db_session.commit()
+
+    body = auth_client.get("/api/dashboard/stats").json()
+
+    assert body["totalTracked"] == 1
+    assert body["playStatusBreakdown"] == {"none": 1}
+    assert body["genreBreakdown"] == [{"name": "Adventure", "count": 1}]
 
 
 def test_release_calendar_requires_auth(client):
