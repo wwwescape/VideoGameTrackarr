@@ -17,6 +17,7 @@ import AutocompleteSelect from "./AutocompleteSelect";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import DangerZoneSection from "./DangerZoneSection";
 import DataManagementSection from "./DataManagementSection";
+import InstallAppRow from "./InstallAppRow";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 import ShareSection from "./ShareSection";
@@ -70,6 +71,10 @@ const Settings = () => {
           <SettingRow name={t("settings.display.accentColor")} description={t("settings.display.accentColorHelp")}>
             <AccentColorSetting inRow />
           </SettingRow>
+        </SettingsGroup>
+
+        <SettingsGroup title={t("settings.installApp.heading")}>
+          <InstallAppRow />
         </SettingsGroup>
 
         <SettingsGroup title={t("settings.regional.heading")}>

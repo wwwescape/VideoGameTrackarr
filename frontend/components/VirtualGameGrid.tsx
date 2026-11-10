@@ -25,9 +25,20 @@ const ESTIMATED_ROW_HEIGHT_BY_COLUMNS: Record<number, number> = {
 };
 
 const GRID_GAP_PX = 16;
-// Below this container width a size-driven grid (minItemWidth) always shows two columns, as
-// the breakpoint grid does on phones, whatever card size is chosen.
+// Below this container width there's no room to fit cards by size, so the card size picks a
+// column count instead (phoneColumns).
 const PHONE_MAX_WIDTH_PX = 600;
+
+// On phones, Options → Card size chooses 1, 2 or 3 columns: the smallest sizes 3, the default
+// (170) 2, the largest sizes 1. Shared by every card grid with the slider, so they all agree.
+export function phoneColumns(cardSize: number): number {
+  if (cardSize < 160) return 3;
+  if (cardSize <= 230) return 2;
+  return 1;
+}
+
+// The CSS-grid equivalent, for grids that aren't windowed (On Sale, Missing Add-ons, Events).
+export const phoneGridColumns = (cardSize: number) => `repeat(${phoneColumns(cardSize)}, minmax(0, 1fr))`;
 const SAVE_THROTTLE_MS = 100;
 
 // Session-lifetime, in-memory — the topmost-visible item's own key (e.g. a game id), not a
@@ -62,7 +73,7 @@ interface VirtualGameGridProps<T> {
 }
 
 function columnsForWidth(width: number, minItemWidth: number): number {
-  if (width < PHONE_MAX_WIDTH_PX) return 2;
+  if (width < PHONE_MAX_WIDTH_PX) return phoneColumns(minItemWidth);
   return Math.max(1, Math.floor((width + GRID_GAP_PX) / (minItemWidth + GRID_GAP_PX)));
 }
 

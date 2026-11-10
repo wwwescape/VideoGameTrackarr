@@ -261,6 +261,16 @@
       "passwordChanged": "Password changed. Other devices have been signed out.",
       "changing": "Changing..."
     },
+    "installApp": {
+      "heading": "App",
+      "name": "Install app",
+      "install": "Install",
+      "installed": "You're using the installed app.",
+      "prompt": "Adds VideoGameTrackarr to your home screen or desktop. It opens in its own window and works offline.",
+      "ios": "In Safari, tap Share, then Add to Home Screen.",
+      "insecure": "Browsers only install apps opened over HTTPS (or on localhost). Open VideoGameTrackarr at an HTTPS address, such as through a reverse proxy or Cloudflare tunnel, to install it.",
+      "manual": "Use your browser's install option: the install icon in the address bar, or Install app in its menu (Safari on a Mac: File → Add to Dock). Some browsers, such as Firefox on a computer, can't install apps."
+    },
     "display": {
       "heading": "Display",
       "darkMode": "Dark mode",

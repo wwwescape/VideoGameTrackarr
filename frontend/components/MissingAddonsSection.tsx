@@ -15,6 +15,7 @@ import { useGameListControls } from "./GameListControls";
 import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import Page from "./Page";
 import VirtualList from "./VirtualList";
+import { phoneGridColumns } from "./VirtualGameGrid";
 
 // Insights → Missing add-ons: for each owned game, the DLC/expansions/packs you don't have.
 // Same filters and toolbar as the Games list (see GameListControls); the filters apply to the
@@ -90,7 +91,7 @@ const MissingAddonsSection = () => {
                 sx={{
                   display: "grid",
                   gridTemplateColumns: {
-                    xs: "repeat(2, minmax(0, 1fr))",
+                    xs: phoneGridColumns(cardSize),
                     sm: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
                   },
                   gap: "18px 14px",

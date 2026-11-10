@@ -66,8 +66,8 @@
 - **Backup & restore** — one JSON backup of your library, hardware, target prices and settings,
   or a `.zip` that also carries your pick of ROMs and saves, BIOS files and uploaded images,
   with an automatic safety snapshot before every restore.
-- **PWA** — installable, works offline for anything you've already viewed, and syncs offline
-  edits when you reconnect.
+- **PWA** — installable (see [Installing the app](#installing-the-app)), works offline for
+  anything you've already viewed, and syncs offline edits when you reconnect.
 - **Design** — light, dark, and high-contrast modes with your choice of accent color (Material 3
   color schemes), a sidebar that becomes a drawer on phones, and virtualized lists for large
   collections.
@@ -124,6 +124,14 @@ docker compose pull && docker compose up -d
 Running from source instead? `git pull`, reinstall dependencies if they changed, then run
 `alembic upgrade head` from `backend/` before starting the app. Any breaking change is called
 out in that release's notes.
+
+### Installing the app
+
+VideoGameTrackarr can be installed like an app, with its own window and home-screen or desktop icon.
+**Settings → General → App** has an **Install** button where the browser offers one (Chrome, Edge, Android),
+and says how otherwise (on an iPhone or iPad: Share → Add to Home Screen). Browsers only install
+apps opened over **HTTPS** (or on `localhost`): at a plain `http://` address such as
+`http://192.168.1.10:8000`, use a reverse proxy with a certificate or a Cloudflare tunnel.
 
 ## Configuration
 

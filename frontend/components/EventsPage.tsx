@@ -19,6 +19,7 @@ import {
   type FilterChip,
 } from "./ListToolbar";
 import Page from "./Page";
+import { phoneGridColumns } from "./VirtualGameGrid";
 
 type EventSort = "start" | "name";
 type EventStatus = "all" | "ongoing" | "upcoming";
@@ -31,7 +32,8 @@ const EventGrid = ({ events, cardSize }: { events: EventSummary[]; cardSize: num
     sx={{
       display: "grid",
       gridTemplateColumns: {
-        xs: "minmax(0, 1fr)",
+        // The default event size (260) keeps phones at one column, as before.
+        xs: phoneGridColumns(cardSize),
         sm: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
       },
       gap: "18px 14px",

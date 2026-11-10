@@ -7,6 +7,7 @@ import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
+import { listenForInstallPrompt } from "./hooks/useInstallApp";
 import "./i18n";
 import { offlinePersistOptions } from "./offline/queryPersistence";
 import { createQueryClient } from "./queryClient";
@@ -23,6 +24,9 @@ const queryClient = createQueryClient();
 // checking navigator.onLine at startup — so reopening the app while already offline would
 // otherwise show nothing as offline until the next actual connectivity transition.
 onlineManager.setOnline(navigator.onLine);
+
+// Before the first render: the browser's install offer can arrive soon after the page loads.
+listenForInstallPrompt();
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

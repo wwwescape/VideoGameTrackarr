@@ -261,6 +261,16 @@
       "passwordChanged": "Mot de passe changé. Les autres appareils ont été déconnectés.",
       "changing": "Modification..."
     },
+    "installApp": {
+      "heading": "Application",
+      "name": "Installer l'application",
+      "install": "Installer",
+      "installed": "Vous utilisez l'application installée.",
+      "prompt": "Ajoute VideoGameTrackarr à votre écran d'accueil ou à votre bureau. Elle s'ouvre dans sa propre fenêtre et fonctionne hors ligne.",
+      "ios": "Dans Safari, touchez Partager, puis Sur l'écran d'accueil.",
+      "insecure": "Les navigateurs n'installent que les applications ouvertes en HTTPS (ou sur localhost). Ouvrez VideoGameTrackarr à une adresse HTTPS, par exemple via un proxy inverse ou un tunnel Cloudflare, pour l'installer.",
+      "manual": "Utilisez l'option d'installation de votre navigateur : l'icône d'installation dans la barre d'adresse, ou Installer l'application dans son menu (Safari sur Mac : Fichier → Ajouter au Dock). Certains navigateurs, comme Firefox sur ordinateur, ne peuvent pas installer d'applications."
+    },
     "display": {
       "heading": "Affichage",
       "darkMode": "Mode sombre",
