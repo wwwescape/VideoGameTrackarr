@@ -46,7 +46,6 @@ const DeviceList = ({ searchKeyword, status, filters, sort, view, cardSize }: De
               imageUrl: item.imageUrl,
               owned: item.owned,
               wishlisted: item.wishlisted,
-              ownedQuantity: item.ownedQuantity,
               isCustom: item.isCustom,
               href: `/hardware/device/${hardwareIdentifier(item.officialName, item.uuid)}`,
               createdAt: item.createdAt,

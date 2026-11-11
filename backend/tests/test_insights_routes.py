@@ -282,16 +282,13 @@ def test_accessories_without_owned_hardware_flags_accessory_with_no_links(auth_c
     assert item["isCustom"] is True
     assert item["imageUrl"] is None
     assert item["wishlisted"] is False
-    assert item["ownedQuantity"] == 1
+    assert "ownedQuantity" not in item
 
 
-def test_accessories_without_owned_hardware_carries_wishlist_and_owned_quantity(
-    auth_client, db_session, seed_accessory
-):
-    # Two owned copies plus a wishlist row: the card shows ×2 and the heart, as on Hardware.
+def test_accessories_without_owned_hardware_carries_the_wishlist_flag(auth_client, db_session, seed_accessory):
+    # Owned and also wishlisted: the card shows the heart beside the tick, as on Hardware.
     db_session.add_all(
         [
-            UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.OWNED),
             UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.OWNED),
             UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.WISHLIST),
         ]
@@ -301,7 +298,6 @@ def test_accessories_without_owned_hardware_carries_wishlist_and_owned_quantity(
     response = auth_client.get("/api/insights/accessories-without-owned-hardware")
 
     [item] = response.json()
-    assert item["ownedQuantity"] == 2
     assert item["wishlisted"] is True
 
 

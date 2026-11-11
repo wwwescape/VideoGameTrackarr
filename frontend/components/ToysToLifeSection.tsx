@@ -42,7 +42,6 @@ const ToysToLifeSection = ({ section }: { section: ToysToLifeGameSection }) => {
               imageUrl={item.imageUrl}
               owned={item.owned}
               wishlisted={item.wishlisted}
-              ownedQuantity={0}
               onClick={() => navigate(toyPath(item))}
             />
           ))}

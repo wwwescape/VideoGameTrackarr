@@ -268,7 +268,6 @@ export interface PublicDeviceSummary {
   isCustom: boolean;
   owned: boolean;
   wishlisted: boolean;
-  ownedQuantity: number;
 }
 
 export interface PublicAccessorySummary {
@@ -279,7 +278,6 @@ export interface PublicAccessorySummary {
   isCustom: boolean;
   owned: boolean;
   wishlisted: boolean;
-  ownedQuantity: number;
 }
 
 export interface CatalogRef {
@@ -905,9 +903,8 @@ export interface InsightAccessoryRef {
   accessoryTypeName: string;
   // No hardware reference catalog entry (the "Custom" chip).
   isCustom: boolean;
-  // Always owned (the page's premise); also wishlisted, and how many copies are owned.
+  // Always owned (the page's premise); this is whether it's also wishlisted.
   wishlisted: boolean;
-  ownedQuantity: number;
   // When it was added here (ISO timestamp).
   createdAt: string;
 }

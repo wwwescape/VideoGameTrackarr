@@ -50,7 +50,6 @@ const AccessoryList = ({
         imageUrl: item.imageUrl,
         owned: item.owned,
         wishlisted: item.wishlisted,
-        ownedQuantity: item.ownedQuantity,
         isCustom: item.isCustom,
         href: `/hardware/accessory/${hardwareIdentifier(item.officialName, item.uuid)}`,
         createdAt: item.createdAt,

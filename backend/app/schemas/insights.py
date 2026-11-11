@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.models.catalog import Game, GameCategory
 from app.models.library import LibraryItem
-from app.repositories.accessory_repository import AccessoryWithStatus
+from app.repositories.insight_repository import OrphanedAccessory
 from app.schemas.base import CamelModel
 from app.schemas.library import LibraryItemResponse, library_item_from_orm
 from app.services.hardware_reference_image_service import resolve_image_url
@@ -87,16 +87,15 @@ class InsightAccessoryRefResponse(CamelModel):
     accessory_type_name: str
     # No hardware reference catalog entry — the "Custom" chip, as on the Hardware page.
     is_custom: bool
-    # Every row here is owned (that's the page's premise); these carry the rest of the
-    # ownership the cards show — the wishlist heart and the ×N quantity badge.
+    # Every row here is owned (that's the page's premise); this carries the rest of the
+    # ownership a card shows, the wishlist heart.
     wishlisted: bool
-    owned_quantity: int
     # When it was added here, for the Orphaned Accessories page's Date added sort.
     created_at: datetime
 
 
-def insight_accessory_ref_from_orm(with_status: AccessoryWithStatus) -> InsightAccessoryRefResponse:
-    accessory = with_status.accessory
+def insight_accessory_ref_from_orm(orphan: OrphanedAccessory) -> InsightAccessoryRefResponse:
+    accessory = orphan.accessory
     return InsightAccessoryRefResponse(
         id=accessory.id,
         uuid=accessory.uuid,
@@ -113,8 +112,7 @@ def insight_accessory_ref_from_orm(with_status: AccessoryWithStatus) -> InsightA
         manufacturer_name=accessory.manufacturer.name,
         accessory_type_name=accessory.accessory_type.name,
         is_custom=accessory.hardware_reference_entry_id is None,
-        wishlisted=with_status.wishlisted,
-        owned_quantity=with_status.owned_quantity,
+        wishlisted=orphan.wishlisted,
         created_at=accessory.created_at,
     )
 

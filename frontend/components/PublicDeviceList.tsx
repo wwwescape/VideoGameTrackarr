@@ -36,7 +36,6 @@ const PublicDeviceList = ({ token, search }: PublicDeviceListProps) => {
           imageUrl={device.imageUrl}
           owned={device.owned}
           wishlisted={device.wishlisted}
-          ownedQuantity={device.ownedQuantity}
           isCustom={device.isCustom}
         />
       )}

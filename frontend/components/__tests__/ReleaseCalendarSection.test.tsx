@@ -15,7 +15,6 @@ const device = {
   imageUrl: null,
   owned: false,
   wishlisted: true,
-  ownedQuantity: 0,
 } as DeviceSummary;
 
 const accessory = {
@@ -27,7 +26,6 @@ const accessory = {
   imageUrl: null,
   owned: false,
   wishlisted: true,
-  ownedQuantity: 0,
 } as AccessorySummary;
 
 const releases: UpcomingRelease[] = [

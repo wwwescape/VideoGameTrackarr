@@ -64,7 +64,6 @@ const ToysToLifeLinePage = () => {
           imageUrl={item.imageUrl}
           owned={item.owned}
           wishlisted={item.wishlisted}
-          ownedQuantity={0}
           onClick={onClick}
         />
       )}

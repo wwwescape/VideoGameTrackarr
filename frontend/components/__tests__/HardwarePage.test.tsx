@@ -67,7 +67,6 @@ const device = (id: number, officialName: string): Partial<DeviceSummary> => ({
   imageUrl: null,
   owned: true,
   wishlisted: false,
-  ownedQuantity: 1,
 });
 
 const accessory = (id: number, officialName: string, releaseDate: number | null): Partial<AccessorySummary> => ({
@@ -80,7 +79,6 @@ const accessory = (id: number, officialName: string, releaseDate: number | null)
   imageUrl: null,
   owned: true,
   wishlisted: false,
-  ownedQuantity: 1,
 });
 
 function renderPage() {
@@ -180,9 +178,9 @@ describe("HardwarePage", () => {
 
   it("sorts the table from its column headers, for both sections", async () => {
     devices = [
-      { ...device(1, "PlayStation 5"), ownedQuantity: 1 },
-      { ...device(2, "PlayStation 4"), ownedQuantity: 3 },
-      { ...device(3, "PlayStation 3"), owned: false, wishlisted: true, ownedQuantity: 0 },
+      device(1, "PlayStation 5"),
+      device(2, "PlayStation 4"),
+      { ...device(3, "PlayStation 3"), owned: false, wishlisted: true },
     ];
     const user = renderPage();
     await user.click(screen.getByRole("button", { name: "View" }));
@@ -191,9 +189,10 @@ describe("HardwarePage", () => {
     const deviceRows = () => devicesTable.getAllByRole("row").slice(1).map((row) => row.getAttribute("aria-label"));
 
     expect(devicesTable.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
-    await user.click(devicesTable.getByRole("button", { name: "Qty" }));
-    // Highest first; a device you don't own has no quantity, so it goes last.
-    expect(deviceRows()).toEqual(["PlayStation 4", "PlayStation 5", "PlayStation 3"]);
+    expect(deviceRows()).toEqual(["PlayStation 3", "PlayStation 4", "PlayStation 5"]);
+    // No quantity column: every add is its own row with one copy.
+    expect(devicesTable.queryByRole("columnheader", { name: "Qty" })).not.toBeInTheDocument();
+    // Owned before wishlisted.
     await user.click(devicesTable.getByRole("button", { name: "Library" }));
     expect(deviceRows()).toEqual(["PlayStation 4", "PlayStation 5", "PlayStation 3"]);
     await user.click(devicesTable.getByRole("button", { name: "Library" }));

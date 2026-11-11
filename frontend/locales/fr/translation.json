@@ -1541,8 +1541,6 @@
     },
     "card": {
       "noImage": "Aucune image",
-      "quantity_one": "{{count}} possédé",
-      "quantity_other": "{{count}} possédés",
       "customLabel": "Personnalisé"
     },
     "coverCard": {
@@ -1584,8 +1582,7 @@
     },
     "filter": {
       "statusLabel": "Statut",
-      "kindChip": "{{kind}} : {{label}}",
-      "columnQuantity": "Qté"
+      "kindChip": "{{kind}} : {{label}}"
     }
   },
   "notes": {

@@ -33,7 +33,6 @@ export interface HardwareRow {
   imageUrl: string | null;
   owned: boolean;
   wishlisted: boolean;
-  ownedQuantity: number;
   // No hardware reference catalog entry: a "Custom" chip on the card and in the table.
   isCustom: boolean;
   href: string;
@@ -47,7 +46,6 @@ export type HardwareSortField =
   | "manufacturer"
   | "detail"
   | "library"
-  | "quantity"
   | "date_added"
   | "release_date";
 
@@ -56,7 +54,6 @@ const HARDWARE_SORT_VALUES: Record<HardwareSortField, (row: HardwareRow) => Sort
   manufacturer: (row) => row.manufacturer,
   detail: (row) => row.detail,
   library: libraryRank,
-  quantity: (row) => (row.owned ? row.ownedQuantity : null),
   date_added: (row) => Date.parse(row.createdAt),
   release_date: (row) => row.releaseDate,
 };
@@ -70,8 +67,7 @@ interface HardwareListSectionProps {
   detailLabel: string;
   view: HardwareListView;
   cardSize: number;
-  // Rows with no type/platform or quantity to show (Orphaned accessories): those table columns
-  // are left out.
+  // Rows with no type/platform to show (Orphaned accessories): that table column is left out.
   compact?: boolean;
   // The page's sort: it orders the cards and table, and the table's headers change it.
   sort: ListSortControl<HardwareSortField>;
@@ -122,12 +118,7 @@ export function HardwareListSection({
             {header("name", t("games.listView.columnName"))}
             {header("library", t("games.listView.columnLibrary"))}
             {header("manufacturer", t("hardware.listToolbar.manufacturerLabel"), { display: { xs: "none", sm: "table-cell" } })}
-            {!compact ? (
-              <>
-                {header("detail", detailLabel, { display: { xs: "none", md: "table-cell" } })}
-                {header("quantity", t("hardware.filter.columnQuantity"), { display: { xs: "none", sm: "table-cell" } })}
-              </>
-            ) : null}
+            {!compact ? header("detail", detailLabel, { display: { xs: "none", md: "table-cell" } }) : null}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -183,12 +174,7 @@ export function HardwareListSection({
               </TableCell>
               <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, color: "text.secondary" }}>{row.manufacturer}</TableCell>
               {!compact ? (
-                <>
-                  <TableCell sx={{ display: { xs: "none", md: "table-cell" }, color: "text.secondary" }}>{row.detail ?? "—"}</TableCell>
-                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, color: "text.secondary" }}>
-                    {row.owned ? row.ownedQuantity : "—"}
-                  </TableCell>
-                </>
+                <TableCell sx={{ display: { xs: "none", md: "table-cell" }, color: "text.secondary" }}>{row.detail ?? "—"}</TableCell>
               ) : null}
             </TableRow>
           ))}
@@ -208,7 +194,6 @@ export function HardwareListSection({
           imageUrl={row.imageUrl}
           owned={row.owned}
           wishlisted={row.wishlisted}
-          ownedQuantity={row.ownedQuantity}
           isCustom={row.isCustom}
           onClick={() => navigate(row.href)}
         />

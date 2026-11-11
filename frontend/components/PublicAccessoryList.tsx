@@ -34,7 +34,6 @@ const PublicAccessoryList = ({ token, search }: PublicAccessoryListProps) => {
           imageUrl={accessory.imageUrl}
           owned={accessory.owned}
           wishlisted={accessory.wishlisted}
-          ownedQuantity={accessory.ownedQuantity}
           isCustom={accessory.isCustom}
         />
       )}

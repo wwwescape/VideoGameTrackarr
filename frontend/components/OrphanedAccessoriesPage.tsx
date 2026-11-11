@@ -69,7 +69,6 @@ const OrphanedAccessoriesPage = () => {
         imageUrl: accessory.imageUrl,
         owned: true,
         wishlisted: accessory.wishlisted,
-        ownedQuantity: accessory.ownedQuantity,
         isCustom: accessory.isCustom,
         href: `/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`,
         createdAt: accessory.createdAt,

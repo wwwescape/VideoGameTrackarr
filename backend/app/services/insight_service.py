@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.catalog import Game
 from app.models.library import LibraryItem
 from app.repositories import insight_repository
-from app.repositories.accessory_repository import AccessoryWithStatus
+from app.repositories.insight_repository import OrphanedAccessory
 from app.services import itad_service, platprices_service
 
 
@@ -17,7 +17,7 @@ def find_missing_addons(db: Session, **filters: Any) -> list[tuple[Game, list[tu
     return insight_repository.find_missing_addons(db, **filters)
 
 
-def find_accessories_without_owned_hardware(db: Session) -> list[AccessoryWithStatus]:
+def find_accessories_without_owned_hardware(db: Session) -> list[OrphanedAccessory]:
     return insight_repository.find_accessories_without_owned_hardware(db)
 
 

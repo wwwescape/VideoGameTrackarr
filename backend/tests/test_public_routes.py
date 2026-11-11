@@ -80,7 +80,6 @@ def test_public_devices_with_valid_token(auth_client, client, seed_device):
         "isCustom",
         "owned",
         "wishlisted",
-        "ownedQuantity",
     }
     # The seeded device has no hardware reference entry, so it shows as Custom.
     assert device["isCustom"] is True
@@ -109,7 +108,6 @@ def test_public_accessories_with_valid_token(auth_client, client, seed_accessory
         "isCustom",
         "owned",
         "wishlisted",
-        "ownedQuantity",
     }
     assert accessory["isCustom"] is True
 

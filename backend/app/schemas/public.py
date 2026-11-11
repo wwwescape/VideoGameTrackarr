@@ -143,7 +143,6 @@ class PublicDeviceSummaryResponse(CamelModel):
     is_custom: bool
     owned: bool
     wishlisted: bool
-    owned_quantity: int
 
 
 def public_device_from_orm(item: DeviceWithStatus) -> PublicDeviceSummaryResponse:
@@ -161,7 +160,6 @@ def public_device_from_orm(item: DeviceWithStatus) -> PublicDeviceSummaryRespons
         is_custom=device.hardware_reference_entry_id is None,
         owned=item.owned,
         wishlisted=item.wishlisted,
-        owned_quantity=item.owned_quantity,
     )
 
 
@@ -173,7 +171,6 @@ class PublicAccessorySummaryResponse(CamelModel):
     is_custom: bool
     owned: bool
     wishlisted: bool
-    owned_quantity: int
 
 
 def public_accessory_from_orm(item: AccessoryWithStatus) -> PublicAccessorySummaryResponse:
@@ -191,5 +188,4 @@ def public_accessory_from_orm(item: AccessoryWithStatus) -> PublicAccessorySumma
         is_custom=accessory.hardware_reference_entry_id is None,
         owned=item.owned,
         wishlisted=item.wishlisted,
-        owned_quantity=item.owned_quantity,
     )

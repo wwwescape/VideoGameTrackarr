@@ -43,7 +43,6 @@ export function useHardwareListState() {
     { field: "manufacturer", label: t("hardware.listToolbar.manufacturerLabel") },
     { field: "detail", label: t("hardware.listToolbar.sortOptionPlatformOrType") },
     { field: "library", label: t("games.listView.columnLibrary") },
-    { field: "quantity", label: t("hardware.filter.columnQuantity"), defaultDirection: "desc" },
     { field: "date_added", label: t("games.listView.sortDateAdded"), defaultDirection: "desc" },
     { field: "release_date", label: t("hardware.listToolbar.sortOptionReleaseDate"), defaultDirection: "desc" },
   ];
