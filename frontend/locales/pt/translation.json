@@ -75,6 +75,7 @@
     "about": "Sobre",
     "emulation": "Emulação",
     "gameCases": "Caixas de jogos",
+    "screensaver": "Protetor de ecrã",
     "overview": "Visão geral",
     "settingsGeneral": "Geral",
     "primary": "Navegação principal",
@@ -466,6 +467,10 @@
         "game_shelf": {
           "name": "Estante",
           "description": "Os seus jogos físicos como caixas numa estante, desenhadas como as verdadeiras. Acrescenta Jogos → Estante, Definições → Caixas de jogos e um separador Estante na sua ligação partilhada."
+        },
+        "screensaver": {
+          "name": "Protetor de ecrã",
+          "description": "Um botão flutuante que mostra as capas dos seus jogos em ecrã inteiro, uma após a outra. Deslize para explorar e toque numa capa para abrir o jogo. Adiciona Definições → Protetor de ecrã."
         }
       }
     },
@@ -482,6 +487,18 @@
       "caseSize": "{{label}} · {{height}} × {{spine}} mm",
       "sampleTitle": "Título do jogo",
       "loadFailed": "Não foi possível carregar as caixas de jogos.",
+      "saveFailed": "Não foi possível guardar a alteração. Tente novamente."
+    },
+    "screensaver": {
+      "description": "Como o protetor de ecrã se comporta em cada ecrã onde o abrir. Inicie-o com o botão redondo no canto inferior esquerdo de qualquer página.",
+      "heading": "Diapositivos",
+      "interval": "Tempo por capa",
+      "intervalDescription": "Quanto tempo cada capa fica no ecrã antes de entrar a seguinte.",
+      "seconds_one": "{{count}} segundo",
+      "seconds_other": "{{count}} segundos",
+      "current_one": "Cada capa é mostrada durante {{count}} segundo.",
+      "current_other": "Cada capa é mostrada durante {{count}} segundos.",
+      "included": "Estão incluídos todos os jogos que possui com capa. Oculte um na sua página, ou vários de uma vez a partir da lista de jogos.",
       "saveFailed": "Não foi possível guardar a alteração. Tente novamente."
     },
     "tagManager": {
@@ -576,6 +593,27 @@
     },
     "regional": {
       "heading": "Regional"
+    }
+  },
+  "screensaver": {
+    "start": "Iniciar protetor de ecrã",
+    "label": "Protetor de ecrã",
+    "close": "Fechar protetor de ecrã",
+    "empty": "Ainda não há capas para mostrar. Os jogos que possui com capa aparecem aqui.",
+    "loadFailed": "Não foi possível carregar as capas.",
+    "retry": "Tentar novamente",
+    "confirmTitle": "Abrir jogo?",
+    "confirmText": "Ir para a página de {{name}}?",
+    "confirmGo": "Ir para o jogo",
+    "slide": "{{name}}, capa {{position}} de {{count}}",
+    "toggle": {
+      "hideLabel": "Ocultar do protetor de ecrã",
+      "showLabel": "Mostrar no protetor de ecrã",
+      "shownTooltip": "Mostrado no protetor de ecrã · clique para o ocultar",
+      "hiddenTooltip": "Oculto do protetor de ecrã · clique para o mostrar",
+      "hidden": "Oculto do protetor de ecrã",
+      "shown": "Mostrado no protetor de ecrã",
+      "saveFailed": "Não foi possível alterar. Tente novamente."
     }
   },
   "auth": {
@@ -722,7 +760,21 @@
       "showMissingLabel": "Mostrar o que me falta?",
       "steelbookOnlyLabel": "Somente Steelbooks",
       "clearFiltersButton": "Limpar filtros",
-      "noSearchMatches": "Nenhum resultado encontrado."
+      "noSearchMatches": "Nenhum resultado encontrado.",
+      "screensaverButton": "Protetor de ecrã",
+      "screensaverHide": "Ocultar do protetor de ecrã ({{count}})",
+      "screensaverShow": "Mostrar no protetor de ecrã ({{count}})",
+      "screensaverHiddenToast_one": "{{count}} jogo oculto do protetor de ecrã",
+      "screensaverHiddenToast_other": "{{count}} jogos ocultos do protetor de ecrã",
+      "screensaverShownToast_one": "{{count}} jogo volta a ser mostrado no protetor de ecrã",
+      "screensaverShownToast_other": "{{count}} jogos voltam a ser mostrados no protetor de ecrã",
+      "screensaverFailed": "Não foi possível alterar o protetor de ecrã desses jogos. Tente novamente.",
+      "screensaverFilterLabel": "Protetor de ecrã",
+      "screensaverAny": "Todos",
+      "screensaverShownOption": "Mostrados",
+      "screensaverHiddenOption": "Ocultos",
+      "screensaverHiddenChip": "Protetor de ecrã: ocultos",
+      "screensaverShownChip": "Protetor de ecrã: mostrados"
     },
     "card": {
       "playStatusBacklog": "Backlog",

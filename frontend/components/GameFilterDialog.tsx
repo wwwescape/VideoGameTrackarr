@@ -12,6 +12,7 @@ import Switch from "@mui/material/Switch";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { MatchAllField, MatchAllFilters } from "../api/games";
 import type {
@@ -21,6 +22,7 @@ import type {
   MediaFormat,
   PlatformResponse,
   PlayStatus,
+  ScreensaverFilter,
   Tag,
 } from "../api/types";
 import AutocompleteMultiSelect from "./AutocompleteMultiSelect";
@@ -254,6 +256,10 @@ export interface GameFilterFieldsProps {
   onSourcesChange?: (value: GameSource[]) => void;
   sourceExclude?: boolean;
   onSourceExcludeChange?: (value: boolean) => void;
+  // Optional, same "only rendered when provided" pattern — only the Games page passes these,
+  // and only while the Screensaver lab is on. Null = any.
+  screensaverFilter?: ScreensaverFilter | null;
+  onScreensaverFilterChange?: (value: ScreensaverFilter | null) => void;
   playStatuses: PlayStatus[];
   onPlayStatusesChange: (value: PlayStatus[]) => void;
   playStatusExclude: boolean;
@@ -282,6 +288,7 @@ export function countActiveFilters(fields: {
   playStatuses: unknown[];
   sources?: unknown[];
   steelbookOnly?: boolean;
+  screensaverFilter?: ScreensaverFilter | null;
 }): number {
   return (
     fields.ownershipStatuses.length +
@@ -294,7 +301,8 @@ export function countActiveFilters(fields: {
     fields.storefronts.length +
     fields.playStatuses.length +
     (fields.sources?.length ?? 0) +
-    (fields.steelbookOnly ? 1 : 0)
+    (fields.steelbookOnly ? 1 : 0) +
+    (fields.screensaverFilter ? 1 : 0)
   );
 }
 
@@ -350,6 +358,8 @@ const GameFilterDialog = ({
   onSourcesChange,
   sourceExclude = false,
   onSourceExcludeChange,
+  screensaverFilter = null,
+  onScreensaverFilterChange,
   playStatuses,
   onPlayStatusesChange,
   playStatusExclude,
@@ -396,6 +406,7 @@ const GameFilterDialog = ({
       playStatuses,
       sources,
       steelbookOnly,
+      screensaverFilter,
     }) > 0;
 
 
@@ -438,6 +449,7 @@ const GameFilterDialog = ({
     onSteelbookOnlyChange?.(false);
     onSourcesChange?.([]);
     onSourceExcludeChange?.(false);
+    onScreensaverFilterChange?.(null);
   };
 
   return (
@@ -691,6 +703,28 @@ const GameFilterDialog = ({
                   exclude={sourceExclude}
                   onExcludeChange={(value) => onSourceExcludeChange?.(value)}
                 />
+              </Stack>
+            </Grid>
+          ) : null}
+          {onScreensaverFilterChange ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.75}>
+                <Typography id="screensaver-filter-label" variant="body2" sx={{ color: "text.secondary" }}>
+                  {t("games.listToolbar.screensaverFilterLabel")}
+                </Typography>
+                <ToggleButtonGroup
+                  exclusive
+                  size="small"
+                  value={screensaverFilter ?? "any"}
+                  onChange={(_event, value: ScreensaverFilter | "any" | null) => {
+                    if (value !== null) onScreensaverFilterChange(value === "any" ? null : value);
+                  }}
+                  aria-labelledby="screensaver-filter-label"
+                >
+                  <ToggleButton value="any">{t("games.listToolbar.screensaverAny")}</ToggleButton>
+                  <ToggleButton value="shown">{t("games.listToolbar.screensaverShownOption")}</ToggleButton>
+                  <ToggleButton value="hidden">{t("games.listToolbar.screensaverHiddenOption")}</ToggleButton>
+                </ToggleButtonGroup>
               </Stack>
             </Grid>
           ) : null}

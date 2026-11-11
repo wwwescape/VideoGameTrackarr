@@ -36,7 +36,10 @@ export type IgdbImageSize =
   // 264×374 (~22 KB): small rows, Compare, and the Series/Collections cover grids.
   | "t_cover_big"
   // 889×500, cropped to 16:9 like the event cards that use it (event logos are t_1080p).
-  | "t_screenshot_big";
+  | "t_screenshot_big"
+  // Fits 1920×1080 uncropped (a cover comes back about 810×1080): the Screensaver's full-screen
+  // covers, sharp on a tablet or TV.
+  | "t_1080p";
 
 const IGDB_SIZED_URL = /^(https?:\/\/images\.igdb\.com\/igdb\/image\/upload\/)t_[a-z0-9_]+\//i;
 

@@ -1,10 +1,12 @@
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { alpha, useTheme } from "@mui/material/styles";
+import { SCREENSAVER_BUTTON_CLEARANCE_XS } from "./ScreensaverButton";
 
 // react-toastify's toasts in the redesign's look: a surface card with a hairline border and
 // soft shadow (light and dark), the type shown by a coloured icon, a left stripe and a thin
-// progress line rather than a fully coloured box.
-const ToastStyles = () => {
+// progress line rather than a fully coloured box. `raised` lifts them above the Screensaver
+// lab's floating button on phones, where they span the screen's width.
+const ToastStyles = ({ raised = false }: { raised?: boolean }) => {
   const theme = useTheme();
   const { vgt } = theme.palette;
   const tones = {
@@ -28,7 +30,7 @@ const ToastStyles = () => {
             width: "auto",
             left: 12,
             right: 12,
-            bottom: 12,
+            bottom: raised ? `calc(${12 + SCREENSAVER_BUTTON_CLEARANCE_XS}px + env(safe-area-inset-bottom))` : 12,
           },
           ".Toastify__toast-container .Toastify__toast": { marginBottom: 8, borderRadius: 12 },
         },

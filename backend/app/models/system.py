@@ -28,6 +28,9 @@ class User(TimestampMixin, Base):
     overview_layout: Mapped[list[dict] | None] = mapped_column(
         JSON, comment="Overview page sections in display order, each {key, hidden}; null = the default layout"
     )
+    screensaver_interval_seconds: Mapped[int | None] = mapped_column(
+        Integer, comment="Screensaver lab: seconds each cover is shown, 5-15; null = the default (8)"
+    )
     last_seen_version: Mapped[str | None] = mapped_column(
         String(32),
         comment="Newest app version whose What's New was closed; null = an install from before What's New",

@@ -207,6 +207,14 @@ class GameSource(enum.Enum):
     CUSTOM = "custom"
 
 
+class ScreensaverFilter(enum.Enum):
+    """The Games list's Screensaver filter (Screensaver lab): games shown in it, or hidden
+    from it, by the per-game opt-out alone (Game.screensaver_excluded)."""
+
+    SHOWN = "shown"
+    HIDDEN = "hidden"
+
+
 def _rank(value: ColumnElement[Any], order: list[Any]) -> ColumnElement[int | None]:
     """A value's position in a fixed order, NULL for anything not in it."""
     return case(*((value == item, index) for index, item in enumerate(order)), else_=None)
@@ -341,6 +349,7 @@ def _apply_optional_game_filters(
     steelbook_only: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
+    screensaver: ScreensaverFilter | None = None,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> Select[Any]:
     """The Games list's whole optional filter set (search + 8 dimensions + sort), factored
@@ -418,6 +427,8 @@ def _apply_optional_game_filters(
             *(Game.igdb_id.is_not(None) if source == GameSource.IGDB else Game.igdb_id.is_(None) for source in sources)
         )
         stmt = stmt.where(_maybe_negate(clause, source_exclude))
+    if screensaver is not None:
+        stmt = stmt.where(Game.screensaver_excluded.is_(screensaver == ScreensaverFilter.HIDDEN))
     return stmt.order_by(*_order_by_for_sort(sort))
 
 
@@ -450,6 +461,7 @@ def list_top_level_games(
     steelbook_only: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
+    screensaver: ScreensaverFilter | None = None,
     sort: GameSortOption = GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
@@ -515,6 +527,7 @@ def list_top_level_games(
         steelbook_only=steelbook_only,
         sources=sources,
         source_exclude=source_exclude,
+        screensaver=screensaver,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
@@ -570,6 +583,53 @@ def list_owned_copies(db: Session, game_ids: list[int]) -> list[ShelfCopy]:
         .order_by(LibraryItem.id)
     )
     return [ShelfCopy(*row) for row in db.execute(stmt)]
+
+
+@dataclass(frozen=True)
+class ScreensaverGame:
+    id: int
+    uuid: str
+    slug: str | None
+    name: str
+    cover_url: str
+
+
+def _screensaver_filter() -> ColumnElement[bool]:
+    """The Screensaver lab's games: top-level browsable games you own a copy of (any format;
+    owning one also means it isn't Missing), with a cover, that you haven't opted out."""
+    return and_(
+        Game.parent_game_id.is_(None),
+        _is_browsable_game(Game.category),
+        _owned_exists(Game.id),
+        Game.cover_url.is_not(None),
+        Game.cover_url != "",
+        ~Game.screensaver_excluded,
+    )
+
+
+def count_screensaver_games(db: Session) -> int:
+    return db.scalar(select(func.count()).select_from(Game).where(_screensaver_filter())) or 0
+
+
+def sample_screensaver_games(db: Session, limit: int) -> list[ScreensaverGame]:
+    """Up to `limit` of the screensaver's games in random order, picked by the database, so a
+    large library never loads more than a slide show's worth of rows."""
+    stmt = (
+        select(Game.id, Game.uuid, Game.slug, Game.name, Game.cover_url)
+        .where(_screensaver_filter())
+        .order_by(func.random())
+        .limit(limit)
+    )
+    return [ScreensaverGame(*row) for row in db.execute(stmt)]
+
+
+def set_screensaver_excluded(db: Session, game_ids: list[int], excluded: bool) -> int:
+    """Opts these games out of (or back into) the screensaver; returns how many exist. Unknown
+    ids are skipped. Not committed."""
+    if not game_ids:
+        return 0
+    result = db.execute(update(Game).where(Game.id.in_(game_ids)).values(screensaver_excluded=excluded))
+    return result.rowcount or 0
 
 
 def _get_game_options() -> tuple[Any, ...]:

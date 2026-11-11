@@ -8,6 +8,7 @@ from app.repositories.game_repository import (
     GameSortOption,
     GameSource,
     GameWithStatus,
+    ScreensaverFilter,
     _apply_optional_game_filters,
     _is_browsable_game,
     _owned_exists,
@@ -123,6 +124,7 @@ def list_addons_for_collection(
     steelbook_only: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
+    screensaver: ScreensaverFilter | None = None,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this collection's top-level games — parent_game_id is only ever set for
@@ -184,6 +186,7 @@ def list_addons_for_collection(
         steelbook_only=steelbook_only,
         sources=sources,
         source_exclude=source_exclude,
+        screensaver=screensaver,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

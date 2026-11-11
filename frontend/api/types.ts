@@ -135,6 +135,8 @@ export interface GameSummary {
   // discovered-but-unclaimed game (greyscale + "Missing" chip) from a manually-added one
   // that just isn't owned/wishlisted yet (greyscale, no chip) — see GameCard.tsx.
   autoDiscovered: boolean;
+  // Left out of the Screensaver lab's carousel (its page's toggle, the list's bulk Hide/Show).
+  screensaverExcluded: boolean;
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;
@@ -887,6 +889,27 @@ export interface CurrentUser {
   currency: string | null;
   // The Overview's sections in order; null until customised (see hooks/useOverviewLayout.ts).
   overviewLayout: OverviewSectionSetting[] | null;
+  // The Screensaver lab's seconds per cover (5-15); null until changed (see SCREENSAVER_DEFAULT_INTERVAL).
+  screensaverIntervalSeconds: number | null;
+}
+
+// The Games list's Screensaver filter: games shown in it, or hidden from it.
+export type ScreensaverFilter = "shown" | "hidden";
+
+// One slide of the Screensaver lab: just what the carousel shows and what opening the game needs.
+export interface ScreensaverGame {
+  id: number;
+  uuid: string;
+  slug: string | null;
+  name: string;
+  coverUrl: string;
+}
+
+// GET /api/games/screensaver: a random sample (at most 500) of the games it shows, and how
+// many there are in all.
+export interface ScreensaverSample {
+  games: ScreensaverGame[];
+  total: number;
 }
 
 export interface OverviewSectionSetting {

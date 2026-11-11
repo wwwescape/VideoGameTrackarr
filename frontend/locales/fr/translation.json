@@ -75,6 +75,7 @@
     "about": "À propos",
     "emulation": "Émulation",
     "gameCases": "Boîtiers de jeux",
+    "screensaver": "Économiseur d'écran",
     "overview": "Vue d'ensemble",
     "settingsGeneral": "Général",
     "primary": "Navigation principale",
@@ -466,6 +467,10 @@
         "game_shelf": {
           "name": "Étagère",
           "description": "Vos jeux physiques sous forme de boîtiers sur une étagère, dessinés comme les vrais. Ajoute Jeux → Étagère, Paramètres → Boîtiers de jeux et un onglet Étagère sur votre lien de partage."
+        },
+        "screensaver": {
+          "name": "Économiseur d'écran",
+          "description": "Un bouton flottant qui affiche les jaquettes de vos jeux en plein écran, l'une après l'autre. Balayez pour parcourir, touchez une jaquette pour ouvrir le jeu. Ajoute Paramètres → Économiseur d'écran."
         }
       }
     },
@@ -483,6 +488,18 @@
       "sampleTitle": "Titre du jeu",
       "loadFailed": "Impossible de charger les boîtiers de jeux.",
       "saveFailed": "Impossible d'enregistrer ce changement. Réessayez."
+    },
+    "screensaver": {
+      "description": "Le comportement de l'économiseur d'écran sur chaque écran où vous l'ouvrez. Lancez-le avec le bouton rond en bas à gauche de n'importe quelle page.",
+      "heading": "Diapositives",
+      "interval": "Durée par jaquette",
+      "intervalDescription": "Combien de temps chaque jaquette reste à l'écran avant que la suivante n'arrive.",
+      "seconds_one": "{{count}} seconde",
+      "seconds_other": "{{count}} secondes",
+      "current_one": "Chaque jaquette s'affiche pendant {{count}} seconde.",
+      "current_other": "Chaque jaquette s'affiche pendant {{count}} secondes.",
+      "included": "Tous les jeux que vous possédez avec une jaquette sont inclus. Masquez-en un depuis sa page, ou plusieurs à la fois depuis la liste des jeux.",
+      "saveFailed": "Impossible d'enregistrer ce changement. Veuillez réessayer."
     },
     "tagManager": {
       "description": "Supprime une étiquette de façon permanente. Cela la retire de tous les jeux, appareils et accessoires qui la portent — pas seulement d'un seul élément. Pour retirer une étiquette d'un seul élément, utilisez le champ Étiquettes sur la page de cet élément.",
@@ -576,6 +593,27 @@
     },
     "regional": {
       "heading": "Régional"
+    }
+  },
+  "screensaver": {
+    "start": "Lancer l'économiseur d'écran",
+    "label": "Économiseur d'écran",
+    "close": "Fermer l'économiseur d'écran",
+    "empty": "Aucune jaquette à afficher pour l'instant. Les jeux que vous possédez avec une jaquette apparaissent ici.",
+    "loadFailed": "Impossible de charger les jaquettes.",
+    "retry": "Réessayer",
+    "confirmTitle": "Ouvrir le jeu ?",
+    "confirmText": "Aller à la page de {{name}} ?",
+    "confirmGo": "Aller au jeu",
+    "slide": "{{name}}, jaquette {{position}} sur {{count}}",
+    "toggle": {
+      "hideLabel": "Masquer de l'économiseur d'écran",
+      "showLabel": "Afficher dans l'économiseur d'écran",
+      "shownTooltip": "Affiché dans l'économiseur d'écran · cliquez pour le masquer",
+      "hiddenTooltip": "Masqué de l'économiseur d'écran · cliquez pour l'afficher",
+      "hidden": "Masqué de l'économiseur d'écran",
+      "shown": "Affiché dans l'économiseur d'écran",
+      "saveFailed": "Impossible de faire ce changement. Veuillez réessayer."
     }
   },
   "auth": {
@@ -722,7 +760,21 @@
       "showMissingLabel": "Afficher ce qu'il me manque ?",
       "steelbookOnlyLabel": "Steelbooks uniquement",
       "clearFiltersButton": "Effacer les filtres",
-      "noSearchMatches": "Aucun résultat trouvé."
+      "noSearchMatches": "Aucun résultat trouvé.",
+      "screensaverButton": "Économiseur d'écran",
+      "screensaverHide": "Masquer de l'économiseur ({{count}})",
+      "screensaverShow": "Afficher dans l'économiseur ({{count}})",
+      "screensaverHiddenToast_one": "{{count}} jeu masqué de l'économiseur d'écran",
+      "screensaverHiddenToast_other": "{{count}} jeux masqués de l'économiseur d'écran",
+      "screensaverShownToast_one": "{{count}} jeu de nouveau affiché dans l'économiseur d'écran",
+      "screensaverShownToast_other": "{{count}} jeux de nouveau affichés dans l'économiseur d'écran",
+      "screensaverFailed": "Impossible de modifier l'économiseur d'écran pour ces jeux. Veuillez réessayer.",
+      "screensaverFilterLabel": "Économiseur d'écran",
+      "screensaverAny": "Tous",
+      "screensaverShownOption": "Affichés",
+      "screensaverHiddenOption": "Masqués",
+      "screensaverHiddenChip": "Économiseur : masqués",
+      "screensaverShownChip": "Économiseur : affichés"
     },
     "card": {
       "playStatusBacklog": "À faire",

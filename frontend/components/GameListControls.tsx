@@ -110,6 +110,7 @@ export function useGameListControls(
     playStatuses: fields.playStatuses,
     sources: fields.sources,
     steelbookOnly: fields.steelbookOnly,
+    screensaverFilter: fields.screensaverFilter,
   });
 
   // Remove-one-value chips under the breadcrumbs. An Exclude flag on a field shows on its chips
@@ -160,6 +161,17 @@ export function useGameListControls(
   if (fields.steelbookOnly && fields.onSteelbookOnlyChange) {
     const clear = fields.onSteelbookOnlyChange;
     chips.push({ key: "steelbook", label: t("games.listToolbar.steelbookOnlyLabel"), onRemove: () => clear(false) });
+  }
+  if (fields.screensaverFilter && fields.onScreensaverFilterChange) {
+    const clear = fields.onScreensaverFilterChange;
+    chips.push({
+      key: "screensaver",
+      label:
+        fields.screensaverFilter === "hidden"
+          ? t("games.listToolbar.screensaverHiddenChip")
+          : t("games.listToolbar.screensaverShownChip"),
+      onRemove: () => clear(null),
+    });
   }
 
   const menuItem = (key: string, label: ReactNode, selected: boolean, onSelect: () => void, icon?: ReactNode, keepOpen = false) => (

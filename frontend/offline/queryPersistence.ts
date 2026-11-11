@@ -1,5 +1,6 @@
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import type { PersistQueryClientOptions } from "@tanstack/query-persist-client-core";
+import { defaultShouldDehydrateQuery } from "@tanstack/react-query";
 import { createStore, del, get, set } from "idb-keyval";
 
 const idbStore = createStore("videogametrackarr-offline", "query-cache");
@@ -34,4 +35,8 @@ export function clearOfflineCache(): void {
 export const offlinePersistOptions: Omit<PersistQueryClientOptions, "queryClient"> = {
   persister,
   maxAge: 1000 * 60 * 60 * 24 * 7,
+  // A query can opt out with `meta: { persist: false }` (the Screensaver's random samples).
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query) => defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
+  },
 };

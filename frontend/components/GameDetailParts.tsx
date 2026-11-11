@@ -73,9 +73,11 @@ interface GameHeroProps {
   // A share-link page: the parent game links to its share page, and series/collection pills
   // aren't links (those pages need a login).
   publicToken?: string;
+  // The game page's own control in the hero's corner (its Screensaver toggle).
+  corner?: ReactNode;
 }
 
-export const GameHero = ({ game, status, crumbs, preview = false, publicToken }: GameHeroProps) => {
+export const GameHero = ({ game, status, crumbs, preview = false, publicToken, corner }: GameHeroProps) => {
   const { t, i18n } = useTranslation();
   const greyscale = !preview && !status.owned && !status.wishlisted;
   const missing = greyscale && status.autoDiscovered;
@@ -216,6 +218,7 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken }:
         game.genres.slice(0, 3).map((genre) => genre.name).join(", "),
       ]}
       pills={pills}
+      corner={corner}
       links={
         storeLinks.length ? (
           <>

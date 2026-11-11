@@ -5,6 +5,8 @@ import ButtonBase from "@mui/material/ButtonBase";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import type { Crumb } from "../navigation/breadcrumbConfig";
 import { SECTION_SCROLL_MARGIN_TOP } from "./Page";
 
@@ -26,114 +28,146 @@ interface DetailHeroProps {
   pills: ReactNode;
   // External links (a game's IGDB and store pages), on their own row under the pills.
   links?: ReactNode;
+  // A small control for the item itself (a game's Screensaver toggle): in the hero's top-right
+  // corner from `md` up; below that the hero stacks and it would sit on the cover or the
+  // breadcrumbs, so it goes at the end of the links row instead. One element, placed by width.
+  corner?: ReactNode;
 }
 
-export const DetailHero = ({ backdrop, media, mediaWidth, crumbs, title, subline, pills, links }: DetailHeroProps) => (
-  <Box
-    component="section"
-    sx={{
-      position: "relative",
-      overflow: "hidden",
-      borderBottom: 1,
-      borderColor: "divider",
-      "&::after": {
-        content: '""',
-        position: "absolute",
-        inset: 0,
-        background: (theme) =>
-          backdrop && !backdrop.blur
-            ? `linear-gradient(180deg, ${theme.palette.background.default}44 0%, ${theme.palette.background.default}99 45%, ${theme.palette.background.default} 100%), linear-gradient(90deg, ${theme.palette.background.default}bb 0%, transparent 70%)`
-            : `linear-gradient(180deg, transparent 0%, ${theme.palette.background.default} 100%)`,
-      },
-    }}
-  >
-    {backdrop ? (
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: backdrop.blur ? -40 : 0,
-          backgroundImage: `url("${backdrop.url}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center 30%",
-          ...(backdrop.blur ? { filter: "blur(36px) saturate(1.3)", opacity: 0.4 } : {}),
-        }}
-      />
-    ) : null}
+export const DetailHero = ({
+  backdrop,
+  media,
+  mediaWidth,
+  crumbs,
+  title,
+  subline,
+  pills,
+  links,
+  corner,
+}: DetailHeroProps) => {
+  const wide = useMediaQuery(useTheme().breakpoints.up("md"));
+  const cornerInRow = corner && !wide ? corner : null;
+  return (
     <Box
+      component="section"
       sx={{
         position: "relative",
-        zIndex: 1,
-        display: "grid",
-        gridTemplateColumns: { xs: `${typeof mediaWidth.xs === "number" ? `${mediaWidth.xs}px` : mediaWidth.xs} 1fr`, md: `${mediaWidth.md}px 1fr` },
-        gap: { xs: 1.75, md: 3.25 },
-        alignItems: "end",
-        px: { xs: 1.75, md: 3.5 },
-        pt: { xs: 8, md: 5 },
-        pb: { xs: 2, md: 3 },
+        // Clip, not just hide: the blurred backdrop reaches 40px past the edges, and a hidden
+        // overflow can still be scrolled, so focusing something near the edge (the corner's
+        // toggle) would slide the whole hero sideways.
+        overflow: "hidden",
+        "@supports (overflow: clip)": { overflow: "clip" },
+        borderBottom: 1,
+        borderColor: "divider",
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          background: (theme) =>
+            backdrop && !backdrop.blur
+              ? `linear-gradient(180deg, ${theme.palette.background.default}44 0%, ${theme.palette.background.default}99 45%, ${theme.palette.background.default} 100%), linear-gradient(90deg, ${theme.palette.background.default}bb 0%, transparent 70%)`
+              : `linear-gradient(180deg, transparent 0%, ${theme.palette.background.default} 100%)`,
+        },
       }}
     >
-      <Box sx={{ minWidth: 0 }}>{media}</Box>
-      <Box sx={{ minWidth: 0, gridColumn: { xs: "1 / -1", sm: "auto" } }}>
-        {crumbs.length ? (
-          <Box
-            component="nav"
-            aria-label="Breadcrumb"
-            sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1, fontSize: 13, color: "text.secondary" }}
+      {backdrop ? (
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            inset: backdrop.blur ? -40 : 0,
+            backgroundImage: `url("${backdrop.url}")`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 30%",
+            ...(backdrop.blur ? { filter: "blur(36px) saturate(1.3)", opacity: 0.4 } : {}),
+          }}
+        />
+      ) : null}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          display: "grid",
+          gridTemplateColumns: { xs: `${typeof mediaWidth.xs === "number" ? `${mediaWidth.xs}px` : mediaWidth.xs} 1fr`, md: `${mediaWidth.md}px 1fr` },
+          gap: { xs: 1.75, md: 3.25 },
+          alignItems: "end",
+          px: { xs: 1.75, md: 3.5 },
+          pt: { xs: 8, md: 5 },
+          pb: { xs: 2, md: 3 },
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>{media}</Box>
+        <Box sx={{ minWidth: 0, gridColumn: { xs: "1 / -1", sm: "auto" } }}>
+          {crumbs.length ? (
+            <Box
+              component="nav"
+              aria-label="Breadcrumb"
+              sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1, fontSize: 13, color: "text.secondary" }}
+            >
+              {crumbs.map((crumb, index) => (
+                <Fragment key={index}>
+                  {index > 0 ? <span aria-hidden>›</span> : null}
+                  {crumb.to ? (
+                    <Box
+                      component={Link}
+                      to={crumb.to}
+                      sx={{ color: "inherit", textDecoration: "none", "&:hover": { color: "text.primary" } }}
+                    >
+                      {crumb.label}
+                    </Box>
+                  ) : (
+                    <span>{crumb.label}</span>
+                  )}
+                </Fragment>
+              ))}
+            </Box>
+          ) : null}
+          <Typography
+            variant="h1"
+            sx={{ fontSize: { xs: 24, md: 34 }, lineHeight: 1.1, mb: 1, wordBreak: "break-word" }}
           >
-            {crumbs.map((crumb, index) => (
+            {title}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              columnGap: 1,
+              rowGap: 0.25,
+              alignItems: "center",
+              color: "text.secondary",
+              fontSize: { xs: 13.5, md: 15 },
+              mb: 1.75,
+            }}
+          >
+            {subline.filter(Boolean).map((part, index) => (
               <Fragment key={index}>
-                {index > 0 ? <span aria-hidden>›</span> : null}
-                {crumb.to ? (
-                  <Box
-                    component={Link}
-                    to={crumb.to}
-                    sx={{ color: "inherit", textDecoration: "none", "&:hover": { color: "text.primary" } }}
-                  >
-                    {crumb.label}
+                {index > 0 ? (
+                  <Box component="span" aria-hidden sx={{ color: "vgt.text3" }}>
+                    ·
                   </Box>
-                ) : (
-                  <span>{crumb.label}</span>
-                )}
+                ) : null}
+                <span>{part}</span>
               </Fragment>
             ))}
           </Box>
-        ) : null}
-        <Typography
-          variant="h1"
-          sx={{ fontSize: { xs: 24, md: 34 }, lineHeight: 1.1, mb: 1, wordBreak: "break-word" }}
-        >
-          {title}
-        </Typography>
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            columnGap: 1,
-            rowGap: 0.25,
-            alignItems: "center",
-            color: "text.secondary",
-            fontSize: { xs: 13.5, md: 15 },
-            mb: 1.75,
-          }}
-        >
-          {subline.filter(Boolean).map((part, index) => (
-            <Fragment key={index}>
-              {index > 0 ? (
-                <Box component="span" aria-hidden sx={{ color: "vgt.text3" }}>
-                  ·
-                </Box>
-              ) : null}
-              <span>{part}</span>
-            </Fragment>
-          ))}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>{pills}</Box>
+          {links || cornerInRow ? (
+            <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1, mt: 1 }}>
+              {links}
+              {cornerInRow}
+            </Box>
+          ) : null}
         </Box>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>{pills}</Box>
-        {links ? <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>{links}</Box> : null}
       </Box>
+      {corner && wide ? (
+        <Box data-testid="detail-hero-corner" sx={{ position: "absolute", top: 16, right: 24, zIndex: 2 }}>
+          {corner}
+        </Box>
+      ) : null}
     </Box>
-  </Box>
-);
+  );
+};
 
 interface PillProps {
   icon?: ReactNode;

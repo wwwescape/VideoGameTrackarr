@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import { useAddons, useGame } from "../hooks/useGames";
+import { useEnabledLabs } from "../hooks/useLabs";
 import { useLibraryItems } from "../hooks/useLibrary";
 import { useCreateNote, useDeleteNote, useNotes, useUpdateNote } from "../hooks/useNotes";
 import { usePlatforms } from "../hooks/usePlatforms";
@@ -14,6 +15,7 @@ import { useAttachTag, useDetachTag } from "../hooks/useTags";
 import { useToysToLifeGameSection } from "../hooks/useToysToLife";
 import { gameIdentifier } from "../utils/identifiers";
 import { useCanonicalAddress, useDetailBack } from "../utils/navState";
+import { canBeInScreensaver } from "../utils/screensaver";
 import { DetailColumns, Section } from "./Detail";
 import GameActionButtons from "./GameActionButtons";
 import GameCard from "./GameCard";
@@ -23,6 +25,7 @@ import GameProgressSection from "./GameProgressSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
+import ScreensaverToggle from "./ScreensaverToggle";
 import ToysToLifeSection from "./ToysToLifeSection";
 import YourRatingSection from "./YourRatingSection";
 import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
@@ -51,6 +54,7 @@ const GameDetails = () => {
   const deleteNote = useDeleteNote(gameId);
 
   const routeCrumbs = useRouteCrumbs();
+  const screensaverLab = useEnabledLabs().has("screensaver");
   const { back, toList } = useDetailBack("/games");
   // A rename (custom games) changes the address; correct it in place.
   useCanonicalAddress(game ? `/${location.pathname.startsWith("/addon/") ? "addon" : "game"}/${gameIdentifier(game)}` : null);
@@ -147,6 +151,11 @@ const GameDetails = () => {
             copyPlatforms,
           }}
           crumbs={routeCrumbs.slice(0, -1)}
+          corner={
+            screensaverLab && canBeInScreensaver(game) ? (
+              <ScreensaverToggle gameId={game.id} excluded={game.screensaverExcluded} />
+            ) : undefined
+          }
         />
       }
     >

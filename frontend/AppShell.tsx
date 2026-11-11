@@ -18,6 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ToastStyles from "./components/ToastStyles";
 import OfflineStatusIndicator from "./components/OfflineStatusIndicator";
 import RestoreGuard from "./components/RestoreGuard";
+import ScreensaverButton, { useScreensaverButtonShown } from "./components/ScreensaverButton";
 import UpdateAvailableChip from "./components/UpdateAvailableChip";
 import WhatsNew from "./components/WhatsNew";
 import { useLogout } from "./hooks/useAuth";
@@ -41,6 +42,7 @@ const AppShell = () => {
   // "loading" while a page opened for the first time fetches its code (see router.tsx).
   const navigation = useNavigation();
   const logoutMutation = useLogout();
+  const screensaverButtonShown = useScreensaverButtonShown();
   useScrollResetOnNavigate();
   useJobCompletionRefresh();
 
@@ -168,8 +170,9 @@ const AppShell = () => {
 
       {/* Bottom right, as in DieCastCollectionTracker, out of the way of the header's buttons;
           styled by ToastStyles. */}
-      <ToastStyles />
+      <ToastStyles raised={screensaverButtonShown} />
       <ToastContainer theme={mode === "dark" ? "dark" : "light"} position="bottom-right" />
+      <ScreensaverButton />
     </Box>
   );
 };

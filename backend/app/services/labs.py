@@ -14,15 +14,18 @@ from app.models.labs import LabFeature
 from app.services.exceptions import NotFoundError
 
 LAB_GAME_SHELF = "game_shelf"
+LAB_SCREENSAVER = "screensaver"
 
 
 @dataclass(frozen=True)
 class Lab:
     id: str
+    # Whether the share page has anything for it (and so is told it's on).
+    on_share_page: bool = False
 
 
 # In the order Settings > Labs lists them.
-LABS: tuple[Lab, ...] = (Lab(LAB_GAME_SHELF),)
+LABS: tuple[Lab, ...] = (Lab(LAB_GAME_SHELF, on_share_page=True), Lab(LAB_SCREENSAVER))
 _KNOWN = {lab.id for lab in LABS}
 
 
@@ -35,8 +38,10 @@ def list_labs(db: Session) -> list[tuple[Lab, bool]]:
     return [(lab, is_enabled(db, lab.id)) for lab in LABS]
 
 
-def enabled_ids(db: Session) -> list[str]:
-    return [lab.id for lab, enabled in list_labs(db) if enabled]
+def enabled_ids(db: Session, *, share_page: bool = False) -> list[str]:
+    """The labs that are on; with share_page, only those the share page has anything for, so it
+    doesn't learn about the rest."""
+    return [lab.id for lab, enabled in list_labs(db) if enabled and (lab.on_share_page or not share_page)]
 
 
 def set_enabled(db: Session, lab_id: str, enabled: bool) -> None:

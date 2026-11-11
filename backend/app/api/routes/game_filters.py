@@ -4,7 +4,7 @@ from fastapi import Query
 
 from app.models.catalog import GameCategory
 from app.models.library import MediaFormat, PlayStatus
-from app.repositories.game_repository import GameSortOption, GameSource
+from app.repositories.game_repository import GameSortOption, GameSource, ScreensaverFilter
 
 
 @dataclass
@@ -45,4 +45,7 @@ class GameFilterParams:
     steelbook_only: bool = Query(default=False, alias="steelbookOnly")
     sources: list[GameSource] | None = Query(default=None, alias="source")
     source_exclude: bool = Query(default=False, alias="sourceExclude")
+    # Screensaver lab: games shown in it or hidden from it (the per-game opt-out). Only the
+    # Games list offers it, and only while the lab is on; elsewhere it's never sent.
+    screensaver: ScreensaverFilter | None = Query(default=None)
     sort: GameSortOption = Query(default=GameSortOption.NAME_ASC)

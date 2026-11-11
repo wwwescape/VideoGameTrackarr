@@ -75,6 +75,7 @@
     "about": "About",
     "emulation": "Emulation",
     "gameCases": "Game Cases",
+    "screensaver": "Screensaver",
     "overview": "Overview",
     "settingsGeneral": "General",
     "primary": "Main navigation",
@@ -466,6 +467,10 @@
         "game_shelf": {
           "name": "Game Shelf",
           "description": "Your physical games as cases on a shelf, drawn like the real cases. Adds Games → Game Shelf, Settings → Game Cases and a Shelf tab on your share link."
+        },
+        "screensaver": {
+          "name": "Screensaver",
+          "description": "A floating button that shows your game covers full screen, one after another. Swipe to browse, tap a cover to open the game. Adds Settings → Screensaver."
         }
       }
     },
@@ -482,6 +487,18 @@
       "caseSize": "{{label}} · {{height}} × {{spine}} mm",
       "sampleTitle": "Game Title",
       "loadFailed": "Couldn't load the game cases.",
+      "saveFailed": "Couldn't save that change. Please try again."
+    },
+    "screensaver": {
+      "description": "How the screensaver behaves on every screen you open it on. Start it from the round button at the bottom left of any page.",
+      "heading": "Slides",
+      "interval": "Time per cover",
+      "intervalDescription": "How long each cover stays on screen before the next one slides in.",
+      "seconds_one": "{{count}} second",
+      "seconds_other": "{{count}} seconds",
+      "current_one": "Each cover shows for {{count}} second.",
+      "current_other": "Each cover shows for {{count}} seconds.",
+      "included": "Every game you own that has a cover is included. Hide one from the screensaver on its page, or several at once from the Games list.",
       "saveFailed": "Couldn't save that change. Please try again."
     },
     "tagManager": {
@@ -576,6 +593,27 @@
     },
     "regional": {
       "heading": "Regional"
+    }
+  },
+  "screensaver": {
+    "start": "Start screensaver",
+    "label": "Screensaver",
+    "close": "Close screensaver",
+    "empty": "No covers to show yet. Games you own that have a cover appear here.",
+    "loadFailed": "Couldn't load the covers.",
+    "retry": "Try again",
+    "confirmTitle": "Open game?",
+    "confirmText": "Go to {{name}}'s page?",
+    "confirmGo": "Go to game",
+    "slide": "{{name}}, cover {{position}} of {{count}}",
+    "toggle": {
+      "hideLabel": "Hide from the screensaver",
+      "showLabel": "Show in the screensaver",
+      "shownTooltip": "Shown in the screensaver · click to hide it",
+      "hiddenTooltip": "Hidden from the screensaver · click to show it",
+      "hidden": "Hidden from the screensaver",
+      "shown": "Shown in the screensaver",
+      "saveFailed": "Couldn't change that. Please try again."
     }
   },
   "auth": {
@@ -722,7 +760,21 @@
       "showMissingLabel": "Show what I am missing?",
       "steelbookOnlyLabel": "Steelbooks only",
       "clearFiltersButton": "Clear filters",
-      "noSearchMatches": "No matches found."
+      "noSearchMatches": "No matches found.",
+      "screensaverButton": "Screensaver",
+      "screensaverHide": "Hide from screensaver ({{count}})",
+      "screensaverShow": "Show in screensaver ({{count}})",
+      "screensaverHiddenToast_one": "{{count}} game hidden from the screensaver",
+      "screensaverHiddenToast_other": "{{count}} games hidden from the screensaver",
+      "screensaverShownToast_one": "{{count}} game shown in the screensaver again",
+      "screensaverShownToast_other": "{{count}} games shown in the screensaver again",
+      "screensaverFailed": "Couldn't change the screensaver for those games. Please try again.",
+      "screensaverFilterLabel": "Screensaver",
+      "screensaverAny": "Any",
+      "screensaverShownOption": "Shown",
+      "screensaverHiddenOption": "Hidden",
+      "screensaverHiddenChip": "Screensaver: Hidden",
+      "screensaverShownChip": "Screensaver: Shown"
     },
     "card": {
       "playStatusBacklog": "Backlog",

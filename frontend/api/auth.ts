@@ -51,6 +51,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
 export async function updatePreferences(preferences: {
   currency?: string;
   overviewLayout?: OverviewSectionSetting[];
+  screensaverIntervalSeconds?: number;
 }): Promise<CurrentUser> {
   const response = await apiClient.put<CurrentUser>("/api/auth/me/preferences", preferences);
   return response.data;
