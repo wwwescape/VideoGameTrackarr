@@ -6,7 +6,7 @@ To add a new curated image: drop a 400x400 `.png` (product centred on a white ba
 
 **Naming rule** (if a new reference entry is added later and isn't in this list): lowercase the official name, replace every run of non-alphanumeric characters with a single hyphen, trim leading/trailing hyphens, append `.png`.
 
-**Summary: 193 rows. Devices: 57/74 images present. Accessories: 119 missing an image.**
+**Summary: 194 rows. Devices: 57/74 images present. Accessories: 112 missing an image.**
 
 ## Devices
 
@@ -160,18 +160,19 @@ To add a new curated image: drop a 400x400 `.png` (product centred on a white ba
 | Sega | Sega Saturn NetLink | SAT | ✅ | `sega-saturn-netlink.png` | — |
 | Sega | Sega SegaScope 3-D Glasses | SMS | ✅ | `sega-segascope-3-d-glasses.png` | — |
 | Sony | Sony Access Controller | PS5 | ✅ | `sony-access-controller.png` | — |
-| Sony | Sony Blu-ray Disc Remote (PlayStation 3) | PS3 | ✅ | `sony-blu-ray-disc-remote-playstation-3.png` | — |
+| Sony | Sony Blu-ray Disc Remote (PlayStation 3) | PS3 | ✅ | `sony-blu-ray-disc-remote-playstation-3.png` | ✅ |
 | Sony | Sony Buzz Controller | PS2 | ✅ | `sony-buzz-controller.png` | — |
-| Sony | Sony DualSense Charging Station | PS5 | ✅ | `sony-dualsense-charging-station.png` | — |
+| Sony | Sony DualSense Charging Station | PS5 | ✅ | `sony-dualsense-charging-station.png` | ✅ |
 | Sony | Sony DualSense Edge Controller | PS5 | ✅ | `sony-dualsense-edge-controller.png` | — |
-| Sony | Sony DualSense Wireless Controller | PS5 | ✅ | `sony-dualsense-wireless-controller.png` | — |
+| Sony | Sony DualSense Wireless Controller | PS5 | ✅ | `sony-dualsense-wireless-controller.png` | ✅ |
 | Sony | Sony DualShock 2 Controller | PS2 | ✅ | `sony-dualshock-2-controller.png` | — |
-| Sony | Sony DualShock 4 Wireless Controller | PS4 | ✅ | `sony-dualshock-4-wireless-controller.png` | — |
+| Sony | Sony DualShock 3 Wireless Controller | PS3 | ✅ | `sony-dualshock-3-wireless-controller.png` | ✅ |
+| Sony | Sony DualShock 4 Wireless Controller | PS4 | ✅ | `sony-dualshock-4-wireless-controller.png` | ✅ |
 | Sony | Sony DualShock Controller | PS1 | ✅ | `sony-dualshock-controller.png` | — |
 | Sony | Sony EyeToy Camera | PS2 | ✅ | `sony-eyetoy-camera.png` | — |
 | Sony | Sony HD Camera | PS5 | ✅ | `sony-hd-camera.png` | — |
 | Sony | Sony PSone LCD Monitor | PS1 | ✅ | `sony-psone-lcd-monitor.png` | — |
-| Sony | Sony PULSE 3D Wireless Headset | PS5 | ✅ | `sony-pulse-3d-wireless-headset.png` | — |
+| Sony | Sony PULSE 3D Wireless Headset | PS5 | ✅ | `sony-pulse-3d-wireless-headset.png` | ✅ |
 | Sony | Sony PULSE Elite Wireless Headset | PS5 | ✅ | `sony-pulse-elite-wireless-headset.png` | — |
 | Sony | Sony PULSE Explore Wireless Earbuds | PS5 | ✅ | `sony-pulse-explore-wireless-earbuds.png` | — |
 | Sony | Sony PlayStation 2 Game Disc | PS2 | ✅ | `sony-playstation-2-game-disc.png` | — |
@@ -186,8 +187,8 @@ To add a new curated image: drop a 400x400 `.png` (product centred on a white ba
 | Sony | Sony PlayStation Game Disc | PS1 | ✅ | `sony-playstation-game-disc.png` | — |
 | Sony | Sony PlayStation Link USB Adapter | PS5 | ✅ | `sony-playstation-link-usb-adapter.png` | — |
 | Sony | Sony PlayStation Media Remote (PlayStation 2) | PS2 | ✅ | `sony-playstation-media-remote-playstation-2.png` | — |
-| Sony | Sony PlayStation Media Remote (PlayStation 4) | PS4 | ✅ | `sony-playstation-media-remote-playstation-4.png` | — |
-| Sony | Sony PlayStation Media Remote (PlayStation 5) | PS5 | ✅ | `sony-playstation-media-remote-playstation-5.png` | — |
+| Sony | Sony PlayStation Media Remote (PlayStation 4) | PS4 | ✅ | `sony-playstation-media-remote-playstation-4.png` | ✅ |
+| Sony | Sony PlayStation Media Remote (PlayStation 5) | PS5 | ✅ | `sony-playstation-media-remote-playstation-5.png` | ✅ |
 | Sony | Sony PlayStation Memory Card | PS1 | ✅ | `sony-playstation-memory-card.png` | — |
 | Sony | Sony PlayStation Mouse | PS1 | ✅ | `sony-playstation-mouse.png` | — |
 | Sony | Sony PlayStation Move Motion Controller | PS3 | ✅ | `sony-playstation-move-motion-controller.png` | — |
