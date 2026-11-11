@@ -45,7 +45,7 @@
   each on, drawn at their real relative sizes in each platform's spine colours and logo, with
   the usual search, filters, and sort, plus a scale slider. Cases come from a curated list of
   standard retail cases (cartridge-only systems have none); turn a platform's cases on or
-  off in **Settings → Game Cases**.
+  off in **Settings → Game Cases**, where each preview opens large.
 - **Labs** — opt-in features that are still taking shape, off by default and switched on in
   **Settings → Labs**.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega

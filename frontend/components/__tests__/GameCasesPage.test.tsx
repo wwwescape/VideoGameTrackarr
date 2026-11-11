@@ -98,6 +98,15 @@ describe("Settings → Game Cases", () => {
     expect(mutate).toHaveBeenCalledWith({ id: 2, shown: true });
   });
 
+  it("opens a preview large in the lightbox, with a sample title on the spine", async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole("button", { name: "View the Nintendo Switch case larger" }));
+
+    const large = await screen.findByRole("img", { name: "Nintendo Switch case, seen from its spine" });
+    expect(within(large).getByTestId("case-spine")).toHaveTextContent("Game Title");
+    expect(screen.getByText("Nintendo Switch case · 170 × 10.5 mm")).toBeInTheDocument();
+  });
+
   it("sends you to Labs while the Game Shelf lab is off", () => {
     labOn = false;
     const router = renderPage();
