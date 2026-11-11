@@ -12,6 +12,12 @@ import {
 import Page, { ToolbarButton } from "../Page";
 import SettingsFrame from "../SettingsFrame";
 
+// Lab features stay off here; Settings → Labs and the Game Shelf have their own tests.
+vi.mock("../../hooks/useLabs", () => ({
+  useLabs: () => ({ data: [], isError: false }),
+  useEnabledLabs: () => new Set(),
+}));
+
 vi.mock("../../hooks/useGames", () => ({
   useGame: () => ({ data: { name: "Hollow Knight" } }),
 }));
@@ -132,7 +138,10 @@ describe("Page toolbar", () => {
     );
 
     const toolbar = screen.getByRole("toolbar");
-    expect(within(toolbar).getAllByRole("link")).toHaveLength(9);
+    expect(within(toolbar).getAllByRole("link")).toHaveLength(10);
+    expect(within(toolbar).getByRole("link", { name: "Labs" })).toHaveAttribute("href", "/settings/labs");
+    // Settings → Game Cases belongs to the Game Shelf lab, off here.
+    expect(within(toolbar).queryByRole("link", { name: "Game Cases" })).not.toBeInTheDocument();
     expect(within(toolbar).getByRole("link", { name: "IGDB Import" })).toHaveAttribute("href", "/settings/igdb-import");
     expect(within(toolbar).getByRole("link", { name: "General" })).toHaveAttribute("href", "/settings");
     expect(within(toolbar).getByRole("link", { name: "Emulation" })).toHaveAttribute("aria-current", "page");

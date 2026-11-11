@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.repositories.game_repository import PRIVATE_SORTS, GameSortOption
+from app.schemas.labs import PublicLabsResponse
 from app.schemas.public import (
     PublicAccessorySummaryResponse,
     PublicDeviceSummaryResponse,
@@ -13,7 +14,9 @@ from app.schemas.public import (
     public_game_detail_from_orm,
     public_game_from_orm,
 )
-from app.services import accessory_service, auth_service, device_service, game_service
+from app.schemas.shelf import PublicGameShelfResponse, public_game_shelf_response
+from app.services import accessory_service, auth_service, device_service, game_service, game_shelf_service, labs
+from app.services.labs import LAB_GAME_SHELF, require_lab
 
 # No auth dependency — this is the app's one deliberately unauthenticated router, gated
 # instead by the unlisted per-user token in the path. See auth_service.get_user_by_share_token.
@@ -33,6 +36,27 @@ def list_public_games(
         sort = GameSortOption.NAME_ASC
     games = game_service.search_local_games(db, search=search, sort=sort)
     return [public_game_from_orm(game) for game in games]
+
+
+@router.get("/labs", response_model=PublicLabsResponse)
+def list_public_labs(token: str, db: Session = Depends(get_db)) -> PublicLabsResponse:
+    """The labs that are on, so the share page shows their tabs (the Game Shelf's)."""
+    auth_service.get_user_by_share_token(db, token)
+    return PublicLabsResponse(enabled=labs.enabled_ids(db))
+
+
+@router.get("/shelf", response_model=PublicGameShelfResponse, dependencies=[Depends(require_lab(LAB_GAME_SHELF))])
+def get_public_shelf(
+    token: str,
+    search: str | None = Query(default=None),
+    sort: GameSortOption = Query(default=GameSortOption.NAME_ASC),
+    db: Session = Depends(get_db),
+) -> PublicGameShelfResponse:
+    """The share page's Game Shelf: search and the public sorts, no filters (like its Games tab)."""
+    auth_service.get_user_by_share_token(db, token)
+    if sort in PRIVATE_SORTS:
+        sort = GameSortOption.NAME_ASC
+    return public_game_shelf_response(game_shelf_service.build_shelf(db, search=search, sort=sort))
 
 
 @router.get("/games/{game_id}", response_model=PublicGameDetailResponse)

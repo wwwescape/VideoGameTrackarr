@@ -25,6 +25,7 @@ from app.api.routes import (
     device,
     events,
     franchises,
+    game_cases,
     games,
     hardware_lookups,
     hardware_stats,
@@ -35,6 +36,7 @@ from app.api.routes import (
     insights,
     integrations,
     jobs,
+    labs,
     library,
     notes,
     platforms,
@@ -310,6 +312,7 @@ app.include_router(auth.router)
 app.include_router(platforms.router)
 app.include_router(regions.router)
 app.include_router(games.router)
+app.include_router(game_cases.router)
 app.include_router(igdb.router)
 app.include_router(igdb_import.router)
 app.include_router(danger_zone.router)
@@ -333,6 +336,7 @@ app.include_router(hardware_stats.router)
 app.include_router(companies.router)
 app.include_router(uploads.router)
 app.include_router(jobs.router)
+app.include_router(labs.router)
 app.include_router(version.router)
 app.include_router(share.router)
 app.include_router(integrations.router)

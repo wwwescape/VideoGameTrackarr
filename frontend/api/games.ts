@@ -4,6 +4,7 @@ import type {
   BulkImportStatusResponse,
   GameCategory,
   GameDetail,
+  GameShelf,
   GameSource,
   GameSortOption,
   GameSummary,
@@ -137,6 +138,16 @@ export function buildGameFilterParams(filters: GameListFilters) {
     requiredPlatformFormat,
     requiredPlatformStorefront,
   };
+}
+
+// The Game Shelf: one case per (game × platform) you own, with the same filters as listGames.
+export async function getGameShelf(filters: GameListFilters = {}, signal?: AbortSignal): Promise<GameShelf> {
+  const response = await apiClient.get<GameShelf>("/api/games/shelf", {
+    params: buildGameFilterParams(filters),
+    paramsSerializer: { indexes: null },
+    signal,
+  });
+  return response.data;
 }
 
 export async function listGames(

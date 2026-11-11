@@ -36,6 +36,9 @@ import {
   orphanedAccessoriesCrumbs,
   saleTrackedCrumbs,
   salesIgnoredCrumbs,
+  gameShelfCrumbs,
+  labsCrumbs,
+  gameCasesCrumbs,
   platformCrumbs,
   platformsCrumbs,
   seriesCrumbs,
@@ -82,6 +85,7 @@ const router = createBrowserRouter([
         path: "/public/:token/games/:gameId",
         lazy: page(() => import("./components/PublicGameDetailsPage")),
       },
+      { path: "/public/:token/shelf", lazy: page(() => import("./components/PublicShelfPage")) },
       {
         path: "/public/:token/hardware",
         lazy: page(() => import("./components/PublicHardwarePage")),
@@ -115,6 +119,11 @@ const router = createBrowserRouter([
             path: "/games/add",
             lazy: page(() => import("./components/AddGame")),
             handle: { crumbs: addGameCrumbs },
+          },
+          {
+            path: "/games/shelf",
+            lazy: page(() => import("./components/GameShelfPage")),
+            handle: { crumbs: gameShelfCrumbs },
           },
           {
             path: "/games/add/igdb/:igdbId",
@@ -257,6 +266,11 @@ const router = createBrowserRouter([
             handle: { crumbs: tagManagerCrumbs },
           },
           {
+            path: "/settings/labs",
+            lazy: page(() => import("./components/LabsPage")),
+            handle: { crumbs: labsCrumbs },
+          },
+          {
             path: "/settings/jobs",
             lazy: page(() => import("./components/JobsPage")),
             handle: { crumbs: jobsCrumbs },
@@ -270,6 +284,11 @@ const router = createBrowserRouter([
             path: "/settings/emulation",
             lazy: page(() => import("./components/EmulationPage")),
             handle: { crumbs: emulationCrumbs },
+          },
+          {
+            path: "/settings/game-cases",
+            lazy: page(() => import("./components/GameCasesPage")),
+            handle: { crumbs: gameCasesCrumbs },
           },
           {
             path: "/settings/igdb-import",

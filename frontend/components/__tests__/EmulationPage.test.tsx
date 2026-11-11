@@ -5,6 +5,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BiosSystem } from "../../api/types";
 import EmulationPage from "../EmulationPage";
 
+// Lab features stay off here; Settings → Labs and the Game Shelf have their own tests.
+vi.mock("../../hooks/useLabs", () => ({
+  useLabs: () => ({ data: [], isError: false }),
+  useEnabledLabs: () => new Set(),
+}));
+
 vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn(), dismiss: vi.fn() },
 }));

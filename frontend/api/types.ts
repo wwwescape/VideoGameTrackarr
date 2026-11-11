@@ -23,6 +23,75 @@ export interface PlatformResponse {
   abbreviation: string | null;
 }
 
+// Game Shelf (a Labs feature): how a platform's standard game case looks, from the curated
+// docs/data/game_cases/Game_Cases.csv. Sizes are real millimetres, colours "#rrggbb".
+export interface GameCaseLook {
+  platformSlug: string;
+  caseLabel: string;
+  heightMm: number;
+  spineMm: number;
+  // How much of the case shows above the logo band (e.g. a PS3 case's clear top), in mm.
+  caseTopMm: number;
+  caseColor: string;
+  logoBandColor: string;
+  // The logo band's share of the spine's height, in percent.
+  logoBandHeightPct: number;
+  // A file in assets/game-cases/; null shows the platform's short name instead.
+  logo: string | null;
+  // Draws the logo as a one-colour silhouette in this colour; null keeps the file's colours.
+  logoColor: string | null;
+  // The thin line under the logo band (PS3's red, PS4's white); null for none.
+  logoLineColor: string | null;
+  titleBandColor: string;
+  titleTextColor: string;
+}
+
+// A Settings > Game Cases row.
+export interface GameCase extends GameCaseLook {
+  id: number;
+  platformName: string;
+  shown: boolean;
+  physicalGames: number;
+  abbreviation: string | null;
+  logoUrl: string | null;
+}
+
+// A platform on the shelf and the case its games are drawn in.
+export interface ShelfPlatform {
+  id: number;
+  name: string;
+  slug: string | null;
+  // The short name the logo band falls back to when the case has no logo file.
+  abbreviation: string | null;
+  logoUrl: string | null;
+  case: GameCaseLook;
+}
+
+// What both shelves (private and the share page's) need to draw one case.
+export interface ShelfCaseEntry {
+  gameId: number;
+  name: string;
+  platformId: number;
+}
+
+// One case on the Game Shelf: a game on one platform you own a physical copy on.
+export interface ShelfCase extends ShelfCaseEntry {
+  uuid: string;
+  slug: string | null;
+}
+
+export interface GameShelf {
+  // In the requested sort order.
+  cases: ShelfCase[];
+  platforms: ShelfPlatform[];
+}
+
+export interface PublicGameShelf {
+  cases: ShelfCaseEntry[];
+  platforms: ShelfPlatform[];
+}
+
+
 // A Games → Platforms card: a platform with copies in your library.
 export interface LibraryPlatform {
   id: number;

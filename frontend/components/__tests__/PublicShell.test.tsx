@@ -1,7 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import PublicShell from "../../PublicShell";
+
+// The owner has the Game Shelf lab on, so the Shelf tab shows.
+vi.mock("../../hooks/usePublic", () => ({
+  usePublicLabEnabled: () => ({ enabled: true, isLoading: false }),
+}));
 
 function renderAt(path: string) {
   const router = createMemoryRouter(
@@ -21,13 +26,14 @@ function renderAt(path: string) {
 }
 
 describe("PublicShell", () => {
-  it("has the app name, Games and Hardware tabs and a light/dark button in one header", () => {
+  it("has the app name, Games, Shelf and Hardware tabs and a light/dark button in one header", () => {
     renderAt("/public/tok/hardware");
 
     const header = screen.getByRole("banner");
     expect(within(header).getByText("VideoGameTrackarr")).toBeInTheDocument();
     const nav = within(header).getByRole("navigation", { name: "Shared collection" });
     expect(within(nav).getByRole("link", { name: "Games" })).toHaveAttribute("href", "/public/tok/games");
+    expect(within(nav).getByRole("link", { name: "Shelf" })).toHaveAttribute("href", "/public/tok/shelf");
     expect(within(nav).getByRole("link", { name: "Hardware" })).toHaveAttribute("aria-current", "page");
     expect(within(header).getByRole("button", { name: /Mode/ })).toBeInTheDocument();
   });

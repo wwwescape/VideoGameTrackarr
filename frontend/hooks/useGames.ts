@@ -1,4 +1,4 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DetailQueryOptions } from "./detailQueryOptions";
 import {
   acknowledgeBulkImportStatus,
@@ -7,6 +7,7 @@ import {
   deleteGame,
   getBulkImportStatus,
   getGame,
+  getGameShelf,
   importGame,
   linkGameToIgdb,
   linkGameToIgdbViaParent,
@@ -27,6 +28,16 @@ export function useGames(filters: GameListFilters = {}, options?: { enabled?: bo
     queryKey: ["games", filters],
     queryFn: ({ signal }) => listGames(filters, signal),
     enabled: options?.enabled ?? true,
+  });
+}
+
+// Under ["games", ...], so every game and library change refreshes it, and under
+// ["games", "shelf"], which a platform's case settings refresh (hooks/usePlatforms.ts).
+export function useGameShelf(filters: GameListFilters) {
+  return useQuery({
+    queryKey: ["games", "shelf", filters],
+    queryFn: ({ signal }) => getGameShelf(filters, signal),
+    placeholderData: keepPreviousData,
   });
 }
 

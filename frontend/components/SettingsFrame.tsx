@@ -2,7 +2,12 @@ import { Fragment, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { settingsGeneralPage, settingsPages } from "../navigation/destinations";
+import { useEnabledLabs } from "../hooks/useLabs";
+import {
+  isSubDestinationEnabled,
+  settingsGeneralPage,
+  settingsPages,
+} from "../navigation/destinations";
 import Page, { ToolbarButton, ToolbarDivider } from "./Page";
 
 interface SettingsFrameProps {
@@ -18,10 +23,14 @@ interface SettingsFrameProps {
 const SettingsFrame = ({ description, toolbarEnd, children }: SettingsFrameProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const enabledLabs = useEnabledLabs();
 
   return (
     <Page
-      toolbar={[settingsGeneralPage, ...settingsPages()].map((page) => (
+      toolbar={[
+        settingsGeneralPage,
+        ...settingsPages().filter((page) => isSubDestinationEnabled(page, enabledLabs)),
+      ].map((page) => (
         <Fragment key={page.to}>
           {page.separatorBefore ? <ToolbarDivider /> : null}
           <ToolbarButton

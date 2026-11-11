@@ -1,0 +1,29 @@
+Platform Slug,Platform,Case,Height (mm),Spine (mm),Case Top (mm),Case Color,Logo Band Color,Logo Band Height (%),Logo,Logo Color,Logo Line Color,Title Band Color,Title Text Color
+ps,PlayStation,CD jewel case,142,10,2,#111111,#111111,40,ps.png,,,#111111,#ffffff
+ps2,PlayStation 2,DVD case,190,14,4,#0b0b0b,#0b0b0b,38,ps2.png,,,#ffffff,#111111
+ps3,PlayStation 3,Blu-ray case,171,12,17,#d6d6d6,#000000,24,ps3.png,,#d40000,#1c1c1c,#ffffff
+ps4,PlayStation 4,Blu-ray case,171,12,6,#00307a,#00439c,25,ps4.png,,#ffffff,#003791,#ffffff
+ps5,PlayStation 5,Blu-ray case,171,12,6,#1a3d8f,#ffffff,25,ps5.png,,#1f5fc8,#ffffff,#111111
+psp,PlayStation Portable,UMD case,178,14,7,#2a2a2a,#111111,30,psp.png,,,#111111,#ffffff
+psvita,PlayStation Vita,PS Vita case,137,12,6,#1d50c0,#1f3d99,25,psvita.png,,,#1a1a1a,#ffffff
+xbox,Xbox,DVD case,190,14,4,#111111,#111111,25,xbox.png,,,#111111,#ffffff
+xbox360,Xbox 360,DVD case,190,14,4,#4e9a06,#f5f5f5,30,xbox360.png,,,#f2f2f2,#111111
+xboxone,Xbox One,Blu-ray case,171,12,6,#107c10,#e8e8e8,30,xboxone.png,,,#f2f2f2,#111111
+series-x-s,Xbox Series X|S,Blu-ray case,171,12,6,#0e7a0d,#0e0e0e,25,xbox.png,,,#ffffff,#111111
+ngc,Nintendo GameCube,GameCube case,190,14,4,#1a1a1a,#1a1a1a,12,,,,#1a1a1a,#ffffff
+wii,Wii,DVD case,190,14,4,#f2f2f2,#ffffff,25,nintendo-wii.png,,,#ffffff,#1a1a1a
+wiiu,Wii U,Wii U case,171,14,5,#009ac7,#ffffff,25,nintendo-wii-u.png,,,#ffffff,#111111
+switch,Nintendo Switch,Nintendo Switch case,170,10.5,4,#e60012,#e60012,27,switch.png,,,#ffffff,#111111
+switch-2,Nintendo Switch 2,Nintendo Switch 2 case,170,10.5,4,#e60012,#e60012,15,switch-2.png,,,#ffffff,#111111
+nds,Nintendo DS,Nintendo DS case,137,15,3,#1a1a1a,#ffffff,25,nds.png,,,#ffffff,#111111
+3ds,Nintendo 3DS,Nintendo 3DS case,137,12,3,#ffffff,#ffffff,25,3ds.png,,,#ffffff,#111111
+new-nintendo-3ds,New Nintendo 3DS,Nintendo 3DS case,137,12,3,#ffffff,#ffffff,25,3ds.png,,,#ffffff,#111111
+gb,Game Boy,Game Boy box,140,25,0,#bdbdbd,#ffffff,30,gb.png,,,#d6d6d6,#111111
+gbc,Game Boy Color,Game Boy box,140,25,0,#cfcfcf,#ffffff,30,gbc.png,,,#e6e6e6,#111111
+gba,Game Boy Advance,Game Boy Advance box,140,25,0,#2a2f7a,#ffffff,30,gba.png,,,#ffffff,#111111
+genesis-slash-megadrive,Sega Mega Drive/Genesis,Sega clamshell case,184,25,3,#111111,#111111,14,,,,#111111,#ffffff
+sms,Sega Master System,Sega clamshell case,184,25,3,#111111,#ffffff,14,,,,#111111,#ffffff
+saturn,Sega Saturn,Sega Saturn case,212,22,4,#111111,#111111,14,,,,#111111,#ffffff
+dc,Dreamcast,CD jewel case,142,10,2,#ffffff,#ffffff,14,,,,#ffffff,#111111
+segacd,Sega CD,CD jewel case,142,10,2,#111111,#111111,12,,,,#111111,#ffffff
+win,PC (Microsoft Windows),Games for Windows DVD case,190,14,4,#111111,#0a7fd6,18,win.png,,#ffffff,#ffffff,#111111

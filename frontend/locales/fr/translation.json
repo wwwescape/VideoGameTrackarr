@@ -49,6 +49,7 @@
     "events": "Événements",
     "games": "Jeux",
     "addGame": "Ajouter un jeu",
+    "gameShelf": "Étagère",
     "collections": "Collections",
     "series": "Séries",
     "platforms": "Plateformes",
@@ -68,10 +69,12 @@
     "onSale": "En promotion",
     "settings": "Paramètres",
     "tagManager": "Gestionnaire d'étiquettes",
+    "labs": "Labs",
     "jobs": "Tâches",
     "integrations": "Intégrations",
     "about": "À propos",
     "emulation": "Émulation",
+    "gameCases": "Boîtiers de jeux",
     "overview": "Vue d'ensemble",
     "settingsGeneral": "Général",
     "primary": "Navigation principale",
@@ -453,6 +456,29 @@
       },
       "runHeading": "Exécuter",
       "runHelp": "Le lancer maintenant, en dehors de sa planification."
+    },
+    "labs": {
+      "description": "Des fonctionnalités encore en chantier. Chacune reste désactivée jusqu'à ce que vous l'activiez ici, pour toute l'application et votre lien de partage.",
+      "heading": "Fonctionnalités Labs",
+      "loadFailed": "Impossible de charger les fonctionnalités Labs.",
+      "saveFailed": "Impossible d'enregistrer ce changement. Réessayez.",
+      "items": {
+        "game_shelf": {
+          "name": "Étagère",
+          "description": "Vos jeux physiques sous forme de boîtiers sur une étagère, dessinés comme les vrais. Ajoute Jeux → Étagère, Paramètres → Boîtiers de jeux et un onglet Étagère sur votre lien de partage."
+        }
+      }
+    },
+    "gameCases": {
+      "description": "L'apparence des jeux de chaque plateforme sur l'étagère : son boîtier standard du commerce, à la taille réelle, avec les couleurs et le logo de sa tranche. Désactivez une plateforme pour garder ses jeux hors de l'étagère. Les systèmes à cartouches n'ont pas de boîtier standard, ils n'y apparaissent jamais.",
+      "heading": "Plateformes",
+      "lead_one": "{{count}} plateforme",
+      "lead_other": "{{count}} plateformes",
+      "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} jeu physique",
+      "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} jeux physiques",
+      "showOnShelf": "Afficher {{platform}} sur l'étagère",
+      "loadFailed": "Impossible de charger les boîtiers de jeux.",
+      "saveFailed": "Impossible d'enregistrer ce changement. Réessayez."
     },
     "tagManager": {
       "description": "Supprime une étiquette de façon permanente. Cela la retire de tous les jeux, appareils et accessoires qui la portent — pas seulement d'un seul élément. Pour retirer une étiquette d'un seul élément, utilisez le champ Étiquettes sur la page de cet élément.",
@@ -995,6 +1021,14 @@
     "detail": {
       "aboutTitle": "À propos",
       "platformsReleaseDatesTitle": "Plateformes et dates de sortie"
+    },
+    "shelf": {
+      "scale": "Échelle de l'étagère",
+      "caseCount_one": "{{count}} boîtier",
+      "caseCount_other": "{{count}} boîtiers",
+      "empty": "Votre étagère est encore vide. Les jeux physiques que vous possédez apparaissent ici sous forme de boîtiers, un par plateforme sur laquelle vous les possédez.",
+      "noMatches": "Aucun boîtier ne correspond.",
+      "caseLabel": "{{name}} sur {{platform}}"
     }
   },
   "events": {
@@ -1704,6 +1738,7 @@
   "public": {
     "nav": {
       "games": "Jeux",
+      "shelf": "Étagère",
       "hardware": "Matériel",
       "label": "Collection partagée"
     },
@@ -1712,6 +1747,11 @@
       "searchLabel": "Rechercher des jeux",
       "emptyState": "Aucun jeu trouvé.",
       "loadError": "Impossible de charger ce jeu. Veuillez réessayer."
+    },
+    "shelf": {
+      "title": "Étagère",
+      "searchLabel": "Rechercher sur l'étagère",
+      "emptyState": "Aucun jeu sur cette étagère."
     },
     "hardware": {
       "title": "Matériel",

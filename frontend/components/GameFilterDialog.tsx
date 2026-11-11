@@ -225,6 +225,11 @@ export interface GameFilterFieldsProps {
   // item shown is inherently an addon (DLC/expansion/pack), so filtering by "Game Type"
   // (main_game/bundle/etc) would never match anything.
   hideGameTypesField?: boolean;
+  // Skips the Ownership field — for the Game Shelf, where every case is an owned copy.
+  hideOwnershipField?: boolean;
+  // Skips the Format field (and so Storefront, which needs Digital picked there) — for the
+  // Game Shelf, where every case is a physical copy.
+  hideFormatsField?: boolean;
   formats: MediaFormat[];
   onFormatsChange: (value: MediaFormat[]) => void;
   formatExclude: boolean;
@@ -328,6 +333,8 @@ const GameFilterDialog = ({
   gameTypeExclude,
   onGameTypeExcludeChange,
   hideGameTypesField = false,
+  hideOwnershipField = false,
+  hideFormatsField = false,
   formats,
   onFormatsChange,
   formatExclude,
@@ -487,6 +494,7 @@ const GameFilterDialog = ({
               />
             </Stack>
           </Grid>
+          {!hideOwnershipField ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <Stack spacing={0.5}>
               <AutocompleteMultiSelect<OwnershipOption>
@@ -509,6 +517,7 @@ const GameFilterDialog = ({
               />
             </Stack>
           </Grid>
+          ) : null}
           <Grid size={{ xs: 12, sm: 6 }}>
             <Stack spacing={0.5}>
               <AutocompleteMultiSelect<PlayStatusOption>
@@ -555,6 +564,7 @@ const GameFilterDialog = ({
             </Stack>
           </Grid>
           ) : null}
+          {!hideFormatsField ? (
           <Grid size={{ xs: 12, sm: 6 }}>
             <Stack spacing={0.5}>
               <AutocompleteMultiSelect<FormatOption>
@@ -577,6 +587,7 @@ const GameFilterDialog = ({
               />
             </Stack>
           </Grid>
+          ) : null}
           {showStorefrontFilter ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
