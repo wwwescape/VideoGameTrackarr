@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -33,6 +34,8 @@ export interface HardwareRow {
   owned: boolean;
   wishlisted: boolean;
   ownedQuantity: number;
+  // No hardware reference catalog entry: a "Custom" chip on the card and in the table.
+  isCustom: boolean;
   href: string;
   createdAt: string;
   // Accessories only (a year); devices have none of their own.
@@ -164,7 +167,10 @@ export function HardwareListSection({
                   ) : null}
                 </Box>
               </TableCell>
-              <TableCell sx={{ fontWeight: 600, maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis" }}>{row.name}</TableCell>
+              <TableCell sx={{ fontWeight: 600, maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis" }}>
+                {row.name}
+                {row.isCustom ? <Chip size="small" label={t("hardware.card.customLabel")} sx={{ ml: 1, fontWeight: 400 }} /> : null}
+              </TableCell>
               <TableCell>
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                   {row.owned ? (
@@ -203,6 +209,7 @@ export function HardwareListSection({
           owned={row.owned}
           wishlisted={row.wishlisted}
           ownedQuantity={row.ownedQuantity}
+          isCustom={row.isCustom}
           onClick={() => navigate(row.href)}
         />
       )}

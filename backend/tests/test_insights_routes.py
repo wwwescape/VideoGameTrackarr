@@ -1,5 +1,5 @@
 from app.models.catalog import Game, GameCategory
-from app.models.hardware import AccessoryDeviceLink, UserAccessory, UserDevice
+from app.models.hardware import AccessoryDeviceLink, HardwareReferenceEntry, UserAccessory, UserDevice
 from app.models.itad import ItadPriceCache
 from app.models.library import GameProgress, LibraryItem, LibraryStatus, MediaFormat, PlayStatus
 from app.models.platprices import PlatPricesCache
@@ -279,6 +279,57 @@ def test_accessories_without_owned_hardware_flags_accessory_with_no_links(auth_c
     assert item["id"] == seed_accessory.id
     assert item["accessoryTypeName"] == seed_accessory.accessory_type.name
     assert item["createdAt"]
+    assert item["isCustom"] is True
+    assert item["imageUrl"] is None
+    assert item["wishlisted"] is False
+    assert item["ownedQuantity"] == 1
+
+
+def test_accessories_without_owned_hardware_carries_wishlist_and_owned_quantity(
+    auth_client, db_session, seed_accessory
+):
+    # Two owned copies plus a wishlist row: the card shows ×2 and the heart, as on Hardware.
+    db_session.add_all(
+        [
+            UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.OWNED),
+            UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.OWNED),
+            UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.WISHLIST),
+        ]
+    )
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/accessories-without-owned-hardware")
+
+    [item] = response.json()
+    assert item["ownedQuantity"] == 2
+    assert item["wishlisted"] is True
+
+
+def test_accessories_without_owned_hardware_falls_back_to_the_curated_image(auth_client, db_session, seed_accessory):
+    # A catalog accessory has no upload of its own; like the Hardware page, its reference
+    # entry's curated product shot stands in (a real file in backend/static/hardware-reference).
+    entry = HardwareReferenceEntry(
+        brand="Sony",
+        family="PlayStation",
+        generation="PlayStation 5",
+        artefact="DualSense Charging Station",
+        official_name="Sony DualSense Charging Station",
+        category="Charging",
+        type="Accessory",
+        release_date="2020",
+        discontinued=False,
+    )
+    db_session.add(entry)
+    db_session.flush()
+    seed_accessory.hardware_reference_entry_id = entry.id
+    db_session.add(UserAccessory(accessory_id=seed_accessory.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    response = auth_client.get("/api/insights/accessories-without-owned-hardware")
+
+    [item] = response.json()
+    assert item["imageUrl"] == "/static/hardware-reference/sony-dualsense-charging-station.png"
+    assert item["isCustom"] is False
 
 
 def test_accessories_without_owned_hardware_flags_accessory_linked_to_unowned_device(

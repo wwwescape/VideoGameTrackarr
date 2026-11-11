@@ -77,10 +77,13 @@ def test_public_devices_with_valid_token(auth_client, client, seed_device):
         "manufacturerName",
         "hardwarePlatformName",
         "imageUrl",
+        "isCustom",
         "owned",
         "wishlisted",
         "ownedQuantity",
     }
+    # The seeded device has no hardware reference entry, so it shows as Custom.
+    assert device["isCustom"] is True
 
 
 def test_public_devices_wrong_token_is_404(client, seed_device):
@@ -103,10 +106,12 @@ def test_public_accessories_with_valid_token(auth_client, client, seed_accessory
         "officialName",
         "manufacturerName",
         "imageUrl",
+        "isCustom",
         "owned",
         "wishlisted",
         "ownedQuantity",
     }
+    assert accessory["isCustom"] is True
 
 
 def test_public_accessories_wrong_token_is_404(client, seed_accessory):

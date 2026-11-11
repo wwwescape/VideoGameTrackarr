@@ -1466,15 +1466,14 @@
       "statusWishlist": "Liste de souhaits",
       "conditionLabel": "État",
       "inventoryNotTracked": "Pas encore suivi.",
-      "linkedAccessoriesTitle": "Accessoires liés"
+      "linkedAccessoriesTitle": "Accessoires liés",
+      "customTooltip": "Ajouté manuellement, non lié à une entrée du catalogue de référence."
     },
     "accessoryDetails": {
       "removeSuccess": "Accessoire retiré.",
       "removeError": "Erreur lors de la suppression de l'accessoire. Veuillez réessayer.",
       "editButton": "Modifier l'accessoire",
       "removeButton": "Retirer l'accessoire",
-      "customTooltip": "Ajouté manuellement, non lié à une entrée du catalogue de référence.",
-      "customLabel": "Personnalisé",
       "linkedDevicesTitle": "Appareils liés",
       "noLinkedDevices": "Aucun appareil lié pour l'instant.",
       "noLinkedAccessories": "Aucun accessoire lié pour l'instant.",
@@ -1543,7 +1542,8 @@
     "card": {
       "noImage": "Aucune image",
       "quantity_one": "{{count}} possédé",
-      "quantity_other": "{{count}} possédés"
+      "quantity_other": "{{count}} possédés",
+      "customLabel": "Personnalisé"
     },
     "coverCard": {
       "noImageAvailable": "Aucune image disponible"

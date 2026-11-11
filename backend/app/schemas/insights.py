@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from app.models.catalog import Game, GameCategory
-from app.models.hardware import Accessory
 from app.models.library import LibraryItem
+from app.repositories.accessory_repository import AccessoryWithStatus
 from app.schemas.base import CamelModel
 from app.schemas.library import LibraryItemResponse, library_item_from_orm
+from app.services.hardware_reference_image_service import resolve_image_url
 from app.services.itad_service import OnSaleItem
 from app.services.platprices_service import PlatPricesOnSaleItem
 
@@ -84,18 +85,36 @@ class InsightAccessoryRefResponse(CamelModel):
     image_url: str | None
     manufacturer_name: str
     accessory_type_name: str
+    # No hardware reference catalog entry — the "Custom" chip, as on the Hardware page.
+    is_custom: bool
+    # Every row here is owned (that's the page's premise); these carry the rest of the
+    # ownership the cards show — the wishlist heart and the ×N quantity badge.
+    wishlisted: bool
+    owned_quantity: int
     # When it was added here, for the Orphaned Accessories page's Date added sort.
     created_at: datetime
 
 
-def insight_accessory_ref_from_orm(accessory: Accessory) -> InsightAccessoryRefResponse:
+def insight_accessory_ref_from_orm(with_status: AccessoryWithStatus) -> InsightAccessoryRefResponse:
+    accessory = with_status.accessory
     return InsightAccessoryRefResponse(
         id=accessory.id,
         uuid=accessory.uuid,
         official_name=accessory.official_name,
-        image_url=accessory.image_url,
+        # Own upload first, then the linked reference entry's curated photo — the same rule as
+        # the Hardware page (accessory._accessory_fields), so a catalog accessory isn't imageless
+        # only here.
+        image_url=accessory.image_url
+        or (
+            resolve_image_url(accessory.hardware_reference_entry.official_name)
+            if accessory.hardware_reference_entry
+            else None
+        ),
         manufacturer_name=accessory.manufacturer.name,
         accessory_type_name=accessory.accessory_type.name,
+        is_custom=accessory.hardware_reference_entry_id is None,
+        wishlisted=with_status.wishlisted,
+        owned_quantity=with_status.owned_quantity,
         created_at=accessory.created_at,
     )
 

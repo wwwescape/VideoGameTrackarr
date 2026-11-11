@@ -213,4 +213,23 @@ describe("HardwarePage", () => {
     expect(screen.getByRole("row", { name: "PlayStation 5" })).toBeInTheDocument();
     expect(screen.queryAllByTestId("grid-item")).toHaveLength(0);
   });
+
+  it("shows a Custom chip only on hardware with no reference catalog entry, on cards and in the table", async () => {
+    accessories = [
+      { ...accessory(1, "DualSense", 2020), isCustom: false },
+      { ...accessory(2, "Arcade Stick", null), isCustom: true },
+    ];
+    const user = renderPage();
+    const accessoriesSection = () => within(document.getElementById("accessories") as HTMLElement);
+
+    const cards = accessoriesSection().getAllByTestId("grid-item");
+    const card = (name: string) => cards.find((item) => within(item).queryByRole("button", { name })) as HTMLElement;
+    expect(within(card("Arcade Stick")).getByText("Custom")).toBeInTheDocument();
+    expect(within(card("DualSense")).queryByText("Custom")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "View" }));
+    await user.click(screen.getByRole("menuitem", { name: /Table/ }));
+    expect(within(accessoriesSection().getByRole("row", { name: "Arcade Stick" })).getByText("Custom")).toBeInTheDocument();
+    expect(within(accessoriesSection().getByRole("row", { name: "DualSense" })).queryByText("Custom")).not.toBeInTheDocument();
+  });
 });

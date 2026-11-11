@@ -39,6 +39,9 @@ class AccessorySummaryResponse(CamelModel):
     rating_board: RatingBoard | None
     image_url: str | None
     summary: str | None
+    # Not linked to a hardware reference catalog entry (Add Accessory's Custom mode) — the
+    # hardware counterpart of a game with no igdbId, shown with a "Custom" chip.
+    is_custom: bool
     owned: bool
     wishlisted: bool
     owned_quantity: int
@@ -80,6 +83,7 @@ def _accessory_fields(accessory: Accessory, with_status: AccessoryWithStatus) ->
             else None
         ),
         "summary": accessory.summary,
+        "is_custom": accessory.hardware_reference_entry_id is None,
         "owned": with_status.owned,
         "wishlisted": with_status.wishlisted,
         "owned_quantity": with_status.owned_quantity,

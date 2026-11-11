@@ -81,6 +81,7 @@ const OverviewPage = () => {
           owned={device.owned}
           wishlisted={device.wishlisted}
           ownedQuantity={device.ownedQuantity}
+          isCustom={device.isCustom}
           onClick={() => navigate(`/hardware/device/${hardwareIdentifier(device.officialName, device.uuid)}`)}
         />
       );
@@ -95,6 +96,7 @@ const OverviewPage = () => {
           owned={accessory.owned}
           wishlisted={accessory.wishlisted}
           ownedQuantity={accessory.ownedQuantity}
+          isCustom={accessory.isCustom}
           onClick={() => navigate(`/hardware/accessory/${hardwareIdentifier(accessory.officialName, accessory.uuid)}`)}
         />
       );

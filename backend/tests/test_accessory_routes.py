@@ -144,6 +144,7 @@ def test_create_accessory_with_hardware_reference_entry_links_it_and_shows_rich_
     assert body["hardwareReference"]["family"] == "PlayStation"
     assert body["hardwareReference"]["category"] == "Controller"
     assert body["hardwareReference"]["summary"] == "A controller."
+    assert body["isCustom"] is False
 
 
 def test_create_accessory_without_hardware_reference_entry_has_no_rich_data(auth_client):
@@ -154,6 +155,7 @@ def test_create_accessory_without_hardware_reference_entry_has_no_rich_data(auth
 
     assert response.status_code == 201
     assert response.json()["hardwareReference"] is None
+    assert response.json()["isCustom"] is True
 
 
 def test_create_accessory_with_ownership_creates_both_rows_in_one_call(auth_client, db_session):
@@ -205,6 +207,8 @@ def test_update_accessory_can_link_hardware_reference_entry(auth_client, db_sess
 
     assert response.status_code == 200
     assert response.json()["hardwareReference"]["artefact"] == "DualSense"
+    # Linking a custom accessory to the catalog later drops its Custom chip.
+    assert response.json()["isCustom"] is False
 
 
 def test_update_accessory_replaces_compatible_platforms(auth_client):

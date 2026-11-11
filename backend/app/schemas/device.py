@@ -30,6 +30,9 @@ class DeviceSummaryResponse(CamelModel):
     # Curated product shot from the linked HardwareReferenceEntry, if any — Device has no
     # image of its own since every Device today comes from the predefined reference cascade.
     image_url: str | None
+    # Not linked to a hardware reference catalog entry — the hardware counterpart of a game
+    # with no igdbId; the UI shows a "Custom" chip for it, as it does for games.
+    is_custom: bool
     # Computed fresh per request (EXISTS/scalar-subquery against user_devices), never a
     # stored counter — see DeviceWithStatus.
     owned: bool
@@ -75,6 +78,7 @@ def _device_fields(device: Device, with_status: DeviceWithStatus) -> dict:
             if device.hardware_reference_entry
             else None
         ),
+        "is_custom": device.hardware_reference_entry_id is None,
         "owned": with_status.owned,
         "wishlisted": with_status.wishlisted,
         "owned_quantity": with_status.owned_quantity,

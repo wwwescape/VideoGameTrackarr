@@ -11,6 +11,9 @@ interface HardwareCardProps {
   owned: boolean;
   wishlisted: boolean;
   ownedQuantity: number;
+  // Not linked to a hardware reference catalog entry: a "Custom" chip, styled like
+  // GameCard's for a game with no IGDB link.
+  isCustom?: boolean;
   // An extra line under the subtitle (the release date in the release calendar).
   dateLine?: string;
   // Optional so a read-only context (the public share-link view) can render a non-clickable
@@ -23,7 +26,17 @@ interface HardwareCardProps {
 // GameCard's game-specific fields (release year, play status, addon type), so this is
 // its own component rather than a GameCard reuse. Photo first: the product shot sits whole
 // in a white 4:3 well (shots are on white backgrounds), in light and dark mode.
-const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuantity, dateLine, onClick }: HardwareCardProps) => {
+const HardwareCard = ({
+  name,
+  subtitle,
+  imageUrl,
+  owned,
+  wishlisted,
+  ownedQuantity,
+  isCustom = false,
+  dateLine,
+  onClick,
+}: HardwareCardProps) => {
   const { t } = useTranslation();
 
   return (
@@ -35,6 +48,36 @@ const HardwareCard = ({ name, subtitle, imageUrl, owned, wishlisted, ownedQuanti
       overlay={
         <>
           <OwnershipBadges owned={owned} wishlisted={wishlisted} />
+          {isCustom ? (
+            // Bottom-left: the bottom-right corner is the quantity badge's. Colours match
+            // GameCard's Custom chip.
+            <Box
+              component="span"
+              sx={{
+                position: "absolute",
+                left: 7,
+                bottom: 7,
+                maxWidth: "calc(100% - 64px)",
+                height: 22,
+                px: 1,
+                borderRadius: 999,
+                bgcolor: "#5d6673",
+                color: "#fff",
+                fontSize: 11.5,
+                fontWeight: 650,
+                lineHeight: "22px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                // The same 1px outer ring as GameCard's chip shadow, as a theme token.
+                outline: "1px solid",
+                outlineColor: "vgt.glassLine",
+                pointerEvents: "none",
+              }}
+            >
+              {t("hardware.card.customLabel")}
+            </Box>
+          ) : null}
           {owned && ownedQuantity > 1 ? (
             <Box
               aria-label={t("hardware.card.quantity", { count: ownedQuantity })}

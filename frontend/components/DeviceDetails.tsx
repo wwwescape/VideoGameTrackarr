@@ -135,6 +135,9 @@ const DeviceDetails = () => {
               {device.wishlisted ? <Pill tone="wishlist" icon={<FavoriteIcon />}>{t("hardware.detailsShared.statusWishlist")}</Pill> : null}
               {primaryOwnership?.condition ? <Pill>{CONDITION_LABELS[primaryOwnership.condition]}</Pill> : null}
               {device.ratingBoard ? <Pill>{RATING_BOARD_LABELS[device.ratingBoard]}</Pill> : null}
+              {device.isCustom ? (
+                <Pill title={t("hardware.detailsShared.customTooltip")}>{t("hardware.card.customLabel")}</Pill>
+              ) : null}
             </>
           }
         />

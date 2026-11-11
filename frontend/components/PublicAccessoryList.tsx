@@ -35,6 +35,7 @@ const PublicAccessoryList = ({ token, search }: PublicAccessoryListProps) => {
           owned={accessory.owned}
           wishlisted={accessory.wishlisted}
           ownedQuantity={accessory.ownedQuantity}
+          isCustom={accessory.isCustom}
         />
       )}
     />

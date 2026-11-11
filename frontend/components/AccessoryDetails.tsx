@@ -82,7 +82,6 @@ const AccessoryDetails = () => {
   // Accessory always creates exactly one alongside the catalog row — this page shows that one
   // record rather than a list, preferring an owned copy over a wishlisted one if both exist.
   const primaryOwnership = ownershipRows?.find((row) => row.status === "owned") ?? ownershipRows?.[0] ?? null;
-  const isCustom = !accessory.hardwareReference;
   const releaseDate = accessory.releaseDate ?? accessory.hardwareReference?.releaseDate ?? null;
   const summaryText = accessory.hardwareReference?.summary ?? accessory.summary;
 
@@ -138,8 +137,8 @@ const AccessoryDetails = () => {
               {accessory.wishlisted ? <Pill tone="wishlist" icon={<FavoriteIcon />}>{t("hardware.detailsShared.statusWishlist")}</Pill> : null}
               {primaryOwnership?.condition ? <Pill>{CONDITION_LABELS[primaryOwnership.condition]}</Pill> : null}
               {accessory.ratingBoard ? <Pill>{RATING_BOARD_LABELS[accessory.ratingBoard]}</Pill> : null}
-              {isCustom ? (
-                <Pill title={t("hardware.accessoryDetails.customTooltip")}>{t("hardware.accessoryDetails.customLabel")}</Pill>
+              {accessory.isCustom ? (
+                <Pill title={t("hardware.detailsShared.customTooltip")}>{t("hardware.card.customLabel")}</Pill>
               ) : null}
             </>
           }

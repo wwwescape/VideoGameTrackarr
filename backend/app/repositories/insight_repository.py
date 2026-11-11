@@ -1,10 +1,11 @@
-from sqlalchemy import exists, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session, aliased, joinedload
 
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory, AccessoryDeviceLink, UserAccessory, UserDevice
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PlayStatus
 from app.repositories import toys_to_life_repository
+from app.repositories.accessory_repository import AccessoryWithStatus
 from app.repositories.game_repository import (
     GameSortOption,
     GameSource,
@@ -149,7 +150,7 @@ def find_missing_addons(
     return [grouped[game_id] for game_id in order]
 
 
-def find_accessories_without_owned_hardware(db: Session) -> list[Accessory]:
+def find_accessories_without_owned_hardware(db: Session) -> list[AccessoryWithStatus]:
     """Owned accessories where none of their linked devices (AccessoryDeviceLink — the
     specific-device link, not just platform compatibility) are themselves owned, including
     accessories with no linked devices at all. No .correlate() needed here despite the
@@ -165,10 +166,33 @@ def find_accessories_without_owned_hardware(db: Session) -> list[Accessory]:
         UserDevice.status == LibraryStatus.OWNED,
     )
 
+    wishlisted_exists = exists().where(
+        UserAccessory.accessory_id == Accessory.id, UserAccessory.status == LibraryStatus.WISHLIST
+    )
+
+    def count_with(status: LibraryStatus):
+        return (
+            select(func.count(UserAccessory.id))
+            .where(UserAccessory.accessory_id == Accessory.id, UserAccessory.status == status)
+            .scalar_subquery()
+        )
+
+    # Real ownership columns (as the Hardware page's list has), so the cards here show the
+    # wishlist heart and the ×N quantity badge too, not a fixed "owned, 1 copy".
     stmt = (
-        select(Accessory)
-        .options(joinedload(Accessory.manufacturer))
+        select(Accessory, wishlisted_exists, count_with(LibraryStatus.OWNED), count_with(LibraryStatus.WISHLIST))
+        # The reference entry feeds the curated-image fallback in insight_accessory_ref_from_orm.
+        .options(joinedload(Accessory.manufacturer), joinedload(Accessory.hardware_reference_entry))
         .where(owned_exists, ~has_owned_linked_device)
         .order_by(Accessory.official_name)
     )
-    return list(db.scalars(stmt))
+    return [
+        AccessoryWithStatus(
+            accessory=accessory,
+            owned=True,
+            wishlisted=bool(wishlisted),
+            owned_quantity=owned_quantity,
+            wishlisted_quantity=wishlisted_quantity,
+        )
+        for accessory, wishlisted, owned_quantity, wishlisted_quantity in db.execute(stmt)
+    ]

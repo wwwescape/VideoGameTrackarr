@@ -145,6 +145,9 @@ describe("Orphaned accessories toolbar", () => {
         imageUrl: null,
         manufacturerName: "Hori",
         accessoryTypeName: "Controller",
+        isCustom: false,
+        wishlisted: false,
+        ownedQuantity: 1,
         createdAt: "2026-01-01T00:00:00Z",
       },
       {
@@ -154,6 +157,9 @@ describe("Orphaned accessories toolbar", () => {
         imageUrl: null,
         manufacturerName: "Sony",
         accessoryTypeName: "Power",
+        isCustom: false,
+        wishlisted: false,
+        ownedQuantity: 1,
         createdAt: "2026-03-01T00:00:00Z",
       },
     ];
