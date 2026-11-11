@@ -64,7 +64,9 @@ def parse_csv(path: Path = CSV_PATH) -> list[dict[str, Any]]:
             if parsed["height_mm"] <= 0 or parsed["spine_mm"] <= 0:
                 raise ValueError(f"{path.name} line {line}: sizes must be above 0")
             if not 0 <= parsed["case_top_mm"] < parsed["height_mm"] / 4:
-                raise ValueError(f"{path.name} line {line}: Case Top (mm) must be 0 or more and under a quarter of the height")
+                raise ValueError(
+                    f"{path.name} line {line}: Case Top (mm) must be 0 or more and under a quarter of the height"
+                )
             if not 0 < parsed["logo_band_height_pct"] <= 50:
                 raise ValueError(f"{path.name} line {line}: Logo Band Height (%) must be above 0 and at most 50")
             if parsed["logo"] is not None and not _LOGO_FILE.match(parsed["logo"]):
