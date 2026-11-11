@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
@@ -14,6 +14,7 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import { useGameListState } from "../hooks/useGameListState";
+import { useEnabledLabs } from "../hooks/useLabs";
 import { useDeleteGame, useGames } from "../hooks/useGames";
 import { useLibraryItems } from "../hooks/useLibrary";
 import { useLocalPreference } from "../hooks/useLocalPreference";
@@ -27,12 +28,14 @@ import { CARD_SIZE_DEFAULT, GameCoverGrid, GameOverviewRows, GameTable, type Gam
 import ManageTagsDialog from "./ManageTagsDialog";
 import Page, { ToolbarButton } from "./Page";
 import PlayGameDialog from "./PlayGameDialog";
+import ScreensaverBulkButton from "./ScreensaverBulkButton";
 import { showUndoToast } from "./UndoToast";
 
 const GameList = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const state = useGameListState("games", { sources: true });
+  const screensaverLab = useEnabledLabs().has("screensaver");
+  const state = useGameListState("games", { sources: true, screensaver: screensaverLab });
   // Enter in the header search lands here with its text.
   useSearchHandoff("search", state.setSearchKeyword);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -68,6 +71,17 @@ const GameList = () => {
   }, [games, ownershipStatuses, ownershipExclude, ownershipMatchAll]);
 
   const visibleGames = useMemo(() => filteredGames.filter((game) => !isPending(game.id)), [filteredGames, isPending]);
+
+  // A selected game that leaves the list (a filter, a search, or the Screensaver filter after
+  // Hide/Show) leaves the selection too, so the count matches what's on screen.
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const shown = new Set(visibleGames.map((game) => game.id));
+      const kept = [...prev].filter((id) => shown.has(id));
+      return kept.length === prev.size ? prev : new Set(kept);
+    });
+  }, [visibleGames]);
 
   const handleGameClick = (game: GameSummary) => {
     navigate(`/game/${gameIdentifier(game)}`);
@@ -170,6 +184,9 @@ const GameList = () => {
         onClick={() => setManageTagsOpen(true)}
         disabled={selectedIds.size === 0}
       />
+      {screensaverLab ? (
+        <ScreensaverBulkButton selected={visibleGames.filter((game) => selectedIds.has(game.id))} />
+      ) : null}
       <ToolbarButton
         danger
         icon={<DeleteOutlineIcon />}

@@ -25,6 +25,7 @@ export function useSetLabEnabled() {
       // A lab adds or removes pages and their data.
       queryClient.invalidateQueries({ queryKey: ["games", "shelf"] });
       queryClient.invalidateQueries({ queryKey: ["game-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["screensaver"] });
     },
   });
 }

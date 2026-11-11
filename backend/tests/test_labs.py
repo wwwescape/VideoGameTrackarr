@@ -6,6 +6,8 @@ from app.models.game_cases import GameCase
 from app.models.labs import LabFeature
 from tests.test_backup_routes import _upload_backup, _wait_for_restore_completion
 
+ALL_OFF = [{"id": "game_shelf", "enabled": False}, {"id": "screensaver", "enabled": False}]
+
 
 def _share_token(client) -> str:
     return client.post("/api/share-link").json()["token"]
@@ -17,7 +19,7 @@ def test_labs_require_auth(client):
 
 
 def test_every_lab_starts_off(auth_client):
-    assert auth_client.get("/api/labs").json() == [{"id": "game_shelf", "enabled": False}]
+    assert auth_client.get("/api/labs").json() == ALL_OFF
 
 
 def test_turning_a_lab_on_and_off(auth_client, db_session):
@@ -27,7 +29,7 @@ def test_turning_a_lab_on_and_off(auth_client, db_session):
     assert db_session.get(LabFeature, "game_shelf").enabled is True
 
     auth_client.put("/api/labs/game_shelf", json={"enabled": False})
-    assert auth_client.get("/api/labs").json() == [{"id": "game_shelf", "enabled": False}]
+    assert auth_client.get("/api/labs").json() == ALL_OFF
 
 
 def test_an_unknown_lab_is_404(auth_client):

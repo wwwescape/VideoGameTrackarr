@@ -39,6 +39,7 @@ import {
   gameShelfCrumbs,
   labsCrumbs,
   gameCasesCrumbs,
+  screensaverSettingsCrumbs,
   platformCrumbs,
   platformsCrumbs,
   seriesCrumbs,
@@ -289,6 +290,11 @@ const router = createBrowserRouter([
             path: "/settings/game-cases",
             lazy: page(() => import("./components/GameCasesPage")),
             handle: { crumbs: gameCasesCrumbs },
+          },
+          {
+            path: "/settings/screensaver",
+            lazy: page(() => import("./components/ScreensaverSettingsPage")),
+            handle: { crumbs: screensaverSettingsCrumbs },
           },
           {
             path: "/settings/igdb-import",

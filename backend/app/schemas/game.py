@@ -50,6 +50,9 @@ class GameSummaryResponse(CamelModel):
     # owned/wishlisted yet (greyscale, no chip) — both look identical via owned/wishlisted
     # alone.
     auto_discovered: bool
+    # Left out of the Screensaver lab's carousel: on the summary so the Games list's bulk
+    # Hide/Show can count what it would change and undo each game exactly.
+    screensaver_excluded: bool
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
@@ -114,6 +117,7 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "play_status": status.play_status,
         "rating": status.rating,
         "auto_discovered": game.auto_discovered,
+        "screensaver_excluded": game.screensaver_excluded,
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,

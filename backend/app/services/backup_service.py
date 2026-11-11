@@ -164,6 +164,7 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=g.user_rating,
+                screensaver_excluded=g.screensaver_excluded,
                 screenshot_urls=custom_media.get(g.id, no_media)[0],
                 artwork_urls=custom_media.get(g.id, no_media)[1],
                 videos=custom_media.get(g.id, no_media)[2],
@@ -302,7 +303,12 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
             for case in db.scalars(select(GameCase).order_by(GameCase.platform_slug))
         ],
         settings=(
-            BackupSettings(currency=user.currency, overview_layout=user.overview_layout, steam_id_64=user.steam_id_64)
+            BackupSettings(
+                currency=user.currency,
+                overview_layout=user.overview_layout,
+                steam_id_64=user.steam_id_64,
+                screensaver_interval_seconds=user.screensaver_interval_seconds,
+            )
             if user
             else None
         ),
@@ -677,6 +683,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 igdb_category_id=g.igdb_category_id,
                 parent_game_id=g.parent_game_id,
                 user_rating=user_rating_for(g),
+                screensaver_excluded=g.screensaver_excluded,
             )
         )
     db.flush()
@@ -832,6 +839,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         user.currency = payload.settings.currency
         user.overview_layout = payload.settings.overview_layout
         user.steam_id_64 = payload.settings.steam_id_64
+        user.screensaver_interval_seconds = payload.settings.screensaver_interval_seconds
 
     restored_items = {li.id: li for li in payload.library_items}
     orphaned_rom_files: list[str] = []

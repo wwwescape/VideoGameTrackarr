@@ -200,6 +200,17 @@ class Game(TimestampMixin, Base):
         ),
     )
 
+    screensaver_excluded: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment=(
+            "True to leave the game's cover out of the Screensaver lab's carousel. Every game "
+            "is in by default; kept while the lab is off, so turning it back on restores it"
+        ),
+    )
+
     # Two self-referential FKs to the same table means SQLAlchemy can't infer which one each
     # relationship below is for — foreign_keys disambiguates explicitly.
     parent_game: Mapped["Game | None"] = relationship(

@@ -7,9 +7,9 @@ from app.schemas.base import CamelModel
 # 2 added the optional rom_files/rom_save_states/bios_files sections (full backups only);
 # 3 added target prices, ignored price lookups, account settings and included_files (which
 # kinds of files a .zip carries); 4 added a custom game's screenshots, artwork and videos;
-# 5 added Toys-to-Life ownership, ratings, notes and tags.
+# 5 added Toys-to-Life ownership, ratings, notes and tags; 7 added a game's screensaver opt-out.
 # Older files still restore — the new parts default to empty.
-BACKUP_FORMAT_VERSION = 6
+BACKUP_FORMAT_VERSION = 7
 
 
 class _BackupRow(BaseModel):
@@ -71,6 +71,8 @@ class BackupGame(_BackupRow):
     # Your overall rating (1-10). Backups from before it existed carry ratings per platform on
     # game_progress instead, which restore folds into this (see backup_service.restore_backup).
     user_rating: int | None = None
+    # Left out of the Screensaver lab (version 7+); older backups restore every game as in.
+    screensaver_excluded: bool = False
     screenshot_urls: list[str] = []
     artwork_urls: list[str] = []
     videos: list[BackupGameVideo] = []
@@ -280,6 +282,8 @@ class BackupSettings(_BackupRow):
     currency: str | None = None
     overview_layout: list[dict] | None = None
     steam_id_64: str | None = None
+    # The Screensaver lab's time per cover (version 7+); null = the default.
+    screensaver_interval_seconds: int | None = None
 
 
 class BackupLabFeature(_BackupRow):

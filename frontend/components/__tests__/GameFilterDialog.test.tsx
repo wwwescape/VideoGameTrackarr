@@ -194,3 +194,40 @@ describe("GameFilterDialog Source filter", () => {
     expect(buildGameFilterParams({ sourceExclude: true }).sourceExclude).toBeUndefined();
   });
 });
+
+describe("GameFilterDialog Screensaver field", () => {
+  it("isn't there unless the page offers it", async () => {
+    renderToolbar();
+    const { dialog } = await openFilters();
+    expect(within(dialog).queryByRole("group", { name: "Screensaver" })).not.toBeInTheDocument();
+  });
+
+  it("picks Any, Shown or Hidden", async () => {
+    const onScreensaverFilterChange = vi.fn();
+    renderToolbar({ screensaverFilter: null, onScreensaverFilterChange });
+    const { user, dialog } = await openFilters();
+    const group = within(dialog).getByRole("group", { name: "Screensaver" });
+    expect(within(group).getByRole("button", { name: "Any" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(within(group).getByRole("button", { name: "Hidden" }));
+    expect(onScreensaverFilterChange).toHaveBeenLastCalledWith("hidden");
+  });
+
+  it("goes back to Any, and Clear filters clears it", async () => {
+    const onScreensaverFilterChange = vi.fn();
+    renderToolbar({ screensaverFilter: "hidden", onScreensaverFilterChange });
+    const { user, dialog } = await openFilters();
+
+    await user.click(within(dialog).getByRole("button", { name: "Any" }));
+    expect(onScreensaverFilterChange).toHaveBeenLastCalledWith(null);
+
+    onScreensaverFilterChange.mockClear();
+    await user.click(within(dialog).getByRole("button", { name: "Clear filters" }));
+    expect(onScreensaverFilterChange).toHaveBeenCalledWith(null);
+  });
+
+  it("is sent as `screensaver`", () => {
+    expect(buildGameFilterParams({ screensaver: "hidden" }).screensaver).toBe("hidden");
+    expect(buildGameFilterParams({}).screensaver).toBeUndefined();
+  });
+});

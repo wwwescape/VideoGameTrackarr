@@ -46,6 +46,7 @@ One row per game (IGDB-sourced or manually added).
 | display_parent_game_id | FK → games.id | Non-hierarchical "shown as related to" link (e.g. an independently-owned standalone expansion) |
 | external_parent_name, external_parent_igdb_url | string | Fallback display data when the conceptual parent was never imported locally |
 | similar_game_igdb_ids | JSON | Cached IGDB `similar_games`, powers recommendations |
+| screensaver_excluded | bool | Left out of the Screensaver lab's carousel (the game page's toggle, the Games list's bulk Hide/Show); every game starts in |
 | created_at, updated_at | timestamp | |
 
 ### `platforms`
@@ -436,11 +437,11 @@ column but `shown` comes from the CSV; a re-import updates them and keeps `shown
 ### `lab_features`
 
 Settings → Labs: one row per lab feature you've switched on or off. The labs themselves
-(`game_shelf` so far) are defined in code, in `app/services/labs.py`; no row means off.
+(`game_shelf`, `screensaver`) are defined in code, in `app/services/labs.py`; no row means off.
 
 | Column | Type | Notes |
 |---|---|---|
-| id | string(64) PK | The lab's id, e.g. `game_shelf` |
+| id | string(64) PK | The lab's id, e.g. `game_shelf` or `screensaver` |
 | enabled | bool | |
 | created_at, updated_at | timestamp | |
 
@@ -458,6 +459,11 @@ scoped by `user_id`.
 | id | int PK | |
 | username | string(255), unique | |
 | password_hash | string(255) | |
+| public_share_token | string(64), unique, nullable | The unlisted share link's token (the public Games, Shelf and Hardware pages); null while there's no link |
+| steam_id_64 | string(32), nullable | Steam profile SteamID64, for Steam sync |
+| currency | string(3), nullable | Display currency (ISO 4217), shared by every browser |
+| overview_layout | JSON, nullable | The Overview's sections in order, each `{key, hidden}`; null = the default layout |
+| screensaver_interval_seconds | int, nullable | Screensaver lab: seconds each cover is shown, 5–15; null = the default (8) |
 | last_seen_version | string(32), nullable | Newest app version whose **What's New** was closed. Set to the running version when the account is created (a new install has nothing new to show); null on an account from before What's New, which then sees the running version's notes once |
 | created_at, updated_at | timestamp | |
 

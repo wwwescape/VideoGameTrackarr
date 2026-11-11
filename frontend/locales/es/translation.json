@@ -75,6 +75,7 @@
     "about": "Acerca de",
     "emulation": "Emulación",
     "gameCases": "Cajas de juegos",
+    "screensaver": "Salvapantallas",
     "overview": "Resumen",
     "settingsGeneral": "General",
     "primary": "Navegación principal",
@@ -466,6 +467,10 @@
         "game_shelf": {
           "name": "Estantería",
           "description": "Tus juegos físicos como cajas en una estantería, dibujadas como las reales. Añade Juegos → Estantería, Configuración → Cajas de juegos y una pestaña Estantería en tu enlace compartido."
+        },
+        "screensaver": {
+          "name": "Salvapantallas",
+          "description": "Un botón flotante que muestra las portadas de tus juegos a pantalla completa, una tras otra. Desliza para explorar y toca una portada para abrir el juego. Añade Ajustes → Salvapantallas."
         }
       }
     },
@@ -482,6 +487,18 @@
       "caseSize": "{{label}} · {{height}} × {{spine}} mm",
       "sampleTitle": "Título del juego",
       "loadFailed": "No se pudieron cargar las cajas de juegos.",
+      "saveFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
+    },
+    "screensaver": {
+      "description": "Cómo se comporta el salvapantallas en cada pantalla donde lo abras. Inícialo con el botón redondo de abajo a la izquierda de cualquier página.",
+      "heading": "Diapositivas",
+      "interval": "Tiempo por portada",
+      "intervalDescription": "Cuánto tiempo se queda cada portada en pantalla antes de que entre la siguiente.",
+      "seconds_one": "{{count}} segundo",
+      "seconds_other": "{{count}} segundos",
+      "current_one": "Cada portada se muestra durante {{count}} segundo.",
+      "current_other": "Cada portada se muestra durante {{count}} segundos.",
+      "included": "Se incluyen todos los juegos que tienes con portada. Oculta uno del salvapantallas en su página, o varios a la vez desde la lista de juegos.",
       "saveFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
     },
     "tagManager": {
@@ -576,6 +593,27 @@
     },
     "regional": {
       "heading": "Regional"
+    }
+  },
+  "screensaver": {
+    "start": "Iniciar salvapantallas",
+    "label": "Salvapantallas",
+    "close": "Cerrar salvapantallas",
+    "empty": "Aún no hay portadas que mostrar. Aquí aparecen los juegos que tienes con portada.",
+    "loadFailed": "No se pudieron cargar las portadas.",
+    "retry": "Reintentar",
+    "confirmTitle": "¿Abrir juego?",
+    "confirmText": "¿Ir a la página de {{name}}?",
+    "confirmGo": "Ir al juego",
+    "slide": "{{name}}, portada {{position}} de {{count}}",
+    "toggle": {
+      "hideLabel": "Ocultar del salvapantallas",
+      "showLabel": "Mostrar en el salvapantallas",
+      "shownTooltip": "Se muestra en el salvapantallas · haz clic para ocultarlo",
+      "hiddenTooltip": "Oculto del salvapantallas · haz clic para mostrarlo",
+      "hidden": "Oculto del salvapantallas",
+      "shown": "Se muestra en el salvapantallas",
+      "saveFailed": "No se pudo cambiar. Inténtalo de nuevo."
     }
   },
   "auth": {
@@ -722,7 +760,21 @@
       "showMissingLabel": "¿Mostrar lo que me falta?",
       "steelbookOnlyLabel": "Solo Steelbooks",
       "clearFiltersButton": "Borrar filtros",
-      "noSearchMatches": "No se encontraron coincidencias."
+      "noSearchMatches": "No se encontraron coincidencias.",
+      "screensaverButton": "Salvapantallas",
+      "screensaverHide": "Ocultar del salvapantallas ({{count}})",
+      "screensaverShow": "Mostrar en el salvapantallas ({{count}})",
+      "screensaverHiddenToast_one": "{{count}} juego oculto del salvapantallas",
+      "screensaverHiddenToast_other": "{{count}} juegos ocultos del salvapantallas",
+      "screensaverShownToast_one": "{{count}} juego vuelve a mostrarse en el salvapantallas",
+      "screensaverShownToast_other": "{{count}} juegos vuelven a mostrarse en el salvapantallas",
+      "screensaverFailed": "No se pudo cambiar el salvapantallas para esos juegos. Inténtalo de nuevo.",
+      "screensaverFilterLabel": "Salvapantallas",
+      "screensaverAny": "Cualquiera",
+      "screensaverShownOption": "Mostrados",
+      "screensaverHiddenOption": "Ocultos",
+      "screensaverHiddenChip": "Salvapantallas: ocultos",
+      "screensaverShownChip": "Salvapantallas: mostrados"
     },
     "card": {
       "playStatusBacklog": "Pendiente",

@@ -78,17 +78,28 @@ def me(current_user: User = Depends(get_current_user)) -> UserResponse:
 def update_preferences(
     body: PreferencesRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> UserResponse:
-    """Display preferences kept on the server, so every browser shows the same (the currency
-    and the Overview's section order; colour mode and language stay per browser). Only the
+    """Display preferences kept on the server, so every browser shows the same (the currency,
+    the Overview's section order and the Screensaver's time per cover; colour mode and language
+    stay per browser). Only the
     fields sent are changed."""
     layout = [section.model_dump() for section in body.overview_layout] if body.overview_layout is not None else None
-    user = auth_service.set_preferences(db, current_user, currency=body.currency, overview_layout=layout)
+    user = auth_service.set_preferences(
+        db,
+        current_user,
+        currency=body.currency,
+        overview_layout=layout,
+        screensaver_interval_seconds=body.screensaver_interval_seconds,
+    )
     return _user_response(user)
 
 
 def _user_response(user: User) -> UserResponse:
     return UserResponse(
-        id=user.id, username=user.username, currency=user.currency, overview_layout=user.overview_layout
+        id=user.id,
+        username=user.username,
+        currency=user.currency,
+        overview_layout=user.overview_layout,
+        screensaver_interval_seconds=user.screensaver_interval_seconds,
     )
 
 

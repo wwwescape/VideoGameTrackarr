@@ -25,6 +25,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
 import ViewWeekIcon from "@mui/icons-material/ViewWeekOutlined";
+import SlideshowIcon from "@mui/icons-material/SlideshowOutlined";
 import GamesIcon from "@mui/icons-material/Games";
 import IgdbIcon from "../icons/IgdbIcon";
 import LegoDimensionsIcon from "../icons/LegoDimensionsIcon";
@@ -171,6 +172,12 @@ export function settingsPages(): NavSubDestination[] {
       labelKey: "nav.gameCases",
       icon: <ViewWeekIcon />,
       lab: "game_shelf",
+    },
+    {
+      to: "/settings/screensaver",
+      labelKey: "nav.screensaver",
+      icon: <SlideshowIcon />,
+      lab: "screensaver",
     },
     {
       to: "/settings/igdb-import",

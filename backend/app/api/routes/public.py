@@ -40,9 +40,10 @@ def list_public_games(
 
 @router.get("/labs", response_model=PublicLabsResponse)
 def list_public_labs(token: str, db: Session = Depends(get_db)) -> PublicLabsResponse:
-    """The labs that are on, so the share page shows their tabs (the Game Shelf's)."""
+    """The labs that are on and have something on the share page, so it shows their tabs (the
+    Game Shelf's). Signed-in-only labs, like the Screensaver, are never listed."""
     auth_service.get_user_by_share_token(db, token)
-    return PublicLabsResponse(enabled=labs.enabled_ids(db))
+    return PublicLabsResponse(enabled=labs.enabled_ids(db, share_page=True))
 
 
 @router.get("/shelf", response_model=PublicGameShelfResponse, dependencies=[Depends(require_lab(LAB_GAME_SHELF))])

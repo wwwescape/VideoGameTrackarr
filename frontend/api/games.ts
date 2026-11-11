@@ -11,6 +11,7 @@ import type {
   ManualGameInput,
   MediaFormat,
   PlayStatus,
+  ScreensaverFilter,
 } from "./types";
 
 // Filters with an "Any / All" choice in the Filters dialog. Each one is off ("Any": a game
@@ -53,6 +54,8 @@ export interface GameListFilters {
   // No "match all", same as categories: a game is either IGDB-backed or custom.
   sources?: GameSource[];
   sourceExclude?: boolean;
+  // Screensaver lab: only the Games list sends it, and only while the lab is on.
+  screensaver?: ScreensaverFilter;
   sort?: GameSortOption;
   // Only meaningful on GET /api/games — an always-applied AND-scope, independent of the
   // collectionIds/franchiseIds OR-filter above. Used by a Collection/Series detail page's
@@ -93,6 +96,7 @@ export function buildGameFilterParams(filters: GameListFilters) {
     steelbookOnly,
     sources,
     sourceExclude,
+    screensaver,
     sort,
     requiredCollectionId,
     requiredFranchiseId,
@@ -131,6 +135,7 @@ export function buildGameFilterParams(filters: GameListFilters) {
     steelbookOnly: steelbookOnly || undefined,
     source: sources?.length ? sources : undefined,
     sourceExclude: sources?.length ? sourceExclude : undefined,
+    screensaver: screensaver || undefined,
     sort: sort || undefined,
     requiredCollectionId,
     requiredFranchiseId,

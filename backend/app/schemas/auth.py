@@ -44,6 +44,8 @@ class PreferencesRequest(CamelModel):
     # An ISO 4217 code; the frontend only offers the currencies it can format.
     currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
     overview_layout: list[OverviewSection] | None = Field(default=None, max_length=50)
+    # The Screensaver lab's time per cover, in seconds.
+    screensaver_interval_seconds: int | None = Field(default=None, ge=5, le=15)
 
 
 class RefreshRequest(CamelModel):
@@ -61,6 +63,8 @@ class UserResponse(CamelModel):
     username: str
     currency: str | None = None
     overview_layout: list[OverviewSection] | None = None
+    # Null = the default (8 s).
+    screensaver_interval_seconds: int | None = None
 
 
 class SetupStatusResponse(CamelModel):

@@ -130,13 +130,19 @@ REUSE_GRACE_SECONDS = 30
 
 
 def set_preferences(
-    db: Session, user: User, currency: str | None = None, overview_layout: list[dict] | None = None
+    db: Session,
+    user: User,
+    currency: str | None = None,
+    overview_layout: list[dict] | None = None,
+    screensaver_interval_seconds: int | None = None,
 ) -> User:
     """Changes only what's given (None leaves a preference as it is)."""
     if currency is not None:
         user.currency = currency
     if overview_layout is not None:
         user.overview_layout = overview_layout
+    if screensaver_interval_seconds is not None:
+        user.screensaver_interval_seconds = screensaver_interval_seconds
     db.commit()
     db.refresh(user)
     return user

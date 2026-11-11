@@ -1,6 +1,13 @@
 import { useMemo } from "react";
 import type { MatchAllFilters } from "../api/games";
-import type { GameCategory, GameSortOption, GameSource, MediaFormat, PlayStatus } from "../api/types";
+import type {
+  GameCategory,
+  GameSortOption,
+  GameSource,
+  MediaFormat,
+  PlayStatus,
+  ScreensaverFilter,
+} from "../api/types";
 import type { OwnershipStatus } from "../components/GameFilterDialog";
 import { writeSessionValue } from "../utils/sessionViewState";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
@@ -21,6 +28,8 @@ export interface GameListStateOptions {
   steelbook?: boolean;
   // Games only: IGDB vs custom.
   sources?: boolean;
+  // Games only, and only while the Screensaver lab is on: shown in it or hidden from it.
+  screensaver?: boolean;
 }
 
 // Every filter a game list remembers, at its cleared value (the sort is left as it is).
@@ -48,6 +57,7 @@ const CLEARED_FILTERS = {
   steelbookOnly: false,
   sources: [] as GameSource[],
   sourceExclude: false,
+  screensaverFilter: null as ScreensaverFilter | null,
 };
 
 export type GameListPreset = Partial<typeof CLEARED_FILTERS>;
@@ -64,7 +74,10 @@ export function presetGameListFilters(prefix: string, preset: GameListPreset): v
 // The search, filters and sort a game list remembers for the browser session, under its own
 // key prefix ("games", "collection.zelda", "missingAddons", ...) so each page keeps its own.
 // Shared by the Games page, the Series/Collection/Platform pages and Missing Add-ons.
-export function useGameListState(prefix: string, { gameTypes = true, steelbook = true, sources = false }: GameListStateOptions = {}) {
+export function useGameListState(
+  prefix: string,
+  { gameTypes = true, steelbook = true, sources = false, screensaver = false }: GameListStateOptions = {}
+) {
   const key = (name: string) => `${prefix}.${name}`;
   const [searchKeyword, setSearchKeyword] = useSessionState(key("searchKeyword"), "");
   const [ownershipStatuses, setOwnershipStatuses] = useSessionState<OwnershipStatus[]>(key("ownershipStatuses"), []);
@@ -89,11 +102,18 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
   const [steelbookValue, setSteelbookOnly] = useSessionState(key("steelbookOnly"), false);
   const [sourceValues, setSources] = useSessionState<GameSource[]>(key("sources"), []);
   const [sourceExclude, setSourceExclude] = useSessionState(key("sourceExclude"), false);
+  const [screensaverValue, setScreensaverFilter] = useSessionState<ScreensaverFilter | null>(
+    key("screensaverFilter"),
+    null
+  );
   const [sort, setSort] = useSessionState<GameSortOption>(key("sort"), "name_asc");
   // A page without a field ignores whatever was once remembered for it.
   const gameTypesList = useMemo(() => (gameTypes ? gameTypeValues : []), [gameTypes, gameTypeValues]);
   const steelbookOnly = steelbook ? steelbookValue : false;
   const sourcesList = useMemo(() => (sources ? sourceValues : []), [sources, sourceValues]);
+  // Also when the Screensaver lab has since been turned off: a remembered choice must not keep
+  // filtering a list that no longer shows the field.
+  const screensaverFilter = screensaver ? screensaverValue : null;
 
   const trimmedKeyword = searchKeyword.trim();
   const debouncedKeyword = useDebouncedValue(trimmedKeyword, 500);
@@ -141,6 +161,7 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
       matchAll,
       ...(steelbook ? { steelbookOnly } : {}),
       ...(sources ? { sources: sourcesList.length > 0 ? sourcesList : undefined, sourceExclude } : {}),
+      ...(screensaverFilter ? { screensaver: screensaverFilter } : {}),
       sort,
     }),
     [
@@ -169,6 +190,7 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
       sources,
       sourcesList,
       sourceExclude,
+      screensaverFilter,
       sort,
     ]
   );
@@ -215,6 +237,7 @@ export function useGameListState(prefix: string, { gameTypes = true, steelbook =
     onStorefrontExcludeChange: setStorefrontExclude,
     ...(steelbook ? { steelbookOnly, onSteelbookOnlyChange: setSteelbookOnly } : {}),
     ...(sources ? { sources: sourcesList, onSourcesChange: setSources, sourceExclude, onSourceExcludeChange: setSourceExclude } : {}),
+    ...(screensaver ? { screensaverFilter, onScreensaverFilterChange: setScreensaverFilter } : {}),
     playStatuses,
     onPlayStatusesChange: setPlayStatuses,
     playStatusExclude,

@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameSummary } from "../../api/types";
 import { createVgtTheme } from "../../theme/createVgtTheme";
+import { writeSessionValue } from "../../utils/sessionViewState";
 import GameList from "../GameList";
 
 // No usable localStorage in this test environment; the list keeps its view and card size there.
@@ -74,6 +75,14 @@ vi.mock("../../hooks/useStorefronts", () => ({ useStorefronts: () => ({ data: []
 vi.mock("../../hooks/useLibrary", () => ({
   useLibraryItems: () => ({ data: [] }),
 }));
+let labOn = false;
+vi.mock("../../hooks/useLabs", () => ({ useEnabledLabs: () => new Set(labOn ? ["screensaver"] : []) }));
+const bulkMutate = vi.fn();
+vi.mock("../../hooks/useScreensaver", () => ({
+  useSetScreensaverExcludedBulk: () => ({ mutate: bulkMutate, isPending: false }),
+}));
+const showUndoToast = vi.fn();
+vi.mock("../UndoToast", () => ({ showUndoToast: (...args: unknown[]) => showUndoToast(...args) }));
 // ManageTagsDialog is always mounted; its hooks only need to exist.
 vi.mock("../ManageTagsDialog", () => ({ default: () => null }));
 vi.mock("../PlayGameDialog", () => ({
@@ -101,6 +110,9 @@ describe("Games list", () => {
     vi.stubGlobal("localStorage", memoryStorage());
     vi.stubGlobal("ResizeObserver", ResizeObserverStub);
     useGamesMock.mockClear();
+    labOn = false;
+    bulkMutate.mockReset();
+    showUndoToast.mockReset();
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -191,5 +203,96 @@ describe("Games list", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     expect(router.state.location.pathname).toBe("/game/my-homebrew-uuid-2/edit");
+  });
+});
+
+describe("Games list — Screensaver lab", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memoryStorage());
+    vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+    useGamesMock.mockClear();
+    useGamesMock.mockReturnValue({
+      data: [GAMES[0], { ...GAMES[1], screensaverExcluded: true }, GAMES[2]],
+      isLoading: false,
+      isFetching: false,
+    });
+    labOn = true;
+    bulkMutate.mockReset();
+    showUndoToast.mockReset();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    useGamesMock.mockReturnValue({ data: GAMES, isLoading: false, isFetching: false });
+  });
+
+  it("has no Screensaver button while the lab is off", async () => {
+    labOn = false;
+    const { user } = renderList();
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    expect(screen.queryByRole("button", { name: "Screensaver" })).not.toBeInTheDocument();
+  });
+
+  it("hides the selected games, counting only those it changes, with an exact Undo", async () => {
+    const { user } = renderList();
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    const toolbar = screen.getByRole("toolbar");
+    expect(within(toolbar).getByRole("button", { name: "Screensaver" })).toBeDisabled();
+
+    await user.click(screen.getByRole("checkbox", { name: /Hollow Knight/ }));
+    await user.click(screen.getByRole("checkbox", { name: /My Homebrew/ }));
+    await user.click(within(toolbar).getByRole("button", { name: "Screensaver" }));
+
+    expect(screen.getByRole("menuitem", { name: "Hide from screensaver (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Show in screensaver (1)" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Hide from screensaver (1)" }));
+
+    expect(bulkMutate).toHaveBeenCalledWith({ gameIds: [1], excluded: true }, expect.anything());
+    const [, callbacks] = bulkMutate.mock.calls[0] as [unknown, { onSuccess: () => void }];
+    callbacks.onSuccess();
+    expect(showUndoToast).toHaveBeenCalledWith("1 game hidden from the screensaver", expect.any(Function), 8000);
+
+    const undo = showUndoToast.mock.calls[0][1] as () => void;
+    undo();
+    expect(bulkMutate).toHaveBeenLastCalledWith({ gameIds: [1], excluded: false }, expect.anything());
+    // Still selecting, for another change.
+    expect(within(toolbar).getByText("2 selected")).toBeInTheDocument();
+  });
+
+  it("drops selected games that leave the list from the selection", async () => {
+    const { user } = renderList();
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    await user.click(screen.getByRole("checkbox", { name: /Hollow Knight/ }));
+    await user.click(screen.getByRole("checkbox", { name: /My Homebrew/ }));
+    expect(within(screen.getByRole("toolbar")).getByText("2 selected")).toBeInTheDocument();
+
+    // Hollow Knight no longer matches (e.g. the Screensaver filter after hiding it).
+    useGamesMock.mockReturnValue({ data: [GAMES[1], GAMES[2]], isLoading: false, isFetching: false });
+    // Picking another game re-renders the list with the new results.
+    await user.click(screen.getByRole("checkbox", { name: /Super Mario Bros/ }));
+    expect(await within(screen.getByRole("toolbar")).findByText("2 selected")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /Hollow Knight/ })).not.toBeInTheDocument();
+  });
+
+  it("disables a choice that would change nothing", async () => {
+    const { user } = renderList();
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    await user.click(screen.getByRole("checkbox", { name: /Hollow Knight/ }));
+    await user.click(within(screen.getByRole("toolbar")).getByRole("button", { name: "Screensaver" }));
+    expect(screen.getByRole("menuitem", { name: "Show in screensaver (0)" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("sends a remembered Screensaver filter only while the lab is on", () => {
+    writeSessionValue("games.screensaverFilter", "hidden");
+    renderList();
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.objectContaining({ screensaver: "hidden" }));
+    expect(screen.getByText("Screensaver: Hidden")).toBeInTheDocument();
+  });
+
+  it("ignores a remembered Screensaver filter once the lab is off", () => {
+    writeSessionValue("games.screensaverFilter", "hidden");
+    labOn = false;
+    renderList();
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.not.objectContaining({ screensaver: "hidden" }));
+    expect(screen.queryByText("Screensaver: Hidden")).not.toBeInTheDocument();
   });
 });

@@ -45,7 +45,13 @@ def test_me_returns_current_user_with_valid_access_token(client, test_user):
     response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {access_token}"})
 
     assert response.status_code == 200
-    assert response.json() == {"id": test_user.id, "username": "admin", "currency": None, "overviewLayout": None}
+    assert response.json() == {
+        "id": test_user.id,
+        "username": "admin",
+        "currency": None,
+        "overviewLayout": None,
+        "screensaverIntervalSeconds": None,
+    }
 
 
 def test_me_rejects_garbage_token(client):

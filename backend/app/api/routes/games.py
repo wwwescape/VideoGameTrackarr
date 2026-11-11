@@ -19,6 +19,14 @@ from app.schemas.game import (
     game_summary_from_orm,
 )
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
+from app.schemas.screensaver import (
+    ScreensaverBulkRequest,
+    ScreensaverBulkResponse,
+    ScreensaverExcludedRequest,
+    ScreensaverExcludedResponse,
+    ScreensaverResponse,
+    screensaver_response,
+)
 from app.schemas.shelf import GameShelfResponse, game_shelf_response
 from app.services import (
     bulk_import_job,
@@ -28,10 +36,11 @@ from app.services import (
     insight_service,
     manual_game_service,
     progress_service,
+    screensaver_service,
     tag_service,
 )
 from app.services.igdb_client import IGDBClient
-from app.services.labs import LAB_GAME_SHELF, require_lab
+from app.services.labs import LAB_GAME_SHELF, LAB_SCREENSAVER, require_lab
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(get_current_user)])
 
@@ -91,6 +100,34 @@ def get_game_shelf(params: GameFilterParams = Depends(), db: Session = Depends(g
     """The Game Shelf: one case per (game x platform) you own a physical copy on, with the same
     filters and search as GET /api/games (see game_shelf_service for how they apply)."""
     return game_shelf_response(game_shelf_service.build_shelf(db, **vars(params)))
+
+
+# The Screensaver lab's routes, all 404 while it's off. GET and the bulk POST are before the
+# /{identifier} wildcard below for the same reason as /shelf.
+_screensaver_lab = [Depends(require_lab(LAB_SCREENSAVER))]
+
+
+@router.get("/screensaver", response_model=ScreensaverResponse, dependencies=_screensaver_lab)
+def get_screensaver(db: Session = Depends(get_db)) -> ScreensaverResponse:
+    """A random sample of the covers the screensaver shows (see screensaver_service), fetched
+    only when it opens."""
+    return screensaver_response(screensaver_service.sample(db))
+
+
+@router.post("/screensaver/bulk", response_model=ScreensaverBulkResponse, dependencies=_screensaver_lab)
+def set_screensaver_excluded_bulk(
+    body: ScreensaverBulkRequest, db: Session = Depends(get_db)
+) -> ScreensaverBulkResponse:
+    updated = screensaver_service.set_excluded_bulk(db, body.game_ids, body.excluded)
+    return ScreensaverBulkResponse(updated=updated)
+
+
+@router.put("/{game_id}/screensaver", response_model=ScreensaverExcludedResponse, dependencies=_screensaver_lab)
+def set_screensaver_excluded(
+    game_id: int, body: ScreensaverExcludedRequest, db: Session = Depends(get_db)
+) -> ScreensaverExcludedResponse:
+    excluded = screensaver_service.set_excluded(db, game_id, body.excluded)
+    return ScreensaverExcludedResponse(id=game_id, excluded=excluded)
 
 
 def _to_bulk_import_response(state: bulk_import_job.BulkImportJobState) -> BulkImportStatusResponse:

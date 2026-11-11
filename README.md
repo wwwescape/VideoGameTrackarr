@@ -39,13 +39,18 @@
   colored tags (with a Tag Manager and bulk tagging).
 - **Views, filters & sort** — Covers, Table, or Overview views with an adjustable card size;
   filter by platform, format, storefront, tag, ownership, play status, game type, source,
-  steelbook, collection, or series (each with an Exclude option), and sort by name or release
-  date. Pages remember your search, filters, and sort.
+  steelbook, collection, or series (each with an Exclude option), or, with the Screensaver lab
+  on, whether a game is shown in the screensaver; sort by name or release date. Pages remember
+  your search, filters, and sort.
 - **Game Shelf** (Labs) — your physical games as cases on a shelf, one per platform you own
   each on, drawn at their real relative sizes in each platform's spine colours and logo, with
   the usual search, filters, and sort, plus a scale slider. Cases come from a curated list of
   standard retail cases (cartridge-only systems have none); turn a platform's cases on or
   off in **Settings → Game Cases**, where each preview opens large.
+- **Screensaver** (Labs) — a floating button that shows your game covers full screen, one
+  after another, with the VideoGameTrackarr badge in the corner; swipe to browse, tap a cover
+  to open the game. Set the time per cover in **Settings → Screensaver**, and hide a game from
+  its page, or many at once from the Games list. Handy on a wall-mounted tablet.
 - **Labs** — opt-in features that are still taking shape, off by default and switched on in
   **Settings → Labs**.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega
