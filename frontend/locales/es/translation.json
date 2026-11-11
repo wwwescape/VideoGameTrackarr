@@ -477,6 +477,10 @@
       "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} juego físico",
       "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} juegos físicos",
       "showOnShelf": "Mostrar {{platform}} en la estantería",
+      "openPreview": "Ver la caja de {{platform}} en grande",
+      "previewAlt": "Caja de {{platform}}, vista desde el lomo",
+      "caseSize": "{{label}} · {{height}} × {{spine}} mm",
+      "sampleTitle": "Título del juego",
       "loadFailed": "No se pudieron cargar las cajas de juegos.",
       "saveFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
     },

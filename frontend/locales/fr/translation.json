@@ -477,6 +477,10 @@
       "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} jeu physique",
       "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} jeux physiques",
       "showOnShelf": "Afficher {{platform}} sur l'étagère",
+      "openPreview": "Voir le boîtier {{platform}} en grand",
+      "previewAlt": "Boîtier {{platform}}, vu de sa tranche",
+      "caseSize": "{{label}} · {{height}} × {{spine}} mm",
+      "sampleTitle": "Titre du jeu",
       "loadFailed": "Impossible de charger les boîtiers de jeux.",
       "saveFailed": "Impossible d'enregistrer ce changement. Réessayez."
     },

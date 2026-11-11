@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import Paper from "@mui/material/Paper";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
@@ -9,6 +11,7 @@ import type { GameCase } from "../api/types";
 import { useGameCases, useSetGameCaseShown } from "../hooks/useGameCases";
 import { caseSizeToPixels, platformLogoSrc } from "../utils/caseSpine";
 import CaseSpine from "./CaseSpine";
+import CaseSpineLightbox from "./CaseSpineLightbox";
 import { withLab } from "./LabGate";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -19,9 +22,12 @@ const PREVIEW_SCALE = 0.15;
 const CaseRow = ({
   gameCase,
   onToggle,
+  onOpen,
 }: {
   gameCase: GameCase;
   onToggle: (shown: boolean) => void;
+  // Shows the preview large, in the lightbox.
+  onOpen: () => void;
 }) => {
   const { t } = useTranslation();
   const mode = useTheme().palette.mode;
@@ -53,13 +59,26 @@ const CaseRow = ({
       })}
     >
       <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2 }}>
-        <Box sx={{ opacity: gameCase.shown ? 1 : 0.35, display: "flex", alignItems: "flex-end" }}>
+        <ButtonBase
+          onClick={onOpen}
+          aria-label={t("settings.gameCases.openPreview", { platform: gameCase.platformName })}
+          sx={{
+            opacity: gameCase.shown ? 1 : 0.35,
+            display: "flex",
+            alignItems: "flex-end",
+            borderRadius: 0.5,
+            cursor: "zoom-in",
+            transition: "transform 150ms ease",
+            "&:hover": { transform: "scale(1.06)" },
+            "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: 3 },
+          }}
+        >
           <CaseSpine
             {...size}
             look={gameCase}
             fallbackLabel={gameCase.abbreviation ?? gameCase.platformName}
           />
-        </Box>
+        </ButtonBase>
         <Switch
           checked={gameCase.shown}
           onChange={(event) => onToggle(event.target.checked)}
@@ -83,6 +102,7 @@ const GameCasesPage = () => {
   const { t } = useTranslation();
   const { data: cases, isLoading, isError } = useGameCases();
   const setShown = useSetGameCaseShown();
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <SettingsFrame description={t("settings.gameCases.description")}>
@@ -96,11 +116,12 @@ const GameCasesPage = () => {
             title={t("settings.gameCases.heading")}
             lead={t("settings.gameCases.lead", { count: cases?.length ?? 0 })}
           >
-            {(cases ?? []).map((gameCase) => (
+            {(cases ?? []).map((gameCase, index) => (
               <CaseRow
                 key={gameCase.id}
                 gameCase={gameCase}
                 onToggle={(shown) => setShown.mutate({ id: gameCase.id, shown })}
+                onOpen={() => setOpenIndex(index)}
               />
             ))}
           </SettingsGroup>
@@ -110,6 +131,7 @@ const GameCasesPage = () => {
             {t("settings.gameCases.saveFailed")}
           </Typography>
         ) : null}
+        <CaseSpineLightbox cases={cases ?? []} index={openIndex} onClose={() => setOpenIndex(null)} />
       </SettingsColumn>
     </SettingsFrame>
   );

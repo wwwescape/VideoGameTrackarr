@@ -477,6 +477,10 @@
       "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} physical game",
       "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} physical games",
       "showOnShelf": "Show {{platform}} on the shelf",
+      "openPreview": "View the {{platform}} case larger",
+      "previewAlt": "{{platform}} case, seen from its spine",
+      "caseSize": "{{label}} · {{height}} × {{spine}} mm",
+      "sampleTitle": "Game Title",
       "loadFailed": "Couldn't load the game cases.",
       "saveFailed": "Couldn't save that change. Please try again."
     },
