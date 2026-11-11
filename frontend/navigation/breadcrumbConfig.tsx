@@ -90,6 +90,11 @@ const EventCrumbLabel = ({ identifier }: { identifier: string | undefined }) => 
 // from ancestors) since the route tree here is flat — there's no /games/:id nesting to walk.
 export const gamesCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.games") }];
 
+export const gameShelfCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.games"), to: "/games" },
+  { label: t("nav.gameShelf") },
+];
+
 export const addGameCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.games"), to: "/games" },
   { label: t("nav.addGame") },
@@ -273,6 +278,16 @@ export const emulationCrumbs: CrumbsFn = (_params, t) => [
 export const igdbImportCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.igdbImport") },
+];
+
+export const labsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.labs") },
+];
+
+export const gameCasesCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.gameCases") },
 ];
 
 export const steamSyncCrumbs: CrumbsFn = (_params, t) => [

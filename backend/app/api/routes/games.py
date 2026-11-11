@@ -19,16 +19,19 @@ from app.schemas.game import (
     game_summary_from_orm,
 )
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
+from app.schemas.shelf import GameShelfResponse, game_shelf_response
 from app.services import (
     bulk_import_job,
     game_card_service,
     game_service,
+    game_shelf_service,
     insight_service,
     manual_game_service,
     progress_service,
     tag_service,
 )
 from app.services.igdb_client import IGDBClient
+from app.services.labs import LAB_GAME_SHELF, require_lab
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(get_current_user)])
 
@@ -79,6 +82,15 @@ def list_games(
     games = game_service.sort_by_labels(games, params.sort, on_sale_game_ids)
     extras = game_card_service.get_card_extras(db, [game.game.id for game in games])
     return [game_summary_from_orm(game, on_sale_game_ids, extras[game.game.id]) for game in games]
+
+
+# Before the /{identifier} wildcard below, or "shelf" would be read as a game identifier.
+# Only there while the Game Shelf lab is on.
+@router.get("/shelf", response_model=GameShelfResponse, dependencies=[Depends(require_lab(LAB_GAME_SHELF))])
+def get_game_shelf(params: GameFilterParams = Depends(), db: Session = Depends(get_db)) -> GameShelfResponse:
+    """The Game Shelf: one case per (game x platform) you own a physical copy on, with the same
+    filters and search as GET /api/games (see game_shelf_service for how they apply)."""
+    return game_shelf_response(game_shelf_service.build_shelf(db, **vars(params)))
 
 
 def _to_bulk_import_response(state: bulk_import_job.BulkImportJobState) -> BulkImportStatusResponse:

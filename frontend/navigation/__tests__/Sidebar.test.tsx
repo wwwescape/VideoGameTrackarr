@@ -3,6 +3,12 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import Sidebar from "../Sidebar";
 
+// Lab features stay off here; Settings → Labs and the Game Shelf have their own tests.
+vi.mock("../../hooks/useLabs", () => ({
+  useLabs: () => ({ data: [], isError: false }),
+  useEnabledLabs: () => new Set(),
+}));
+
 vi.mock("../../hooks/useDashboard", () => ({
   useDashboardStats: () => ({ data: { totalTracked: 224 } }),
 }));

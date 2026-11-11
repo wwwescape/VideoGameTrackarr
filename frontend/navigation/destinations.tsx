@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { LabId } from "../api/labs";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import BlockIcon from "@mui/icons-material/Block";
@@ -13,7 +14,9 @@ import LabelIcon from "@mui/icons-material/LabelOutlined";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import MemoryIcon from "@mui/icons-material/Memory";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import ScienceIcon from "@mui/icons-material/ScienceOutlined";
 import SellIcon from "@mui/icons-material/SellOutlined";
+import ShelvesIcon from "@mui/icons-material/Shelves";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import DashboardIcon from "@mui/icons-material/SpaceDashboardOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
@@ -21,6 +24,7 @@ import ToysIcon from "@mui/icons-material/ToysOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
+import ViewWeekIcon from "@mui/icons-material/ViewWeekOutlined";
 import GamesIcon from "@mui/icons-material/Games";
 import IgdbIcon from "../icons/IgdbIcon";
 import LegoDimensionsIcon from "../icons/LegoDimensionsIcon";
@@ -34,6 +38,8 @@ export interface NavSubDestination {
   // Draws a divider above this item — for a sub-page that's grouped in the same section but
   // conceptually separate from the rest (Steam Sync and the sale lists under Settings).
   separatorBefore?: boolean;
+  // Only shown while this Settings → Labs feature is on.
+  lab?: LabId;
 }
 
 export interface NavDestination {
@@ -70,6 +76,12 @@ export const navGroups: NavGroup[] = [
         subItems: [
           { to: "/games/add", labelKey: "nav.addGame", icon: <AddCircleOutlineIcon /> },
           {
+            to: "/games/shelf",
+            labelKey: "nav.gameShelf",
+            icon: <ShelvesIcon />,
+            lab: "game_shelf",
+          },
+          {
             to: "/games/collections",
             labelKey: "nav.collections",
             icon: <CollectionsBookmarkIcon />,
@@ -83,7 +95,11 @@ export const navGroups: NavGroup[] = [
         labelKey: "nav.toysToLife",
         icon: <ToysIcon />,
         subItems: [
-          { to: "/toys-to-life/lego-dimensions", labelKey: "nav.legoDimensions", icon: <LegoDimensionsIcon /> },
+          {
+            to: "/toys-to-life/lego-dimensions",
+            labelKey: "nav.legoDimensions",
+            icon: <LegoDimensionsIcon />,
+          },
         ],
       },
       {
@@ -146,9 +162,16 @@ export const navGroups: NavGroup[] = [
 export function settingsPages(): NavSubDestination[] {
   return [
     { to: "/settings/tags", labelKey: "nav.tagManager", icon: <LabelIcon /> },
+    { to: "/settings/labs", labelKey: "nav.labs", icon: <ScienceIcon /> },
     { to: "/settings/jobs", labelKey: "nav.jobs", icon: <RefreshIcon /> },
     { to: "/settings/integrations", labelKey: "nav.integrations", icon: <CableIcon /> },
     { to: "/settings/emulation", labelKey: "nav.emulation", icon: <SportsEsportsIcon /> },
+    {
+      to: "/settings/game-cases",
+      labelKey: "nav.gameCases",
+      icon: <ViewWeekIcon />,
+      lab: "game_shelf",
+    },
     {
       to: "/settings/igdb-import",
       labelKey: "nav.igdbImport",
@@ -180,4 +203,12 @@ export function isInSection(pathname: string, destination: NavDestination): bool
   return [destination.to, ...(destination.alsoActiveFor ?? [])].some((prefix) =>
     isPathWithin(pathname, prefix)
   );
+}
+
+// A sub-page's lab is on (or it has none): the sidebar and the Settings tabs skip the rest.
+export function isSubDestinationEnabled(
+  sub: NavSubDestination,
+  enabledLabs: ReadonlySet<LabId>
+): boolean {
+  return !sub.lab || enabledLabs.has(sub.lab);
 }

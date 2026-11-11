@@ -171,7 +171,10 @@ def get_or_create_by_igdb(db: Session, igdb_id: int, name: str, slug: str | None
     # by IGDB's raw name on a later sync. The abbreviation is only ever filled when missing.
     bare_slug = slug.split("--")[0] if slug else None
     if bare_slug:
-        platform = db.scalars(select(Platform).where(Platform.slug == bare_slug)).first()
+        # Only a row not yet linked to IGDB: one already linked is a different IGDB platform
+        # (IGDB adds "--N" to reused slugs), and taking it over would flip its igdb_id back and
+        # forth as games on either platform resync.
+        platform = db.scalars(select(Platform).where(Platform.slug == bare_slug, Platform.igdb_id.is_(None))).first()
         if platform is not None:
             platform.igdb_id = igdb_id
             _fill_missing_abbreviation(platform, abbreviation)

@@ -4,6 +4,12 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import Settings from "../Settings";
 
+// Lab features stay off here; Settings → Labs and the Game Shelf have their own tests.
+vi.mock("../../hooks/useLabs", () => ({
+  useLabs: () => ({ data: [], isError: false }),
+  useEnabledLabs: () => new Set(),
+}));
+
 // No usable localStorage in this test environment, and the theme providers read it when they
 // load, so a small in-memory one goes in before anything imports them.
 vi.hoisted(() => {

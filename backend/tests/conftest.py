@@ -261,3 +261,17 @@ def seed_accessory(db_session, seed_manufacturer, seed_accessory_type):
     db_session.add(accessory)
     db_session.commit()
     return accessory
+
+
+@pytest.fixture()
+def game_shelf_lab(db_session):
+    """The Game Shelf lab turned on, with the curated game cases loaded from the CSV (the test
+    schema is built from the models, so the seed migration's rows aren't there)."""
+    from app.models.labs import LabFeature
+    from app.services import game_case_catalog
+    from app.services.labs import LAB_GAME_SHELF
+
+    db_session.add(LabFeature(id=LAB_GAME_SHELF, enabled=True))
+    for row in game_case_catalog.parse_csv():
+        game_case_catalog.upsert(db_session, row)
+    db_session.commit()

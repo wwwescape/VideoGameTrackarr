@@ -25,6 +25,7 @@ from app.models.catalog import (
     ReleaseDate,
     Screenshot,
 )
+from app.models.game_cases import GameCase
 from app.models.hardware import (
     Accessory,
     AccessoryCompatibility,
@@ -41,6 +42,7 @@ from app.models.hardware import (
 )
 from app.models.igdb_import import IgdbImportEntry
 from app.models.itad import ItadPriceCache
+from app.models.labs import LabFeature
 from app.models.library import (
     BiosFile,
     GameProgress,
@@ -67,6 +69,7 @@ from app.schemas.backup import (
     BackupBiosFile,
     BackupColor,
     BackupGame,
+    BackupGameCaseChoice,
     BackupGameProgress,
     BackupGameTag,
     BackupGameVideo,
@@ -74,6 +77,7 @@ from app.schemas.backup import (
     BackupHardwarePlatform,
     BackupHardwareType,
     BackupIncludedFiles,
+    BackupLabFeature,
     BackupLibraryItem,
     BackupManufacturer,
     BackupNote,
@@ -292,6 +296,11 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
             ),
         ],
         toys_to_life=_toys_to_life_rows(db),
+        lab_features=[BackupLabFeature(id=row.id, enabled=row.enabled) for row in db.scalars(select(LabFeature))],
+        game_cases=[
+            BackupGameCaseChoice(platform_slug=case.platform_slug, shown=case.shown)
+            for case in db.scalars(select(GameCase).order_by(GameCase.platform_slug))
+        ],
         settings=(
             BackupSettings(currency=user.currency, overview_layout=user.overview_layout, steam_id_64=user.steam_id_64)
             if user
@@ -340,6 +349,21 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
             for b in db.scalars(select(BiosFile))
         ]
     return payload
+
+
+def _restore_labs_and_game_cases(db: Session, payload: BackupPayload) -> None:
+    """Labs and each case's Show on shelf choice, from a version-6+ backup. A lab the backup
+    doesn't list is off; a case it doesn't list (added to the CSV later) is shown. Cases are
+    curated data, so a restore only sets `shown` on the ones this install has."""
+    if payload.version < 6:
+        return
+    db.execute(delete(LabFeature))
+    for lab in payload.lab_features:
+        db.add(LabFeature(id=lab.id, enabled=lab.enabled))
+    choices = {choice.platform_slug: choice.shown for choice in payload.game_cases}
+    for case in db.scalars(select(GameCase)):
+        case.shown = choices.get(case.platform_slug, True)
+    db.flush()
 
 
 def _toys_to_life_rows(db: Session) -> list[BackupToysToLifeItem]:
@@ -718,6 +742,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         db.add(GameTag(game_id=gt.game_id, tag_id=gt.tag_id))
     db.flush()
     _restore_toys_to_life(db, payload.toys_to_life)
+    _restore_labs_and_game_cases(db, payload)
 
     for m in payload.manufacturers:
         db.add(Manufacturer(id=m.id, name=m.name))

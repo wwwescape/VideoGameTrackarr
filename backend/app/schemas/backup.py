@@ -9,7 +9,7 @@ from app.schemas.base import CamelModel
 # kinds of files a .zip carries); 4 added a custom game's screenshots, artwork and videos;
 # 5 added Toys-to-Life ownership, ratings, notes and tags.
 # Older files still restore — the new parts default to empty.
-BACKUP_FORMAT_VERSION = 5
+BACKUP_FORMAT_VERSION = 6
 
 
 class _BackupRow(BaseModel):
@@ -282,6 +282,19 @@ class BackupSettings(_BackupRow):
     steam_id_64: str | None = None
 
 
+class BackupLabFeature(_BackupRow):
+    id: str
+    enabled: bool
+
+
+class BackupGameCaseChoice(_BackupRow):
+    """A game case's Show on shelf choice. The cases themselves are curated data (seeded from
+    docs/data/game_cases), so only your choice is backed up, keyed by platform slug."""
+
+    platform_slug: str
+    shown: bool
+
+
 class BackupIncludedFiles(_BackupRow):
     """Which kinds of files a .zip backup carries under files/ — a restore only replaces
     those kinds, leaving the rest as they are."""
@@ -316,6 +329,9 @@ class BackupPayload(_BackupRow):
     user_accessories: list[BackupUserAccessory] = []
     sales_ignored: list[BackupSalesIgnored] = []
     toys_to_life: list[BackupToysToLifeItem] = []
+    # Version 6+. Restoring an older backup leaves Labs and the shelf's cases as they are.
+    lab_features: list[BackupLabFeature] = []
+    game_cases: list[BackupGameCaseChoice] = []
     settings: BackupSettings | None = None
     # .zip backups only (the files themselves under files/<...>). Null in a version-2 .zip,
     # which always carried ROMs and BIOS files.

@@ -23,6 +23,8 @@
 ![](./screenshots/3.png)
 ![](./screenshots/4.png)
 ![](./screenshots/5.png)
+![](./screenshots/6.png)
+![](./screenshots/7.png)
 
 ## Features
 
@@ -39,6 +41,13 @@
   filter by platform, format, storefront, tag, ownership, play status, game type, source,
   steelbook, collection, or series (each with an Exclude option), and sort by name or release
   date. Pages remember your search, filters, and sort.
+- **Game Shelf** (Labs) — your physical games as cases on a shelf, one per platform you own
+  each on, drawn at their real relative sizes in each platform's spine colours and logo, with
+  the usual search, filters, and sort, plus a scale slider. Cases come from a curated list of
+  standard retail cases (cartridge-only systems have none); turn a platform's cases on or
+  off in **Settings → Game Cases**.
+- **Labs** — opt-in features that are still taking shape, off by default and switched on in
+  **Settings → Labs**.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega
   catalog, with product photos.
 - **What's New** — after an upgrade, the release notes of every version you haven't seen
@@ -60,7 +69,8 @@
   worth filling on the Overview; breakdowns by play status, platform, genre, and hardware on
   Insights; plus release calendars, duplicate detection, missing addons, orphaned accessories,
   and side-by-side game comparison.
-- **Share links** — unlisted, read-only links to your Games or Hardware collection.
+- **Share links** — unlisted, read-only links to your Games, Game Shelf, or Hardware
+  collection.
 - **Jobs** — scheduled catalog resyncs, Steam import, sale refreshes, and event syncs, with live
   progress.
 - **Backup & restore** — one JSON backup of your library, hardware, target prices and settings,

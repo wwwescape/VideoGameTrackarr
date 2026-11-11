@@ -7,7 +7,14 @@ import { useTranslation } from "react-i18next";
 import { useDashboardStats } from "../hooks/useDashboard";
 import { useHardwareStats } from "../hooks/useHardwareStats";
 import { useVersion } from "../hooks/useVersion";
-import { isInSection, isPathWithin, navGroups, type NavDestination } from "./destinations";
+import { useEnabledLabs } from "../hooks/useLabs";
+import {
+  isInSection,
+  isPathWithin,
+  isSubDestinationEnabled,
+  navGroups,
+  type NavDestination,
+} from "./destinations";
 
 export const SIDEBAR_WIDTH = 240;
 export const HEADER_HEIGHT = 56;
@@ -116,6 +123,7 @@ interface SidebarProps {
 const Sidebar = ({ onNavigate }: SidebarProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const enabledLabs = useEnabledLabs();
   const { data: dashboardStats } = useDashboardStats();
   const { data: hardwareStats } = useHardwareStats();
   const { data: version } = useVersion();
@@ -189,18 +197,20 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
                     onNavigate={onNavigate}
                   />
                   {inside
-                    ? item.subItems?.map((sub) => (
-                        <NavLink
-                          key={sub.to}
-                          to={sub.to}
-                          label={t(sub.labelKey)}
-                          icon={sub.icon}
-                          selected={isPathWithin(pathname, sub.to)}
-                          separatorBefore={sub.separatorBefore}
-                          sub
-                          onNavigate={onNavigate}
-                        />
-                      ))
+                    ? item.subItems
+                        ?.filter((sub) => isSubDestinationEnabled(sub, enabledLabs))
+                        .map((sub) => (
+                          <NavLink
+                            key={sub.to}
+                            to={sub.to}
+                            label={t(sub.labelKey)}
+                            icon={sub.icon}
+                            selected={isPathWithin(pathname, sub.to)}
+                            separatorBefore={sub.separatorBefore}
+                            sub
+                            onNavigate={onNavigate}
+                          />
+                        ))
                     : null}
                 </Box>
               );

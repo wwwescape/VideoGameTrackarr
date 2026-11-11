@@ -7,6 +7,12 @@ import type { SteamEntry, SteamWishlistEntry } from "../../api/integrations";
 import { createVgtTheme } from "../../theme/createVgtTheme";
 import SteamSyncPage from "../SteamSyncPage";
 
+// Lab features stay off here; Settings → Labs and the Game Shelf have their own tests.
+vi.mock("../../hooks/useLabs", () => ({
+  useLabs: () => ({ data: [], isError: false }),
+  useEnabledLabs: () => new Set(),
+}));
+
 vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), dismiss: vi.fn() },
 }));

@@ -2,7 +2,7 @@
 
 Companion to [developer-guide.md](developer-guide.md) and [diagrams.md](diagrams.md). Every
 table below is a SQLAlchemy model in `backend/app/models/` (`catalog.py`, `hardware.py`,
-`library.py`, `system.py`, `toys_to_life.py`) — schema changes always go through an Alembic migration in
+`library.py`, `system.py`, `toys_to_life.py`, `game_cases.py`, `labs.py`) — schema changes always go through an Alembic migration in
 `backend/alembic/versions/`, never a hand edit to the running DB.
 
 **Conventions used throughout:**
@@ -400,6 +400,49 @@ wishlisted with any wishlisted one.
 ### `toys_to_life_tags`, `toys_to_life_notes`
 
 Same shape as `accessory_tags`/`accessory_notes`, scoped to `item_id`.
+
+---
+
+## Game Shelf (`game_cases.py`) — the cases on the shelf
+
+### `game_cases`
+
+One row per platform with a standard retail case, seeded from
+`docs/data/game_cases/Game_Cases.csv` by a migration (and re-loadable with
+`python -m scripts.import_game_cases`). Cartridge-only systems have no row, so they never
+reach the Game Shelf. A platform matches by its IGDB slug, ignoring any `--N` suffix. Every
+column but `shown` comes from the CSV; a re-import updates them and keeps `shown`.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | int PK | |
+| platform_slug | string(64), unique | IGDB platform slug, e.g. `ps5` |
+| platform_name | string(255) | |
+| case_label | string(64) | e.g. `Blu-ray case` |
+| height_mm, spine_mm | float | The real case's height and spine width |
+| case_top_mm | float | How much of the case shows above the logo band (e.g. a PS3 case's clear top) |
+| case_color, logo_band_color, title_band_color, title_text_color | string(7) | `#rrggbb` |
+| logo_band_height_pct | float | The logo band's share of the spine height, above 0 and at most 50 |
+| logo | string(64), nullable | A file in `frontend/assets/game-cases/`; NULL shows the platform's short name |
+| logo_color | string(7), nullable | Draws the logo as a one-colour silhouette; NULL keeps the file's own colours |
+| logo_line_color | string(7), nullable | The thin line under the logo band (PS3 red, PS4 white, PS5 blue); NULL for none |
+| shown | bool | Settings → Game Cases' **Show on shelf** switch; on by default |
+| created_at, updated_at | timestamp | |
+
+---
+
+## Labs (`labs.py`) — opt-in features
+
+### `lab_features`
+
+Settings → Labs: one row per lab feature you've switched on or off. The labs themselves
+(`game_shelf` so far) are defined in code, in `app/services/labs.py`; no row means off.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | string(64) PK | The lab's id, e.g. `game_shelf` |
+| enabled | bool | |
+| created_at, updated_at | timestamp | |
 
 ---
 

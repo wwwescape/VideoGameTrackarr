@@ -49,6 +49,7 @@
     "events": "Events",
     "games": "Games",
     "addGame": "Add Game",
+    "gameShelf": "Game Shelf",
     "collections": "Collections",
     "series": "Series",
     "platforms": "Platforms",
@@ -68,10 +69,12 @@
     "onSale": "On Sale",
     "settings": "Settings",
     "tagManager": "Tag Manager",
+    "labs": "Labs",
     "jobs": "Jobs",
     "integrations": "Integrations",
     "about": "About",
     "emulation": "Emulation",
+    "gameCases": "Game Cases",
     "overview": "Overview",
     "settingsGeneral": "General",
     "primary": "Main navigation",
@@ -453,6 +456,29 @@
       },
       "runHeading": "Run",
       "runHelp": "Start it now, outside its schedule."
+    },
+    "labs": {
+      "description": "Features still taking shape. Each one is off until you turn it on here, for the whole app and your share link.",
+      "heading": "Lab features",
+      "loadFailed": "Couldn't load the lab features.",
+      "saveFailed": "Couldn't save that change. Please try again.",
+      "items": {
+        "game_shelf": {
+          "name": "Game Shelf",
+          "description": "Your physical games as cases on a shelf, drawn like the real cases. Adds Games → Game Shelf, Settings → Game Cases and a Shelf tab on your share link."
+        }
+      }
+    },
+    "gameCases": {
+      "description": "How each platform's games look on the Game Shelf: its standard retail case, at the real size and in its spine colours and logo. Turn a platform off to keep its games off the shelf. Cartridge-only systems have no standard case, so they're never shelved.",
+      "heading": "Platforms",
+      "lead_one": "{{count}} platform",
+      "lead_other": "{{count}} platforms",
+      "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} physical game",
+      "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} physical games",
+      "showOnShelf": "Show {{platform}} on the shelf",
+      "loadFailed": "Couldn't load the game cases.",
+      "saveFailed": "Couldn't save that change. Please try again."
     },
     "tagManager": {
       "description": "Permanently delete a tag. This removes it from every game, device, and accessory that has it — not just one item. To remove a tag from a single item instead, use the Tags field on that item's own page.",
@@ -995,6 +1021,14 @@
     "detail": {
       "aboutTitle": "About",
       "platformsReleaseDatesTitle": "Platforms & release dates"
+    },
+    "shelf": {
+      "scale": "Shelf scale",
+      "caseCount_one": "{{count}} case",
+      "caseCount_other": "{{count}} cases",
+      "empty": "No games on your shelf yet. Physical games you own show up here as cases, one for each platform you own them on.",
+      "noMatches": "No cases match.",
+      "caseLabel": "{{name}} on {{platform}}"
     }
   },
   "events": {
@@ -1704,6 +1738,7 @@
   "public": {
     "nav": {
       "games": "Games",
+      "shelf": "Shelf",
       "hardware": "Hardware",
       "label": "Shared collection"
     },
@@ -1712,6 +1747,11 @@
       "searchLabel": "Search games",
       "emptyState": "No games found.",
       "loadError": "Couldn't load this game. Please try again."
+    },
+    "shelf": {
+      "title": "Game Shelf",
+      "searchLabel": "Search the shelf",
+      "emptyState": "No games on this shelf."
     },
     "hardware": {
       "title": "Hardware",

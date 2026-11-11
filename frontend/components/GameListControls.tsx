@@ -42,15 +42,23 @@ export interface ListToggle {
 }
 
 interface GameListControlsOptions {
-  view: GameListView;
-  setView: (view: GameListView) => void;
-  cardSize: number;
-  setCardSize: (size: number) => void;
+  // Optional for a page with no View menu and its own Options (the Game Shelf).
+  view?: GameListView;
+  setView?: (view: GameListView) => void;
+  cardSize?: number;
+  setCardSize?: (size: number) => void;
   // Pages already scoped to one platform/collection/series hide that filter field.
   hidePlatformsField?: boolean;
   hideCollectionsField?: boolean;
   hideFranchisesField?: boolean;
+  // The Game Shelf, where everything is an owned copy.
+  hideOwnershipField?: boolean;
+  // The Game Shelf, where everything is physical: no Format (or Storefront) field.
+  hideFormatsField?: boolean;
   toggles?: ListToggle[];
+  // The Options menu's own controls, in place of the Card size slider (the Game Shelf's
+  // Shelf scale).
+  options?: ReactNode;
   // Off for a list that only has one way to show it (Missing Add-ons's grouped cards).
   showViewMenu?: boolean;
   // What the Sort menu offers, when not every field fits the page.
@@ -70,14 +78,17 @@ const VIEW_ICONS: Record<GameListView, ReactNode> = {
 export function useGameListControls(
   state: GameListState,
   {
-    view,
-    setView,
-    cardSize,
-    setCardSize,
+    view = "covers",
+    setView = () => undefined,
+    cardSize = 0,
+    setCardSize = () => undefined,
     hidePlatformsField,
     hideCollectionsField,
     hideFranchisesField,
+    hideOwnershipField,
+    hideFormatsField,
     toggles = [],
+    options,
     showViewMenu = true,
     sortFields,
   }: GameListControlsOptions
@@ -88,14 +99,14 @@ export function useGameListControls(
   const { fields } = state;
 
   const activeFilterCount = countActiveFilters({
-    ownershipStatuses: fields.ownershipStatuses,
+    ownershipStatuses: hideOwnershipField ? [] : fields.ownershipStatuses,
     platformIds: hidePlatformsField ? [] : fields.platformIds,
     tagIds: fields.tagIds,
     collectionIds: hideCollectionsField ? [] : fields.collectionIds,
     franchiseIds: hideFranchisesField ? [] : fields.franchiseIds,
     gameTypes: fields.gameTypes,
-    formats: fields.formats,
-    storefronts: fields.storefronts,
+    formats: hideFormatsField ? [] : fields.formats,
+    storefronts: hideFormatsField ? [] : fields.storefronts,
     playStatuses: fields.playStatuses,
     sources: fields.sources,
     steelbookOnly: fields.steelbookOnly,
@@ -125,7 +136,7 @@ export function useGameListControls(
       });
     });
   };
-  addChips("ownership", fields.ownershipStatuses, fields.ownershipExclude, (value) => t(OWNERSHIP_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onOwnershipStatusesChange, fields.onOwnershipExcludeChange);
+  if (!hideOwnershipField) addChips("ownership", fields.ownershipStatuses, fields.ownershipExclude, (value) => t(OWNERSHIP_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onOwnershipStatusesChange, fields.onOwnershipExcludeChange);
   addChips("playStatus", fields.playStatuses, fields.playStatusExclude, (value) => t(PLAY_STATUS_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onPlayStatusesChange, fields.onPlayStatusExcludeChange);
   if (!hidePlatformsField) {
     addChips("platform", fields.platformIds, fields.platformExclude, (id) => {
@@ -141,8 +152,8 @@ export function useGameListControls(
     addChips("series", fields.franchiseIds, fields.franchiseExclude, (id) => fields.franchiseOptions.find((f) => f.id === id)?.name, fields.onFranchiseIdsChange, fields.onFranchiseExcludeChange);
   }
   addChips("type", fields.gameTypes, fields.gameTypeExclude, (value) => GAME_TYPE_OPTIONS.find((o) => o.value === value)?.label, fields.onGameTypesChange, fields.onGameTypeExcludeChange);
-  addChips("format", fields.formats, fields.formatExclude, (value) => FORMAT_OPTIONS.find((o) => o.value === value)?.label, fields.onFormatsChange, fields.onFormatExcludeChange);
-  addChips("storefront", fields.storefronts, fields.storefrontExclude, (value) => value, fields.onStorefrontsChange, fields.onStorefrontExcludeChange);
+  if (!hideFormatsField) addChips("format", fields.formats, fields.formatExclude, (value) => FORMAT_OPTIONS.find((o) => o.value === value)?.label, fields.onFormatsChange, fields.onFormatExcludeChange);
+  if (!hideFormatsField) addChips("storefront", fields.storefronts, fields.storefrontExclude, (value) => value, fields.onStorefrontsChange, fields.onStorefrontExcludeChange);
   if (fields.sources && fields.onSourcesChange) {
     addChips("source", fields.sources, fields.sourceExclude, (value) => t(SOURCE_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onSourcesChange, fields.onSourceExcludeChange);
   }
@@ -222,7 +233,7 @@ export function useGameListControls(
   const dialogs = (
     <>
       <Menu anchorEl={menu?.anchor} open={menu?.name === "options"} onClose={() => setMenu(null)}>
-        <CardSizeSlider value={cardSize} onChange={setCardSize} disabled={view !== "covers"} />
+        {options ?? <CardSizeSlider value={cardSize} onChange={setCardSize} disabled={view !== "covers"} />}
         {toggles.length ? <Divider /> : null}
         {toggles.map((toggle) =>
           menuItem(toggle.key, toggle.label, toggle.checked, () => toggle.onChange(!toggle.checked), undefined, true)
@@ -250,6 +261,8 @@ export function useGameListControls(
         hidePlatformsField={hidePlatformsField}
         hideCollectionsField={hideCollectionsField}
         hideFranchisesField={hideFranchisesField}
+        hideOwnershipField={hideOwnershipField}
+        hideFormatsField={hideFormatsField}
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
       />

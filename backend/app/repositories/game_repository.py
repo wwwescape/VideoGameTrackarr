@@ -520,6 +520,58 @@ def list_top_level_games(
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 
 
+@dataclass(frozen=True)
+class ShelfGame:
+    id: int
+    uuid: str
+    slug: str | None
+    name: str
+
+
+@dataclass(frozen=True)
+class ShelfCopy:
+    game_id: int
+    platform_id: int
+    format: MediaFormat | None
+    digital_storefront: str | None
+    steelbook: bool
+
+
+def list_shelf_games(db: Session, **filters: Any) -> list[ShelfGame]:
+    """The Game Shelf's games: top-level browsable games with an owned copy, filtered and
+    sorted exactly like the Games list (same _apply_optional_game_filters), but only the
+    columns a spine needs."""
+    stmt = select(Game.id, Game.uuid, Game.slug, Game.name).where(
+        Game.parent_game_id.is_(None),
+        _is_browsable_game(Game.category),
+        _owned_exists(Game.id),
+    )
+    stmt = _apply_optional_game_filters(stmt, **filters)
+    return [ShelfGame(*row) for row in db.execute(stmt)]
+
+
+def list_owned_copies(db: Session, game_ids: list[int]) -> list[ShelfCopy]:
+    """Every owned, platform-assigned copy of these games, in id order (oldest copy first)."""
+    if not game_ids:
+        return []
+    stmt = (
+        select(
+            LibraryItem.game_id,
+            LibraryItem.platform_id,
+            LibraryItem.format,
+            LibraryItem.digital_storefront,
+            LibraryItem.steelbook,
+        )
+        .where(
+            LibraryItem.game_id.in_(game_ids),
+            LibraryItem.status == LibraryStatus.OWNED,
+            LibraryItem.platform_id.is_not(None),
+        )
+        .order_by(LibraryItem.id)
+    )
+    return [ShelfCopy(*row) for row in db.execute(stmt)]
+
+
 def _get_game_options() -> tuple[Any, ...]:
     # selectinload (separate SELECT...IN queries), not joinedload, for the one-to-many/
     # many-to-many richness relations — joining all of them in a single query would
