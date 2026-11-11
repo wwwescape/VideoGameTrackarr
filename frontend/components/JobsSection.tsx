@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -17,13 +21,14 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { ChipProps } from "@mui/material/Chip";
-import type { JobRunStatus, JobSummary, ResyncJobResult } from "../api/types";
+import type { JobRunLogStatus, JobRunStatus, JobSummary, ResyncJobResult } from "../api/types";
 import {
   useAcknowledgeJobStatus,
   useJobsList,
   useRunJob,
   useUpdateJobSchedule,
 } from "../hooks/useJobs";
+import JobLogsDialog from "./JobLogsDialog";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 
@@ -76,6 +81,17 @@ const STATUS_CHIP_COLOR: Record<JobRunStatus, ChipProps["color"]> = {
   failed: "error",
 };
 
+// A tick or cross for the newest logged run (an hourglass while it's still going), labelled
+// for screen readers since the colour alone carries the outcome.
+function PreviousRunIcon({ status }: { status: JobRunLogStatus }) {
+  const { t } = useTranslation();
+  const label = t(`settings.jobs.logs.status.${status}`);
+  const sx = { fontSize: 18, flexShrink: 0 };
+  if (status === "completed") return <CheckCircleIcon color="success" titleAccess={label} sx={sx} />;
+  if (status === "failed") return <CancelIcon color="error" titleAccess={label} sx={sx} />;
+  return <HourglassTopIcon color="info" titleAccess={label} sx={sx} />;
+}
+
 function JobCard({ job }: { job: JobSummary }) {
   const { t } = useTranslation();
   const runJob = useRunJob();
@@ -86,6 +102,8 @@ function JobCard({ job }: { job: JobSummary }) {
   const [scheduleEnabled, setScheduleEnabled] = useState(job.schedule.enabled);
   const [cronExpression, setCronExpression] = useState(job.schedule.cronExpression ?? "");
   const [showFailures, setShowFailures] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const jobName = displayKeys ? t(displayKeys.nameKey) : job.id;
 
   useEffect(() => {
     setScheduleEnabled(job.schedule.enabled);
@@ -129,14 +147,23 @@ function JobCard({ job }: { job: JobSummary }) {
 
   return (
     <SettingsGroup
-      title={displayKeys ? t(displayKeys.nameKey) : job.id}
+      title={jobName}
       lead={displayKeys ? t(displayKeys.descriptionKey) : undefined}
       aside={<Chip size="small" color={STATUS_CHIP_COLOR[job.run.status]} label={t(`settings.jobs.status.${job.run.status}`)} />}
     >
-      <SettingRow name={t("settings.jobs.runHeading")} description={t("settings.jobs.runHelp")}>
-        <Button variant="outlined" startIcon={<PlayArrowIcon />} disabled={isRunning} onClick={handleRun}>
-          {t("settings.jobs.runNow")}
-        </Button>
+      <SettingRow
+        name={t("settings.jobs.runHeading")}
+        description={t("settings.jobs.runHelp")}
+      >
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+          <Button variant="outlined" startIcon={<ReceiptLongIcon />} onClick={() => setLogsOpen(true)}>
+            {t("settings.jobs.logs.open")}
+          </Button>
+          <Button variant="outlined" startIcon={<PlayArrowIcon />} disabled={isRunning} onClick={handleRun}>
+            {t("settings.jobs.runNow")}
+          </Button>
+        </Stack>
+        <JobLogsDialog jobId={job.id} jobName={jobName} open={logsOpen} onClose={() => setLogsOpen(false)} />
       </SettingRow>
       {hasRunStatus ? (
         <SettingRow stacked>
@@ -221,9 +248,22 @@ function JobCard({ job }: { job: JobSummary }) {
       <SettingRow
         name={t("settings.jobs.scheduleHeading")}
         description={
-          job.schedule.nextRunAt
-            ? t("settings.jobs.nextRun", { date: new Date(job.schedule.nextRunAt).toLocaleString() })
-            : t("settings.jobs.neverScheduled")
+          <>
+            {job.schedule.nextRunAt
+              ? t("settings.jobs.nextRun", { date: new Date(job.schedule.nextRunAt).toLocaleString() })
+              : t("settings.jobs.neverScheduled")}
+            {job.lastRun && (
+              <Box component="span" data-testid="previous-run" sx={{ display: "block", mt: 0.5 }}>
+                <Box component="span" sx={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", columnGap: 0.5 }}>
+                  {t("settings.jobs.previousRun", { date: new Date(job.lastRun.startedAt).toLocaleString() })}
+                  <PreviousRunIcon status={job.lastRun.status} />
+                </Box>
+                <Box component="span" sx={{ display: "block", fontSize: "0.75rem", mt: 0.25 }}>
+                  {t(`settings.jobs.logs.trigger.${job.lastRun.trigger}`)}
+                </Box>
+              </Box>
+            )}
+          </>
         }
       >
         <Stack spacing={1.5} sx={{ alignItems: { xs: "flex-start", md: "flex-end" } }}>
@@ -236,7 +276,7 @@ function JobCard({ job }: { job: JobSummary }) {
             <TextField
               size="small"
               label={t("settings.jobs.cronExpressionLabel")}
-              helperText={t("settings.jobs.cronExpressionHelp")}
+              helperText={`${t("settings.jobs.cronExpressionHelp")} ${t("settings.jobs.timezoneHelp", { timezone: job.schedule.timezone })}`}
               value={cronExpression}
               disabled={!scheduleEnabled}
               onChange={(event) => setCronExpression(event.target.value)}

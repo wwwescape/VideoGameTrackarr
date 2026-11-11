@@ -77,7 +77,7 @@
 - **Share links** — unlisted, read-only links to your Games, Game Shelf, or Hardware
   collection.
 - **Jobs** — scheduled catalog resyncs, Steam import, sale refreshes, and event syncs, with live
-  progress.
+  progress, a log of each run, and catch-up of runs missed while the app was down.
 - **Backup & restore** — one JSON backup of your library, hardware, target prices and settings,
   or a `.zip` that also carries your pick of ROMs and saves, BIOS files and uploaded images,
   with an automatic safety snapshot before every restore.
@@ -175,7 +175,8 @@ Optional integrations — add a key to `.env`, then run `docker compose up -d` (
 Other options: `ROM_MAX_UPLOAD_MB` (default `2048`) caps ROM uploads — raise your reverse
 proxy's upload limit to match. Behind a reverse proxy, set `FORWARDED_ALLOW_IPS` to the proxy's
 address (or its Docker network, such as `172.16.0.0/12`) so login rate limits count each visitor
-rather than the proxy. `DATABASE_URL` (SQLite by default), `REDIS_URL`, and
+rather than the proxy. Set `TZ` (such as `Europe/Lisbon`) so job schedules run in your
+timezone; Docker containers otherwise use UTC. `DATABASE_URL` (SQLite by default), `REDIS_URL`, and
 `CORS_ORIGINS` are optional.
 
 ## Development

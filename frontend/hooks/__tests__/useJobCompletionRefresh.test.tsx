@@ -11,7 +11,8 @@ vi.mock("../../api/jobs", () => ({ listJobs }));
 const job = (status: JobSummary["run"]["status"], finishedAt: string | null): JobSummary => ({
   id: "resync_all",
   run: { status, startedAt: null, finishedAt, result: null, error: null, progress: null },
-  schedule: { enabled: false, cronExpression: null, nextRunAt: null },
+  schedule: { enabled: false, cronExpression: null, nextRunAt: null, timezone: "UTC" },
+  lastRun: null,
 });
 
 function setup(first: JobSummary[]) {

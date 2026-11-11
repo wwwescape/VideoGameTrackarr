@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from app.models.jobs import JobSchedule
+from app.models.jobs import JobRunLog, JobSchedule
 from app.schemas.base import CamelModel
 from app.services.job_registry import JobRunState
 
@@ -24,12 +24,35 @@ class JobScheduleResponse(CamelModel):
     enabled: bool
     cron_expression: str | None
     next_run_at: str | None
+    # The zone cron expressions are evaluated in (TZ env var, else the server's own zone).
+    timezone: str
+
+
+class JobRunLogSummaryResponse(CamelModel):
+    id: int
+    trigger: str
+    status: str
+    started_at: str
+    finished_at: str | None
+    result: dict[str, Any] | None
+    error: str | None
+
+
+class JobRunLogLine(CamelModel):
+    t: str
+    level: str
+    msg: str
+
+
+class JobRunLogResponse(JobRunLogSummaryResponse):
+    lines: list[JobRunLogLine]
 
 
 class JobSummaryResponse(CamelModel):
     id: str
     run: JobRunResponse
     schedule: JobScheduleResponse
+    last_run: JobRunLogSummaryResponse | None
 
 
 class JobScheduleUpdateRequest(CamelModel):
@@ -50,9 +73,35 @@ def job_run_from_state(state: JobRunState) -> JobRunResponse:
     )
 
 
-def job_schedule_from_orm(schedule: JobSchedule | None, next_run_at: datetime | None) -> JobScheduleResponse:
+def job_schedule_from_orm(
+    schedule: JobSchedule | None, next_run_at: datetime | None, timezone: str
+) -> JobScheduleResponse:
     return JobScheduleResponse(
         enabled=schedule.enabled if schedule else False,
         cron_expression=schedule.cron_expression if schedule else None,
         next_run_at=next_run_at.isoformat() if next_run_at else None,
+        timezone=timezone,
+    )
+
+
+def _log_fields(log: JobRunLog) -> dict[str, Any]:
+    return {
+        "id": log.id,
+        "trigger": log.trigger,
+        "status": log.status,
+        "started_at": log.started_at.isoformat(),
+        "finished_at": log.finished_at.isoformat() if log.finished_at else None,
+        "error": log.error,
+    }
+
+
+def job_run_log_summary(log: JobRunLog) -> JobRunLogSummaryResponse:
+    # The full result can carry a long failures list; the run list only needs the counts.
+    result = {key: value for key, value in (log.result or {}).items() if key != "failures"} or None
+    return JobRunLogSummaryResponse(**_log_fields(log), result=result)
+
+
+def job_run_log_detail(log: JobRunLog, lines: list[dict[str, str]]) -> JobRunLogResponse:
+    return JobRunLogResponse(
+        **_log_fields(log), result=log.result, lines=[JobRunLogLine(**line) for line in lines]
     )

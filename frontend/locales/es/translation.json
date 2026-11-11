@@ -456,7 +456,31 @@
         }
       },
       "runHeading": "Ejecutar",
-      "runHelp": "Iniciarlo ahora, fuera de su programación."
+      "runHelp": "Iniciarlo ahora, fuera de su programación.",
+      "previousRun": "Ejecución anterior: {{date}}",
+      "timezoneHelp": "Las horas están en {{timezone}}.",
+      "logs": {
+        "open": "Registros",
+        "title": "Registros de ejecución",
+        "empty": "Aún no hay ejecuciones registradas.",
+        "retention": "Se conservan las {{count}} ejecuciones más recientes.",
+        "noLines": "Esta ejecución no registró nada.",
+        "loadError": "No se pudieron cargar los registros.",
+        "clear": "Borrar registros",
+        "clearTitle": "¿Borrar registros?",
+        "clearDescription": "Elimina todas las ejecuciones registradas de {{name}}. Una ejecución en curso conserva su registro. No se puede deshacer.",
+        "clearError": "No se pudieron borrar los registros. Inténtalo de nuevo.",
+        "status": {
+          "running": "En curso",
+          "completed": "Completada",
+          "failed": "Fallida"
+        },
+        "trigger": {
+          "manual": "Manual",
+          "scheduled": "Programada",
+          "catch_up": "Recuperación"
+        }
+      }
     },
     "labs": {
       "description": "Funciones aún en desarrollo. Cada una está desactivada hasta que la actives aquí, para toda la app y tu enlace compartido.",
@@ -1868,6 +1892,13 @@
       "reset": "Restablecer",
       "saveError": "No se pudo guardar el diseño del Resumen. Inténtalo de nuevo.",
       "allHidden": "Todas las secciones están ocultas. Usa Personalizar para volver a mostrar alguna."
+    }
+  },
+  "uploads": {
+    "hint": {
+      "cover": "Recomendado: 540 × 720 px o más, vertical (3:4). Otras proporciones se recortan para encajar. Hasta 20 MB.",
+      "accessory": "Recomendado: 400 × 400 px o más, cuadrada, con fondo blanco. Otras proporciones se recortan para encajar. Hasta 20 MB.",
+      "media": "Recomendado: 1920 × 1080 px (16:9). Las imágenes más grandes se reducen, nunca se recortan. Hasta 20 MB."
     }
   }
 }

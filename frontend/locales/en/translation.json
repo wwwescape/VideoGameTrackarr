@@ -456,7 +456,31 @@
         }
       },
       "runHeading": "Run",
-      "runHelp": "Start it now, outside its schedule."
+      "runHelp": "Start it now, outside its schedule.",
+      "previousRun": "Previous run: {{date}}",
+      "timezoneHelp": "Times are in {{timezone}}.",
+      "logs": {
+        "open": "Logs",
+        "title": "Run logs",
+        "empty": "No runs logged yet.",
+        "retention": "The newest {{count}} runs are kept.",
+        "noLines": "This run logged nothing.",
+        "loadError": "Could not load the logs.",
+        "clear": "Clear logs",
+        "clearTitle": "Clear logs?",
+        "clearDescription": "Deletes every logged run of {{name}}. A run in progress keeps its log. This can't be undone.",
+        "clearError": "Could not clear the logs. Please try again.",
+        "status": {
+          "running": "Running",
+          "completed": "Completed",
+          "failed": "Failed"
+        },
+        "trigger": {
+          "manual": "Manual",
+          "scheduled": "Scheduled",
+          "catch_up": "Catch-up"
+        }
+      }
     },
     "labs": {
       "description": "Features still taking shape. Each one is off until you turn it on here, for the whole app and your share link.",
@@ -1868,6 +1892,13 @@
       "reset": "Reset to default",
       "saveError": "Couldn't save the Overview layout. Please try again.",
       "allHidden": "Every section is hidden. Use Customize to show some again."
+    }
+  },
+  "uploads": {
+    "hint": {
+      "cover": "Recommended: 540 × 720 px or larger, portrait (3:4). Other shapes are cropped to fit. Up to 20 MB.",
+      "accessory": "Recommended: 400 × 400 px or larger, square, on a white background. Other shapes are cropped to fit. Up to 20 MB.",
+      "media": "Recommended: 1920 × 1080 px (16:9). Larger images are scaled down, never cropped. Up to 20 MB."
     }
   }
 }

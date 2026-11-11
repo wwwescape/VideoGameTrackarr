@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { JobSummary } from "./types";
+import type { JobRunLog, JobRunLogSummary, JobSummary } from "./types";
 
 export async function listJobs(): Promise<JobSummary[]> {
   const response = await apiClient.get<JobSummary[]>("/api/jobs");
@@ -26,4 +26,18 @@ export async function updateJobSchedule(
 ): Promise<JobSummary> {
   const response = await apiClient.put<JobSummary>(`/api/jobs/${jobId}/schedule`, body);
   return response.data;
+}
+
+export async function listJobLogs(jobId: string): Promise<JobRunLogSummary[]> {
+  const response = await apiClient.get<JobRunLogSummary[]>(`/api/jobs/${jobId}/logs`);
+  return response.data;
+}
+
+export async function getJobLog(jobId: string, logId: number): Promise<JobRunLog> {
+  const response = await apiClient.get<JobRunLog>(`/api/jobs/${jobId}/logs/${logId}`);
+  return response.data;
+}
+
+export async function clearJobLogs(jobId: string): Promise<void> {
+  await apiClient.delete(`/api/jobs/${jobId}/logs`);
 }

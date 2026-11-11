@@ -1,4 +1,5 @@
 import threading
+import traceback
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -7,6 +8,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.services import job_run_log_service
 from app.services.exceptions import ConflictError, NotFoundError
 
 
@@ -81,7 +83,13 @@ def get_state(job_id: str) -> JobRunState:
         return _states[job_id]
 
 
-def trigger_run(job_id: str, session_factory: Callable[[], Session]) -> JobRunState:
+def trigger_run(
+    job_id: str,
+    session_factory: Callable[[], Session],
+    trigger: str = job_run_log_service.TRIGGER_MANUAL,
+) -> JobRunState:
+    """Starts a run on its own thread. `trigger` (manual/scheduled/catch_up) is recorded in
+    the run's log."""
     if job_id not in _definitions:
         raise NotFoundError(f"Job {job_id} not found")
 
@@ -96,7 +104,7 @@ def trigger_run(job_id: str, session_factory: Callable[[], Session]) -> JobRunSt
     # restore_job.start_restore: BackgroundTasks runs as part of the same ASGI call the
     # response belongs to, which would block the response from returning until the job
     # finishes.
-    thread = threading.Thread(target=_run, args=(job_id, session_factory), daemon=True)
+    thread = threading.Thread(target=_run, args=(job_id, session_factory, trigger), daemon=True)
     thread.start()
     return snapshot
 
@@ -111,30 +119,54 @@ def set_progress(job_id: str, current: int, total: int) -> None:
             _states[job_id] = replace(_states[job_id], progress=JobProgress(current=current, total=total))
 
 
-def _run(job_id: str, session_factory: Callable[[], Session]) -> None:
+def _run(
+    job_id: str,
+    session_factory: Callable[[], Session],
+    trigger: str = job_run_log_service.TRIGGER_MANUAL,
+) -> None:
     lock = _locks[job_id]
-    reporter = lambda current, total: set_progress(job_id, current, total)  # noqa: E731
+    started_at = _states[job_id].started_at or datetime.now(UTC)
+    collector = job_run_log_service.begin(job_id, trigger, started_at, session_factory)
+    last_quarter = -1
+
+    def reporter(current: int, total: int) -> None:
+        nonlocal last_quarter
+        set_progress(job_id, current, total)
+        last_quarter = job_run_log_service.progress_line(collector, current, total, last_quarter)
+
     try:
         result = _definitions[job_id].run(session_factory, reporter)
-        with lock:
-            _states[job_id] = replace(
-                _states[job_id],
-                status=JobRunStatus.COMPLETED,
-                result=result,
-                finished_at=datetime.now(UTC),
-                progress=None,
-            )
     except Exception as exc:  # noqa: BLE001 - any failure here must flip status to FAILED
         # rather than leaving the job stuck RUNNING forever with nothing observing this
         # thread.
+        finished_at = datetime.now(UTC)
+        collector.add("ERROR", traceback.format_exc().rstrip())
+        # Log saved before the state flips, so a client that sees FAILED also sees its log.
+        job_run_log_service.finish(
+            collector, JobRunStatus.FAILED.value, finished_at, started_at, None, str(exc), session_factory
+        )
         with lock:
             _states[job_id] = replace(
                 _states[job_id],
                 status=JobRunStatus.FAILED,
                 error=str(exc),
-                finished_at=datetime.now(UTC),
+                finished_at=finished_at,
                 progress=None,
             )
+        return
+
+    finished_at = datetime.now(UTC)
+    job_run_log_service.finish(
+        collector, JobRunStatus.COMPLETED.value, finished_at, started_at, result, None, session_factory
+    )
+    with lock:
+        _states[job_id] = replace(
+            _states[job_id],
+            status=JobRunStatus.COMPLETED,
+            result=result,
+            finished_at=finished_at,
+            progress=None,
+        )
 
 
 def acknowledge(job_id: str) -> None:

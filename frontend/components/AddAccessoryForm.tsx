@@ -31,7 +31,8 @@ import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AccessoryPredefinedFields, { type AccessoryPredefinedValues } from "./AccessoryPredefinedFields";
 import AutocompleteSelect from "./AutocompleteSelect";
-import FreeSoloLookupField from "./FreeSoloLookupField";
+import FreeSoloLookupField from "./FreeSoloLookupField";
+import ImageUploadHint from "./ImageUploadHint";
 
 type AddMode = "predefined" | "custom";
 
@@ -281,41 +282,44 @@ const AddAccessoryForm = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", height: "100%" }}>
-                <Button
-                  component="label"
-                  variant="outlined"
-                  startIcon={uploadAccessoryImage.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
-                  disabled={uploadAccessoryImage.isPending}
-                >
-                  {imageUrl
-                    ? t("hardware.accessoryForm.replaceImageButton")
-                    : t("hardware.accessoryForm.uploadImageButton")}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={(event) => void handleImageFileChange(event)}
-                  />
-                </Button>
-                {imageUrl ? (
-                  <>
-                    <Box
-                      component="img"
-                      src={resolveAssetUrl(imageUrl) ?? undefined}
-                      alt={t("hardware.accessoryForm.imagePreviewAlt")}
-                      sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
+              <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.75, height: "100%" }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    startIcon={uploadAccessoryImage.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />}
+                    disabled={uploadAccessoryImage.isPending}
+                  >
+                    {imageUrl
+                      ? t("hardware.accessoryForm.replaceImageButton")
+                      : t("hardware.accessoryForm.uploadImageButton")}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(event) => void handleImageFileChange(event)}
                     />
-                    <IconButton
-                      size="small"
-                      aria-label={t("hardware.accessoryForm.removeImageAriaLabel")}
-                      onClick={() => setImageUrl("")}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </>
-                ) : null}
-              </Stack>
+                  </Button>
+                  {imageUrl ? (
+                    <>
+                      <Box
+                        component="img"
+                        src={resolveAssetUrl(imageUrl) ?? undefined}
+                        alt={t("hardware.accessoryForm.imagePreviewAlt")}
+                        sx={{ height: 56, width: "auto", borderRadius: 1, border: "1px solid", borderColor: "divider" }}
+                      />
+                      <IconButton
+                        size="small"
+                        aria-label={t("hardware.accessoryForm.removeImageAriaLabel")}
+                        onClick={() => setImageUrl("")}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </>
+                  ) : null}
+                </Stack>
+                <ImageUploadHint kind="accessory" />
+              </Box>
             </Grid>
             <Grid size={12}>
               <TextField

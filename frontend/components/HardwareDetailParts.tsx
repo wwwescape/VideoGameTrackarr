@@ -45,7 +45,15 @@ export const HardwareHero = ({ name, imageUrl, owned, wishlisted, crumbs, sublin
           }}
         >
           {image ? (
-            <Box component="img" src={image} alt={name} sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1.25 }} />
+            // Absolutely filled and border-box, as HardwareCard does: in-flow, the padding made
+            // the 100% box overflow the well and the image's natural height stretched the grid
+            // row, so the photo sat off-centre and cropped instead of whole and centred.
+            <Box
+              component="img"
+              src={image}
+              alt={name}
+              sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", p: 1.25, boxSizing: "border-box" }}
+            />
           ) : (
             <Box sx={{ textAlign: "center", p: 1 }}>
               <ImageNotSupportedOutlinedIcon fontSize="large" />

@@ -456,7 +456,31 @@
         }
       },
       "runHeading": "Executar",
-      "runHelp": "Iniciar agora, fora do agendamento."
+      "runHelp": "Iniciar agora, fora do agendamento.",
+      "previousRun": "Execução anterior: {{date}}",
+      "timezoneHelp": "Os horários estão em {{timezone}}.",
+      "logs": {
+        "open": "Registos",
+        "title": "Registos de execução",
+        "empty": "Ainda não há execuções registadas.",
+        "retention": "São mantidas as {{count}} execuções mais recentes.",
+        "noLines": "Esta execução não registou nada.",
+        "loadError": "Não foi possível carregar os registos.",
+        "clear": "Limpar registos",
+        "clearTitle": "Limpar registos?",
+        "clearDescription": "Apaga todas as execuções registadas de {{name}}. Uma execução em curso mantém o seu registo. Não pode ser desfeito.",
+        "clearError": "Não foi possível limpar os registos. Tente novamente.",
+        "status": {
+          "running": "Em curso",
+          "completed": "Concluída",
+          "failed": "Falhou"
+        },
+        "trigger": {
+          "manual": "Manual",
+          "scheduled": "Agendada",
+          "catch_up": "Recuperação"
+        }
+      }
     },
     "labs": {
       "description": "Funcionalidades ainda em desenvolvimento. Cada uma fica desligada até a ligar aqui, para toda a aplicação e para a sua ligação partilhada.",
@@ -1868,6 +1892,13 @@
       "reset": "Repor predefinição",
       "saveError": "Não foi possível guardar a disposição da Visão geral. Tente novamente.",
       "allHidden": "Todas as secções estão ocultas. Use Personalizar para voltar a mostrar algumas."
+    }
+  },
+  "uploads": {
+    "hint": {
+      "cover": "Recomendado: 540 × 720 px ou mais, vertical (3:4). Outras proporções são recortadas para caber. Até 20 MB.",
+      "accessory": "Recomendado: 400 × 400 px ou mais, quadrada, com fundo branco. Outras proporções são recortadas para caber. Até 20 MB.",
+      "media": "Recomendado: 1920 × 1080 px (16:9). Imagens maiores são reduzidas, nunca recortadas. Até 20 MB."
     }
   }
 }

@@ -29,7 +29,8 @@ import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AddGameSuggestionsDialog from "./AddGameSuggestionsDialog";
 import AutocompleteSelect from "./AutocompleteSelect";
-import GameMediaFields, { EMPTY_GAME_MEDIA, type GameMediaValue } from "./GameMediaFields";
+import GameMediaFields, { EMPTY_GAME_MEDIA, type GameMediaValue } from "./GameMediaFields";
+import ImageUploadHint from "./ImageUploadHint";
 
 interface CategoryOption {
   value: GameCategory;
@@ -199,49 +200,52 @@ const ManualGameForm = ({ initialValues, steamAppId }: ManualGameFormProps) => {
           </LocalizationProvider>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", height: "100%" }}>
-            <Button
-              component="label"
-              variant="outlined"
-              startIcon={
-                uploadCover.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />
-              }
-              disabled={uploadCover.isPending}
-            >
-              {coverUrl
-                ? t("games.gameForm.replaceCoverButton")
-                : t("games.gameForm.uploadCoverButton")}
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(event) => void handleCoverFileChange(event)}
-              />
-            </Button>
-            {coverUrl ? (
-              <>
-                <Box
-                  component="img"
-                  src={resolveAssetUrl(coverUrl) ?? undefined}
-                  alt={t("games.gameForm.coverPreviewAlt")}
-                  sx={{
-                    height: 56,
-                    width: "auto",
-                    borderRadius: 1,
-                    border: "1px solid",
-                    borderColor: "divider",
-                  }}
+          <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.75, height: "100%" }}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={
+                  uploadCover.isPending ? <CircularProgress size={16} /> : <CloudUploadIcon />
+                }
+                disabled={uploadCover.isPending}
+              >
+                {coverUrl
+                  ? t("games.gameForm.replaceCoverButton")
+                  : t("games.gameForm.uploadCoverButton")}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(event) => void handleCoverFileChange(event)}
                 />
-                <IconButton
-                  size="small"
-                  aria-label={t("games.gameForm.removeCoverAriaLabel")}
-                  onClick={() => setCoverUrl("")}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </>
-            ) : null}
-          </Stack>
+              </Button>
+              {coverUrl ? (
+                <>
+                  <Box
+                    component="img"
+                    src={resolveAssetUrl(coverUrl) ?? undefined}
+                    alt={t("games.gameForm.coverPreviewAlt")}
+                    sx={{
+                      height: 56,
+                      width: "auto",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    aria-label={t("games.gameForm.removeCoverAriaLabel")}
+                    onClick={() => setCoverUrl("")}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </>
+              ) : null}
+            </Stack>
+            <ImageUploadHint kind="cover" />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <Autocomplete

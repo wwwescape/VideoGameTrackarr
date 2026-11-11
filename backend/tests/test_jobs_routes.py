@@ -27,7 +27,10 @@ def test_list_jobs_shows_all_four_registered_jobs_idle(auth_client):
     # run in the same pytest process.
     for job_id in ("resync_all", "resync_games", "resync_collections", "resync_series"):
         assert jobs[job_id]["run"]["status"] == "idle"
-        assert jobs[job_id]["schedule"] == {"enabled": False, "cronExpression": None, "nextRunAt": None}
+        schedule = jobs[job_id]["schedule"]
+        assert (schedule["enabled"], schedule["cronExpression"], schedule["nextRunAt"]) == (False, None, None)
+        assert schedule["timezone"]
+        assert jobs[job_id]["lastRun"] is None
 
 
 def test_run_job_transitions_to_completed(auth_client, monkeypatch):

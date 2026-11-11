@@ -11,6 +11,9 @@ tenacity>=8.5,<9.0
 redis>=5.0,<6.0
 slowapi>=0.1.9,<1.0
 APScheduler>=3.10,<4.0
+# Job schedules' timezone (TZ env var). tzdata supplies zone data that slim Docker images lack.
+tzlocal>=5.0
+tzdata>=2024.1
 python-multipart>=0.0.9,<1.0
 Pillow>=13.0,<14.0
 py7zr>=1.0,<2.0

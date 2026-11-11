@@ -456,7 +456,31 @@
         }
       },
       "runHeading": "Exécuter",
-      "runHelp": "Le lancer maintenant, en dehors de sa planification."
+      "runHelp": "Le lancer maintenant, en dehors de sa planification.",
+      "previousRun": "Exécution précédente : {{date}}",
+      "timezoneHelp": "Les heures sont en {{timezone}}.",
+      "logs": {
+        "open": "Journaux",
+        "title": "Journaux d'exécution",
+        "empty": "Aucune exécution enregistrée pour l'instant.",
+        "retention": "Les {{count}} exécutions les plus récentes sont conservées.",
+        "noLines": "Cette exécution n'a rien journalisé.",
+        "loadError": "Impossible de charger les journaux.",
+        "clear": "Effacer les journaux",
+        "clearTitle": "Effacer les journaux ?",
+        "clearDescription": "Supprime toutes les exécutions enregistrées de {{name}}. Une exécution en cours conserve son journal. Action irréversible.",
+        "clearError": "Impossible d'effacer les journaux. Veuillez réessayer.",
+        "status": {
+          "running": "En cours",
+          "completed": "Terminée",
+          "failed": "Échec"
+        },
+        "trigger": {
+          "manual": "Manuelle",
+          "scheduled": "Planifiée",
+          "catch_up": "Rattrapage"
+        }
+      }
     },
     "labs": {
       "description": "Des fonctionnalités encore en chantier. Chacune reste désactivée jusqu'à ce que vous l'activiez ici, pour toute l'application et votre lien de partage.",
@@ -1868,6 +1892,13 @@
       "reset": "Réinitialiser",
       "saveError": "Impossible d'enregistrer la disposition de l'aperçu. Veuillez réessayer.",
       "allHidden": "Toutes les sections sont masquées. Utilisez Personnaliser pour en réafficher."
+    }
+  },
+  "uploads": {
+    "hint": {
+      "cover": "Recommandé : 540 × 720 px ou plus, en portrait (3:4). Les autres formats sont recadrés. Jusqu'à 20 Mo.",
+      "accessory": "Recommandé : 400 × 400 px ou plus, carrée, sur fond blanc. Les autres formats sont recadrés. Jusqu'à 20 Mo.",
+      "media": "Recommandé : 1920 × 1080 px (16:9). Les images plus grandes sont réduites, jamais recadrées. Jusqu'à 20 Mo."
     }
   }
 }

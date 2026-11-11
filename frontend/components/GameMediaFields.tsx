@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { resolveAssetUrl } from "../api/client";
 import type { ManualGameVideoInput } from "../api/types";
 import { useUploadGameMedia } from "../hooks/useUploads";
+import { useImageUploadHint } from "./ImageUploadHint";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import { parseYoutubeVideoId, youtubeThumbnailUrl } from "../utils/youtube";
 
@@ -246,6 +247,7 @@ interface GameMediaFieldsProps {
 // Videos, up to MAX_MEDIA_PER_KIND each, on the Add and Edit custom game forms.
 const GameMediaFields = ({ value, onChange, onUploadingChange }: GameMediaFieldsProps) => {
   const { t } = useTranslation();
+  const mediaHint = useImageUploadHint("media");
   const [uploadingScreenshots, setUploadingScreenshots] = useState(false);
   const [uploadingArtwork, setUploadingArtwork] = useState(false);
 
@@ -255,13 +257,14 @@ const GameMediaFields = ({ value, onChange, onUploadingChange }: GameMediaFields
     <Stack spacing={2.5}>
       <ImageSection
         title={t("screenshotGallery.title")}
+        helper={mediaHint}
         urls={value.screenshotUrls}
         onChange={(update) => onChange((current) => ({ ...current, screenshotUrls: update(current.screenshotUrls) }))}
         onUploadingChange={setUploadingScreenshots}
       />
       <ImageSection
         title={t("games.about.artworkTitle")}
-        helper={t("games.gameForm.media.artworkHelperText")}
+        helper={`${t("games.gameForm.media.artworkHelperText")} ${mediaHint}`}
         urls={value.artworkUrls}
         onChange={(update) => onChange((current) => ({ ...current, artworkUrls: update(current.artworkUrls) }))}
         onUploadingChange={setUploadingArtwork}

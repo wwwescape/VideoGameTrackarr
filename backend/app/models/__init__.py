@@ -42,7 +42,7 @@ from app.models.hardware import (  # noqa: F401
 )
 from app.models.igdb_import import IgdbImportEntry  # noqa: F401
 from app.models.itad import ItadPriceCache  # noqa: F401
-from app.models.jobs import JobSchedule  # noqa: F401
+from app.models.jobs import JobRunLog, JobSchedule  # noqa: F401
 from app.models.labs import LabFeature  # noqa: F401
 from app.models.library import (  # noqa: F401
     BiosFile,

@@ -577,12 +577,41 @@ export interface JobSchedule {
   enabled: boolean;
   cronExpression: string | null;
   nextRunAt: string | null;
+  // IANA zone the server reads cron expressions in (its TZ env var, else its own zone).
+  timezone: string;
+}
+
+export type JobRunTrigger = "manual" | "scheduled" | "catch_up";
+// "running" only while the run is in progress; never "idle" (that's in-memory run state).
+export type JobRunLogStatus = "running" | "completed" | "failed";
+
+export interface JobRunLogSummary {
+  id: number;
+  trigger: JobRunTrigger;
+  status: JobRunLogStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  // Numeric counts only (the failures list is left out of the run list).
+  result: Record<string, unknown> | null;
+  error: string | null;
+}
+
+export interface JobRunLogLine {
+  t: string;
+  level: "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
+  msg: string;
+}
+
+export interface JobRunLog extends JobRunLogSummary {
+  lines: JobRunLogLine[];
 }
 
 export interface JobSummary {
   id: string;
   run: JobRun;
   schedule: JobSchedule;
+  // Newest run log, which, unlike `run`, survives a server restart.
+  lastRun: JobRunLogSummary | null;
 }
 
 export interface VersionInfo {

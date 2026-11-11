@@ -13,12 +13,16 @@ vi.mock("../../hooks/useJobs", () => ({
   useRunJob: () => ({ mutateAsync: runJob }),
   useAcknowledgeJobStatus: () => ({ mutateAsync: vi.fn() }),
   useUpdateJobSchedule: () => ({ mutateAsync: updateSchedule, isPending: false }),
+  useJobLogs: () => ({ data: [], isLoading: false, isError: false }),
+  useJobLog: () => ({ data: undefined, isLoading: false, isError: false }),
+  useClearJobLogs: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 const job = (overrides: Partial<JobSummary> = {}): JobSummary => ({
   id: "resync_all",
   run: { status: "idle", startedAt: null, finishedAt: null, result: null, error: null, progress: null },
-  schedule: { enabled: false, cronExpression: null, nextRunAt: null },
+  schedule: { enabled: false, cronExpression: null, nextRunAt: null, timezone: "UTC" },
+  lastRun: null,
   ...overrides,
 });
 
