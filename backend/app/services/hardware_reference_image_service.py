@@ -15,7 +15,7 @@ def resolve_image_url(official_name: str) -> str | None:
     committing, with no code or migration change required. So this checks the filesystem
     directly rather than trusting a column that would otherwise need updating by hand every
     time an image is added."""
-    filename = f"{slugify(official_name)}.jpg"
+    filename = f"{slugify(official_name)}.png"
     if (HARDWARE_REFERENCE_IMAGES_DIR / filename).is_file():
         return f"/static/hardware-reference/{filename}"
     return None

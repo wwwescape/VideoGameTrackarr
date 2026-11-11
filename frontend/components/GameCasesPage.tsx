@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import type { GameCase } from "../api/types";
 import { useGameCases, useSetGameCaseShown } from "../hooks/useGameCases";
@@ -23,7 +24,8 @@ const CaseRow = ({
   onToggle: (shown: boolean) => void;
 }) => {
   const { t } = useTranslation();
-  const logo = platformLogoSrc({ slug: gameCase.platformSlug, logoUrl: gameCase.logoUrl });
+  const mode = useTheme().palette.mode;
+  const logo = platformLogoSrc({ slug: gameCase.platformSlug, logoUrl: gameCase.logoUrl }, mode);
   const size = caseSizeToPixels(gameCase.heightMm, gameCase.spineMm, PREVIEW_SCALE);
   return (
     <SettingRow

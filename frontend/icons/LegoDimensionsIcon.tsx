@@ -2,7 +2,7 @@ import { createSvgIcon } from "@mui/material/SvgIcon";
 
 // A plain currentColor LEGO Dimensions mark for the nav: the portal "O" from its logo, a ring
 // with the vortex swirling into it. Same role as IgdbIcon; the full-color logo
-// (assets/toys-to-life/lego-dimensions-logo.png) stays for the Toys to Life card.
+// (assets/toys-to-life/lego-dimensions.png) stays for the Toys to Life card.
 const LegoDimensionsIcon = createSvgIcon(
   <>
     <path d="M12 2.2a9.8 9.8 0 1 1 0 19.6 9.8 9.8 0 0 1 0-19.6zm0 2.4a7.4 7.4 0 1 0 0 14.8 7.4 7.4 0 0 0 0-14.8z" />

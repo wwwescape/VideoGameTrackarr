@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import legoDimensionsLogo from "../assets/toys-to-life/lego-dimensions-logo.png";
+import legoDimensionsLogo from "../assets/toys-to-life/lego-dimensions.png";
 import type { ToysToLifeItemSummary, ToysToLifeParentGame } from "../api/types";
 import { gameIdentifier, slugify } from "./identifiers";
 

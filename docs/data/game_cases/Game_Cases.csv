@@ -21,9 +21,9 @@ new-nintendo-3ds,New Nintendo 3DS,Nintendo 3DS case,137,12,3,#ffffff,#ffffff,25,
 gb,Game Boy,Game Boy box,140,25,0,#bdbdbd,#ffffff,30,gb.png,,,#d6d6d6,#111111
 gbc,Game Boy Color,Game Boy box,140,25,0,#cfcfcf,#ffffff,30,gbc.png,,,#e6e6e6,#111111
 gba,Game Boy Advance,Game Boy Advance box,140,25,0,#2a2f7a,#ffffff,30,gba.png,,,#ffffff,#111111
-genesis-slash-megadrive,Sega Mega Drive/Genesis,Sega clamshell case,184,25,3,#111111,#111111,14,,,,#111111,#ffffff
-sms,Sega Master System,Sega clamshell case,184,25,3,#111111,#ffffff,14,,,,#111111,#ffffff
-saturn,Sega Saturn,Sega Saturn case,212,22,4,#111111,#111111,14,,,,#111111,#ffffff
-dc,Dreamcast,CD jewel case,142,10,2,#ffffff,#ffffff,14,,,,#ffffff,#111111
-segacd,Sega CD,CD jewel case,142,10,2,#111111,#111111,12,,,,#111111,#ffffff
+genesis-slash-megadrive,Sega Mega Drive/Genesis,Sega clamshell case,184,25,3,#111111,#2b4f9c,45,mega-drive.png,,,#2b4f9c,#ffffff
+sms,Sega Master System,Sega clamshell case,184,25,3,#111111,#1346a0,45,sms.png,,,#111111,#ffffff
+saturn,Sega Saturn,Sega Saturn case,212,22,4,#111111,#ffffff,35,saturn.png,,,#111111,#ffffff
+dc,Dreamcast,CD jewel case,142,10,2,#ffffff,#e42a04,33,dc.png,,,#ffffff,#111111
+segacd,Sega CD,CD jewel case,142,10,2,#111111,#309eeb,24,segacd.png,,,#111111,#ffffff
 win,PC (Microsoft Windows),Games for Windows DVD case,190,14,4,#111111,#0a7fd6,18,win.png,,#ffffff,#ffffff,#111111

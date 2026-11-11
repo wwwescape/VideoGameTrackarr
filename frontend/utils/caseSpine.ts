@@ -1,5 +1,5 @@
 import { resolveAssetUrl } from "../api/client";
-import { platformLogoUrl } from "./platformLogos";
+import { platformLogoUrl, type LogoMode } from "./platformLogos";
 
 // How the Game Shelf draws a game case's spine. Sizes are real-world millimetres (from the
 // curated game cases); every case is drawn at the same fraction of real size, so a Saturn case
@@ -47,13 +47,13 @@ export function createCaseLogoLookup(modules: Record<string, string>) {
 
 export const gameCaseLogoUrl = createCaseLogoLookup(caseLogoModules);
 
-// A platform's everyday logo (for Settings > Game Cases' rows): the bundled one when there is
-// one, else IGDB's.
-export function platformLogoSrc(platform: {
-  slug: string | null;
-  logoUrl?: string | null;
-}): string | null {
-  return platformLogoUrl(platform.slug) ?? resolveAssetUrl(platform.logoUrl ?? null);
+// A platform's everyday logo (for Settings > Game Cases' rows): the bundled one for the colour
+// mode when there is one, else IGDB's.
+export function platformLogoSrc(
+  platform: { slug: string | null; logoUrl?: string | null },
+  mode: LogoMode = "light"
+): string | null {
+  return platformLogoUrl(platform.slug, mode) ?? resolveAssetUrl(platform.logoUrl ?? null);
 }
 
 // Readable text over a colour: near-black on light colours, white on dark ones. For the logo

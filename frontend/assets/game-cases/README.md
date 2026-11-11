@@ -9,6 +9,7 @@ Logos drawn in the logo band at the top of each case on the **Game Shelf** (a Se
   - PS1 and PS2: the logo box stays upright (PS2 adds "PlayStation 2" running down below it).
   - Switch and Switch 2: the logo stays upright in a short band.
   - Game Boy, DS and 3DS: the wordmark runs down the spine.
+  - Sega (Master System, Mega Drive, Sega CD, Saturn, Dreamcast): the SEGA badge, Saturn's planet or Dreamcast's swirl stays upright at the top, with the wordmark running down the spine below it.
 - **Colours:** the logo in its printed colours (e.g. white on the PS4's blue band, black on the PS5's white band). The band's background comes from the CSV's `Logo Band Color`, so don't bake a background into the file. For a one-colour spine mark, the CSV's `Logo Color` can repaint any file in that colour instead (it keeps only the file's shape), so a black wordmark shows white on a black band.
 - **Size:** cropped tight. It's scaled to fit inside the band (with a small margin), so set the CSV's `Logo Band Height (%)` to match how much of the real spine the band covers.
 - **Naming:** anything, as long as the CSV's `Logo` cell matches; the platform's IGDB slug is a good choice (`ps5.svg`, `switch.svg`).

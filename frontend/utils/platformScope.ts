@@ -1,8 +1,11 @@
 import type { TFunction } from "i18next";
-import epicGamesLogo from "../assets/epic-games-logo.png";
-import gogLogo from "../assets/gog.com-logo.png";
-import steamLogo from "../assets/steam-logo.png";
+import epicGamesLogo from "../assets/services/epic-games.png";
+import epicGamesLogoDark from "../assets/services/epic-games-dark.png";
+import gogLogo from "../assets/services/gog.png";
+import gogLogoDark from "../assets/services/gog-dark.png";
+import steamLogo from "../assets/services/steam.png";
 import type { MediaFormat } from "../api/types";
+import type { LogoMode } from "./platformLogos";
 
 // PC copies are split into one Games → Platforms card per storefront (and per other format,
 // e.g. Physical) — see the backend's platform_repository.STOREFRONT_SPLIT_IGDB_PLATFORM_IDS.
@@ -54,12 +57,14 @@ export function platformDisplayName(
   return label ? `${platform.abbreviation || platform.name} · ${label}` : platform.name;
 }
 
-const STOREFRONT_LOGOS: Record<string, string> = {
-  Steam: steamLogo,
-  GOG: gogLogo,
-  "Epic Games Store": epicGamesLogo,
+// `dark` only where the regular logo would vanish on the dark theme.
+const STOREFRONT_LOGOS: Record<string, { light: string; dark?: string }> = {
+  Steam: { light: steamLogo },
+  GOG: { light: gogLogo, dark: gogLogoDark },
+  "Epic Games Store": { light: epicGamesLogo, dark: epicGamesLogoDark },
 };
 
-export function storefrontLogoUrl(storefront: string | undefined): string | undefined {
-  return storefront ? STOREFRONT_LOGOS[storefront] : undefined;
+export function storefrontLogoUrl(storefront: string | undefined, mode: LogoMode = "light"): string | undefined {
+  const logo = storefront ? STOREFRONT_LOGOS[storefront] : undefined;
+  return logo && (mode === "dark" ? (logo.dark ?? logo.light) : logo.light);
 }

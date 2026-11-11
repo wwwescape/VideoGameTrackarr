@@ -1,7 +1,7 @@
 import { createSvgIcon } from "@mui/material/SvgIcon";
 
 // Simple Icons' Steam mark (https://simpleicons.org/?q=steam), a single currentColor path —
-// unlike the full-color steam-logo.png used in branding contexts (Settings -> Integrations,
+// unlike the full-color assets/services/steam.png used in branding contexts (Settings -> Integrations,
 // the About page, a game's "View on Steam" link), this is for spots where Steam needs to sit
 // alongside plain @mui/icons-material icons (e.g. the nav drawer) and inherit their color/
 // sizing behavior instead of standing out as the only colored icon in the list.

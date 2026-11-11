@@ -10,7 +10,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Trans, useTranslation } from "react-i18next";
-import igdbLogo from "../assets/igdb-logo.png";
+import igdbLogo from "../assets/services/igdb.png";
 import { useEmulationConfig } from "../hooks/useLibrary";
 import { useVersion } from "../hooks/useVersion";
 import Page from "./Page";

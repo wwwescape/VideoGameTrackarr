@@ -4,7 +4,9 @@
 # backend/app/core/config.py derives REPO_ROOT (and therefore where it looks for build/)
 # relative to backend/'s own location — see FRONTEND_BUILD_DIR in backend/app/main.py.
 
-FROM node:22-slim AS frontend-builder
+# Built once on the runner's own platform: the output is static files, the same for every
+# architecture, so the arm64 image doesn't need a second, QEMU-emulated Vite build.
+FROM --platform=$BUILDPLATFORM node:22-slim AS frontend-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY frontend/package.json frontend/package.json

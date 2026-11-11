@@ -247,13 +247,28 @@ describe("PlatformsPage toolbar", () => {
 describe("createLogoLookup", () => {
   const lookup = createLogoLookup({
     "../assets/platforms/ps4.png": "/a/ps4.png",
-    "../assets/platforms/Switch.svg": "/a/switch.svg",
+    "../assets/platforms/Switch.png": "/a/switch.png",
   });
 
   it("matches by slug, ignoring IGDB's --N suffix and case", () => {
     expect(lookup("ps4")).toBe("/a/ps4.png");
     expect(lookup("ps4--1")).toBe("/a/ps4.png");
-    expect(lookup("switch")).toBe("/a/switch.svg");
+    expect(lookup("switch")).toBe("/a/switch.png");
+  });
+
+  it("uses a -dark logo in dark mode, falling back to the regular one", () => {
+    const themed = createLogoLookup({
+      "../assets/platforms/ps4.png": "/a/ps4.png",
+      "../assets/platforms/ps4-dark.png": "/a/ps4-dark.png",
+      "../assets/platforms/switch.png": "/a/switch.png",
+    });
+    expect(themed("ps4", "dark")).toBe("/a/ps4-dark.png");
+    expect(themed("ps4--1", "dark")).toBe("/a/ps4-dark.png");
+    expect(themed("ps4", "light")).toBe("/a/ps4.png");
+    expect(themed("ps4")).toBe("/a/ps4.png");
+    expect(themed("switch", "dark")).toBe("/a/switch.png");
+    // A dark file is never a platform of its own.
+    expect(themed("ps4-dark")).toBeUndefined();
   });
 
   it("returns nothing for a missing logo or slug", () => {

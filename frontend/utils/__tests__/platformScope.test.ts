@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import { parsePlatformScope, platformDisplayName, platformScopeQuery } from "../platformScope";
+import { parsePlatformScope, platformDisplayName, platformScopeQuery, storefrontLogoUrl } from "../platformScope";
 
 const t = ((key: string) => ({ "games.library.formatPhysical": "Physical", "games.library.formatDigital": "Digital" })[
   key
@@ -45,5 +45,16 @@ describe("platformDisplayName", () => {
 
   it("uses the platform's own name without a scope", () => {
     expect(platformDisplayName(pc, {}, t)).toBe("PC (Microsoft Windows)");
+  });
+});
+
+describe("storefrontLogoUrl", () => {
+  it("uses a storefront's dark logo in dark mode, else its regular one", () => {
+    expect(storefrontLogoUrl("GOG", "dark")).toMatch(/gog-dark\.png/);
+    expect(storefrontLogoUrl("GOG")).not.toMatch(/-dark/);
+    // Steam's logo reads on both themes, so it has no dark version.
+    expect(storefrontLogoUrl("Steam", "dark")).toBe(storefrontLogoUrl("Steam"));
+    expect(storefrontLogoUrl("Itch", "dark")).toBeUndefined();
+    expect(storefrontLogoUrl(undefined)).toBeUndefined();
   });
 });

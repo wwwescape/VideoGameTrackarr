@@ -42,6 +42,13 @@ describe("createCaseLogoLookup", () => {
 });
 
 describe("platformLogoSrc", () => {
+  it("picks the bundled logo for the colour mode", () => {
+    expect(platformLogoSrc({ slug: "ps5" }, "dark")).toMatch(/ps5-dark\.png/);
+    expect(platformLogoSrc({ slug: "ps5" })).toMatch(/ps5\.png/);
+    // The Switch logo reads on both themes, so dark mode keeps it.
+    expect(platformLogoSrc({ slug: "switch" }, "dark")).toBe(platformLogoSrc({ slug: "switch" }));
+  });
+
   it("falls back to IGDB's logo without a bundled one", () => {
     expect(
       platformLogoSrc({ slug: "no-such-platform", logoUrl: "https://images.igdb.com/x.png" })

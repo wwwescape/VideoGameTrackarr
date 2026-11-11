@@ -12,7 +12,7 @@ from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.services import game_case_catalog
 
 # The newest migration that seeds the cases from a snapshot of the CSV.
-_MIGRATION = BACKEND_DIR / "alembic" / "versions" / "e2a4c6e8f0b1_game_case_spine_logos.py"
+_MIGRATION = BACKEND_DIR / "alembic" / "versions" / "890ae488ac83_sega_game_case_spine_logos.py"
 
 
 def _load_migration():

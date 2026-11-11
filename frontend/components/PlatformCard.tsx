@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import type { LibraryPlatform } from "../api/types";
 import { platformLogoUrl } from "../utils/platformLogos";
@@ -14,9 +15,10 @@ interface PlatformCardProps {
 
 // The platform's logo (from assets/platforms/, see utils/platformLogos.ts) or, until one is
 // added, its abbreviation as a text badge. A PC storefront card shows that storefront's logo
-// (or its name) instead.
+// (or its name) instead. Each logo follows the colour mode (see utils/platformLogos.ts).
 export const PlatformLogo = ({ platform, scope, height }: { platform: LibraryPlatform; scope: PlatformScope; height: number }) => {
-  const logoUrl = scope.storefront ? storefrontLogoUrl(scope.storefront) : platformLogoUrl(platform.slug);
+  const mode = useTheme().palette.mode;
+  const logoUrl = scope.storefront ? storefrontLogoUrl(scope.storefront, mode) : platformLogoUrl(platform.slug, mode);
   const badgeText = scope.storefront ?? (platform.abbreviation || platform.name);
   return logoUrl ? (
     <Box component="img" loading="lazy" src={logoUrl} alt="" sx={{ maxHeight: height, maxWidth: "100%", objectFit: "contain", display: "block" }} />
