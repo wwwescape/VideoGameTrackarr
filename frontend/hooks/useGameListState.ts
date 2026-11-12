@@ -36,6 +36,8 @@ export interface GameListStateOptions {
   screensaver?: boolean;
   // Games only: whether search and filters also look at each game's add-ons.
   includeAddons?: boolean;
+  // The Game Shelf: only platform cards that can have physical cases (not PC · Steam and co).
+  physicalPlatforms?: boolean;
 }
 
 // Every filter a game list remembers, at its cleared value (the sort is left as it is).
@@ -100,6 +102,7 @@ export function useGameListState(
     sources = false,
     screensaver = false,
     includeAddons: offersAddons = false,
+    physicalPlatforms = false,
   }: GameListStateOptions = {}
 ) {
   const key = (name: string) => `${prefix}.${name}`;
@@ -161,20 +164,36 @@ export function useGameListState(
   // Only the Platforms-page cards the library actually has — PC split per storefront the same
   // way — rather than every platform IGDB has ever attached to an imported game.
   const { data: libraryPlatforms = [], isSuccess: platformsLoaded } = useLibraryPlatforms();
-  const platformOptions = useMemo<PlatformFilterOption[]>(
-    () =>
-      libraryPlatforms.map((platform) => {
-        const scope = { format: platform.format ?? undefined, storefront: platform.storefront ?? undefined };
-        return { id: platformScopeKey(platform.id, scope), label: platformDisplayName(platform, scope, t) };
-      }),
-    [libraryPlatforms, t]
-  );
-  const platformIdOptions = useMemo(() => libraryPlatforms.map((platform) => ({ id: platform.id })), [libraryPlatforms]);
   // An Insights row or Overview link still presets plain platformIds; the dialog edits both as
   // one list of card keys and writes them back as scopes.
   const platformKeys = useMemo(
     () => [...platformIds.map(String), ...platformScopes],
     [platformIds, platformScopes]
+  );
+  const platformOptions = useMemo<PlatformFilterOption[]>(() => {
+    const cards = libraryPlatforms
+      .filter((platform) => !physicalPlatforms || !platform.format || platform.format === "physical")
+      .map((platform) => {
+        const scope = { format: platform.format ?? undefined, storefront: platform.storefront ?? undefined };
+        return { id: platformScopeKey(platform.id, scope), label: platformDisplayName(platform, scope, t) };
+      });
+    // PC only has per-storefront cards, so a whole-PC value (a preset plain id) gets an option
+    // of its own while it's picked — otherwise it would show as a bare number.
+    const wholes: PlatformFilterOption[] = [];
+    for (const platform of libraryPlatforms) {
+      const id = String(platform.id);
+      if (platformKeys.includes(id) && !cards.some((card) => card.id === id) && !wholes.some((w) => w.id === id)) {
+        wholes.push({ id, label: platform.name });
+      }
+    }
+    return [...cards, ...wholes];
+  }, [libraryPlatforms, physicalPlatforms, platformKeys, t]);
+  const platformIdOptions = useMemo(() => libraryPlatforms.map((platform) => ({ id: platform.id })), [libraryPlatforms]);
+  // What a remembered card value is checked against: every card, plus each library platform as a
+  // whole ("6" for all of PC).
+  const platformScopeOptions = useMemo(
+    () => [...platformOptions.map((option) => ({ id: option.id })), ...platformIdOptions.map((o) => ({ id: String(o.id) }))],
+    [platformOptions, platformIdOptions]
   );
   const setPlatformKeys = useCallback(
     (keys: string[]) => {
@@ -188,7 +207,7 @@ export function useGameListState(
   const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
   const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
   usePruneStaleIds(platformIds, setPlatformIds, platformIdOptions, platformsLoaded);
-  usePruneStaleIds(platformScopes, setPlatformScopes, platformOptions, platformsLoaded);
+  usePruneStaleIds(platformScopes, setPlatformScopes, platformScopeOptions, platformsLoaded);
   usePruneStaleIds(genreIds, setGenreIds, genres, genresLoaded);
   usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
   usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);

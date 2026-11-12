@@ -32,7 +32,7 @@ export const SHELF_SORT_FIELDS: GameSortField[] = [
 const GameShelfPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const state = useGameListState("shelf", { sources: true });
+  const state = useGameListState("shelf", { sources: true, physicalPlatforms: true });
   const [scale, setScale] = useShelfScale();
 
   const controls = useGameListControls(state, {
