@@ -495,6 +495,10 @@
         "screensaver": {
           "name": "Salvapantallas",
           "description": "Un botón flotante que muestra las portadas de tus juegos a pantalla completa, una tras otra. Desliza para explorar y toca una portada para abrir el juego. Añade Ajustes → Salvapantallas."
+        },
+        "filter_presets": {
+          "name": "Preajustes de filtros",
+          "description": "Guarda los filtros de las listas de juegos con un nombre («Cooperativo en el sofá») y vuelve a aplicarlos con un toque. Añade un botón Preajustes junto a Filtrar, y tus preajustes guardados en Configuración → General → Listas de juegos."
         }
       }
     },

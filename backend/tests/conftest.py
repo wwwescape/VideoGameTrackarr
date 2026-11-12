@@ -264,6 +264,16 @@ def seed_accessory(db_session, seed_manufacturer, seed_accessory_type):
 
 
 @pytest.fixture()
+def filter_presets_lab(db_session):
+    """The Filter Presets lab turned on: saved game-list filters can be written."""
+    from app.models.labs import LabFeature
+    from app.services.labs import LAB_FILTER_PRESETS
+
+    db_session.add(LabFeature(id=LAB_FILTER_PRESETS, enabled=True))
+    db_session.commit()
+
+
+@pytest.fixture()
 def game_shelf_lab(db_session):
     """The Game Shelf lab turned on, with the curated game cases loaded from the CSV (the test
     schema is built from the models, so the seed migration's rows aren't there)."""

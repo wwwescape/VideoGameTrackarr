@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
@@ -83,7 +83,10 @@ vi.mock("../../hooks/useLibrary", () => ({
   useLibraryItems: () => ({ data: [] }),
 }));
 let labOn = false;
-vi.mock("../../hooks/useLabs", () => ({ useEnabledLabs: () => new Set(labOn ? ["screensaver"] : []) }));
+let presetsLab = false;
+vi.mock("../../hooks/useLabs", () => ({
+  useEnabledLabs: () => new Set([...(labOn ? ["screensaver"] : []), ...(presetsLab ? ["filter_presets"] : [])]),
+}));
 const bulkMutate = vi.fn();
 vi.mock("../../hooks/useScreensaver", () => ({
   useSetScreensaverExcludedBulk: () => ({ mutate: bulkMutate, isPending: false }),
@@ -118,6 +121,7 @@ describe("Games list", () => {
     vi.stubGlobal("ResizeObserver", ResizeObserverStub);
     useGamesMock.mockClear();
     labOn = false;
+    presetsLab = false;
     bulkMutate.mockReset();
     showUndoToast.mockReset();
   });
@@ -132,6 +136,16 @@ describe("Games list", () => {
     }
     expect(screen.getByRole("textbox", { name: "Search games" })).toBeInTheDocument();
     expect(screen.getByText("3 games")).toBeInTheDocument();
+  });
+
+  it("has a Presets button only while the Filter Presets lab is on", () => {
+    renderList();
+    expect(within(screen.getByRole("toolbar")).queryByRole("button", { name: "Presets" })).not.toBeInTheDocument();
+    cleanup();
+
+    presetsLab = true;
+    renderList();
+    expect(within(screen.getByRole("toolbar")).getByRole("button", { name: "Presets" })).toBeInTheDocument();
   });
 
   it("switches to the Table view, shows each game's platforms and remembers the view", async () => {
