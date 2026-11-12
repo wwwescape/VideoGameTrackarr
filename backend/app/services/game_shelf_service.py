@@ -5,7 +5,8 @@ copies, nothing wishlisted, no cartridge-only systems.
 
 Game-level filters (search, tags, collections, series, type, play status, source) pick the
 games exactly as on the Games list. The platform, Steelbook and Contents filters also pick which of
-a game's copies become cases, so filtering by PS5 shows a game's PS5 case and not its PS4 one.
+a game's copies become cases, so filtering by PS5 shows a game's PS5 case and not its PS4 one
+(whether the filter came as a plain platform id or as a Platforms-page card).
 Format and storefront filters don't apply: everything here is physical.
 """
 
@@ -50,9 +51,24 @@ class Shelf:
     platforms: list[ShelfPlatform]
 
 
+def _shelf_platform_ids(platform_ids: list[int] | None, platform_scopes: list[str] | None) -> set[int] | None:
+    """The platforms the Platforms filter picks, as cases: its plain ids plus its Platforms-page
+    cards ("<id>" or "<id>:<format>:<storefront>"). A card for another format (PC · Steam) has no
+    physical cases, so it adds nothing. None when the filter isn't set."""
+    if not platform_ids and not platform_scopes:
+        return None
+    picked = set(platform_ids or [])
+    for scope in platform_scopes or []:
+        platform_id, _, rest = scope.partition(":")
+        media_format = rest.partition(":")[0]
+        if not media_format or media_format == MediaFormat.PHYSICAL.value:
+            picked.add(int(platform_id))
+    return picked
+
+
 def _copy_matches(
     copy: ShelfCopy,
-    platform_ids: list[int] | None,
+    platform_ids: set[int] | None,
     platform_exclude: bool,
     steelbook_only: bool,
     contents: set[PhysicalContents] | None,
@@ -60,7 +76,7 @@ def _copy_matches(
 ) -> bool:
     if copy.format != MediaFormat.PHYSICAL:
         return False
-    if platform_ids and (copy.platform_id in platform_ids) == platform_exclude:
+    if platform_ids is not None and (copy.platform_id in platform_ids) == platform_exclude:
         return False
     # A copy with no contents set matches no value, so "Not code in the box" keeps it.
     if contents is not None and (copy.physical_contents in contents) == contents_exclude:
@@ -78,7 +94,7 @@ def build_shelf(db: Session, **filters: Any) -> Shelf:
     descending = filters.get("sort") == GameSortOption.PLATFORMS_DESC
     if platform_sort:
         filters["sort"] = GameSortOption.NAME_ASC
-    platform_ids = filters.get("platform_ids")
+    platform_ids = _shelf_platform_ids(filters.get("platform_ids"), filters.get("platform_scopes"))
     platform_exclude = filters.get("platform_exclude", False)
     steelbook_only = filters.get("steelbook_only", False)
     contents = set(filters["contents"]) if filters.get("contents") else None
@@ -93,6 +109,7 @@ def build_shelf(db: Session, **filters: Any) -> Shelf:
     # copy, which here would also hide its other cases.
     if platform_exclude:
         game_filters["platform_ids"] = None
+        game_filters["platform_scopes"] = None
         game_filters["platform_exclude"] = False
     # Same for "Not code in the box": drop those cases, keep the game's other ones.
     if contents_exclude:
