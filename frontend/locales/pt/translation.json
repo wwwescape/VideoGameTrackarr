@@ -540,6 +540,10 @@
         "linked_addons": {
           "name": "Complementos ligados",
           "description": "Ligue complementos a mais jogos do que o IGDB, p. ex. um DLC que o IGDB lista na edição Standard de um jogo e que também funciona com a edição Premium, e marque os que uma edição inclui para contarem como seus. Adiciona uma secção de ligações às páginas de jogos, Funciona com nas páginas de complementos, complementos do jogo base de uma edição e Definições → Complementos ligados. Um complemento personalizado com a categoria Pack, como um passe de temporada, pode conter outros complementos, por isso tê-lo conta como tê-los. Os complementos também podem ser marcados como bónus de pré-venda de um jogo. Desativá-lo mantém as suas ligações."
+        },
+        "filter_presets": {
+          "name": "Predefinições de filtros",
+          "description": "Guarde os filtros das listas de jogos com um nome («Cooperativo no sofá») e volte a aplicá-los com um toque. Adiciona um botão Predefinições junto a Filtrar, e as suas predefinições guardadas em Definições → Geral → Listas de jogos."
         }
       }
     },

@@ -540,6 +540,10 @@
         "linked_addons": {
           "name": "Compléments liés",
           "description": "Liez des compléments à plus de jeux qu'IGDB, p. ex. un DLC qu'IGDB range sous l'édition standard d'un jeu et qui fonctionne aussi avec son édition Premium, et marquez ceux qu'une édition inclut pour qu'ils comptent comme possédés. Ajoute une section de liens aux pages de jeux, Fonctionne avec sur les pages de compléments, les compléments du jeu de base d'une édition et Paramètres → Compléments liés. Un complément personnalisé de catégorie Pack, comme un Season Pass, peut contenir d'autres compléments : le posséder les fait posséder aussi. Un complément peut aussi être marqué bonus de précommande d'un jeu. Le désactiver conserve vos liens."
+        },
+        "filter_presets": {
+          "name": "Préréglages de filtres",
+          "description": "Enregistrez les filtres des listes de jeux sous un nom (« Coop sur le canapé ») et réappliquez-les en un geste. Ajoute un bouton Préréglages à côté de Filtrer, et vos préréglages enregistrés dans Paramètres → Général → Listes de jeux."
         }
       }
     },
@@ -716,8 +720,8 @@
       "customizeTitle": "Champs de filtre",
       "customizeDescription": "Désactivez les champs que vous n'utilisez jamais. Le filtre d'un champ masqué est conservé et peut toujours être retiré depuis sa puce.",
       "showAll": "Tout afficher",
-      "saved": "Vues enregistrées",
-      "savedHelp": "Créées depuis le bouton Vues des listes de jeux. Modifiez-en une pour la renommer ou la supprimer."
+      "saved": "Préréglages enregistrés",
+      "savedHelp": "Créés depuis le bouton Préréglages des listes de jeux. Modifiez-en un pour le renommer ou le supprimer."
     }
   },
   "screensaver": {
@@ -1394,18 +1398,18 @@
       "saveErrorToast": "Impossible d'enregistrer ce fichier. Veuillez réessayer."
     },
     "savedViews": {
-      "button": "Vues",
-      "modifiedLabel": "{{name}} (modifiée)",
-      "empty": "Aucune vue pour l'instant",
+      "button": "Préréglages",
+      "modifiedLabel": "{{name}} (modifié)",
+      "empty": "Aucun préréglage pour l'instant",
       "saveCurrent": "Enregistrer les filtres actuels…",
-      "saveAsNew": "Enregistrer comme nouvelle vue…",
+      "saveAsNew": "Enregistrer comme nouveau préréglage…",
       "update": "Mettre à jour « {{name}} »",
       "saveTitle": "Enregistrer ces filtres",
-      "editTitle": "Modifier la vue",
+      "editTitle": "Modifier le préréglage",
       "editAria": "Modifier {{name}}",
       "nameLabel": "Nom",
-      "replaceHelp": "Remplace la vue enregistrée sous ce nom.",
-      "deleted": "Vue « {{name}} » supprimée"
+      "replaceHelp": "Remplace le préréglage enregistré sous ce nom.",
+      "deleted": "Préréglage « {{name}} » supprimé"
     }
   },
   "events": {

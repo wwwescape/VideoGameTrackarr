@@ -540,6 +540,10 @@
         "linked_addons": {
           "name": "Linked Add-ons",
           "description": "Link add-ons to more games than IGDB does, e.g. DLC IGDB lists under a game's Standard edition that also works with its Premium edition, and mark the ones an edition includes so they count as owned. Adds a Linked section to game pages, Works with on add-on pages, add-ons from an edition's base game, and Settings → Linked Add-ons. A custom add-on with the Pack category, like a Season Pass, can hold other add-ons, so owning it owns them too. Add-ons can also be marked a pre-order bonus for a game. Turning it off keeps your links for later."
+        },
+        "filter_presets": {
+          "name": "Filter Presets",
+          "description": "Save the game lists' filters under a name (\"Couch co-op\") and put them back in one tap. Adds a Presets button next to Filter, and your saved presets to Settings → General → Game lists."
         }
       }
     },

@@ -46,10 +46,13 @@
   copies, plus a one-click link to the manufacturer's own manual or LEGO's building instructions
   where there is one. Uploaded photos have their location and other metadata removed.
 - **Views, filters & sort** — Covers, Table, or Overview views with an adjustable card size;
-  filter by platform, format, storefront, tag, ownership, play status, game type, source,
-  steelbook, collection, or series (each with an Exclude option), or, with the Screensaver lab
-  on, whether a game is shown in the screensaver; sort by name or release date. Pages remember
-  your search, filters, and sort.
+  filter by platform (the same cards as the Platforms page, PC split per storefront), format,
+  storefront, tag, ownership, play status, game type, source, steelbook, collection, series or
+  genre (each with an Exclude option), release status and year, local players, online
+  multiplayer, co-op, time to beat, or IGDB rating, or, with the Screensaver lab on, whether a
+  game is shown in the screensaver; sort by name or release date. Switch off the filter fields
+  you never use in **Settings → General → Game lists**. Pages remember your search, filters,
+  and sort.
 - **Game Shelf** (Labs) — your physical games as cases on a shelf, one per platform you own
   each on, drawn at their real relative sizes in each platform's spine colours and logo, with
   the usual search, filters, and sort, plus a scale slider. Cases come from a curated list of
@@ -59,6 +62,9 @@
   after another, with the VideoGameTrackarr badge in the corner; swipe to browse, tap a cover
   to open the game. Set the time per cover in **Settings → Screensaver**, and hide a game from
   its page, or many at once from the Games list. Handy on a wall-mounted tablet.
+- **Filter Presets** (Labs) — save the game lists' filters under a name ("Couch co-op") from
+  the Presets button next to Filter and put them back in one tap; rename or delete them there
+  or in **Settings → General → Game lists**.
 - **Labs** — opt-in features that are still taking shape, off by default and switched on in
   **Settings → Labs**.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega
