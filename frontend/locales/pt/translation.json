@@ -76,6 +76,7 @@
     "emulation": "Emulação",
     "gameCases": "Caixas de jogos",
     "screensaver": "Protetor de ecrã",
+    "filterPresets": "Predefinições de filtros",
     "overview": "Visão geral",
     "settingsGeneral": "Geral",
     "primary": "Navegação principal",
@@ -498,7 +499,7 @@
         },
         "filter_presets": {
           "name": "Predefinições de filtros",
-          "description": "Guarde os filtros das listas de jogos com um nome («Cooperativo no sofá») e volte a aplicá-los com um toque. Adiciona um ▾ ao botão Filtrar com as suas predefinições, e lista-as em Definições → Geral → Listas de jogos."
+          "description": "Escolha os campos que a janela Filtros das listas de jogos mostra, e guarde os seus filtros com um nome («Cooperativo no sofá») para os voltar a aplicar com um toque. Adiciona uma seta junto ao botão Filtrar com as suas predefinições, e Definições → Predefinições de filtros."
         }
       }
     },
@@ -631,6 +632,9 @@
     "regional": {
       "heading": "Regional"
     },
+    "filterPresets": {
+      "description": "Os campos que a janela Filtros das listas de jogos mostra, e as predefinições guardadas na seta junto ao seu botão Filtrar. Guardado na sua conta, para que todos os seus navegadores as tenham."
+    },
     "gameFilters": {
       "heading": "Listas de jogos",
       "fields": "Campos de filtro",
@@ -640,7 +644,7 @@
       "customizeDescription": "Desative os campos que nunca usa. O filtro de um campo oculto mantém-se e ainda pode ser removido a partir do seu chip.",
       "showAll": "Mostrar todos",
       "saved": "Predefinições guardadas",
-      "savedHelp": "Criadas no ▾ do botão Filtrar das listas de jogos. Edite uma para a renomear ou eliminar."
+      "savedHelp": "Criadas na seta junto a Filtrar nas listas de jogos. Edite uma para a renomear ou eliminar."
     }
   },
   "screensaver": {

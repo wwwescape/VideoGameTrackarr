@@ -86,6 +86,9 @@ def update_preferences(
     def dump(rows: list | None) -> list[dict] | None:
         return [row.model_dump() for row in rows] if rows is not None else None
 
+    # Filter fields and presets are the Filter Presets lab's: while it's off they're left as
+    # they are, the same as a field this version doesn't know.
+    filter_presets = labs.is_enabled(db, labs.LAB_FILTER_PRESETS)
     try:
         user = auth_service.set_preferences(
             db,
@@ -96,10 +99,8 @@ def update_preferences(
             screensaver_show_owned=body.screensaver_show_owned,
             screensaver_show_wishlist=body.screensaver_show_wishlist,
             screensaver_include_custom=body.screensaver_include_custom,
-            game_filter_fields=dump(body.game_filter_fields),
-            # Presets are the Filter Presets lab's: while it's off they're left as they are, the
-            # same as a field this version doesn't know.
-            saved_game_filters=dump(body.saved_game_filters) if labs.is_enabled(db, labs.LAB_FILTER_PRESETS) else None,
+            game_filter_fields=dump(body.game_filter_fields) if filter_presets else None,
+            saved_game_filters=dump(body.saved_game_filters) if filter_presets else None,
         )
     except ScreensaverShowsNothingError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc

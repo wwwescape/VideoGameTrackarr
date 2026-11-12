@@ -25,6 +25,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
 import ViewWeekIcon from "@mui/icons-material/ViewWeekOutlined";
+import BookmarksOutlinedIcon from "@mui/icons-material/BookmarksOutlined";
 import SlideshowIcon from "@mui/icons-material/SlideshowOutlined";
 import GamesIcon from "@mui/icons-material/Games";
 import IgdbIcon from "../icons/IgdbIcon";
@@ -178,6 +179,12 @@ export function settingsPages(): NavSubDestination[] {
       labelKey: "nav.screensaver",
       icon: <SlideshowIcon />,
       lab: "screensaver",
+    },
+    {
+      to: "/settings/filter-presets",
+      labelKey: "nav.filterPresets",
+      icon: <BookmarksOutlinedIcon />,
+      lab: "filter_presets",
     },
     {
       to: "/settings/igdb-import",

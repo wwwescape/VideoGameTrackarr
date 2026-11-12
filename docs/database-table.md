@@ -466,7 +466,7 @@ scoped by `user_id`.
 | steam_id_64 | string(32), nullable | Steam profile SteamID64, for Steam sync |
 | currency | string(3), nullable | Display currency (ISO 4217), shared by every browser |
 | overview_layout | JSON, nullable | The Overview's sections in order, each `{key, hidden}`; null = the default layout |
-| game_filter_fields | JSON, nullable | The game lists' Filter dialog fields, each `{key, hidden}` (Settings → General → Game lists); null = every field shown |
+| game_filter_fields | JSON, nullable | Filter Presets lab: the game lists' Filter dialog fields, each `{key, hidden}` (Settings → Filter Presets); null = every field shown |
 | saved_game_filters | JSON, nullable | Filter Presets lab: named game-list filters, each `{name, filters}` where `filters` is the frontend's own filter state; null = none saved |
 | screensaver_interval_seconds | int, nullable | Screensaver lab: seconds each cover is shown, 5–15; null = the default (8) |
 | last_seen_version | string(32), nullable | Newest app version whose **What's New** was closed. Set to the running version when the account is created (a new install has nothing new to show); null on an account from before What's New, which then sees the running version's notes once |

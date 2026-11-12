@@ -374,7 +374,7 @@ def test_overview_layout_keys_are_validated(auth_client):
     assert response.status_code == 422
 
 
-def test_game_filter_fields_are_saved_on_the_account(auth_client):
+def test_game_filter_fields_are_saved_on_the_account(auth_client, filter_presets_lab):
     fields = [{"key": "format", "hidden": True}, {"key": "genre", "hidden": False}]
 
     response = auth_client.put("/api/auth/me/preferences", json={"gameFilterFields": fields})
@@ -403,14 +403,17 @@ def test_saved_game_filters_need_a_name_and_stay_small(auth_client, filter_prese
     assert auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": huge}).status_code == 422
 
 
-def test_saved_game_filters_are_left_alone_while_the_lab_is_off(auth_client):
+def test_filter_fields_and_presets_are_left_alone_while_the_lab_is_off(auth_client):
     saved = [{"name": "Couch", "filters": {"coopOnly": True}}]
     fields = [{"key": "steelbook", "hidden": True}]
 
-    response = auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": saved, "gameFilterFields": fields})
+    response = auth_client.put(
+        "/api/auth/me/preferences", json={"savedGameFilters": saved, "gameFilterFields": fields, "currency": "EUR"}
+    )
 
     assert response.status_code == 200
     me = auth_client.get("/api/auth/me").json()
     assert me["savedGameFilters"] is None
-    # Filter fields aren't part of the lab.
-    assert me["gameFilterFields"] == fields
+    assert me["gameFilterFields"] is None
+    # The rest of the request still applies.
+    assert me["currency"] == "EUR"
