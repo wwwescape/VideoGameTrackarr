@@ -498,7 +498,7 @@
         },
         "filter_presets": {
           "name": "Préréglages de filtres",
-          "description": "Enregistrez les filtres des listes de jeux sous un nom (« Coop sur le canapé ») et réappliquez-les en un geste. Ajoute un bouton Préréglages à côté de Filtrer, et vos préréglages enregistrés dans Paramètres → Général → Listes de jeux."
+          "description": "Enregistrez les filtres des listes de jeux sous un nom (« Coop sur le canapé ») et réappliquez-les en un geste. Ajoute un ▾ au bouton Filtrer pour vos préréglages, et les liste dans Paramètres → Général → Listes de jeux."
         }
       }
     },
@@ -640,7 +640,7 @@
       "customizeDescription": "Désactivez les champs que vous n'utilisez jamais. Le filtre d'un champ masqué est conservé et peut toujours être retiré depuis sa puce.",
       "showAll": "Tout afficher",
       "saved": "Préréglages enregistrés",
-      "savedHelp": "Créés depuis le bouton Préréglages des listes de jeux. Modifiez-en un pour le renommer ou le supprimer."
+      "savedHelp": "Créés depuis le ▾ du bouton Filtrer des listes de jeux. Modifiez-en un pour le renommer ou le supprimer."
     }
   },
   "screensaver": {
@@ -1169,7 +1169,8 @@
       "editAria": "Modifier {{name}}",
       "nameLabel": "Nom",
       "replaceHelp": "Remplace le préréglage enregistré sous ce nom.",
-      "deleted": "Préréglage « {{name}} » supprimé"
+      "deleted": "Préréglage « {{name}} » supprimé",
+      "clearChip": "Retirer les filtres de {{name}}"
     }
   },
   "events": {

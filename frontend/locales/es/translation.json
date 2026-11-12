@@ -498,7 +498,7 @@
         },
         "filter_presets": {
           "name": "Preajustes de filtros",
-          "description": "Guarda los filtros de las listas de juegos con un nombre («Cooperativo en el sofá») y vuelve a aplicarlos con un toque. Añade un botón Preajustes junto a Filtrar, y tus preajustes guardados en Configuración → General → Listas de juegos."
+          "description": "Guarda los filtros de las listas de juegos con un nombre («Cooperativo en el sofá») y vuelve a aplicarlos con un toque. Añade un ▾ al botón Filtrar con tus preajustes, y los lista en Configuración → General → Listas de juegos."
         }
       }
     },
@@ -640,7 +640,7 @@
       "customizeDescription": "Desactiva los campos que nunca usas. El filtro de un campo oculto se conserva y aún puede quitarse desde su chip.",
       "showAll": "Mostrar todos",
       "saved": "Preajustes guardados",
-      "savedHelp": "Creados desde el botón Preajustes de las listas de juegos. Edita uno para renombrarlo o eliminarlo."
+      "savedHelp": "Creados desde el ▾ del botón Filtrar de las listas de juegos. Edita uno para renombrarlo o eliminarlo."
     }
   },
   "screensaver": {
@@ -1169,7 +1169,8 @@
       "editAria": "Editar {{name}}",
       "nameLabel": "Nombre",
       "replaceHelp": "Reemplaza el preajuste con este nombre.",
-      "deleted": "Preajuste «{{name}}» eliminado"
+      "deleted": "Preajuste «{{name}}» eliminado",
+      "clearChip": "Quitar los filtros de {{name}}"
     }
   },
   "events": {

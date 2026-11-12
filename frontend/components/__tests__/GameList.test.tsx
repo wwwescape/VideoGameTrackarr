@@ -67,8 +67,9 @@ vi.mock("../../hooks/usePlatforms", () => ({
   useLibraryPlatforms: () => ({ data: [], isSuccess: true }),
 }));
 vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
+let savedFilters: { name: string; filters: Record<string, unknown> }[] = [];
 vi.mock("../../hooks/useGameFilterPreferences", () => ({
-  useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters: [], saveFilter: vi.fn(), deleteFilter: vi.fn() }),
+  useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters, saveFilter: vi.fn(), deleteFilter: vi.fn() }),
 }));
 vi.mock("../../hooks/useTags", () => ({
   useTags: () => ({ data: [], isSuccess: true }),
@@ -122,6 +123,7 @@ describe("Games list", () => {
     useGamesMock.mockClear();
     labOn = false;
     presetsLab = false;
+    savedFilters = [];
     bulkMutate.mockReset();
     showUndoToast.mockReset();
   });
@@ -146,6 +148,23 @@ describe("Games list", () => {
     presetsLab = true;
     renderList();
     expect(within(screen.getByRole("toolbar")).getByRole("button", { name: "Presets" })).toBeInTheDocument();
+  });
+
+  it("shows the preset in use as the first chip, which opens the presets", async () => {
+    presetsLab = true;
+    savedFilters = [{ name: "Couch co-op", filters: { coopOnly: true } }];
+    writeSessionValue("games.coopOnly", true);
+    writeSessionValue("games.activeView", "Couch co-op");
+    const { user } = renderList();
+
+    await user.click(screen.getByRole("button", { name: "Couch co-op" }));
+    expect(within(screen.getByRole("menu")).getByRole("menuitem", { name: /Couch co-op/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    // Its × clears the preset's filters, and so the chip.
+    await user.click(screen.getByLabelText("Clear the filters of Couch co-op"));
+    expect(screen.queryByRole("button", { name: "Couch co-op" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Remove filter Co-op")).not.toBeInTheDocument();
   });
 
   it("switches to the Table view, shows each game's platforms and remembers the view", async () => {
