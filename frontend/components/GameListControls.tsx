@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from "react";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
 import CancelIcon from "@mui/icons-material/Cancel";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import GridViewIcon from "@mui/icons-material/GridView";
@@ -7,6 +9,7 @@ import TableRowsIcon from "@mui/icons-material/TableRows";
 import TuneIcon from "@mui/icons-material/Tune";
 import ViewAgendaIcon from "@mui/icons-material/ViewAgenda";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
@@ -33,7 +36,7 @@ import GameFilterDialog, {
   TIME_TO_BEAT_OPTIONS,
   timeToBeatLabel,
 } from "./GameFilterDialog";
-import GameListPresets from "./GameListPresets";
+import { useGameListPresets } from "./GameListPresets";
 import type { GameListView } from "./GameListViews";
 import { CardSizeSlider, ChoiceMenuItem, ListSearchField, SortMenu } from "./ListControls";
 import { ToolbarButton } from "./Page";
@@ -136,6 +139,12 @@ export function useGameListControls(
     coopOnly: fields.coopOnly,
     timeToBeat: fields.timeToBeat,
     ratingMin: fields.ratingMin,
+  });
+
+  const presets = useGameListPresets(state, {
+    enabled: presetsLab,
+    canSave: activeFilterCount > 0,
+    fixedFields,
   });
 
   // Remove-one-value chips under the breadcrumbs. An Exclude flag on a field shows on its chips
@@ -249,14 +258,42 @@ export function useGameListControls(
         onClick={(event) => setMenu({ name: "sort", anchor: event.currentTarget })}
         aria-haspopup="menu"
       />
-      {presetsLab ? <GameListPresets state={state} canSave={activeFilterCount > 0} fixedFields={fixedFields} /> : null}
-      <ToolbarButton
-        icon={<FilterAltOutlinedIcon />}
-        label={t("games.listView.filter")}
-        count={activeFilterCount}
-        active={activeFilterCount > 0}
-        onClick={() => setFiltersOpen(true)}
-      />
+      {/* With the Filter Presets lab on, Filter is a split button: its caret opens the presets. */}
+      <Box sx={{ display: "inline-flex", flexShrink: 0 }}>
+        <ToolbarButton
+          icon={<FilterAltOutlinedIcon />}
+          label={t("games.listView.filter")}
+          count={activeFilterCount}
+          active={activeFilterCount > 0}
+          onClick={() => setFiltersOpen(true)}
+          sx={presetsLab ? { borderTopRightRadius: 0, borderBottomRightRadius: 0 } : undefined}
+        />
+        {presetsLab ? (
+          <ButtonBase
+            aria-label={t("games.savedViews.button")}
+            aria-haspopup="menu"
+            aria-expanded={presets.menuOpen}
+            onClick={(event) => presets.openMenu(event.currentTarget)}
+            sx={{
+              flexShrink: 0,
+              // Phones: the toolbar's full 50px height, and wide enough to tap without hitting Filter.
+              width: { xs: 32, sm: 26 },
+              height: { xs: 50, sm: 34 },
+              borderRadius: 1.5,
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              borderLeft: 1,
+              borderColor: "vgt.glassLine",
+              color: presets.activeLabel ? "text.primary" : "text.secondary",
+              bgcolor: activeFilterCount > 0 ? "vgt.surface2" : "transparent",
+              "&:hover": { bgcolor: "vgt.surfaceHover", color: "text.primary" },
+              "& svg": { fontSize: 20 },
+            }}
+          >
+            <ArrowDropDownIcon />
+          </ButtonBase>
+        ) : null}
+      </Box>
     </>
   );
 
@@ -271,6 +308,20 @@ export function useGameListControls(
 
   const chipRow = chips.length ? (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: -0.5, mb: 1.75 }}>
+      {presets.activeLabel ? (
+        // The preset in use, first: tapping it opens the presets, its × clears its filters.
+        <Chip
+          size="small"
+          color="primary"
+          variant="outlined"
+          icon={<BookmarkIcon />}
+          label={presets.activeLabel}
+          onClick={(event) => presets.openMenu(event.currentTarget)}
+          aria-haspopup="menu"
+          onDelete={presets.clearActive}
+          deleteIcon={<CancelIcon aria-label={t("games.savedViews.clearChip", { name: presets.activeLabel })} />}
+        />
+      ) : null}
       {chips.map((chip) => (
         <Chip
           key={chip.key}
@@ -285,6 +336,7 @@ export function useGameListControls(
 
   const dialogs = (
     <>
+      {presets.elements}
       <Menu anchorEl={menu?.anchor} open={menu?.name === "options"} onClose={() => setMenu(null)}>
         {options ?? <CardSizeSlider value={cardSize} onChange={setCardSize} disabled={view !== "covers"} />}
         {toggles.length ? <Divider /> : null}

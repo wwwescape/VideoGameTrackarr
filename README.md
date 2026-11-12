@@ -55,8 +55,8 @@
   to open the game. Set the time per cover in **Settings → Screensaver**, and hide a game from
   its page, or many at once from the Games list. Handy on a wall-mounted tablet.
 - **Filter Presets** (Labs) — save the game lists' filters under a name ("Couch co-op") from
-  the Presets button next to Filter and put them back in one tap; rename or delete them there
-  or in **Settings → General → Game lists**.
+  the ▾ on the Filter button and put them back in one tap; the preset in use shows as the first
+  filter chip. Rename or delete them from that menu or in **Settings → General → Game lists**.
 - **Labs** — opt-in features that are still taking shape, off by default and switched on in
   **Settings → Labs**.
 - **Hardware** — devices and accessories from a curated Sony, Microsoft, Nintendo, and Sega

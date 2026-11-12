@@ -1,6 +1,4 @@
-import { useState, type MouseEvent } from "react";
-import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
+import { useState } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Button from "@mui/material/Button";
@@ -19,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import type { SavedGameFilter } from "../api/types";
 import { useGameFilterPreferences } from "../hooks/useGameFilterPreferences";
 import type { GameListState, PresetField } from "../hooks/useGameListState";
-import { ToolbarButton } from "./Page";
 import { showUndoToast } from "./UndoToast";
 
 const MAX_NAME_LENGTH = 60;
@@ -112,18 +109,23 @@ export function useViewEditor(onRenamed?: (from: string, to: string) => void) {
   return { edit: setEditing, dialog };
 }
 
-interface GameListPresetsProps {
-  state: GameListState;
+interface GameListPresetsOptions {
+  // Off while the Filter Presets lab is: no menu, no chip.
+  enabled: boolean;
   // Nothing to save while no filter is set.
   canSave: boolean;
   // Fields this page fixes itself (no field or chip for them here): presets leave them alone.
   fixedFields?: readonly PresetField[];
 }
 
-// The list toolbar's Views button: put a saved view back, save the current filters as one,
-// update the view in use once its filters have been changed, and edit a view (the pencil:
-// rename or delete). The button shows the view in use, if any.
-const GameListPresets = ({ state, canSave, fixedFields = [] }: GameListPresetsProps) => {
+// A game list's presets: the menu that the Filter button's caret (and the active preset's chip)
+// opens — put a saved preset back, save the current filters as one, update the preset in use
+// once its filters have been changed, and edit one (the pencil: rename or delete) — plus the
+// preset in use, if any, for the chip row.
+export function useGameListPresets(
+  state: GameListState,
+  { enabled, canSave, fixedFields = [] }: GameListPresetsOptions
+) {
   const { t } = useTranslation();
   const { savedFilters, saveFilter } = useGameFilterPreferences();
   const { edit, dialog: editDialog } = useViewEditor((from, to) => {
@@ -132,8 +134,8 @@ const GameListPresets = ({ state, canSave, fixedFields = [] }: GameListPresetsPr
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [naming, setNaming] = useState(false);
 
-  // Clearing every filter leaves the view rather than "modifying" it.
-  const active = canSave ? (savedFilters.find((saved) => saved.name === state.activeView) ?? null) : null;
+  // Clearing every filter leaves the preset rather than "modifying" it.
+  const active = enabled && canSave ? (savedFilters.find((saved) => saved.name === state.activeView) ?? null) : null;
   const modified = active !== null && !state.matchesFilters(active.filters, fixedFields);
 
   const close = () => setAnchor(null);
@@ -143,15 +145,8 @@ const GameListPresets = ({ state, canSave, fixedFields = [] }: GameListPresetsPr
     close();
   };
 
-  return (
+  const elements = enabled ? (
     <>
-      <ToolbarButton
-        icon={active ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-        label={active ? (modified ? t("games.savedViews.modifiedLabel", { name: active.name }) : active.name) : t("games.savedViews.button")}
-        active={active !== null}
-        onClick={(event: MouseEvent<HTMLButtonElement>) => setAnchor(event.currentTarget)}
-        aria-haspopup="menu"
-      />
       <Menu anchorEl={anchor} open={anchor !== null} onClose={close}>
         {savedFilters.length ? (
           savedFilters.map((saved) => (
@@ -214,7 +209,18 @@ const GameListPresets = ({ state, canSave, fixedFields = [] }: GameListPresetsPr
       ) : null}
       {editDialog}
     </>
-  );
-};
+  ) : null;
 
-export default GameListPresets;
+  return {
+    menuOpen: anchor !== null,
+    openMenu: (target: HTMLElement) => setAnchor(target),
+    // The preset in use, for the chip row: its label says when the filters have drifted from it.
+    activeLabel: active ? (modified ? t("games.savedViews.modifiedLabel", { name: active.name }) : active.name) : null,
+    // The chip's ×: back to no filters (the page's own fixed ones stay) and no preset.
+    clearActive: () => {
+      state.applyFilters({}, fixedFields);
+      state.setActiveView(null);
+    },
+    elements,
+  };
+}

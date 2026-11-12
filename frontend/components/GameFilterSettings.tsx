@@ -76,7 +76,7 @@ const CustomizeFilterFieldsDialog = ({ hidden, saving, onClose, onSave }: Custom
 };
 
 // Settings rows for the game lists' Filter dialog: which fields it shows, and, while the Filter
-// Presets lab is on, the presets saved from the lists' Presets button (made and applied there;
+// Presets lab is on, the presets saved from the ▾ on the lists' Filter button (made and applied there;
 // renamed or deleted from either place).
 const GameFilterSettings = () => {
   const { t } = useTranslation();
