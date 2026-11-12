@@ -26,6 +26,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import VideogameAssetIcon from "@mui/icons-material/VideogameAsset";
 import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
 import ViewWeekIcon from "@mui/icons-material/ViewWeekOutlined";
+import BookmarksOutlinedIcon from "@mui/icons-material/BookmarksOutlined";
 import SlideshowIcon from "@mui/icons-material/SlideshowOutlined";
 import GamesIcon from "@mui/icons-material/Games";
 import GogIcon from "../icons/GogIcon";
@@ -187,6 +188,12 @@ export function settingsPages(): NavSubDestination[] {
       labelKey: "nav.linkedAddons",
       icon: <AddLinkIcon />,
       lab: "linked_addons",
+    },
+    {
+      to: "/settings/filter-presets",
+      labelKey: "nav.filterPresets",
+      icon: <BookmarksOutlinedIcon />,
+      lab: "filter_presets",
     },
     {
       to: "/settings/igdb-import",
