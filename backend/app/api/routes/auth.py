@@ -14,7 +14,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
-from app.services import auth_service
+from app.services import auth_service, labs
 from app.services.auth_service import AuthError, ScreensaverShowsNothingError, SetupCodeError, WrongPasswordError
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -97,7 +97,9 @@ def update_preferences(
             screensaver_show_wishlist=body.screensaver_show_wishlist,
             screensaver_include_custom=body.screensaver_include_custom,
             game_filter_fields=dump(body.game_filter_fields),
-            saved_game_filters=dump(body.saved_game_filters),
+            # Presets are the Filter Presets lab's: while it's off they're left as they are, the
+            # same as a field this version doesn't know.
+            saved_game_filters=dump(body.saved_game_filters) if labs.is_enabled(db, labs.LAB_FILTER_PRESETS) else None,
         )
     except ScreensaverShowsNothingError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc

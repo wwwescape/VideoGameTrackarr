@@ -1,7 +1,7 @@
 import { apiClient } from "./client";
 
 // Settings > Labs: VGT's feature flags. Each lab is off until turned on, for the whole app.
-export type LabId = "game_shelf" | "screensaver";
+export type LabId = "game_shelf" | "screensaver" | "filter_presets";
 
 export interface Lab {
   id: LabId;

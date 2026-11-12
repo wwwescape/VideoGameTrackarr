@@ -495,6 +495,10 @@
         "screensaver": {
           "name": "Screensaver",
           "description": "A floating button that shows your game covers full screen, one after another. Swipe to browse, tap a cover to open the game. Adds Settings → Screensaver."
+        },
+        "filter_presets": {
+          "name": "Filter Presets",
+          "description": "Save the game lists' filters under a name (\"Couch co-op\") and put them back in one tap. Adds a Presets button next to Filter, and your saved presets to Settings → General → Game lists."
         }
       }
     },

@@ -82,6 +82,18 @@ const CLEARED_FILTERS = {
 
 export type GameListPreset = Partial<typeof CLEARED_FILTERS>;
 
+// Filter Dialog fields a page can fix itself (a Platform page's platform, a Collection or Series
+// page's own, the Game Shelf's ownership and format), with the state each one keeps. Saved
+// presets leave them alone there.
+export type PresetField = "platform" | "collection" | "series" | "ownership" | "format";
+const PRESET_FIELD_NAMES: Record<PresetField, (keyof typeof CLEARED_FILTERS)[]> = {
+  platform: ["platformIds", "platformScopes", "platformExclude"],
+  collection: ["collectionIds", "collectionExclude"],
+  series: ["franchiseIds", "franchiseExclude"],
+  ownership: ["ownershipStatuses", "ownershipExclude"],
+  format: ["formats", "formatExclude", "storefronts", "storefrontExclude"],
+};
+
 // Replaces a game list's remembered filters with just `preset`, before opening it (Overview's
 // "Now playing" or "Custom games", an Insights breakdown row) — the same as setting that one
 // filter by hand on a cleared list.
@@ -417,49 +429,64 @@ export function useGameListState(
     coopOnly,
     timeToBeat,
     ratingMin,
+    screensaverFilter: screensaverValue,
+  };
+  const skippedNames = (fixed: readonly PresetField[]): ReadonlySet<string> =>
+    new Set<string>(fixed.flatMap((field) => PRESET_FIELD_NAMES[field]));
+  // What a preset saved on this page keeps: the snapshot without the fields the page fixes.
+  const snapshotFilters = (fixed: readonly PresetField[] = []) => {
+    const skip = skippedNames(fixed);
+    return Object.fromEntries(Object.entries(filterSnapshot).filter(([name]) => !skip.has(name)));
   };
   // Whether the filters set now are exactly a saved view's: names it doesn't mention count as
   // cleared, the same way applyFilters reads it.
-  const matchesFilters = (saved: Record<string, unknown>) =>
-    (Object.keys(filterSnapshot) as (keyof typeof filterSnapshot)[]).every(
-      (name) => JSON.stringify(saved[name] ?? CLEARED_FILTERS[name]) === JSON.stringify(filterSnapshot[name])
-    );
-  const applyFilters = (saved: Record<string, unknown>) => {
-    const value = <K extends keyof typeof CLEARED_FILTERS>(name: K) =>
-      (saved[name] ?? CLEARED_FILTERS[name]) as (typeof CLEARED_FILTERS)[K];
-    setOwnershipStatuses(value("ownershipStatuses"));
-    setOwnershipExclude(value("ownershipExclude"));
-    setPlatformIds(value("platformIds"));
-    setPlatformExclude(value("platformExclude"));
-    setTagIds(value("tagIds"));
-    setTagExclude(value("tagExclude"));
-    setCollectionIds(value("collectionIds"));
-    setCollectionExclude(value("collectionExclude"));
-    setFranchiseIds(value("franchiseIds"));
-    setFranchiseExclude(value("franchiseExclude"));
-    setGameTypes(value("gameTypes"));
-    setGameTypeExclude(value("gameTypeExclude"));
-    setFormats(value("formats"));
-    setFormatExclude(value("formatExclude"));
-    setStorefronts(value("storefronts"));
-    setStorefrontExclude(value("storefrontExclude"));
-    setPlayStatuses(value("playStatuses"));
-    setPlayStatusExclude(value("playStatusExclude"));
-    setMatchAll(value("matchAll"));
-    setSteelbookOnly(value("steelbookOnly"));
-    setSources(value("sources"));
-    setSourceExclude(value("sourceExclude"));
-    setPlatformScopes(value("platformScopes"));
-    setGenreIds(value("genreIds"));
-    setGenreExclude(value("genreExclude"));
-    setReleaseStatuses(value("releaseStatuses"));
-    setReleaseYearFrom(value("releaseYearFrom"));
-    setReleaseYearTo(value("releaseYearTo"));
-    setLocalPlayersMin(value("localPlayersMin"));
-    setOnlineMultiplayerOnly(value("onlineMultiplayerOnly"));
-    setCoopOnly(value("coopOnly"));
-    setTimeToBeat(value("timeToBeat"));
-    setRatingMin(value("ratingMin"));
+  const matchesFilters = (saved: Record<string, unknown>, fixed: readonly PresetField[] = []) => {
+    const skip = skippedNames(fixed);
+    return (Object.keys(filterSnapshot) as (keyof typeof filterSnapshot)[])
+      .filter((name) => !skip.has(name))
+      .every((name) => JSON.stringify(saved[name] ?? CLEARED_FILTERS[name]) === JSON.stringify(filterSnapshot[name]));
+  };
+  // Fields the page fixes (`fixed`) are left as they are: a Platform page's own platform filter,
+  // say, has no field or chip there, so a preset setting it would filter invisibly.
+  const applyFilters = (saved: Record<string, unknown>, fixed: readonly PresetField[] = []) => {
+    const skip = skippedNames(fixed);
+    const apply = <K extends keyof typeof CLEARED_FILTERS>(name: K, set: (value: (typeof CLEARED_FILTERS)[K]) => void) => {
+      if (!skip.has(name)) set((saved[name] ?? CLEARED_FILTERS[name]) as (typeof CLEARED_FILTERS)[K]);
+    };
+    apply("ownershipStatuses", setOwnershipStatuses);
+    apply("ownershipExclude", setOwnershipExclude);
+    apply("platformIds", setPlatformIds);
+    apply("platformExclude", setPlatformExclude);
+    apply("tagIds", setTagIds);
+    apply("tagExclude", setTagExclude);
+    apply("collectionIds", setCollectionIds);
+    apply("collectionExclude", setCollectionExclude);
+    apply("franchiseIds", setFranchiseIds);
+    apply("franchiseExclude", setFranchiseExclude);
+    apply("gameTypes", setGameTypes);
+    apply("gameTypeExclude", setGameTypeExclude);
+    apply("formats", setFormats);
+    apply("formatExclude", setFormatExclude);
+    apply("storefronts", setStorefronts);
+    apply("storefrontExclude", setStorefrontExclude);
+    apply("playStatuses", setPlayStatuses);
+    apply("playStatusExclude", setPlayStatusExclude);
+    apply("matchAll", setMatchAll);
+    apply("steelbookOnly", setSteelbookOnly);
+    apply("sources", setSources);
+    apply("sourceExclude", setSourceExclude);
+    apply("platformScopes", setPlatformScopes);
+    apply("genreIds", setGenreIds);
+    apply("genreExclude", setGenreExclude);
+    apply("releaseStatuses", setReleaseStatuses);
+    apply("releaseYearFrom", setReleaseYearFrom);
+    apply("releaseYearTo", setReleaseYearTo);
+    apply("localPlayersMin", setLocalPlayersMin);
+    apply("onlineMultiplayerOnly", setOnlineMultiplayerOnly);
+    apply("coopOnly", setCoopOnly);
+    apply("timeToBeat", setTimeToBeat);
+    apply("ratingMin", setRatingMin);
+    apply("screensaverFilter", setScreensaverFilter);
   };
 
   return {
@@ -473,6 +500,7 @@ export function useGameListState(
     apiFilters,
     fields,
     filterSnapshot,
+    snapshotFilters,
     applyFilters,
     matchesFilters,
     activeView,

@@ -46,7 +46,11 @@ const useGameShelfMock = vi.fn((..._args: unknown[]) => ({
 vi.mock("../../hooks/useGames", () => ({
   useGameShelf: (...args: unknown[]) => useGameShelfMock(...args),
 }));
+vi.mock("../../hooks/useGameFilterPreferences", () => ({
+  useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters: [] }),
+}));
 vi.mock("../../hooks/useLabs", () => ({
+  useEnabledLabs: () => new Set(labOn ? ["game_shelf"] : []),
   useLabs: () => ({
     data: [{ id: "game_shelf", enabled: labOn }],
     isError: false,

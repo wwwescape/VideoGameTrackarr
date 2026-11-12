@@ -45,4 +45,36 @@ describe("useGameListState saved filters", () => {
     expect(result.current.fields.genreIds).toEqual([]);
     expect(result.current.fields.coopOnly).toBe(true);
   });
+
+  it("keeps the Screensaver filter in a preset", () => {
+    const { result } = renderHook(() => useGameListState("games", { screensaver: true }));
+
+    act(() => result.current.fields.onScreensaverFilterChange?.("hidden"));
+    const saved = JSON.parse(JSON.stringify(result.current.snapshotFilters()));
+    expect(saved.screensaverFilter).toBe("hidden");
+
+    act(() => result.current.fields.onScreensaverFilterChange?.(null));
+    expect(result.current.matchesFilters(saved)).toBe(false);
+    act(() => result.current.applyFilters(saved));
+    expect(result.current.fields.screensaverFilter).toBe("hidden");
+  });
+
+  it("leaves the fields a page fixes alone: not saved, not compared, not put back", () => {
+    // Like a Platform page: its own platform filter has no field or chip there.
+    const { result } = renderHook(() => useGameListState("platform.ps5"));
+
+    act(() => {
+      result.current.fields.onCoopOnlyChange(true);
+      result.current.fields.onCollectionIdsChange([7]);
+    });
+    const saved = result.current.snapshotFilters(["collection"]);
+    expect(saved).not.toHaveProperty("collectionIds");
+    expect(saved).toHaveProperty("coopOnly", true);
+    expect(result.current.matchesFilters({ coopOnly: true }, ["collection"])).toBe(true);
+
+    act(() => result.current.applyFilters({ platformScopes: ["130"], collectionIds: [9] }, ["platform", "collection"]));
+    expect(result.current.fields.platformKeys).toEqual([]);
+    expect(result.current.fields.collectionIds).toEqual([7]);
+    expect(result.current.fields.coopOnly).toBe(false);
+  });
 });

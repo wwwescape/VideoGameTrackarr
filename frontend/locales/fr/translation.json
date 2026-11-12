@@ -495,6 +495,10 @@
         "screensaver": {
           "name": "Économiseur d'écran",
           "description": "Un bouton flottant qui affiche les jaquettes de vos jeux en plein écran, l'une après l'autre. Balayez pour parcourir, touchez une jaquette pour ouvrir le jeu. Ajoute Paramètres → Économiseur d'écran."
+        },
+        "filter_presets": {
+          "name": "Préréglages de filtres",
+          "description": "Enregistrez les filtres des listes de jeux sous un nom (« Coop sur le canapé ») et réappliquez-les en un geste. Ajoute un bouton Préréglages à côté de Filtrer, et vos préréglages enregistrés dans Paramètres → Général → Listes de jeux."
         }
       }
     },
@@ -635,8 +639,8 @@
       "customizeTitle": "Champs de filtre",
       "customizeDescription": "Désactivez les champs que vous n'utilisez jamais. Le filtre d'un champ masqué est conservé et peut toujours être retiré depuis sa puce.",
       "showAll": "Tout afficher",
-      "saved": "Vues enregistrées",
-      "savedHelp": "Créées depuis le bouton Vues des listes de jeux. Modifiez-en une pour la renommer ou la supprimer."
+      "saved": "Préréglages enregistrés",
+      "savedHelp": "Créés depuis le bouton Préréglages des listes de jeux. Modifiez-en un pour le renommer ou le supprimer."
     }
   },
   "screensaver": {
@@ -1154,18 +1158,18 @@
       "caseLabel": "{{name}} sur {{platform}}"
     },
     "savedViews": {
-      "button": "Vues",
-      "modifiedLabel": "{{name}} (modifiée)",
-      "empty": "Aucune vue pour l'instant",
+      "button": "Préréglages",
+      "modifiedLabel": "{{name}} (modifié)",
+      "empty": "Aucun préréglage pour l'instant",
       "saveCurrent": "Enregistrer les filtres actuels…",
-      "saveAsNew": "Enregistrer comme nouvelle vue…",
+      "saveAsNew": "Enregistrer comme nouveau préréglage…",
       "update": "Mettre à jour « {{name}} »",
       "saveTitle": "Enregistrer ces filtres",
-      "editTitle": "Modifier la vue",
+      "editTitle": "Modifier le préréglage",
       "editAria": "Modifier {{name}}",
       "nameLabel": "Nom",
-      "replaceHelp": "Remplace la vue enregistrée sous ce nom.",
-      "deleted": "Vue « {{name}} » supprimée"
+      "replaceHelp": "Remplace le préréglage enregistré sous ce nom.",
+      "deleted": "Préréglage « {{name}} » supprimé"
     }
   },
   "events": {

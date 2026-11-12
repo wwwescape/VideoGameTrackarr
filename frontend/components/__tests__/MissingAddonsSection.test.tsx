@@ -39,6 +39,7 @@ vi.mock("../../hooks/useGameFilterPreferences", () => ({
   useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters: [], saveFilter: vi.fn(), deleteFilter: vi.fn() }),
 }));
 vi.mock("../../hooks/useTags", () => ({ useTags: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/useLabs", () => ({ useEnabledLabs: () => new Set() }));
 vi.mock("../../hooks/useCatalogBrowse", () => ({
   useCollections: () => ({ data: [], isSuccess: true }),
   useFranchises: () => ({ data: [], isSuccess: true }),
