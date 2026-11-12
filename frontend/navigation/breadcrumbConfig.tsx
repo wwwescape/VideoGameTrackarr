@@ -318,6 +318,11 @@ export const linkedAddonsSettingsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.linkedAddons") },
 ];
 
+export const filterPresetsSettingsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.filterPresets") },
+];
+
 export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.steamSync") },

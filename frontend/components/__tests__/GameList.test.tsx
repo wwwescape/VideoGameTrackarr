@@ -68,8 +68,9 @@ vi.mock("../../hooks/usePlatforms", () => ({
 }));
 vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
 let savedFilters: { name: string; filters: Record<string, unknown> }[] = [];
+let hiddenFields = new Set<string>();
 vi.mock("../../hooks/useGameFilterPreferences", () => ({
-  useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters, saveFilter: vi.fn(), deleteFilter: vi.fn() }),
+  useGameFilterPreferences: () => ({ hiddenFields, savedFilters, saveFilter: vi.fn(), deleteFilter: vi.fn() }),
 }));
 vi.mock("../../hooks/useTags", () => ({
   useTags: () => ({ data: [], isSuccess: true }),
@@ -124,6 +125,7 @@ describe("Games list", () => {
     labOn = false;
     presetsLab = false;
     savedFilters = [];
+    hiddenFields = new Set();
     bulkMutate.mockReset();
     showUndoToast.mockReset();
   });
@@ -148,6 +150,19 @@ describe("Games list", () => {
     presetsLab = true;
     renderList();
     expect(within(screen.getByRole("toolbar")).getByRole("button", { name: "Presets" })).toBeInTheDocument();
+  });
+
+  it("hides the fields switched off in Settings only while the Filter Presets lab is on", async () => {
+    hiddenFields = new Set(["steelbook"]);
+    const { user } = renderList();
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    expect(within(screen.getByRole("dialog")).getByText("Steelbooks only")).toBeInTheDocument();
+    cleanup();
+
+    presetsLab = true;
+    const second = renderList();
+    await second.user.click(screen.getByRole("button", { name: "Filter" }));
+    expect(within(screen.getByRole("dialog")).queryByText("Steelbooks only")).not.toBeInTheDocument();
   });
 
   it("shows the preset in use as the first chip, which opens the presets", async () => {

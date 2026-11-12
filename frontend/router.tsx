@@ -43,6 +43,7 @@ import {
   gameCasesCrumbs,
   screensaverSettingsCrumbs,
   linkedAddonsSettingsCrumbs,
+  filterPresetsSettingsCrumbs,
   platformCrumbs,
   platformsCrumbs,
   seriesCrumbs,
@@ -314,6 +315,11 @@ const router = createBrowserRouter([
             path: "/settings/linked-addons",
             lazy: page(() => import("./components/LinkedAddonsSettingsPage")),
             handle: { crumbs: linkedAddonsSettingsCrumbs },
+          },
+          {
+            path: "/settings/filter-presets",
+            lazy: page(() => import("./components/FilterPresetsSettingsPage")),
+            handle: { crumbs: filterPresetsSettingsCrumbs },
           },
           {
             path: "/settings/igdb-import",

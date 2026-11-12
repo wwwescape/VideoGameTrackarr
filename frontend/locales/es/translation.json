@@ -78,6 +78,7 @@
     "gameCases": "Cajas de juegos",
     "screensaver": "Salvapantallas",
     "linkedAddons": "Expansiones vinculadas",
+    "filterPresets": "Preajustes de filtros",
     "overview": "Resumen",
     "settingsGeneral": "General",
     "primary": "Navegación principal",
@@ -543,7 +544,7 @@
         },
         "filter_presets": {
           "name": "Preajustes de filtros",
-          "description": "Guarda los filtros de las listas de juegos con un nombre («Cooperativo en el sofá») y vuelve a aplicarlos con un toque. Añade un ▾ al botón Filtrar con tus preajustes, y los lista en Configuración → General → Listas de juegos."
+          "description": "Elige qué campos muestra el diálogo Filtros de las listas de juegos y guarda sus filtros con un nombre («Cooperativo en el sofá») para volver a aplicarlos con un toque. Añade una flecha junto al botón Filtrar con tus preajustes, y Configuración → Preajustes de filtros."
         }
       }
     },
@@ -712,6 +713,9 @@
     "regional": {
       "heading": "Regional"
     },
+    "filterPresets": {
+      "description": "Qué campos muestra el diálogo Filtros de las listas de juegos, y los preajustes guardados desde la flecha junto a su botón Filtrar. Guardado en tu cuenta, así que todos tus navegadores los tienen."
+    },
     "gameFilters": {
       "heading": "Listas de juegos",
       "fields": "Campos de filtro",
@@ -721,7 +725,7 @@
       "customizeDescription": "Desactiva los campos que nunca usas. El filtro de un campo oculto se conserva y aún puede quitarse desde su chip.",
       "showAll": "Mostrar todos",
       "saved": "Preajustes guardados",
-      "savedHelp": "Creados desde el ▾ del botón Filtrar de las listas de juegos. Edita uno para renombrarlo o eliminarlo."
+      "savedHelp": "Creados desde la flecha junto a Filtrar en las listas de juegos. Edita uno para renombrarlo o eliminarlo."
     }
   },
   "screensaver": {
