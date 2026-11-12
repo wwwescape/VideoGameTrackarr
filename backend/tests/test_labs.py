@@ -10,6 +10,7 @@ ALL_OFF = [
     {"id": "game_shelf", "enabled": False},
     {"id": "screensaver", "enabled": False},
     {"id": "linked_addons", "enabled": False},
+    {"id": "filter_presets", "enabled": False},
 ]
 
 

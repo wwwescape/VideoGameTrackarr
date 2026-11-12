@@ -24,6 +24,7 @@ function listState(overrides: Partial<GameListState> = {}) {
     applyFilters: vi.fn(),
     matchesFilters: vi.fn(() => true),
     filterSnapshot: { localPlayersMin: 2, coopOnly: true },
+    snapshotFilters: vi.fn(() => ({ localPlayersMin: 2, coopOnly: true })),
     ...overrides,
   } as unknown as GameListState;
 }
@@ -42,7 +43,7 @@ describe("GameListPresets", () => {
     await user.click(screen.getByRole("button", { name: "Presets" }));
     await user.click(screen.getByRole("menuitem", { name: /Couch Switch/ }));
 
-    expect(state.applyFilters).toHaveBeenCalledWith({ localPlayersMin: 2 });
+    expect(state.applyFilters).toHaveBeenCalledWith({ localPlayersMin: 2 }, []);
     expect(state.setActiveView).toHaveBeenCalledWith("Couch Switch");
   });
 
@@ -69,6 +70,22 @@ describe("GameListPresets", () => {
     await user.click(screen.getByRole("menuitem", { name: "Update “Couch Switch”" }));
 
     expect(saveFilter).toHaveBeenCalledWith("Couch Switch", { localPlayersMin: 2, coopOnly: true });
+  });
+
+  it("leaves the fields a page fixes alone, putting a preset back and saving one", async () => {
+    const user = userEvent.setup();
+    const state = listState({ activeView: "Couch Switch", matchesFilters: vi.fn(() => false) });
+    render(<GameListPresets state={state} canSave fixedFields={["platform"]} />);
+
+    await user.click(screen.getByRole("button", { name: "Couch Switch (changed)" }));
+    expect(state.matchesFilters).toHaveBeenCalledWith({ localPlayersMin: 2 }, ["platform"]);
+    await user.click(screen.getByRole("menuitem", { name: "Update “Couch Switch”" }));
+    expect(state.snapshotFilters).toHaveBeenCalledWith(["platform"]);
+
+    await user.click(screen.getByRole("button", { name: "Couch Switch (changed)" }));
+    // The preset itself, not the "Update" item below it.
+    await user.click(screen.getAllByRole("menuitem", { name: /Couch Switch/ })[0]);
+    expect(state.applyFilters).toHaveBeenCalledWith({ localPlayersMin: 2 }, ["platform"]);
   });
 
   it("drops the active view once no filter is set", () => {

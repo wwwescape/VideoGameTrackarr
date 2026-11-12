@@ -18,7 +18,7 @@ import TextField from "@mui/material/TextField";
 import { useTranslation } from "react-i18next";
 import type { SavedGameFilter } from "../api/types";
 import { useGameFilterPreferences } from "../hooks/useGameFilterPreferences";
-import type { GameListState } from "../hooks/useGameListState";
+import type { GameListState, PresetField } from "../hooks/useGameListState";
 import { ToolbarButton } from "./Page";
 import { showUndoToast } from "./UndoToast";
 
@@ -116,12 +116,14 @@ interface GameListPresetsProps {
   state: GameListState;
   // Nothing to save while no filter is set.
   canSave: boolean;
+  // Fields this page fixes itself (no field or chip for them here): presets leave them alone.
+  fixedFields?: readonly PresetField[];
 }
 
 // The list toolbar's Views button: put a saved view back, save the current filters as one,
 // update the view in use once its filters have been changed, and edit a view (the pencil:
 // rename or delete). The button shows the view in use, if any.
-const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
+const GameListPresets = ({ state, canSave, fixedFields = [] }: GameListPresetsProps) => {
   const { t } = useTranslation();
   const { savedFilters, saveFilter } = useGameFilterPreferences();
   const { edit, dialog: editDialog } = useViewEditor((from, to) => {
@@ -132,11 +134,11 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
 
   // Clearing every filter leaves the view rather than "modifying" it.
   const active = canSave ? (savedFilters.find((saved) => saved.name === state.activeView) ?? null) : null;
-  const modified = active !== null && !state.matchesFilters(active.filters);
+  const modified = active !== null && !state.matchesFilters(active.filters, fixedFields);
 
   const close = () => setAnchor(null);
   const apply = (saved: SavedGameFilter) => {
-    state.applyFilters(saved.filters);
+    state.applyFilters(saved.filters, fixedFields);
     state.setActiveView(saved.name);
     close();
   };
@@ -180,7 +182,7 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
         {modified ? (
           <MenuItem
             onClick={() => {
-              saveFilter(active.name, state.filterSnapshot);
+              saveFilter(active.name, state.snapshotFilters(fixedFields));
               close();
             }}
           >
@@ -204,7 +206,7 @@ const GameListPresets = ({ state, canSave }: GameListPresetsProps) => {
           takenNames={savedFilters.map((saved) => saved.name)}
           onClose={() => setNaming(false)}
           onSave={(name) => {
-            saveFilter(name, state.filterSnapshot);
+            saveFilter(name, state.snapshotFilters(fixedFields));
             state.setActiveView(name);
             setNaming(false);
           }}

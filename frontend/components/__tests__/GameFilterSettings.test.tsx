@@ -20,8 +20,14 @@ vi.mock("../../hooks/useGameFilterPreferences", async (importOriginal) => ({
   }),
 }));
 
+let presetsLab = true;
+vi.mock("../../hooks/useLabs", () => ({
+  useEnabledLabs: () => new Set(presetsLab ? ["filter_presets"] : []),
+}));
+
 describe("GameFilterSettings", () => {
   beforeEach(() => {
+    presetsLab = true;
     hiddenFields = new Set(["format"]);
     setHiddenFields.mockClear();
     deleteFilter.mockClear();
@@ -30,7 +36,7 @@ describe("GameFilterSettings", () => {
   it("counts the fields shown and switches more off on Save", async () => {
     const user = userEvent.setup();
     render(<GameFilterSettings />);
-    expect(screen.getByText(/16 of 17 fields shown/)).toBeInTheDocument();
+    expect(screen.getByText(/17 of 18 fields shown/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Customize" }));
     const dialog = screen.getByRole("dialog");
@@ -49,5 +55,14 @@ describe("GameFilterSettings", () => {
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
 
     expect(deleteFilter).toHaveBeenCalledWith("Couch Switch");
+  });
+
+  it("lists saved presets only while the Filter Presets lab is on", () => {
+    presetsLab = false;
+    render(<GameFilterSettings />);
+
+    expect(screen.getByRole("button", { name: "Customize" })).toBeInTheDocument();
+    expect(screen.queryByText("Saved presets")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit Couch Switch" })).not.toBeInTheDocument();
   });
 });
