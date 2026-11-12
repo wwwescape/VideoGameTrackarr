@@ -76,6 +76,7 @@
     "emulation": "Émulation",
     "gameCases": "Boîtiers de jeux",
     "screensaver": "Économiseur d'écran",
+    "filterPresets": "Préréglages de filtres",
     "overview": "Vue d'ensemble",
     "settingsGeneral": "Général",
     "primary": "Navigation principale",
@@ -498,7 +499,7 @@
         },
         "filter_presets": {
           "name": "Préréglages de filtres",
-          "description": "Enregistrez les filtres des listes de jeux sous un nom (« Coop sur le canapé ») et réappliquez-les en un geste. Ajoute un ▾ au bouton Filtrer pour vos préréglages, et les liste dans Paramètres → Général → Listes de jeux."
+          "description": "Choisissez les champs qu'affiche la fenêtre Filtres des listes de jeux, et enregistrez ses filtres sous un nom (« Coop sur le canapé ») pour les réappliquer en un geste. Ajoute une flèche à côté du bouton Filtrer pour vos préréglages, et Paramètres → Préréglages de filtres."
         }
       }
     },
@@ -631,6 +632,9 @@
     "regional": {
       "heading": "Régional"
     },
+    "filterPresets": {
+      "description": "Les champs qu'affiche la fenêtre Filtres des listes de jeux, et les préréglages enregistrés depuis la flèche à côté de son bouton Filtrer. Enregistré sur votre compte, pour que tous vos navigateurs les aient."
+    },
     "gameFilters": {
       "heading": "Listes de jeux",
       "fields": "Champs de filtre",
@@ -640,7 +644,7 @@
       "customizeDescription": "Désactivez les champs que vous n'utilisez jamais. Le filtre d'un champ masqué est conservé et peut toujours être retiré depuis sa puce.",
       "showAll": "Tout afficher",
       "saved": "Préréglages enregistrés",
-      "savedHelp": "Créés depuis le ▾ du bouton Filtrer des listes de jeux. Modifiez-en un pour le renommer ou le supprimer."
+      "savedHelp": "Créés depuis la flèche à côté de Filtrer dans les listes de jeux. Modifiez-en un pour le renommer ou le supprimer."
     }
   },
   "screensaver": {

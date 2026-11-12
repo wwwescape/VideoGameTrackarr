@@ -368,7 +368,8 @@ export function useGameListControls(
         hideFranchisesField={hideFranchisesField}
         hideOwnershipField={hideOwnershipField}
         hideFormatsField={hideFormatsField}
-        hiddenFields={filterPreferences.hiddenFields}
+        // Hiding fields is the Filter Presets lab's (Settings → Filter Presets): off, every field shows.
+        hiddenFields={presetsLab ? filterPreferences.hiddenFields : undefined}
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
       />

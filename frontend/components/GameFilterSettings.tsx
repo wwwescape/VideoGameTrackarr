@@ -17,7 +17,6 @@ import {
   useGameFilterPreferences,
   type GameFilterFieldKey,
 } from "../hooks/useGameFilterPreferences";
-import { useEnabledLabs } from "../hooks/useLabs";
 import { useViewEditor } from "./GameListPresets";
 import { SettingRow } from "./SettingsLayout";
 
@@ -75,15 +74,14 @@ const CustomizeFilterFieldsDialog = ({ hidden, saving, onClose, onSave }: Custom
   );
 };
 
-// Settings rows for the game lists' Filter dialog: which fields it shows, and, while the Filter
-// Presets lab is on, the presets saved from the ▾ on the lists' Filter button (made and applied there;
-// renamed or deleted from either place).
+// Settings → Filter Presets' rows: which fields the game lists' Filter dialog shows, and the
+// presets saved from the ▾ on the lists' Filter button (made and applied there; renamed or
+// deleted from either place).
 const GameFilterSettings = () => {
   const { t } = useTranslation();
   const [customizing, setCustomizing] = useState(false);
   const { hiddenFields, setHiddenFields, savedFilters, saving } = useGameFilterPreferences();
   const { edit, dialog: editDialog } = useViewEditor();
-  const presetsLab = useEnabledLabs().has("filter_presets");
   const shownCount = GAME_FILTER_FIELD_KEYS.length - hiddenFields.size;
 
   return (
@@ -96,7 +94,6 @@ const GameFilterSettings = () => {
           {t("settings.gameFilters.customizeButton")}
         </Button>
       </SettingRow>
-      {presetsLab ? (
       <SettingRow name={t("settings.gameFilters.saved")} description={t("settings.gameFilters.savedHelp")}>
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "flex-end" }}>
           {savedFilters.length ? (
@@ -119,7 +116,6 @@ const GameFilterSettings = () => {
           )}
         </Box>
       </SettingRow>
-      ) : null}
       {customizing ? (
         <CustomizeFilterFieldsDialog
           hidden={hiddenFields}

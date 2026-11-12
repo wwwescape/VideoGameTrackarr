@@ -34,6 +34,15 @@ describe("lab-gated nav entries", () => {
     ).toContain("/settings/game-cases");
   });
 
+  it("show Settings → Filter Presets only while its lab is on", () => {
+    const pages = (labs: Set<LabId>) =>
+      settingsPages()
+        .filter((page) => isSubDestinationEnabled(page, labs))
+        .map((page) => page.to);
+    expect(pages(off)).not.toContain("/settings/filter-presets");
+    expect(pages(new Set<LabId>(["filter_presets"]))).toContain("/settings/filter-presets");
+  });
+
   it("put Labs right after Tag Manager, always shown", () => {
     const pages = settingsPages().filter((page) => isSubDestinationEnabled(page, off));
     expect(pages.slice(0, 2).map((page) => page.to)).toEqual(["/settings/tags", "/settings/labs"]);
