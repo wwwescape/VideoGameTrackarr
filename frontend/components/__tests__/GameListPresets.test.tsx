@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { GameListState } from "../../hooks/useGameListState";
-import GameListPresets from "../GameListPresets";
+import type { GameListState, PresetField } from "../../hooks/useGameListState";
+import { useGameListPresets } from "../GameListPresets";
 
 const saveFilter = vi.fn();
 const renameFilter = vi.fn();
@@ -29,16 +29,43 @@ function listState(overrides: Partial<GameListState> = {}) {
   } as unknown as GameListState;
 }
 
-describe("GameListPresets", () => {
+// What GameListControls does with the hook: the Filter caret opens the menu, and the active
+// preset's chip shows its label and clears it.
+const Harness = ({
+  state,
+  canSave = true,
+  enabled = true,
+  fixedFields,
+}: {
+  state: GameListState;
+  canSave?: boolean;
+  enabled?: boolean;
+  fixedFields?: PresetField[];
+}) => {
+  const presets = useGameListPresets(state, { enabled, canSave, fixedFields });
+  return (
+    <>
+      <button type="button" aria-label="Presets" onClick={(event) => presets.openMenu(event.currentTarget)} />
+      {presets.activeLabel ? (
+        <button type="button" onClick={presets.clearActive}>
+          Clear {presets.activeLabel}
+        </button>
+      ) : null}
+      {presets.elements}
+    </>
+  );
+};
+
+describe("useGameListPresets", () => {
   beforeEach(() => {
     savedFilters = [couch];
     vi.clearAllMocks();
   });
 
-  it("puts a saved view back and makes it the active one", async () => {
+  it("puts a saved preset back and makes it the active one", async () => {
     const user = userEvent.setup();
     const state = listState();
-    render(<GameListPresets state={state} canSave />);
+    render(<Harness state={state} />);
 
     await user.click(screen.getByRole("button", { name: "Presets" }));
     await user.click(screen.getByRole("menuitem", { name: /Couch Switch/ }));
@@ -50,7 +77,7 @@ describe("GameListPresets", () => {
   it("saves the current filters under a name", async () => {
     const user = userEvent.setup();
     const state = listState();
-    render(<GameListPresets state={state} canSave />);
+    render(<Harness state={state} />);
 
     await user.click(screen.getByRole("button", { name: "Presets" }));
     await user.click(screen.getByRole("menuitem", { name: "Save current filters…" }));
@@ -61,42 +88,63 @@ describe("GameListPresets", () => {
     expect(state.setActiveView).toHaveBeenCalledWith("Co-op night");
   });
 
-  it("shows a changed view and offers to update it", async () => {
+  it("labels a changed preset and offers to update it", async () => {
     const user = userEvent.setup();
     const state = listState({ activeView: "Couch Switch", matchesFilters: vi.fn(() => false) });
-    render(<GameListPresets state={state} canSave />);
+    render(<Harness state={state} />);
 
-    await user.click(screen.getByRole("button", { name: "Couch Switch (changed)" }));
+    expect(screen.getByRole("button", { name: "Clear Couch Switch (changed)" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Presets" }));
     await user.click(screen.getByRole("menuitem", { name: "Update “Couch Switch”" }));
 
     expect(saveFilter).toHaveBeenCalledWith("Couch Switch", { localPlayersMin: 2, coopOnly: true });
   });
 
+  it("clears the active preset's filters (not the page's fixed ones) and the preset", async () => {
+    const user = userEvent.setup();
+    const state = listState({ activeView: "Couch Switch" });
+    render(<Harness state={state} fixedFields={["platform"]} />);
+
+    await user.click(screen.getByRole("button", { name: "Clear Couch Switch" }));
+
+    expect(state.applyFilters).toHaveBeenCalledWith({}, ["platform"]);
+    expect(state.setActiveView).toHaveBeenCalledWith(null);
+  });
+
   it("leaves the fields a page fixes alone, putting a preset back and saving one", async () => {
     const user = userEvent.setup();
     const state = listState({ activeView: "Couch Switch", matchesFilters: vi.fn(() => false) });
-    render(<GameListPresets state={state} canSave fixedFields={["platform"]} />);
+    render(<Harness state={state} fixedFields={["platform"]} />);
 
-    await user.click(screen.getByRole("button", { name: "Couch Switch (changed)" }));
     expect(state.matchesFilters).toHaveBeenCalledWith({ localPlayersMin: 2 }, ["platform"]);
+    await user.click(screen.getByRole("button", { name: "Presets" }));
     await user.click(screen.getByRole("menuitem", { name: "Update “Couch Switch”" }));
     expect(state.snapshotFilters).toHaveBeenCalledWith(["platform"]);
 
-    await user.click(screen.getByRole("button", { name: "Couch Switch (changed)" }));
+    await user.click(screen.getByRole("button", { name: "Presets" }));
     // The preset itself, not the "Update" item below it.
     await user.click(screen.getAllByRole("menuitem", { name: /Couch Switch/ })[0]);
     expect(state.applyFilters).toHaveBeenCalledWith({ localPlayersMin: 2 }, ["platform"]);
   });
 
-  it("drops the active view once no filter is set", () => {
-    render(<GameListPresets state={listState({ activeView: "Couch Switch" })} canSave={false} />);
+  it("has no active preset once no filter is set", () => {
+    render(<Harness state={listState({ activeView: "Couch Switch" })} canSave={false} />);
 
-    expect(screen.getByRole("button", { name: "Presets" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Clear/ })).not.toBeInTheDocument();
+  });
+
+  it("has nothing while the Filter Presets lab is off", async () => {
+    const user = userEvent.setup();
+    render(<Harness state={listState({ activeView: "Couch Switch" })} enabled={false} />);
+
+    expect(screen.queryByRole("button", { name: /^Clear/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Presets" }));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
   it("deletes from the pencil with an Undo toast that saves it back", async () => {
     const user = userEvent.setup();
-    render(<GameListPresets state={listState()} canSave />);
+    render(<Harness state={listState()} />);
 
     await user.click(screen.getByRole("button", { name: "Presets" }));
     await user.click(screen.getByRole("button", { name: "Edit Couch Switch" }));
