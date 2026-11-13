@@ -6,6 +6,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import CableIcon from "@mui/icons-material/Cable";
 import CollectionsBookmarkIcon from "@mui/icons-material/CollectionsBookmark";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DownloadIcon from "@mui/icons-material/Download";
 import EventIcon from "@mui/icons-material/Event";
 import ExtensionOffIcon from "@mui/icons-material/ExtensionOff";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
@@ -186,6 +187,7 @@ export function settingsPages(): NavSubDestination[] {
       separatorBefore: true,
     },
     { to: "/settings/steam-sync", labelKey: "nav.steamSync", icon: <SteamIcon /> },
+    { to: "/settings/gog-sync", labelKey: "nav.gogSync", icon: <DownloadIcon /> },
     { to: "/settings/sale-tracked", labelKey: "nav.saleTracked", icon: <VisibilityIcon /> },
     { to: "/settings/sales-ignored", labelKey: "nav.salesIgnored", icon: <BlockIcon /> },
   ];

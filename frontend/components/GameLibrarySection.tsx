@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -35,6 +35,7 @@ import {
   useUpdateRomLabel,
 } from "../hooks/useLibrary";
 import { useUndoableAction } from "../hooks/useUndoableAction";
+import { useGogInstallers } from "../hooks/useIntegrations";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
@@ -65,6 +66,27 @@ const GameLibrarySection = ({
   const replaceRom = useReplaceRom(gameId);
   const updateRomLabel = useUpdateRomLabel(gameId);
   const deleteRom = useDeleteRom(gameId);
+  // Installer downloads only exist for games imported by the GOG sync — the
+  // query (and the row icon below) only fires when a copy carries the GOG
+  // storefront. Same query key as the dialog's installers section, so the two
+  // share one request.
+  const hasGogItem = (libraryItems ?? []).some((item) => item.digitalStorefront === "GOG");
+  const { data: gogInstallers } = useGogInstallers(gameId, hasGogItem);
+  // Labels of the installers already downloaded to the NAS ("windows · en · 1.0"),
+  // for the row icon's tooltip — empty while nothing has finished downloading.
+  const downloadedGogInstallerLabels = useMemo(() => {
+    const labels: string[] = [];
+    for (const group of gogInstallers?.groups ?? []) {
+      for (const installer of group.installers) {
+        if (installer.files.some((file) => file.downloadState === "completed")) {
+          labels.push(
+            [installer.os, installer.language, installer.version ?? ""].filter(Boolean).join(" · ")
+          );
+        }
+      }
+    }
+    return labels;
+  }, [gogInstallers]);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadStep, setUploadStep] = useState<{ current: number; total: number } | null>(null);
   // Moving an owned copy that holds a ROM to the Wishlist deletes the ROM (see
@@ -132,6 +154,24 @@ const GameLibrarySection = ({
               ×{item.roms.length}
             </Box>
           ) : null}
+        </Box>
+      </Tooltip>
+    );
+  };
+
+  // The same gamepad icon as the ROM one, on a GOG copy whose installer is
+  // already downloaded to the NAS — green, because a downloaded installer is
+  // ready to send to this device (unlike a ROM, which can be unplayable).
+  const renderGogInstallerIcon = (item: LibraryItem) => {
+    if (item.digitalStorefront !== "GOG" || downloadedGogInstallerLabels.length === 0) return null;
+    const tooltip = t("games.library.gogInstallerDownloadedTooltip", {
+      count: downloadedGogInstallerLabels.length,
+      name: downloadedGogInstallerLabels.join(", "),
+    });
+    return (
+      <Tooltip title={tooltip}>
+        <Box component="span" aria-label={tooltip} sx={{ display: "inline-flex", alignItems: "center" }}>
+          <SportsEsportsIcon fontSize="small" color="success" />
         </Box>
       </Tooltip>
     );
@@ -334,6 +374,8 @@ const GameLibrarySection = ({
               ]
                 .filter(Boolean)
                 .join(" · ");
+              const showGogInstallerIcon =
+                item.digitalStorefront === "GOG" && downloadedGogInstallerLabels.length > 0;
               return (
                 <ListRow
                   key={item.id}
@@ -343,10 +385,11 @@ const GameLibrarySection = ({
                   title={item.platformName ?? t("games.about.unknownPlatform")}
                   subtitle={
                     <>
-                      {formatLine || item.roms.length ? (
+                      {formatLine || item.roms.length || showGogInstallerIcon ? (
                         <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                           {formatLine}
                           {renderRomIcon(item)}
+                          {renderGogInstallerIcon(item)}
                         </Box>
                       ) : null}
                       {item.edition ? <Box component="span" sx={{ display: "block" }}>{item.edition}</Box> : null}
@@ -387,6 +430,12 @@ const GameLibrarySection = ({
               : t("games.library.addDialogTitle", { phrase: statusPhrase[dialogStatus] })
           }
           status={dialogStatus}
+          gameId={gameId}
+          // Per-copy, not per-game: a Steam copy of a game that also has a
+          // GOG copy must not show the GOG installers (the installers belong
+          // to the GOG copy). dialogItem is null while adding a copy, so the
+          // section stays hidden there too.
+          showGogInstallers={dialogItem?.digitalStorefront === "GOG"}
           platforms={platforms ?? []}
           regions={regions ?? []}
           gameCategory={gameCategory}

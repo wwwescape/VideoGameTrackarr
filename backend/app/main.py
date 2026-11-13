@@ -62,7 +62,14 @@ from app.core.limiter import limiter
 from app.core.logging import configure_logging
 from app.core.security import weak_secret_warning
 from app.db.session import SessionLocal
-from app.services import auth_service, job_definitions, job_scheduler, platprices_service, rom_service
+from app.services import (
+    auth_service,
+    gog_download_service,
+    job_definitions,
+    job_scheduler,
+    platprices_service,
+    rom_service,
+)
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, IGDBCredentialsError
 
@@ -70,15 +77,17 @@ FRONTEND_BUILD_DIR = REPO_ROOT / "build"
 
 
 class UploadsStaticFiles(StaticFiles):
-    """The public /uploads mount, minus the roms/ subfolder. Covers and accessory images are
-    fine to serve unauthenticated (they're shown on public share pages too), but uploaded
-    ROMs live under the same directory (see rom_service.get_rom_dir) and must only ever be
-    reachable through the signed-URL route in app/api/routes/roms.py."""
+    """The public /uploads mount, minus the roms/ and gog-installers/ subfolders. Covers and
+    accessory images are fine to serve unauthenticated (they're shown on public share pages
+    too), but uploaded ROMs live under the same directory (see rom_service.get_rom_dir) and
+    must only ever be reachable through the signed-URL route in app/api/routes/roms.py —
+    and GOG installer downloads (see gog_download_service) must only ever be reachable
+    through the authenticated file route, gated to games imported by the GOG sync."""
 
     def get_path(self, scope: Scope) -> str:
         path = super().get_path(scope)
         first_segment = path.replace("\\", "/").lstrip("/").split("/", 1)[0]
-        if first_segment.lower() == rom_service.ROMS_SUBDIR:
+        if first_segment.lower() in (rom_service.ROMS_SUBDIR, gog_download_service.GOG_DOWNLOADS_SUBDIR):
             raise StarletteHTTPException(status_code=404)
         return path
 
@@ -340,6 +349,7 @@ app.include_router(labs.router)
 app.include_router(version.router)
 app.include_router(share.router)
 app.include_router(integrations.router)
+app.include_router(integrations.download_router)
 app.include_router(sales_tracking.router)
 app.include_router(roms.router)
 app.include_router(roms.content_router)
