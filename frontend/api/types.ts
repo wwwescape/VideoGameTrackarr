@@ -137,6 +137,9 @@ export interface GameSummary {
   autoDiscovered: boolean;
   // Left out of the Screensaver lab's carousel (its page's toggle, the list's bulk Hide/Show).
   screensaverExcluded: boolean;
+  // Games list with Include add-ons: listed only because one of its add-ons matched the search
+  // or filters (the "Via add-on" chip). Always false elsewhere.
+  matchedViaAddon: boolean;
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;
@@ -924,6 +927,10 @@ export interface CurrentUser {
   overviewLayout: OverviewSectionSetting[] | null;
   // The Screensaver lab's seconds per cover (5-15); null until changed (see SCREENSAVER_DEFAULT_INTERVAL).
   screensaverIntervalSeconds: number | null;
+  // Settings → Screensaver → What to show (owned and wishlist are never both off).
+  screensaverShowOwned: boolean;
+  screensaverShowWishlist: boolean;
+  screensaverIncludeCustom: boolean;
 }
 
 // The Games list's Screensaver filter: games shown in it, or hidden from it.
@@ -1023,11 +1030,22 @@ export interface DeviceSummary {
   createdAt: string;
 }
 
-export interface LinkedAccessory {
+// A device or accessory linked to the one being viewed, with what its card shows (the same as
+// on the Hardware page).
+export interface LinkedHardware {
   id: number;
   uuid: string;
   officialName: string;
+  manufacturerName: string;
+  // After the manufacturer on the card: a device's platform, an accessory's type.
+  detail: string | null;
+  imageUrl: string | null;
+  isCustom: boolean;
+  owned: boolean;
+  wishlisted: boolean;
 }
+
+export type LinkedAccessory = LinkedHardware;
 
 export interface DeviceDetail extends DeviceSummary {
   linkedAccessories: LinkedAccessory[];
@@ -1088,11 +1106,7 @@ export interface AccessorySummary {
   createdAt: string;
 }
 
-export interface LinkedDevice {
-  id: number;
-  uuid: string;
-  officialName: string;
-}
+export type LinkedDevice = LinkedHardware;
 
 export interface AccessoryDetail extends AccessorySummary {
   compatiblePlatforms: CompatiblePlatform[];

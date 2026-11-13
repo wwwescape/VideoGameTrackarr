@@ -56,6 +56,8 @@ export interface GameCardGame {
   // manually-added game that just isn't owned/wishlisted yet — both are greyscaled, but only
   // the former gets the "Missing" chip. See the isGreyscale/showMissingChip split below.
   autoDiscovered?: boolean;
+  // Games list with Include add-ons: listed only because one of its add-ons matched.
+  matchedViaAddon?: boolean;
   playStatus?: PlayStatus | null;
   // Named to match GameSummary's own field so a GameSummary object can be passed straight
   // through as `game` everywhere (list, collections, series, addons, release calendar)
@@ -305,6 +307,27 @@ const GameCard = ({
               wishlisted={showsBadges && Boolean(game.wishlisted)}
             />
           </Box>
+
+          {game.matchedViaAddon ? (
+            // Top centre, between the wishlist heart and the owned check: listed because one of
+            // its add-ons matched the search or filters (Include add-ons).
+            <Box
+              data-testid="via-addon-chip"
+              sx={{
+                position: "absolute",
+                top: 7,
+                left: 34,
+                right: 34,
+                display: "flex",
+                justifyContent: "center",
+                pointerEvents: "none",
+                zIndex: 1,
+                [SMALL_CARD]: { top: 8, left: 31, right: 31 },
+              }}
+            >
+              {coverChip(t("games.card.viaAddon"), "rgba(17, 24, 39, 0.78)")}
+            </Box>
+          ) : null}
 
           {showSaleChip || showMissingChip || showCustomChip ? (
             <Box

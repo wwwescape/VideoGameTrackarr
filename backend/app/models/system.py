@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, ForeignKey, Integer, String, func
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -30,6 +30,22 @@ class User(TimestampMixin, Base):
     )
     screensaver_interval_seconds: Mapped[int | None] = mapped_column(
         Integer, comment="Screensaver lab: seconds each cover is shown, 5-15; null = the default (8)"
+    )
+    # Screensaver lab, Settings → Screensaver → What to show. At least one of owned/wishlist is
+    # always on (auth_service.set_preferences); custom is separate (where a game's details came
+    # from, not whether you have it).
+    screensaver_show_owned: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true", comment="Screensaver shows games you own"
+    )
+    screensaver_show_wishlist: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", comment="Screensaver shows wishlisted games"
+    )
+    screensaver_include_custom: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+        comment="Screensaver includes custom games (added by hand, no IGDB id)",
     )
     last_seen_version: Mapped[str | None] = mapped_column(
         String(32),

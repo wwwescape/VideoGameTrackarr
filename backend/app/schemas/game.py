@@ -53,6 +53,9 @@ class GameSummaryResponse(CamelModel):
     # Left out of the Screensaver lab's carousel: on the summary so the Games list's bulk
     # Hide/Show can count what it would change and undo each game exactly.
     screensaver_excluded: bool
+    # Games list with Include add-ons: listed only because one of its add-ons matched the search
+    # or filters (the card's "Via add-on" chip). False everywhere else.
+    matched_via_addon: bool = False
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
@@ -118,6 +121,7 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "rating": status.rating,
         "auto_discovered": game.auto_discovered,
         "screensaver_excluded": game.screensaver_excluded,
+        "matched_via_addon": status.matched_via_addon,
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,

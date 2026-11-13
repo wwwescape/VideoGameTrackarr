@@ -134,6 +134,21 @@ describe("Games list views", () => {
     expect(screen.getByText("Custom")).toBeInTheDocument();
   });
 
+  it("tags a row listed because of an add-on", () => {
+    renderWithTheme(
+      <GameOverviewRows
+        games={[game(1, "Elden Ring", { matchedViaAddon: true }), game(2, "Celeste")]}
+        onOpen={vi.fn()}
+        selecting={false}
+        selectedIds={new Set()}
+        onToggleSelect={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByTestId("via-addon-tag")).toHaveLength(1);
+    expect(screen.getByText("Via add-on")).toBeInTheDocument();
+  });
+
   it("labels categories with the filter's game types, then the add-on types", () => {
     expect(categoryLabel({ category: "remaster" })).toBe("Remaster");
     expect(categoryLabel({ category: "dlc_addon" })).toBe("DLC");

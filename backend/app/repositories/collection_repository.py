@@ -125,6 +125,7 @@ def list_addons_for_collection(
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
+    include_addons: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this collection's top-level games — parent_game_id is only ever set for
@@ -187,6 +188,7 @@ def list_addons_for_collection(
         sources=sources,
         source_exclude=source_exclude,
         screensaver=screensaver,
+        include_addons=include_addons,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

@@ -30,6 +30,8 @@ export interface GameListStateOptions {
   sources?: boolean;
   // Games only, and only while the Screensaver lab is on: shown in it or hidden from it.
   screensaver?: boolean;
+  // Games only: whether search and filters also look at each game's add-ons.
+  includeAddons?: boolean;
 }
 
 // Every filter a game list remembers, at its cleared value (the sort is left as it is).
@@ -58,6 +60,7 @@ const CLEARED_FILTERS = {
   sources: [] as GameSource[],
   sourceExclude: false,
   screensaverFilter: null as ScreensaverFilter | null,
+  includeAddons: false,
 };
 
 export type GameListPreset = Partial<typeof CLEARED_FILTERS>;
@@ -76,7 +79,13 @@ export function presetGameListFilters(prefix: string, preset: GameListPreset): v
 // Shared by the Games page, the Series/Collection/Platform pages and Missing Add-ons.
 export function useGameListState(
   prefix: string,
-  { gameTypes = true, steelbook = true, sources = false, screensaver = false }: GameListStateOptions = {}
+  {
+    gameTypes = true,
+    steelbook = true,
+    sources = false,
+    screensaver = false,
+    includeAddons: offersAddons = false,
+  }: GameListStateOptions = {}
 ) {
   const key = (name: string) => `${prefix}.${name}`;
   const [searchKeyword, setSearchKeyword] = useSessionState(key("searchKeyword"), "");
@@ -102,6 +111,7 @@ export function useGameListState(
   const [steelbookValue, setSteelbookOnly] = useSessionState(key("steelbookOnly"), false);
   const [sourceValues, setSources] = useSessionState<GameSource[]>(key("sources"), []);
   const [sourceExclude, setSourceExclude] = useSessionState(key("sourceExclude"), false);
+  const [includeAddonsValue, setIncludeAddons] = useSessionState(key("includeAddons"), false);
   const [screensaverValue, setScreensaverFilter] = useSessionState<ScreensaverFilter | null>(
     key("screensaverFilter"),
     null
@@ -114,6 +124,7 @@ export function useGameListState(
   // Also when the Screensaver lab has since been turned off: a remembered choice must not keep
   // filtering a list that no longer shows the field.
   const screensaverFilter = screensaver ? screensaverValue : null;
+  const includeAddons = offersAddons ? includeAddonsValue : false;
 
   const trimmedKeyword = searchKeyword.trim();
   const debouncedKeyword = useDebouncedValue(trimmedKeyword, 500);
@@ -162,6 +173,7 @@ export function useGameListState(
       ...(steelbook ? { steelbookOnly } : {}),
       ...(sources ? { sources: sourcesList.length > 0 ? sourcesList : undefined, sourceExclude } : {}),
       ...(screensaverFilter ? { screensaver: screensaverFilter } : {}),
+      ...(includeAddons ? { includeAddons } : {}),
       sort,
     }),
     [
@@ -191,6 +203,7 @@ export function useGameListState(
       sourcesList,
       sourceExclude,
       screensaverFilter,
+      includeAddons,
       sort,
     ]
   );
@@ -238,6 +251,7 @@ export function useGameListState(
     ...(steelbook ? { steelbookOnly, onSteelbookOnlyChange: setSteelbookOnly } : {}),
     ...(sources ? { sources: sourcesList, onSourcesChange: setSources, sourceExclude, onSourceExcludeChange: setSourceExclude } : {}),
     ...(screensaver ? { screensaverFilter, onScreensaverFilterChange: setScreensaverFilter } : {}),
+    ...(offersAddons ? { includeAddons, onIncludeAddonsChange: setIncludeAddons } : {}),
     playStatuses,
     onPlayStatusesChange: setPlayStatuses,
     playStatusExclude,

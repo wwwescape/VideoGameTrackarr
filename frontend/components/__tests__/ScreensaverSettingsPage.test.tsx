@@ -18,7 +18,10 @@ vi.mock("../../hooks/useLabs", () => ({
 vi.mock("../../hooks/useScreensaver", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../hooks/useScreensaver")>()),
   useScreensaverInterval: () => ({ seconds: 8, save: { mutate, isError: saveFailed } }),
+  useScreensaverShows: () => ({ shows, save: { mutate: saveShows, isError: false, isPending: false } }),
 }));
+let shows = { owned: true, wishlist: false, custom: true };
+const saveShows = vi.fn();
 vi.mock("../SettingsFrame", () => ({
   default: ({ children, description }: { children: React.ReactNode; description: string }) => (
     <div>
@@ -45,6 +48,8 @@ describe("Settings → Screensaver", () => {
     labOn = true;
     saveFailed = false;
     mutate.mockReset();
+    saveShows.mockReset();
+    shows = { owned: true, wishlist: false, custom: true };
   });
 
   it("shows the time per cover, 5 to 15 seconds", () => {
@@ -54,7 +59,7 @@ describe("Settings → Screensaver", () => {
     expect(slider).toHaveAttribute("min", "5");
     expect(slider).toHaveAttribute("max", "15");
     expect(screen.getByText("Each cover shows for 8 seconds.")).toBeInTheDocument();
-    expect(screen.getByText(/Every game you own that has a cover is included/)).toBeInTheDocument();
+    expect(screen.getByText(/Hide a game from the screensaver on its page/)).toBeInTheDocument();
   });
 
   it("saves a new time once, when it's let go", () => {
@@ -79,5 +84,31 @@ describe("Settings → Screensaver", () => {
     labOn = false;
     const router = renderPage();
     expect(router.state.location.pathname).toBe("/settings/labs");
+  });
+
+  it("chooses what to show, keeping at least owned or wishlisted on", async () => {
+    renderPage();
+    const owned = screen.getByRole("switch", { name: "Games I own" });
+    const wishlist = screen.getByRole("switch", { name: "Games on my wishlist" });
+    expect(owned).toBeChecked();
+    // The only one on can't be turned off.
+    expect(owned).toBeDisabled();
+    expect(screen.getByText(/needs something to show/)).toBeInTheDocument();
+    expect(wishlist).not.toBeChecked();
+
+    fireEvent.click(wishlist);
+    expect(saveShows).toHaveBeenCalledWith({ wishlist: true });
+
+    fireEvent.click(screen.getByRole("switch", { name: "Include custom games" }));
+    expect(saveShows).toHaveBeenLastCalledWith({ custom: false });
+  });
+
+  it("lets owned go once the wishlist is on", () => {
+    shows = { owned: true, wishlist: true, custom: true };
+    renderPage();
+    const owned = screen.getByRole("switch", { name: "Games I own" });
+    expect(owned).toBeEnabled();
+    fireEvent.click(owned);
+    expect(saveShows).toHaveBeenCalledWith({ owned: false });
   });
 });

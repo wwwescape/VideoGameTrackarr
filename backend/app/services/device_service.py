@@ -41,6 +41,11 @@ def _resolve_lookup_fields(db: Session, fields: dict[str, Any]) -> dict[str, Any
     return resolved
 
 
+def list_devices_by_ids(db: Session, device_ids: list[int]) -> list[DeviceWithStatus]:
+    """Linked devices for an accessory's page: with their status, sorted by name."""
+    return device_repository.list_devices_by_ids(db, device_ids)
+
+
 def list_devices(
     db: Session,
     search: str | None = None,

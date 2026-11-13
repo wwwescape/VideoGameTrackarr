@@ -52,6 +52,9 @@ export async function updatePreferences(preferences: {
   currency?: string;
   overviewLayout?: OverviewSectionSetting[];
   screensaverIntervalSeconds?: number;
+  screensaverShowOwned?: boolean;
+  screensaverShowWishlist?: boolean;
+  screensaverIncludeCustom?: boolean;
 }): Promise<CurrentUser> {
   const response = await apiClient.put<CurrentUser>("/api/auth/me/preferences", preferences);
   return response.data;

@@ -285,12 +285,17 @@ describe("Screensaver", () => {
     expect(refetch).toHaveBeenCalled();
   });
 
-  it("shows VGT's badge, which lets taps through to the cover", () => {
+  it("shows VGT's badge top left, letting taps through to the cover", () => {
     renderScreensaver();
     const brand = screen.getByTestId("screensaver-brand");
     expect(brand).toHaveTextContent("VideoGameTrackarr");
     expect(brand.querySelector("img")).toHaveAttribute("src", "/icon-master.svg");
-    expect(getComputedStyle(brand.parentElement as HTMLElement).pointerEvents).toBe("none");
+    const style = getComputedStyle(brand);
+    expect(style.pointerEvents).toBe("none");
+    expect(style.left).toContain("12px");
+    expect(style.right).toBe("auto");
+    // The close button keeps the top right to itself.
+    expect(brand).not.toContainElement(screen.getByRole("button", { name: "Close screensaver" }));
   });
 
   it("asks IGDB for full-screen sized covers", () => {

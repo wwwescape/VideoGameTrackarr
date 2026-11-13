@@ -231,3 +231,31 @@ describe("GameFilterDialog Screensaver field", () => {
     expect(buildGameFilterParams({}).screensaver).toBeUndefined();
   });
 });
+
+describe("GameFilterDialog Include add-ons", () => {
+  it("isn't there unless the page offers it", async () => {
+    renderToolbar();
+    const { dialog } = await openFilters();
+    expect(within(dialog).queryByRole("switch", { name: "Include add-ons" })).not.toBeInTheDocument();
+  });
+
+  it("turns on, counts as a filter and clears with the rest", async () => {
+    const onIncludeAddonsChange = vi.fn();
+    renderToolbar({ includeAddons: true, onIncludeAddonsChange });
+    const { user, dialog } = await openFilters();
+    const toggle = within(dialog).getByRole("switch", { name: "Include add-ons" });
+    expect(toggle).toBeChecked();
+
+    await user.click(toggle);
+    expect(onIncludeAddonsChange).toHaveBeenLastCalledWith(false);
+
+    onIncludeAddonsChange.mockClear();
+    await user.click(within(dialog).getByRole("button", { name: "Clear filters" }));
+    expect(onIncludeAddonsChange).toHaveBeenCalledWith(false);
+  });
+
+  it("is sent as `includeAddons`, only when on", () => {
+    expect(buildGameFilterParams({ includeAddons: true }).includeAddons).toBe(true);
+    expect(buildGameFilterParams({ includeAddons: false }).includeAddons).toBeUndefined();
+  });
+});

@@ -308,6 +308,9 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 overview_layout=user.overview_layout,
                 steam_id_64=user.steam_id_64,
                 screensaver_interval_seconds=user.screensaver_interval_seconds,
+                screensaver_show_owned=user.screensaver_show_owned,
+                screensaver_show_wishlist=user.screensaver_show_wishlist,
+                screensaver_include_custom=user.screensaver_include_custom,
             )
             if user
             else None
@@ -840,6 +843,12 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         user.overview_layout = payload.settings.overview_layout
         user.steam_id_64 = payload.settings.steam_id_64
         user.screensaver_interval_seconds = payload.settings.screensaver_interval_seconds
+        # A hand-edited backup can't leave the screensaver with nothing to show.
+        user.screensaver_show_owned = payload.settings.screensaver_show_owned or not (
+            payload.settings.screensaver_show_wishlist
+        )
+        user.screensaver_show_wishlist = payload.settings.screensaver_show_wishlist
+        user.screensaver_include_custom = payload.settings.screensaver_include_custom
 
     restored_items = {li.id: li for li in payload.library_items}
     orphaned_rom_files: list[str] = []

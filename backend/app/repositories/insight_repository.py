@@ -72,6 +72,7 @@ def find_missing_addons(
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
+    include_addons: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[tuple[Game, list[tuple[Game, bool]]]]:
     """For every owned, top-level game: its DLC/expansions/packs (per parent_game_id,
@@ -134,6 +135,7 @@ def find_missing_addons(
         sources=sources,
         source_exclude=source_exclude,
         screensaver=screensaver,
+        include_addons=include_addons,
         sort=sort,
     )
     # _apply_optional_game_filters' own order_by only covers Game's sort field — Addon.name

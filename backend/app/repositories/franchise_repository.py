@@ -129,6 +129,7 @@ def list_addons_for_franchise(
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
+    include_addons: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
 ) -> list[GameWithStatus]:
     """Addons of this franchise's top-level games — see
@@ -185,6 +186,7 @@ def list_addons_for_franchise(
         sources=sources,
         source_exclude=source_exclude,
         screensaver=screensaver,
+        include_addons=include_addons,
         sort=sort,
     )
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]

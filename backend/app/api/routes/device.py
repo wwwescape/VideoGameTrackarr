@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.library import LibraryStatus
 from app.repositories.device_repository import DeviceWithStatus
+from app.schemas.accessory import linked_accessory_from_orm
 from app.schemas.device import (
     DeviceCreateRequest,
     DeviceDetailResponse,
@@ -24,14 +25,16 @@ from app.schemas.user_device import (
     UserDeviceUpdateRequest,
     user_device_from_orm,
 )
-from app.services import device_note_service, device_service, tag_service, user_device_service
+from app.services import accessory_service, device_note_service, device_service, tag_service, user_device_service
 
 router = APIRouter(tags=["devices"], dependencies=[Depends(get_current_user)])
 
 
 def _device_detail_response(db: Session, item: DeviceWithStatus) -> DeviceDetailResponse:
     tags = tag_service.list_tags_for_device(db, item.device.id)
-    return device_detail_from_orm(item, tags)
+    accessory_ids = [link.accessory.id for link in item.device.linked_accessories]
+    linked = [linked_accessory_from_orm(a) for a in accessory_service.list_accessories_by_ids(db, accessory_ids)]
+    return device_detail_from_orm(item, tags, linked)
 
 
 @router.get("/api/devices", response_model=list[DeviceSummaryResponse])

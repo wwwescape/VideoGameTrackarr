@@ -1,10 +1,10 @@
 import enum
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, and_, case, delete, exists, func, or_, select, update
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy import ColumnElement, Select, and_, case, delete, exists, false, func, or_, select, true, update
+from sqlalchemy.orm import Session, aliased, joinedload, selectinload
 
 from app.models.catalog import (
     Artwork,
@@ -52,6 +52,8 @@ class GameWithStatus:
     play_status: PlayStatus | None
     # Your overall rating (Game.user_rating), 1-10.
     rating: int | None
+    # On the Games list with Include add-ons: listed only because one of its add-ons matched.
+    matched_via_addon: bool = False
 
 
 def platform_copy_exists(
@@ -120,7 +122,14 @@ def _play_status_subquery(game_id_column: ColumnElement[int]) -> ColumnElement[P
 
 
 def _row_to_game_with_status(row: Any) -> GameWithStatus:
-    return GameWithStatus(game=row[0], owned=bool(row[1]), wishlisted=bool(row[2]), play_status=row[3], rating=row[4])
+    return GameWithStatus(
+        game=row[0],
+        owned=bool(row[1]),
+        wishlisted=bool(row[2]),
+        play_status=row[3],
+        rating=row[4],
+        matched_via_addon=bool(row[5]) if len(row) > 5 else False,
+    )
 
 
 # What counts as a browsable "game" in the main games list / Dashboard / a Collection's or
@@ -304,23 +313,72 @@ def _match_values(
     return build(values)
 
 
-def _play_status_clause(statuses: list[PlayStatus]) -> ColumnElement[bool]:
+def _play_status_clause(statuses: list[PlayStatus], game: Any = Game) -> ColumnElement[bool]:
     """Matches when *any* of the game's platforms has one of these statuses, the same "any
     copy" rule the platform/format filters use, not the single priority-picked status a card
     shows (_play_status_subquery). NONE ("Not started") can't be a plain IN value: most
     unstarted games have no GameProgress row at all, so it means "no platform has a real
-    status yet" instead."""
+    status yet" instead. `game` is Game itself or an aliased add-on (_GameFilters)."""
     clauses = []
     started = [status for status in statuses if status != PlayStatus.NONE]
     if started:
-        clauses.append(exists().where(GameProgress.game_id == Game.id, GameProgress.play_status.in_(started)))
+        clauses.append(exists().where(GameProgress.game_id == game.id, GameProgress.play_status.in_(started)))
     if PlayStatus.NONE in statuses:
-        clauses.append(~exists().where(GameProgress.game_id == Game.id, GameProgress.play_status != PlayStatus.NONE))
+        clauses.append(~exists().where(GameProgress.game_id == game.id, GameProgress.play_status != PlayStatus.NONE))
     return or_(*clauses)
 
 
-def _apply_optional_game_filters(
-    stmt: Select[Any],
+# A condition on one game, given the game to test: Game itself, or an aliased add-on.
+GameCondition = Callable[[Any], ColumnElement[bool]]
+
+
+@dataclass
+class _GameFilters:
+    """The optional filters' clauses, built once for _apply_optional_game_filters' WHERE and,
+    with include_addons, for the Games list's "Via add-on" flag (see game_matched_on_its_own).
+
+    With include_addons, each *positive* condition is met by the game or by any of its add-ons
+    (parent_game_id), each one separately, so a search can match an add-on's name while the
+    platform filter is met by the base game's copy. Exclude conditions, the game type and the
+    Screensaver filter stay on the game itself: excluding never hides a game because of one of
+    its add-ons."""
+
+    include_addons: bool
+    where: list[ColumnElement[bool]] = field(default_factory=list)
+    # The positive conditions as tested on the game alone, for the flag.
+    own: list[ColumnElement[bool]] = field(default_factory=list)
+
+    def _game_or_addon(self, condition: GameCondition) -> ColumnElement[bool]:
+        if not self.include_addons:
+            return condition(Game)
+        addon = aliased(Game)
+        return or_(condition(Game), exists().where(addon.parent_game_id == Game.id, condition(addon)))
+
+    def positive(self, conditions: list[GameCondition]) -> None:
+        """One filter's condition(s), ANDed: a single one for "any of these", one per value
+        for "all of these", so each value can be met by a different item."""
+        self.where.append(and_(*(self._game_or_addon(condition) for condition in conditions)))
+        self.own.append(and_(*(condition(Game) for condition in conditions)))
+
+    def on_game_only(self, clause: ColumnElement[bool]) -> None:
+        self.where.append(clause)
+
+    def values(
+        self,
+        build: Callable[[list[Any], Any], ColumnElement[bool]],
+        values: list[Any],
+        match_all: bool,
+        exclude: bool,
+    ) -> None:
+        """A list filter with its Any/All choice (_match_values) and Exclude (_maybe_negate)."""
+        if exclude:
+            self.on_game_only(_maybe_negate(_match_values(lambda chosen: build(chosen, Game), values, match_all), True))
+            return
+        groups = [[value] for value in values] if match_all and len(values) > 1 else [values]
+        self.positive([lambda game, chosen=chosen: build(chosen, game) for chosen in groups])
+
+
+def _game_filters(
     *,
     search: str | None = None,
     platform_ids: list[int] | None = None,
@@ -350,86 +408,105 @@ def _apply_optional_game_filters(
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
-    sort: GameSortOption = GameSortOption.NAME_ASC,
-) -> Select[Any]:
-    """The Games list's whole optional filter set (search + 8 dimensions + sort), factored
-    out of list_top_level_games so the Collection/Series "Addons" queries
-    (collection_repository.list_addons_for_collection / franchise_repository.list_addons_for_franchise)
-    can offer the exact same filters against a differently-scoped base query, with zero
-    duplicated clause-building logic to drift out of sync."""
+    include_addons: bool = False,
+) -> _GameFilters:
+    filters = _GameFilters(include_addons=include_addons)
     if search:
-        stmt = stmt.where(Game.name.ilike(f"%{search}%"))
+        filters.positive([lambda game: game.name.ilike(f"%{search}%")])
     if platform_ids:
         # The platform of the user's *owned/wishlisted copy* (library_items), not
         # game_platforms — IGDB's full list of platforms a game was ever released on.
-        clause = _match_values(
-            lambda ids: exists().where(LibraryItem.game_id == Game.id, LibraryItem.platform_id.in_(ids)),
+        filters.values(
+            lambda ids, game: exists().where(LibraryItem.game_id == game.id, LibraryItem.platform_id.in_(ids)),
             platform_ids,
             platform_match_all,
+            platform_exclude,
         )
-        stmt = stmt.where(_maybe_negate(clause, platform_exclude))
     if tag_ids:
-        clause = _match_values(
-            lambda ids: exists().where(GameTag.game_id == Game.id, GameTag.tag_id.in_(ids)),
+        filters.values(
+            lambda ids, game: exists().where(GameTag.game_id == game.id, GameTag.tag_id.in_(ids)),
             tag_ids,
             tag_match_all,
+            tag_exclude,
         )
-        stmt = stmt.where(_maybe_negate(clause, tag_exclude))
     if categories:
-        # No "match all" here: a game has exactly one category, so "all of two" could never
-        # match. No need to also validate against _BROWSABLE_CATEGORIES here — list_top_level_games'
-        # own base .where() already restricts every row to that set (or NULL) before this
-        # runs, so an out-of-range value here would just AND down to zero rows rather than
-        # leaking a non-browsable category. The addons queries have no such base restriction,
-        # but addons are never browsable-category anyway, so the same reasoning holds.
-        stmt = stmt.where(_maybe_negate(Game.category.in_(categories), category_exclude))
+        # No "match all": a game has exactly one category, so "all of two" could never match.
+        # Always the listed game's own type, never an add-on's (add-ons are never browsable
+        # types anyway). No need to also validate against _BROWSABLE_CATEGORIES here —
+        # list_top_level_games' own base .where() already restricts every row to that set (or
+        # NULL), so an out-of-range value just ANDs down to zero rows.
+        filters.on_game_only(_maybe_negate(Game.category.in_(categories), category_exclude))
     if collection_ids:
-        clause = _match_values(
-            lambda ids: exists().where(GameCollection.game_id == Game.id, GameCollection.collection_id.in_(ids)),
+        filters.values(
+            lambda ids, game: exists().where(GameCollection.game_id == game.id, GameCollection.collection_id.in_(ids)),
             collection_ids,
             collection_match_all,
+            collection_exclude,
         )
-        stmt = stmt.where(_maybe_negate(clause, collection_exclude))
     if franchise_ids:
-        clause = _match_values(
-            lambda ids: exists().where(GameFranchise.game_id == Game.id, GameFranchise.franchise_id.in_(ids)),
+        filters.values(
+            lambda ids, game: exists().where(GameFranchise.game_id == game.id, GameFranchise.franchise_id.in_(ids)),
             franchise_ids,
             franchise_match_all,
+            franchise_exclude,
         )
-        stmt = stmt.where(_maybe_negate(clause, franchise_exclude))
     if formats:
         # Same "does this game have *any* library copy matching" shape as platform_ids above
         # — an independent exists() subquery, not correlated to the platform/storefront
         # filters' own matched row.
-        clause = _match_values(
-            lambda values: exists().where(LibraryItem.game_id == Game.id, LibraryItem.format.in_(values)),
+        filters.values(
+            lambda values, game: exists().where(LibraryItem.game_id == game.id, LibraryItem.format.in_(values)),
             formats,
             format_match_all,
+            format_exclude,
         )
-        stmt = stmt.where(_maybe_negate(clause, format_exclude))
     if storefronts:
-        clause = _match_values(
-            lambda values: exists().where(LibraryItem.game_id == Game.id, LibraryItem.digital_storefront.in_(values)),
+        filters.values(
+            lambda values, game: exists().where(
+                LibraryItem.game_id == game.id, LibraryItem.digital_storefront.in_(values)
+            ),
             storefronts,
             storefront_match_all,
+            storefront_exclude,
         )
-        stmt = stmt.where(_maybe_negate(clause, storefront_exclude))
     if play_statuses:
-        clause = _match_values(_play_status_clause, play_statuses, play_status_match_all)
-        stmt = stmt.where(_maybe_negate(clause, play_status_exclude))
+        filters.values(_play_status_clause, play_statuses, play_status_match_all, play_status_exclude)
     if steelbook_only:
         # A plain presence check, unlike the list-based filters above — no Exclude toggle,
         # since "not a Steelbook" isn't a meaningful thing to filter for on its own.
-        stmt = stmt.where(exists().where(LibraryItem.game_id == Game.id, LibraryItem.steelbook.is_(True)))
+        filters.positive([lambda game: exists().where(LibraryItem.game_id == game.id, LibraryItem.steelbook.is_(True))])
     if sources:
         # No "match all", same as categories: a game is either IGDB-backed or custom, never both.
-        clause = or_(
-            *(Game.igdb_id.is_not(None) if source == GameSource.IGDB else Game.igdb_id.is_(None) for source in sources)
-        )
-        stmt = stmt.where(_maybe_negate(clause, source_exclude))
+        def source_clause(chosen: list[GameSource], game: Any) -> ColumnElement[bool]:
+            return or_(*(game.igdb_id.is_not(None) if s == GameSource.IGDB else game.igdb_id.is_(None) for s in chosen))
+
+        filters.values(source_clause, sources, False, source_exclude)
     if screensaver is not None:
-        stmt = stmt.where(Game.screensaver_excluded.is_(screensaver == ScreensaverFilter.HIDDEN))
-    return stmt.order_by(*_order_by_for_sort(sort))
+        filters.on_game_only(Game.screensaver_excluded.is_(screensaver == ScreensaverFilter.HIDDEN))
+    return filters
+
+
+def _apply_optional_game_filters(
+    stmt: Select[Any],
+    *,
+    sort: GameSortOption = GameSortOption.NAME_ASC,
+    **filters: Any,
+) -> Select[Any]:
+    """The Games list's whole optional filter set (search + every filter dimension + sort; see
+    _game_filters for the keywords), factored out of list_top_level_games so the
+    Collection/Series "Addons" queries (collection_repository.list_addons_for_collection /
+    franchise_repository.list_addons_for_franchise), Insights and the Game Shelf can offer the
+    exact same filters against a differently-scoped base query, with zero duplicated
+    clause-building logic to drift out of sync."""
+    return stmt.where(*_game_filters(**filters).where).order_by(*_order_by_for_sort(sort))
+
+
+def game_matched_on_its_own(**filters: Any) -> ColumnElement[bool]:
+    """Whether the listed game meets every positive filter by itself, without its add-ons. With
+    Include add-ons, a game in the results where this is false is there because of an add-on
+    (the Games list's "Via add-on" chip)."""
+    own = _game_filters(**filters).own
+    return and_(*own) if own else true()
 
 
 def list_top_level_games(
@@ -462,6 +539,7 @@ def list_top_level_games(
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
+    include_addons: bool = False,
     sort: GameSortOption = GameSortOption.NAME_ASC,
     required_collection_id: int | None = None,
     required_franchise_id: int | None = None,
@@ -470,12 +548,46 @@ def list_top_level_games(
     required_platform_storefront: str | None = None,
     include_missing: bool = False,
 ) -> list[GameWithStatus]:
+    filter_values = {
+        "search": search,
+        "platform_ids": platform_ids,
+        "platform_exclude": platform_exclude,
+        "platform_match_all": platform_match_all,
+        "tag_ids": tag_ids,
+        "tag_exclude": tag_exclude,
+        "tag_match_all": tag_match_all,
+        "collection_ids": collection_ids,
+        "collection_exclude": collection_exclude,
+        "collection_match_all": collection_match_all,
+        "franchise_ids": franchise_ids,
+        "franchise_exclude": franchise_exclude,
+        "franchise_match_all": franchise_match_all,
+        "categories": categories,
+        "category_exclude": category_exclude,
+        "formats": formats,
+        "format_exclude": format_exclude,
+        "format_match_all": format_match_all,
+        "storefronts": storefronts,
+        "storefront_exclude": storefront_exclude,
+        "storefront_match_all": storefront_match_all,
+        "play_statuses": play_statuses,
+        "play_status_exclude": play_status_exclude,
+        "play_status_match_all": play_status_match_all,
+        "steelbook_only": steelbook_only,
+        "sources": sources,
+        "source_exclude": source_exclude,
+        "screensaver": screensaver,
+        "include_addons": include_addons,
+    }
+    # "Via add-on": in the results only because of an add-on (see _GameFilters).
+    via_addon = ~game_matched_on_its_own(**filter_values) if include_addons else false()
     stmt = select(
         Game,
         _owned_exists(Game.id),
         _wishlisted_exists(Game.id),
         _play_status_subquery(Game.id),
         Game.user_rating,
+        via_addon,
     ).where(Game.parent_game_id.is_(None), _is_browsable_game(Game.category))
     if not include_missing:
         stmt = stmt.where(_not_missing())
@@ -498,38 +610,7 @@ def list_top_level_games(
         stmt = stmt.where(
             platform_copy_exists(Game.id, required_platform_id, required_platform_format, required_platform_storefront)
         )
-    stmt = _apply_optional_game_filters(
-        stmt,
-        search=search,
-        platform_ids=platform_ids,
-        platform_exclude=platform_exclude,
-        platform_match_all=platform_match_all,
-        tag_ids=tag_ids,
-        tag_exclude=tag_exclude,
-        tag_match_all=tag_match_all,
-        collection_ids=collection_ids,
-        collection_exclude=collection_exclude,
-        collection_match_all=collection_match_all,
-        franchise_ids=franchise_ids,
-        franchise_exclude=franchise_exclude,
-        franchise_match_all=franchise_match_all,
-        categories=categories,
-        category_exclude=category_exclude,
-        formats=formats,
-        format_exclude=format_exclude,
-        format_match_all=format_match_all,
-        storefronts=storefronts,
-        storefront_exclude=storefront_exclude,
-        storefront_match_all=storefront_match_all,
-        play_statuses=play_statuses,
-        play_status_exclude=play_status_exclude,
-        play_status_match_all=play_status_match_all,
-        steelbook_only=steelbook_only,
-        sources=sources,
-        source_exclude=source_exclude,
-        screensaver=screensaver,
-        sort=sort,
-    )
+    stmt = _apply_optional_game_filters(stmt, sort=sort, **filter_values)
     return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 
 
@@ -594,29 +675,49 @@ class ScreensaverGame:
     cover_url: str
 
 
-def _screensaver_filter() -> ColumnElement[bool]:
-    """The Screensaver lab's games: top-level browsable games you own a copy of (any format;
-    owning one also means it isn't Missing), with a cover, that you haven't opted out."""
-    return and_(
+@dataclass(frozen=True)
+class ScreensaverShows:
+    """Settings → Screensaver → What to show. At least one of owned/wishlist is on (the
+    preferences route enforces it); custom is separate."""
+
+    owned: bool = True
+    wishlist: bool = False
+    custom: bool = True
+
+
+def _screensaver_filter(shows: ScreensaverShows) -> ColumnElement[bool]:
+    """The Screensaver lab's games: top-level browsable games you own a copy of and/or have
+    wishlisted (per `shows`; either also means it isn't Missing), with a cover, that you
+    haven't opted out, and, unless custom games are included, imported from IGDB."""
+    groups = [
+        clause
+        for wanted, clause in ((shows.owned, _owned_exists(Game.id)), (shows.wishlist, _wishlisted_exists(Game.id)))
+        if wanted
+    ]
+    conditions = [
         Game.parent_game_id.is_(None),
         _is_browsable_game(Game.category),
-        _owned_exists(Game.id),
+        # Nothing chosen can't happen through the API; it shows nothing rather than everything.
+        or_(*groups) if groups else false(),
         Game.cover_url.is_not(None),
         Game.cover_url != "",
         ~Game.screensaver_excluded,
-    )
+    ]
+    if not shows.custom:
+        conditions.append(Game.igdb_id.is_not(None))
+    return and_(*conditions)
 
 
-def count_screensaver_games(db: Session) -> int:
-    return db.scalar(select(func.count()).select_from(Game).where(_screensaver_filter())) or 0
+def count_screensaver_games(db: Session, shows: ScreensaverShows) -> int:
+    return db.scalar(select(func.count()).select_from(Game).where(_screensaver_filter(shows))) or 0
 
 
-def sample_screensaver_games(db: Session, limit: int) -> list[ScreensaverGame]:
+def sample_screensaver_games(db: Session, limit: int, shows: ScreensaverShows) -> list[ScreensaverGame]:
     """Up to `limit` of the screensaver's games in random order, picked by the database, so a
     large library never loads more than a slide show's worth of rows."""
     stmt = (
         select(Game.id, Game.uuid, Game.slug, Game.name, Game.cover_url)
-        .where(_screensaver_filter())
+        .where(_screensaver_filter(shows))
         .order_by(func.random())
         .limit(limit)
     )

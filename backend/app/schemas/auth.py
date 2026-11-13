@@ -46,6 +46,10 @@ class PreferencesRequest(CamelModel):
     overview_layout: list[OverviewSection] | None = Field(default=None, max_length=50)
     # The Screensaver lab's time per cover, in seconds.
     screensaver_interval_seconds: int | None = Field(default=None, ge=5, le=15)
+    # Settings → Screensaver → What to show. Owned and wishlist can't both end up off (422).
+    screensaver_show_owned: bool | None = None
+    screensaver_show_wishlist: bool | None = None
+    screensaver_include_custom: bool | None = None
 
 
 class RefreshRequest(CamelModel):
@@ -65,6 +69,9 @@ class UserResponse(CamelModel):
     overview_layout: list[OverviewSection] | None = None
     # Null = the default (8 s).
     screensaver_interval_seconds: int | None = None
+    screensaver_show_owned: bool = True
+    screensaver_show_wishlist: bool = False
+    screensaver_include_custom: bool = True
 
 
 class SetupStatusResponse(CamelModel):

@@ -196,11 +196,8 @@ const DeviceDetails = () => {
             </Section>
             <Section id="linked" title={t("hardware.detailsShared.linkedAccessoriesTitle")}>
               <LinkedHardware
-                items={device.linkedAccessories.map((linked) => ({
-                  key: linked.id,
-                  label: linked.officialName,
-                  to: `/hardware/accessory/${hardwareIdentifier(linked.officialName, linked.uuid)}`,
-                }))}
+                items={device.linkedAccessories}
+                kind="accessory"
                 emptyText={t("hardware.deviceDetails.noLinkedAccessories")}
               />
             </Section>

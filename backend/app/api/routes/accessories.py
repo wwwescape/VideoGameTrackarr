@@ -11,6 +11,8 @@ from app.schemas.accessory import (
     AccessoryUpdateRequest,
     accessory_detail_from_orm,
     accessory_summary_from_orm,
+    linked_accessory_from_orm,
+    linked_accessory_ids,
 )
 from app.schemas.accessory_note import (
     AccessoryNoteCreateRequest,
@@ -18,20 +20,28 @@ from app.schemas.accessory_note import (
     AccessoryNoteUpdateRequest,
     accessory_note_from_orm,
 )
+from app.schemas.device import linked_device_from_orm
 from app.schemas.user_accessory import (
     UserAccessoryCreateRequest,
     UserAccessoryResponse,
     UserAccessoryUpdateRequest,
     user_accessory_from_orm,
 )
-from app.services import accessory_note_service, accessory_service, tag_service, user_accessory_service
+from app.services import accessory_note_service, accessory_service, device_service, tag_service, user_accessory_service
 
 router = APIRouter(tags=["accessories"], dependencies=[Depends(get_current_user)])
 
 
 def _accessory_detail_response(db: Session, item: AccessoryWithStatus) -> AccessoryDetailResponse:
-    tags = tag_service.list_tags_for_accessory(db, item.accessory.id)
-    return accessory_detail_from_orm(item, tags)
+    accessory = item.accessory
+    tags = tag_service.list_tags_for_accessory(db, accessory.id)
+    device_ids = [link.device.id for link in accessory.linked_devices]
+    devices = [linked_device_from_orm(d) for d in device_service.list_devices_by_ids(db, device_ids)]
+    accessories = [
+        linked_accessory_from_orm(a)
+        for a in accessory_service.list_accessories_by_ids(db, linked_accessory_ids(accessory))
+    ]
+    return accessory_detail_from_orm(item, tags, devices, accessories)
 
 
 @router.get("/api/accessories", response_model=list[AccessorySummaryResponse])

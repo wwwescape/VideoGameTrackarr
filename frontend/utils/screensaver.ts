@@ -13,16 +13,28 @@ export const BROWSABLE_CATEGORIES: ReadonlySet<GameCategory> = new Set<GameCateg
   "port",
 ]);
 
+// What to show (Settings → Screensaver); today's behaviour when the account isn't loaded yet.
+export interface ScreensaverShowsSettings {
+  owned: boolean;
+  wishlist: boolean;
+  custom: boolean;
+}
+
+const DEFAULT_SHOWS: ScreensaverShowsSettings = { owned: true, wishlist: false, custom: true };
+
 // Whether a game could be in the Screensaver at all, apart from its own opt-out: a top-level
-// game (no parent, a kind the Games list shows), that you own, with a cover. The frontend twin
-// of game_repository._screensaver_filter; only these get the game page's toggle.
+// game (no parent, a kind the Games list shows) with a cover, that you own and/or have
+// wishlisted as What to show allows, and not a custom one unless those are included. The
+// frontend twin of game_repository._screensaver_filter; only these get the game page's toggle.
 export function canBeInScreensaver(
-  game: Pick<GameDetail, "parentGameId" | "category" | "owned" | "coverUrl">
+  game: Pick<GameDetail, "parentGameId" | "category" | "owned" | "wishlisted" | "igdbId" | "coverUrl">,
+  shows: ScreensaverShowsSettings = DEFAULT_SHOWS
 ): boolean {
   return (
     game.parentGameId === null &&
     (game.category === null || BROWSABLE_CATEGORIES.has(game.category)) &&
-    game.owned &&
+    ((shows.owned && game.owned) || (shows.wishlist && game.wishlisted)) &&
+    (shows.custom || game.igdbId !== null) &&
     Boolean(game.coverUrl)
   );
 }

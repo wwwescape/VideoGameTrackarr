@@ -522,8 +522,17 @@
       "seconds_other": "{{count}} seconds",
       "current_one": "Each cover shows for {{count}} second.",
       "current_other": "Each cover shows for {{count}} seconds.",
-      "included": "Every game you own that has a cover is included. Hide one from the screensaver on its page, or several at once from the Games list.",
-      "saveFailed": "Couldn't save that change. Please try again."
+      "included": "Hide a game from the screensaver on its page, or several at once from the Games list.",
+      "saveFailed": "Couldn't save that change. Please try again.",
+      "showHeading": "What to show",
+      "showLead": "Only games with a cover appear, and never ones you've hidden.",
+      "showOwned": "Games I own",
+      "showOwnedDescription": "Games with at least one copy in your collection.",
+      "showWishlist": "Games on my wishlist",
+      "showWishlistDescription": "Games you want but don't own yet.",
+      "keepOne": "The screensaver needs something to show: turn on the other group first.",
+      "includeCustom": "Include custom games",
+      "includeCustomDescription": "Games you added by hand rather than from IGDB."
     },
     "tagManager": {
       "description": "Permanently delete a tag. This removes it from every game, device, and accessory that has it — not just one item. To remove a tag from a single item instead, use the Tags field on that item's own page.",
@@ -798,7 +807,10 @@
       "screensaverShownOption": "Shown",
       "screensaverHiddenOption": "Hidden",
       "screensaverHiddenChip": "Screensaver: Hidden",
-      "screensaverShownChip": "Screensaver: Shown"
+      "screensaverShownChip": "Screensaver: Shown",
+      "includeAddonsLabel": "Include add-ons",
+      "includeAddonsChip": "Including add-ons",
+      "includeAddonsHint": "Also match a game when one of its add-ons matches the search or filters. Excludes, game type and ownership still look at the game itself."
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -813,7 +825,8 @@
       "nameYearTooltip": "{{name}} ({{year}})",
       "onSaleLabel": "On Sale",
       "missingLabel": "Missing",
-      "customLabel": "Custom"
+      "customLabel": "Custom",
+      "viaAddon": "Via add-on"
     },
     "add": {
       "addGameError": "Error adding game. Please try again.",

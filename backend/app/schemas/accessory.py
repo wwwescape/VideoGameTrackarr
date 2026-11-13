@@ -4,7 +4,7 @@ from app.models.hardware import Accessory
 from app.models.library import RatingBoard, Tag
 from app.repositories.accessory_repository import AccessoryWithStatus
 from app.schemas.base import CamelModel
-from app.schemas.device import LinkedAccessoryResponse
+from app.schemas.hardware_link import LinkedHardwareResponse
 from app.schemas.hardware_reference import HardwareReferenceSummary, hardware_reference_summary_from_orm
 from app.schemas.tag import TagResponse, tag_from_orm
 from app.schemas.user_accessory import UserAccessoryCreateRequest
@@ -14,12 +14,6 @@ from app.services.hardware_reference_image_service import resolve_image_url
 class CompatiblePlatformResponse(CamelModel):
     id: int
     name: str
-
-
-class LinkedDeviceResponse(CamelModel):
-    id: int
-    uuid: str
-    official_name: str
 
 
 class AccessorySummaryResponse(CamelModel):
@@ -52,8 +46,9 @@ class AccessorySummaryResponse(CamelModel):
 
 class AccessoryDetailResponse(AccessorySummaryResponse):
     compatible_platforms: list[CompatiblePlatformResponse]
-    linked_devices: list[LinkedDeviceResponse]
-    linked_accessories: list[LinkedAccessoryResponse]
+    # As cards, sorted by name (see routes/accessories.py, which loads them with their status).
+    linked_devices: list[LinkedHardwareResponse]
+    linked_accessories: list[LinkedHardwareResponse]
     hardware_reference: HardwareReferenceSummary | None
     tags: list[TagResponse]
 
@@ -96,19 +91,37 @@ def accessory_summary_from_orm(with_status: AccessoryWithStatus) -> AccessorySum
     return AccessorySummaryResponse(**_accessory_fields(with_status.accessory, with_status))
 
 
-def _linked_accessories_from_orm(accessory: Accessory) -> list[LinkedAccessoryResponse]:
-    # Union of outgoing links (this accessory's own Linked Accessories selection) and
-    # incoming ones (other accessories that link to this one) — shown together since the
-    # relationship reads the same either way, even though only one side set it.
-    by_id = {link.linked_accessory.id: link.linked_accessory for link in accessory.linked_accessories}
-    by_id.update({link.accessory.id: link.accessory for link in accessory.linking_accessories})
-    return [
-        LinkedAccessoryResponse(id=a.id, uuid=a.uuid, official_name=a.official_name)
-        for a in sorted(by_id.values(), key=lambda a: a.official_name)
-    ]
+def linked_accessory_ids(accessory: Accessory) -> list[int]:
+    """Union of outgoing links (this accessory's own Linked Accessories selection) and incoming
+    ones (other accessories that link to this one), shown together since the relationship reads
+    the same either way, even though only one side set it."""
+    ids = {link.linked_accessory.id for link in accessory.linked_accessories}
+    ids.update(link.accessory.id for link in accessory.linking_accessories)
+    return sorted(ids)
 
 
-def accessory_detail_from_orm(with_status: AccessoryWithStatus, tags: list[Tag]) -> AccessoryDetailResponse:
+def linked_accessory_from_orm(with_status: AccessoryWithStatus) -> LinkedHardwareResponse:
+    """An accessory as a linked card on a device's or another accessory's page."""
+    fields = _accessory_fields(with_status.accessory, with_status)
+    return LinkedHardwareResponse(
+        id=fields["id"],
+        uuid=fields["uuid"],
+        official_name=fields["official_name"],
+        manufacturer_name=fields["manufacturer_name"],
+        detail=fields["accessory_type_name"],
+        image_url=fields["image_url"],
+        is_custom=fields["is_custom"],
+        owned=fields["owned"],
+        wishlisted=fields["wishlisted"],
+    )
+
+
+def accessory_detail_from_orm(
+    with_status: AccessoryWithStatus,
+    tags: list[Tag],
+    linked_devices: list[LinkedHardwareResponse],
+    linked_accessories: list[LinkedHardwareResponse],
+) -> AccessoryDetailResponse:
     accessory = with_status.accessory
     return AccessoryDetailResponse(
         **_accessory_fields(accessory, with_status),
@@ -116,11 +129,8 @@ def accessory_detail_from_orm(with_status: AccessoryWithStatus, tags: list[Tag])
             CompatiblePlatformResponse(id=link.hardware_platform.id, name=link.hardware_platform.name)
             for link in accessory.compatible_platforms
         ],
-        linked_devices=[
-            LinkedDeviceResponse(id=link.device.id, uuid=link.device.uuid, official_name=link.device.official_name)
-            for link in accessory.linked_devices
-        ],
-        linked_accessories=_linked_accessories_from_orm(accessory),
+        linked_devices=linked_devices,
+        linked_accessories=linked_accessories,
         hardware_reference=(
             hardware_reference_summary_from_orm(accessory.hardware_reference_entry)
             if accessory.hardware_reference_entry

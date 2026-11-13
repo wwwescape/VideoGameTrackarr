@@ -62,7 +62,7 @@ def test_export_backup_contains_every_section(auth_client, db_session, seed_game
     # The backup file's internal keys are snake_case by design, not camelCase -
     # see schemas/backup.py's note on why this file format skips the API convention.
     body = response.json()
-    assert body["version"] == 7
+    assert body["version"] == 8
     assert len(body["games"]) == 1
     assert body["games"][0]["user_rating"] == 8
     assert body["game_progress"][0]["rating"] is None

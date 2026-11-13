@@ -503,65 +503,60 @@ const Screensaver = () => {
         }}
       >
         {body}
-        {/* Top right: the close button (shown on activity) beside VGT's badge (always there,
-            so whoever walks past knows what this is). The badge lets taps through to the cover. */}
+        {/* Top left: VGT's badge, always there so whoever walks past knows what this is. It
+            lets taps through to the cover. */}
         <Box
+          data-testid="screensaver-brand"
+          sx={{
+            position: "absolute",
+            top: "calc(12px + env(safe-area-inset-top))",
+            left: "calc(12px + env(safe-area-inset-left))",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            pl: 0.75,
+            pr: { xs: 0.75, sm: 1.5 },
+            py: 0.75,
+            borderRadius: 999,
+            bgcolor: "rgba(0, 0, 0, 0.45)",
+            backdropFilter: "blur(6px)",
+            color: "common.white",
+            opacity: 0.9,
+            pointerEvents: "none",
+          }}
+        >
+          <Box component="img" src="/icon-master.svg" alt="" sx={{ width: 26, height: 26, display: "block" }} />
+          <Typography
+            component="span"
+            sx={{
+              display: { xs: "none", sm: "inline" },
+              fontWeight: 650,
+              fontSize: 14,
+              letterSpacing: "-0.01em",
+              textShadow: "0 1px 2px rgba(0, 0, 0, 0.6)",
+            }}
+          >
+            VideoGameTrackarr
+          </Typography>
+        </Box>
+        {/* Top right: the close button, shown on activity. */}
+        <IconButton
+          onClick={close}
+          aria-label={t("screensaver.close")}
           sx={{
             position: "absolute",
             top: "calc(12px + env(safe-area-inset-top))",
             right: "calc(12px + env(safe-area-inset-right))",
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            pointerEvents: "none",
+            color: "common.white",
+            bgcolor: "rgba(0, 0, 0, 0.45)",
+            "&:hover": { bgcolor: "rgba(0, 0, 0, 0.65)" },
+            opacity: controlsShown ? 1 : 0,
+            transition: "opacity 300ms ease",
+            "&:focus-visible": { opacity: 1 },
           }}
         >
-          <IconButton
-            onClick={close}
-            aria-label={t("screensaver.close")}
-            sx={{
-              pointerEvents: "auto",
-              color: "common.white",
-              bgcolor: "rgba(0, 0, 0, 0.45)",
-              "&:hover": { bgcolor: "rgba(0, 0, 0, 0.65)" },
-              opacity: controlsShown ? 1 : 0,
-              transition: "opacity 300ms ease",
-              "&:focus-visible": { opacity: 1 },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-          <Box
-            data-testid="screensaver-brand"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              pl: 0.75,
-              pr: { xs: 0.75, sm: 1.5 },
-              py: 0.75,
-              borderRadius: 999,
-              bgcolor: "rgba(0, 0, 0, 0.45)",
-              backdropFilter: "blur(6px)",
-              color: "common.white",
-              opacity: 0.9,
-            }}
-          >
-            <Box component="img" src="/icon-master.svg" alt="" sx={{ width: 26, height: 26, display: "block" }} />
-            <Typography
-              component="span"
-              sx={{
-                display: { xs: "none", sm: "inline" },
-                fontWeight: 650,
-                fontSize: 14,
-                letterSpacing: "-0.01em",
-                textShadow: "0 1px 2px rgba(0, 0, 0, 0.6)",
-              }}
-            >
-              VideoGameTrackarr
-            </Typography>
-          </Box>
-        </Box>
+          <CloseIcon />
+        </IconButton>
         {needsVideo ? (
           <video
             src="/keep-awake.mp4"

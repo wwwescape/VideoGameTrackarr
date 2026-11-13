@@ -48,4 +48,7 @@ class GameFilterParams:
     # Screensaver lab: games shown in it or hidden from it (the per-game opt-out). Only the
     # Games list offers it, and only while the lab is on; elsewhere it's never sent.
     screensaver: ScreensaverFilter | None = Query(default=None)
+    # Games list only: positive conditions may be met by the game or any of its add-ons
+    # (game_repository._GameFilters). Off by default; other lists never send it.
+    include_addons: bool = Query(default=False, alias="includeAddons")
     sort: GameSortOption = Query(default=GameSortOption.NAME_ASC)

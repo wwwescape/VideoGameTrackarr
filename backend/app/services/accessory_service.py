@@ -55,6 +55,11 @@ def _require_accessory_ids_exist(db: Session, accessory_ids: list[int]) -> None:
             raise NotFoundError(f"Accessory {linked_accessory_id} not found")
 
 
+def list_accessories_by_ids(db: Session, accessory_ids: list[int]) -> list[AccessoryWithStatus]:
+    """Linked accessories for a device's or accessory's page: with their status, sorted by name."""
+    return accessory_repository.list_accessories_by_ids(db, accessory_ids)
+
+
 def list_accessories(
     db: Session,
     search: str | None = None,

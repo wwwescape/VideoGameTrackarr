@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Game
+from app.models.system import User
 from app.repositories import game_repository
-from app.repositories.game_repository import ScreensaverGame
+from app.repositories.game_repository import ScreensaverGame, ScreensaverShows
 from app.services.exceptions import NotFoundError
 
 # One fetch's worth of covers. A larger library gets a fresh random sample each time the
@@ -24,10 +25,22 @@ class ScreensaverSample:
     total: int
 
 
-def sample(db: Session, limit: int = SAMPLE_SIZE) -> ScreensaverSample:
+def shows_for(user: User | None) -> ScreensaverShows:
+    """The signed-in account's What to show settings (the defaults without an account)."""
+    if user is None:
+        return ScreensaverShows()
+    return ScreensaverShows(
+        owned=user.screensaver_show_owned,
+        wishlist=user.screensaver_show_wishlist,
+        custom=user.screensaver_include_custom,
+    )
+
+
+def sample(db: Session, shows: ScreensaverShows | None = None, limit: int = SAMPLE_SIZE) -> ScreensaverSample:
+    shows = shows or ScreensaverShows()
     return ScreensaverSample(
-        games=game_repository.sample_screensaver_games(db, limit),
-        total=game_repository.count_screensaver_games(db),
+        games=game_repository.sample_screensaver_games(db, limit, shows),
+        total=game_repository.count_screensaver_games(db, shows),
     )
 
 

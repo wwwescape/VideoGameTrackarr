@@ -120,6 +120,20 @@ def _get_accessory_options() -> tuple[Any, ...]:
     )
 
 
+def list_accessories_by_ids(db: Session, accessory_ids: list[int]) -> list[AccessoryWithStatus]:
+    """These accessories with their status, sorted by name: the cards a detail page links to,
+    in one query rather than one per card."""
+    if not accessory_ids:
+        return []
+    stmt = (
+        select(Accessory, *_STATUS_COLUMNS)
+        .options(*_list_options())
+        .where(Accessory.id.in_(accessory_ids))
+        .order_by(Accessory.official_name)
+    )
+    return [_row_to_accessory_with_status(row) for row in db.execute(stmt)]
+
+
 def get_accessory(db: Session, accessory_id: int) -> AccessoryWithStatus | None:
     stmt = (
         select(Accessory, *_STATUS_COLUMNS).options(*_get_accessory_options()).where(Accessory.id == accessory_id)

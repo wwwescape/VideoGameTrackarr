@@ -195,21 +195,15 @@ const AccessoryDetails = () => {
             </Section>
             <Section id="linked-devices" title={t("hardware.accessoryDetails.linkedDevicesTitle")}>
               <LinkedHardware
-                items={accessory.linkedDevices.map((linked) => ({
-                  key: linked.id,
-                  label: linked.officialName,
-                  to: `/hardware/device/${hardwareIdentifier(linked.officialName, linked.uuid)}`,
-                }))}
+                items={accessory.linkedDevices}
+                kind="device"
                 emptyText={t("hardware.accessoryDetails.noLinkedDevices")}
               />
             </Section>
             <Section id="linked" title={t("hardware.detailsShared.linkedAccessoriesTitle")}>
               <LinkedHardware
-                items={accessory.linkedAccessories.map((linked) => ({
-                  key: linked.id,
-                  label: linked.officialName,
-                  to: `/hardware/accessory/${hardwareIdentifier(linked.officialName, linked.uuid)}`,
-                }))}
+                items={accessory.linkedAccessories}
+                kind="accessory"
                 emptyText={t("hardware.accessoryDetails.noLinkedAccessories")}
               />
             </Section>

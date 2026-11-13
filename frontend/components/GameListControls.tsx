@@ -111,6 +111,7 @@ export function useGameListControls(
     sources: fields.sources,
     steelbookOnly: fields.steelbookOnly,
     screensaverFilter: fields.screensaverFilter,
+    includeAddons: fields.includeAddons,
   });
 
   // Remove-one-value chips under the breadcrumbs. An Exclude flag on a field shows on its chips
@@ -161,6 +162,10 @@ export function useGameListControls(
   if (fields.steelbookOnly && fields.onSteelbookOnlyChange) {
     const clear = fields.onSteelbookOnlyChange;
     chips.push({ key: "steelbook", label: t("games.listToolbar.steelbookOnlyLabel"), onRemove: () => clear(false) });
+  }
+  if (fields.includeAddons && fields.onIncludeAddonsChange) {
+    const clear = fields.onIncludeAddonsChange;
+    chips.push({ key: "addons", label: t("games.listToolbar.includeAddonsChip"), onRemove: () => clear(false) });
   }
   if (fields.screensaverFilter && fields.onScreensaverFilterChange) {
     const clear = fields.onScreensaverFilterChange;

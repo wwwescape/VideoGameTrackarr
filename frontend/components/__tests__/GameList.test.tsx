@@ -296,3 +296,28 @@ describe("Games list — Screensaver lab", () => {
     expect(screen.queryByText("Screensaver: Hidden")).not.toBeInTheDocument();
   });
 });
+
+describe("Games list — Include add-ons", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memoryStorage());
+    vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+    useGamesMock.mockClear();
+    labOn = false;
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("is off by default", () => {
+    renderList();
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.not.objectContaining({ includeAddons: true }));
+  });
+
+  it("sends a remembered choice, with a chip that turns it off", async () => {
+    writeSessionValue("games.includeAddons", true);
+    const { user } = renderList();
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.objectContaining({ includeAddons: true }));
+
+    expect(screen.getByText("Including add-ons")).toBeInTheDocument();
+    await user.click(screen.getByLabelText("Remove filter Including add-ons"));
+    expect(useGamesMock).toHaveBeenLastCalledWith(expect.not.objectContaining({ includeAddons: true }));
+  });
+});

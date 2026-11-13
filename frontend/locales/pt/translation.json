@@ -522,8 +522,17 @@
       "seconds_other": "{{count}} segundos",
       "current_one": "Cada capa é mostrada durante {{count}} segundo.",
       "current_other": "Cada capa é mostrada durante {{count}} segundos.",
-      "included": "Estão incluídos todos os jogos que possui com capa. Oculte um na sua página, ou vários de uma vez a partir da lista de jogos.",
-      "saveFailed": "Não foi possível guardar a alteração. Tente novamente."
+      "included": "Oculte um jogo do protetor de ecrã na sua página, ou vários de uma vez a partir da lista de jogos.",
+      "saveFailed": "Não foi possível guardar a alteração. Tente novamente.",
+      "showHeading": "O que mostrar",
+      "showLead": "Só aparecem jogos com capa, e nunca os que ocultou.",
+      "showOwned": "Jogos que tenho",
+      "showOwnedDescription": "Jogos com pelo menos uma cópia na sua coleção.",
+      "showWishlist": "Jogos da minha lista de desejos",
+      "showWishlistDescription": "Jogos que quer mas ainda não tem.",
+      "keepOne": "O protetor de ecrã precisa de algo para mostrar: ative primeiro o outro grupo.",
+      "includeCustom": "Incluir jogos personalizados",
+      "includeCustomDescription": "Jogos que adicionou à mão em vez de a partir do IGDB."
     },
     "tagManager": {
       "description": "Elimina uma etiqueta de forma permanente. Isto remove-a de todos os jogos, dispositivos e acessórios que a tenham — não apenas de um. Para remover uma etiqueta de um único item, utilize o campo Etiquetas na página desse item.",
@@ -798,7 +807,10 @@
       "screensaverShownOption": "Mostrados",
       "screensaverHiddenOption": "Ocultos",
       "screensaverHiddenChip": "Protetor de ecrã: ocultos",
-      "screensaverShownChip": "Protetor de ecrã: mostrados"
+      "screensaverShownChip": "Protetor de ecrã: mostrados",
+      "includeAddonsLabel": "Incluir complementos",
+      "includeAddonsChip": "Complementos incluídos",
+      "includeAddonsHint": "Mostra também um jogo quando um dos seus complementos corresponde à pesquisa ou aos filtros. As exclusões, o tipo de jogo e a posse continuam a olhar para o próprio jogo."
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -813,7 +825,8 @@
       "nameYearTooltip": "{{name}} ({{year}})",
       "onSaleLabel": "Em Promoção",
       "missingLabel": "Em Falta",
-      "customLabel": "Personalizado"
+      "customLabel": "Personalizado",
+      "viaAddon": "Por complemento"
     },
     "add": {
       "addGameError": "Erro ao adicionar o jogo. Por favor, tente novamente.",

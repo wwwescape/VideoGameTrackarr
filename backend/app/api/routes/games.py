@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, get_igdb_client, get_session_factory
 from app.api.routes.game_filters import GameFilterParams
 from app.models.library import MediaFormat
+from app.models.system import User
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
@@ -108,10 +109,12 @@ _screensaver_lab = [Depends(require_lab(LAB_SCREENSAVER))]
 
 
 @router.get("/screensaver", response_model=ScreensaverResponse, dependencies=_screensaver_lab)
-def get_screensaver(db: Session = Depends(get_db)) -> ScreensaverResponse:
-    """A random sample of the covers the screensaver shows (see screensaver_service), fetched
-    only when it opens."""
-    return screensaver_response(screensaver_service.sample(db))
+def get_screensaver(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+) -> ScreensaverResponse:
+    """A random sample of the covers the screensaver shows (see screensaver_service), per the
+    account's What to show settings, fetched only when it opens."""
+    return screensaver_response(screensaver_service.sample(db, screensaver_service.shows_for(current_user)))
 
 
 @router.post("/screensaver/bulk", response_model=ScreensaverBulkResponse, dependencies=_screensaver_lab)

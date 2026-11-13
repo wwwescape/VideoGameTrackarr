@@ -108,6 +108,20 @@ def _get_device_options() -> tuple[Any, ...]:
     )
 
 
+def list_devices_by_ids(db: Session, device_ids: list[int]) -> list[DeviceWithStatus]:
+    """These devices with their status, sorted by name: the cards a detail page links to,
+    in one query rather than one per card."""
+    if not device_ids:
+        return []
+    stmt = (
+        select(Device, *_STATUS_COLUMNS)
+        .options(*_list_options())
+        .where(Device.id.in_(device_ids))
+        .order_by(Device.official_name)
+    )
+    return [_row_to_device_with_status(row) for row in db.execute(stmt)]
+
+
 def get_device(db: Session, device_id: int) -> DeviceWithStatus | None:
     stmt = select(Device, *_STATUS_COLUMNS).options(*_get_device_options()).where(Device.id == device_id)
     row = db.execute(stmt).first()

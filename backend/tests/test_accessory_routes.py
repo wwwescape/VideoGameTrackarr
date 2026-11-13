@@ -580,3 +580,61 @@ def test_list_accessories_search_matches_hardware_reference_generation_short(
     response = auth_client.get("/api/accessories", params={"search": "ps3"})
 
     assert [a["officialName"] for a in response.json()] == ["SIXAXIS Controller"]
+
+
+def test_linked_hardware_comes_as_cards_on_both_sides(auth_client, db_session, seed_device):
+    """Linked Devices / Linked Accessories carry what a Hardware card shows: the name, the
+    manufacturer and detail line, the photo, the Custom chip and the owned/wishlisted marks."""
+    from app.models.hardware import UserDevice
+    from app.models.library import LibraryStatus
+
+    db_session.add(UserDevice(device_id=seed_device.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+    accessory = auth_client.post(
+        "/api/accessories",
+        json={
+            "manufacturer": "Sony",
+            "accessoryType": "Controller",
+            "officialName": "DualSense",
+            "deviceIds": [seed_device.id],
+        },
+    ).json()
+    db_session.add(UserAccessory(accessory_id=accessory["id"], status=LibraryStatus.WISHLIST))
+    db_session.commit()
+
+    [device_card] = auth_client.get(f"/api/accessories/{accessory['uuid']}").json()["linkedDevices"]
+    assert device_card == {
+        "id": seed_device.id,
+        "uuid": seed_device.uuid,
+        "officialName": "Test Console",
+        "manufacturerName": "Sony",
+        "detail": "PlayStation 5",
+        "imageUrl": None,
+        "isCustom": True,
+        "owned": True,
+        "wishlisted": False,
+    }
+
+    [accessory_card] = auth_client.get(f"/api/devices/{seed_device.uuid}").json()["linkedAccessories"]
+    assert accessory_card["officialName"] == "DualSense"
+    assert accessory_card["manufacturerName"] == "Sony"
+    assert accessory_card["detail"] == "Controller"
+    assert accessory_card["owned"] is False
+    assert accessory_card["wishlisted"] is True
+
+
+def test_linked_accessories_are_sorted_by_name(auth_client, seed_device):
+    for name in ("Zebra Pad", "Alpha Pad", "Mid Pad"):
+        auth_client.post(
+            "/api/accessories",
+            json={
+                "manufacturer": "Sony",
+                "accessoryType": "Controller",
+                "officialName": name,
+                "deviceIds": [seed_device.id],
+            },
+        )
+
+    cards = auth_client.get(f"/api/devices/{seed_device.uuid}").json()["linkedAccessories"]
+
+    assert [card["officialName"] for card in cards] == ["Alpha Pad", "Mid Pad", "Zebra Pad"]

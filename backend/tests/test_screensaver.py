@@ -283,3 +283,95 @@ def test_filtering_the_games_list_by_screensaver(auth_client, db_session, platfo
 
 def test_an_unknown_screensaver_filter_is_422(auth_client):
     assert auth_client.get("/api/games", params={"screensaver": "maybe"}).status_code == 422
+
+
+# Settings → Screensaver → What to show
+
+
+def _prefs(client, **body):
+    return client.put("/api/auth/me/preferences", json=body)
+
+
+def test_what_to_show_defaults_to_owned_games_custom_included(auth_client):
+    me = auth_client.get("/api/auth/me").json()
+    assert (me["screensaverShowOwned"], me["screensaverShowWishlist"], me["screensaverIncludeCustom"]) == (
+        True,
+        False,
+        True,
+    )
+
+
+def test_wishlisted_games_show_once_chosen(auth_client, db_session, screensaver_lab, platform):
+    _own(db_session, _game(db_session, "Owned"), platform)
+    _own(db_session, _game(db_session, "Wanted"), platform, status=LibraryStatus.WISHLIST)
+    _game(db_session, "Missing", auto_discovered=True)
+    db_session.commit()
+    assert _names(auth_client) == ["Owned"]
+
+    assert _prefs(auth_client, screensaverShowWishlist=True).status_code == 200
+    assert _names(auth_client) == ["Owned", "Wanted"]
+
+    assert _prefs(auth_client, screensaverShowOwned=False).status_code == 200
+    assert _names(auth_client) == ["Wanted"]
+
+
+def test_custom_games_can_be_left_out(auth_client, db_session, screensaver_lab, platform):
+    _own(db_session, _game(db_session, "From IGDB", igdb_id=1942), platform)
+    _own(db_session, _game(db_session, "Added By Hand", igdb_id=None), platform)
+    assert _names(auth_client) == ["Added By Hand", "From IGDB"]
+
+    assert _prefs(auth_client, screensaverIncludeCustom=False).status_code == 200
+    assert _names(auth_client) == ["From IGDB"]
+    assert auth_client.get("/api/games/screensaver").json()["total"] == 1
+
+
+def test_owned_and_wishlist_cannot_both_be_off(auth_client):
+    assert _prefs(auth_client, screensaverShowOwned=False).status_code == 422
+    # In one request too, and nothing is saved.
+    assert _prefs(auth_client, screensaverShowOwned=False, screensaverShowWishlist=False).status_code == 422
+    assert auth_client.get("/api/auth/me").json()["screensaverShowOwned"] is True
+
+    # Switching over in one request is fine: wishlist on, owned off.
+    response = _prefs(auth_client, screensaverShowOwned=False, screensaverShowWishlist=True)
+    assert response.status_code == 200
+    assert (response.json()["screensaverShowOwned"], response.json()["screensaverShowWishlist"]) == (False, True)
+    assert _prefs(auth_client, screensaverShowWishlist=False).status_code == 422
+
+
+def test_other_preferences_leave_what_to_show_alone(auth_client):
+    _prefs(auth_client, screensaverShowWishlist=True, screensaverIncludeCustom=False)
+    _prefs(auth_client, currency="EUR")
+    me = auth_client.get("/api/auth/me").json()
+    assert (me["screensaverShowWishlist"], me["screensaverIncludeCustom"]) == (True, False)
+
+
+def test_a_backup_carries_what_to_show(auth_client, db_session):
+    _prefs(auth_client, screensaverShowOwned=False, screensaverShowWishlist=True, screensaverIncludeCustom=False)
+    backup = auth_client.get("/api/export/backup").json()
+    assert backup["settings"]["screensaver_show_owned"] is False
+    assert backup["settings"]["screensaver_show_wishlist"] is True
+    assert backup["settings"]["screensaver_include_custom"] is False
+
+    _prefs(auth_client, screensaverShowOwned=True, screensaverShowWishlist=False, screensaverIncludeCustom=True)
+    assert _upload_backup(auth_client, backup).status_code == 202
+    assert _wait_for_restore_completion(auth_client)["status"] == "completed"
+    db_session.expire_all()
+
+    me = auth_client.get("/api/auth/me").json()
+    assert (me["screensaverShowOwned"], me["screensaverShowWishlist"], me["screensaverIncludeCustom"]) == (
+        False,
+        True,
+        False,
+    )
+
+
+def test_a_backup_never_restores_a_screensaver_with_nothing_to_show(auth_client, db_session):
+    backup = auth_client.get("/api/export/backup").json()
+    backup["settings"]["screensaver_show_owned"] = False
+    backup["settings"]["screensaver_show_wishlist"] = False
+
+    assert _upload_backup(auth_client, backup).status_code == 202
+    assert _wait_for_restore_completion(auth_client)["status"] == "completed"
+    db_session.expire_all()
+
+    assert auth_client.get("/api/auth/me").json()["screensaverShowOwned"] is True

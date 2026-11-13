@@ -83,3 +83,34 @@ export function useSetScreensaverExcludedBulk() {
     },
   });
 }
+
+// Settings → Screensaver → What to show, kept on the account. Owned and wishlisted can't both
+// be off (the server says 422; the Settings page disables the last one on).
+export interface ScreensaverShows {
+  owned: boolean;
+  wishlist: boolean;
+  custom: boolean;
+}
+
+export function useScreensaverShows() {
+  const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+  const shows: ScreensaverShows = {
+    owned: user?.screensaverShowOwned ?? true,
+    wishlist: user?.screensaverShowWishlist ?? false,
+    custom: user?.screensaverIncludeCustom ?? true,
+  };
+  const save = useMutation({
+    mutationFn: (next: Partial<ScreensaverShows>) =>
+      updatePreferences({
+        ...(next.owned === undefined ? {} : { screensaverShowOwned: next.owned }),
+        ...(next.wishlist === undefined ? {} : { screensaverShowWishlist: next.wishlist }),
+        ...(next.custom === undefined ? {} : { screensaverIncludeCustom: next.custom }),
+      }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(currentUserQueryKey, updated);
+      queryClient.invalidateQueries({ queryKey: screensaverQueryKey });
+    },
+  });
+  return { shows, save };
+}

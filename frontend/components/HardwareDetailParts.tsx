@@ -3,10 +3,14 @@ import ImageNotSupportedOutlinedIcon from "@mui/icons-material/ImageNotSupported
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { resolveAssetUrl } from "../api/client";
+import type { LinkedHardware as LinkedHardwareItem } from "../api/types";
 import type { Crumb } from "../navigation/breadcrumbConfig";
-import { DetailHero, Pill } from "./Detail";
+import { DetailHero } from "./Detail";
+import HardwareCard from "./HardwareCard";
 import OwnershipBadges from "./OwnershipBadges";
+import { hardwareIdentifier } from "../utils/identifiers";
 
 interface HardwareHeroProps {
   name: string;
@@ -76,17 +80,45 @@ export const HardwareHero = ({ name, imageUrl, owned, wishlisted, crumbs, sublin
 };
 
 // Linked devices/accessories carry only a name, so they're linked pills rather than tiles.
-export const LinkedHardware = ({ items, emptyText }: { items: { key: number; label: string; to: string }[]; emptyText: string }) =>
-  items.length === 0 ? (
-    <Typography variant="body2" color="text.secondary">
-      {emptyText}
-    </Typography>
-  ) : (
-    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+// Linked Devices / Linked Accessories on a hardware page: the same cards as the Hardware page,
+// wrapping like the game page's Add-ons (two columns on phones, then as many as fit).
+export const LinkedHardware = ({
+  items,
+  kind,
+  emptyText,
+}: {
+  items: LinkedHardwareItem[];
+  kind: "device" | "accessory";
+  emptyText: string;
+}) => {
+  const navigate = useNavigate();
+  if (items.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        {emptyText}
+      </Typography>
+    );
+  }
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(auto-fill, minmax(150px, 1fr))" },
+        gap: "18px 14px",
+      }}
+    >
       {items.map((item) => (
-        <Pill key={item.key} to={item.to}>
-          {item.label}
-        </Pill>
+        <HardwareCard
+          key={item.id}
+          name={item.officialName}
+          subtitle={[item.manufacturerName, item.detail].filter(Boolean).join(" · ")}
+          imageUrl={item.imageUrl}
+          owned={item.owned}
+          wishlisted={item.wishlisted}
+          isCustom={item.isCustom}
+          onClick={() => navigate(`/hardware/${kind}/${hardwareIdentifier(item.officialName, item.uuid)}`)}
+        />
       ))}
     </Box>
   );
+};

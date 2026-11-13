@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
 import { useAddons, useGame } from "../hooks/useGames";
 import { useEnabledLabs } from "../hooks/useLabs";
+import { useScreensaverShows } from "../hooks/useScreensaver";
 import { useLibraryItems } from "../hooks/useLibrary";
 import { useCreateNote, useDeleteNote, useNotes, useUpdateNote } from "../hooks/useNotes";
 import { usePlatforms } from "../hooks/usePlatforms";
@@ -55,6 +56,7 @@ const GameDetails = () => {
 
   const routeCrumbs = useRouteCrumbs();
   const screensaverLab = useEnabledLabs().has("screensaver");
+  const { shows: screensaverShows } = useScreensaverShows();
   const { back, toList } = useDetailBack("/games");
   // A rename (custom games) changes the address; correct it in place.
   useCanonicalAddress(game ? `/${location.pathname.startsWith("/addon/") ? "addon" : "game"}/${gameIdentifier(game)}` : null);
@@ -152,7 +154,7 @@ const GameDetails = () => {
           }}
           crumbs={routeCrumbs.slice(0, -1)}
           corner={
-            screensaverLab && canBeInScreensaver(game) ? (
+            screensaverLab && canBeInScreensaver(game, screensaverShows) ? (
               <ScreensaverToggle gameId={game.id} excluded={game.screensaverExcluded} />
             ) : undefined
           }

@@ -15,7 +15,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services import auth_service
-from app.services.auth_service import AuthError, SetupCodeError, WrongPasswordError
+from app.services.auth_service import AuthError, ScreensaverShowsNothingError, SetupCodeError, WrongPasswordError
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -83,13 +83,19 @@ def update_preferences(
     stay per browser). Only the
     fields sent are changed."""
     layout = [section.model_dump() for section in body.overview_layout] if body.overview_layout is not None else None
-    user = auth_service.set_preferences(
-        db,
-        current_user,
-        currency=body.currency,
-        overview_layout=layout,
-        screensaver_interval_seconds=body.screensaver_interval_seconds,
-    )
+    try:
+        user = auth_service.set_preferences(
+            db,
+            current_user,
+            currency=body.currency,
+            overview_layout=layout,
+            screensaver_interval_seconds=body.screensaver_interval_seconds,
+            screensaver_show_owned=body.screensaver_show_owned,
+            screensaver_show_wishlist=body.screensaver_show_wishlist,
+            screensaver_include_custom=body.screensaver_include_custom,
+        )
+    except ScreensaverShowsNothingError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
     return _user_response(user)
 
 
@@ -100,6 +106,9 @@ def _user_response(user: User) -> UserResponse:
         currency=user.currency,
         overview_layout=user.overview_layout,
         screensaver_interval_seconds=user.screensaver_interval_seconds,
+        screensaver_show_owned=user.screensaver_show_owned,
+        screensaver_show_wishlist=user.screensaver_show_wishlist,
+        screensaver_include_custom=user.screensaver_include_custom,
     )
 
 

@@ -51,6 +51,9 @@ def test_me_returns_current_user_with_valid_access_token(client, test_user):
         "currency": None,
         "overviewLayout": None,
         "screensaverIntervalSeconds": None,
+        "screensaverShowOwned": True,
+        "screensaverShowWishlist": False,
+        "screensaverIncludeCustom": True,
     }
 
 

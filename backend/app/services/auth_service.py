@@ -27,6 +27,10 @@ class SetupCodeError(Exception):
     """The first-run setup code is missing or wrong — 403."""
 
 
+class ScreensaverShowsNothingError(ValueError):
+    """Turning off both Screensaver groups (owned and wishlisted) would leave it nothing: 422."""
+
+
 class WrongPasswordError(Exception):
     """The current password given to change it is wrong — 400."""
 
@@ -135,14 +139,26 @@ def set_preferences(
     currency: str | None = None,
     overview_layout: list[dict] | None = None,
     screensaver_interval_seconds: int | None = None,
+    screensaver_show_owned: bool | None = None,
+    screensaver_show_wishlist: bool | None = None,
+    screensaver_include_custom: bool | None = None,
 ) -> User:
-    """Changes only what's given (None leaves a preference as it is)."""
+    """Changes only what's given (None leaves a preference as it is). The Screensaver's owned and
+    wishlist groups are checked together, after merging: at least one has to stay on."""
+    show_owned = user.screensaver_show_owned if screensaver_show_owned is None else screensaver_show_owned
+    show_wishlist = user.screensaver_show_wishlist if screensaver_show_wishlist is None else screensaver_show_wishlist
+    if not show_owned and not show_wishlist:
+        raise ScreensaverShowsNothingError("The screensaver has to show owned or wishlisted games")
     if currency is not None:
         user.currency = currency
     if overview_layout is not None:
         user.overview_layout = overview_layout
     if screensaver_interval_seconds is not None:
         user.screensaver_interval_seconds = screensaver_interval_seconds
+    user.screensaver_show_owned = show_owned
+    user.screensaver_show_wishlist = show_wishlist
+    if screensaver_include_custom is not None:
+        user.screensaver_include_custom = screensaver_include_custom
     db.commit()
     db.refresh(user)
     return user

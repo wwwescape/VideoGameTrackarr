@@ -35,7 +35,7 @@ const GameList = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const screensaverLab = useEnabledLabs().has("screensaver");
-  const state = useGameListState("games", { sources: true, screensaver: screensaverLab });
+  const state = useGameListState("games", { sources: true, screensaver: screensaverLab, includeAddons: true });
   // Enter in the header search lands here with its text.
   useSearchHandoff("search", state.setSearchKeyword);
   const [selectionMode, setSelectionMode] = useState(false);

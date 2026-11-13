@@ -56,6 +56,8 @@ export interface GameListFilters {
   sourceExclude?: boolean;
   // Screensaver lab: only the Games list sends it, and only while the lab is on.
   screensaver?: ScreensaverFilter;
+  // Games list only: search and filters may be met by a game's add-ons too.
+  includeAddons?: boolean;
   sort?: GameSortOption;
   // Only meaningful on GET /api/games — an always-applied AND-scope, independent of the
   // collectionIds/franchiseIds OR-filter above. Used by a Collection/Series detail page's
@@ -97,6 +99,7 @@ export function buildGameFilterParams(filters: GameListFilters) {
     sources,
     sourceExclude,
     screensaver,
+    includeAddons,
     sort,
     requiredCollectionId,
     requiredFranchiseId,
@@ -136,6 +139,7 @@ export function buildGameFilterParams(filters: GameListFilters) {
     source: sources?.length ? sources : undefined,
     sourceExclude: sources?.length ? sourceExclude : undefined,
     screensaver: screensaver || undefined,
+    includeAddons: includeAddons || undefined,
     sort: sort || undefined,
     requiredCollectionId,
     requiredFranchiseId,

@@ -295,4 +295,15 @@ describe("GameCard", () => {
     await userEvent.click(screen.getByRole("img", { name: /Hollow Knight/ }));
     expect(onAdd).not.toHaveBeenCalled();
   });
+
+  it("shows a Via add-on chip only on a game listed because of an add-on", () => {
+    const { unmount } = renderWithTheme(
+      <GameCard game={{ ...baseGame, matchedViaAddon: true, owned: true }} context="list" contextFunction={vi.fn()} />
+    );
+    expect(screen.getByTestId("via-addon-chip")).toHaveTextContent("Via add-on");
+    unmount();
+
+    renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} />);
+    expect(screen.queryByTestId("via-addon-chip")).not.toBeInTheDocument();
+  });
 });

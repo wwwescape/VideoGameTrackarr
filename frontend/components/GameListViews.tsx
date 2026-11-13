@@ -226,6 +226,21 @@ const OwnershipIcons = ({ game }: { game: GameSummary }) => {
 };
 
 // The card's chips (On sale, Missing, Custom) as small inline chips.
+// Right after the name in the Table and Overview rows: listed because one of the game's add-ons
+// matched the search or filters (Include add-ons), like the card's top-centre chip.
+const ViaAddonTag = ({ game }: { game: GameSummary }) => {
+  const { t } = useTranslation();
+  return game.matchedViaAddon ? (
+    <Chip
+      size="small"
+      variant="outlined"
+      label={t("games.card.viaAddon")}
+      data-testid="via-addon-tag"
+      sx={{ height: 20, fontSize: 11, flexShrink: 0 }}
+    />
+  ) : null;
+};
+
 const StateChips = ({ game }: { game: GameSummary }) => {
   const { t } = useTranslation();
   const missing = game.autoDiscovered && !game.owned && !game.wishlisted;
@@ -234,6 +249,7 @@ const StateChips = ({ game }: { game: GameSummary }) => {
       {game.isOnSale ? <Chip size="small" color="success" label={t("games.card.onSaleLabel")} /> : null}
       {missing ? <Chip size="small" color="primary" label={t("games.card.missingLabel")} /> : null}
       {game.igdbId === null && !missing ? <Chip size="small" label={t("games.card.customLabel")} /> : null}
+
     </>
   );
 };
@@ -334,8 +350,13 @@ export function GameTable(props: GameTableProps) {
                 <TableCell sx={{ py: 0.5 }}>
                   <Cover game={game} width={30} />
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {game.name}
+                <TableCell sx={{ fontWeight: 600, maxWidth: 360 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                    <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {game.name}
+                    </Box>
+                    <ViaAddonTag game={game} />
+                  </Box>
                 </TableCell>
                 <TableCell>
                   <OwnershipIcons game={game} />
@@ -402,6 +423,7 @@ export function GameOverviewRows(props: RowsProps) {
                 <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {game.name}
                 </Box>
+                <ViaAddonTag game={game} />
                 <OwnershipIcons game={game} />
               </Box>
               <Box sx={{ color: "vgt.text3", fontSize: 12.5, mt: 0.25 }}>{facts}</Box>

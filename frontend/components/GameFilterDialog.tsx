@@ -260,6 +260,11 @@ export interface GameFilterFieldsProps {
   // and only while the Screensaver lab is on. Null = any.
   screensaverFilter?: ScreensaverFilter | null;
   onScreensaverFilterChange?: (value: ScreensaverFilter | null) => void;
+  // Optional, "only rendered when provided" — only the Games page passes these. With it on,
+  // search and the other filters can be met by a game's add-ons too (excludes, game type and
+  // ownership still look at the game itself).
+  includeAddons?: boolean;
+  onIncludeAddonsChange?: (value: boolean) => void;
   playStatuses: PlayStatus[];
   onPlayStatusesChange: (value: PlayStatus[]) => void;
   playStatusExclude: boolean;
@@ -289,6 +294,7 @@ export function countActiveFilters(fields: {
   sources?: unknown[];
   steelbookOnly?: boolean;
   screensaverFilter?: ScreensaverFilter | null;
+  includeAddons?: boolean;
 }): number {
   return (
     fields.ownershipStatuses.length +
@@ -302,7 +308,8 @@ export function countActiveFilters(fields: {
     fields.playStatuses.length +
     (fields.sources?.length ?? 0) +
     (fields.steelbookOnly ? 1 : 0) +
-    (fields.screensaverFilter ? 1 : 0)
+    (fields.screensaverFilter ? 1 : 0) +
+    (fields.includeAddons ? 1 : 0)
   );
 }
 
@@ -360,6 +367,8 @@ const GameFilterDialog = ({
   onSourceExcludeChange,
   screensaverFilter = null,
   onScreensaverFilterChange,
+  includeAddons = false,
+  onIncludeAddonsChange,
   playStatuses,
   onPlayStatusesChange,
   playStatusExclude,
@@ -407,6 +416,7 @@ const GameFilterDialog = ({
       sources,
       steelbookOnly,
       screensaverFilter,
+      includeAddons,
     }) > 0;
 
 
@@ -450,6 +460,7 @@ const GameFilterDialog = ({
     onSourcesChange?.([]);
     onSourceExcludeChange?.(false);
     onScreensaverFilterChange?.(null);
+    onIncludeAddonsChange?.(false);
   };
 
   return (
@@ -633,6 +644,18 @@ const GameFilterDialog = ({
                 }
                 label={t("games.listToolbar.steelbookOnlyLabel")}
               />
+            </Grid>
+          ) : null}
+          {onIncludeAddonsChange ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Tooltip title={t("games.listToolbar.includeAddonsHint")} placement="top-start" describeChild>
+                <FormControlLabel
+                  control={
+                    <Switch checked={includeAddons} onChange={(event) => onIncludeAddonsChange(event.target.checked)} />
+                  }
+                  label={t("games.listToolbar.includeAddonsLabel")}
+                />
+              </Tooltip>
             </Grid>
           ) : null}
           {!hideCollectionsField ? (

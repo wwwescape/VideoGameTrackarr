@@ -4,6 +4,7 @@ from app.models.hardware import Device
 from app.models.library import RatingBoard, Tag
 from app.repositories.device_repository import DeviceWithStatus
 from app.schemas.base import CamelModel
+from app.schemas.hardware_link import LinkedHardwareResponse
 from app.schemas.hardware_reference import HardwareReferenceSummary, hardware_reference_summary_from_orm
 from app.schemas.tag import TagResponse, tag_from_orm
 from app.schemas.user_device import UserDeviceCreateRequest
@@ -43,14 +44,9 @@ class DeviceSummaryResponse(CamelModel):
     created_at: datetime
 
 
-class LinkedAccessoryResponse(CamelModel):
-    id: int
-    uuid: str
-    official_name: str
-
-
 class DeviceDetailResponse(DeviceSummaryResponse):
-    linked_accessories: list[LinkedAccessoryResponse]
+    # As cards, sorted by name (see routes/device.py, which loads them with their status).
+    linked_accessories: list[LinkedHardwareResponse]
     hardware_reference: HardwareReferenceSummary | None
     tags: list[TagResponse]
 
@@ -91,16 +87,29 @@ def device_summary_from_orm(with_status: DeviceWithStatus) -> DeviceSummaryRespo
     return DeviceSummaryResponse(**_device_fields(with_status.device, with_status))
 
 
-def device_detail_from_orm(with_status: DeviceWithStatus, tags: list[Tag]) -> DeviceDetailResponse:
+def linked_device_from_orm(with_status: DeviceWithStatus) -> LinkedHardwareResponse:
+    """A device as a linked card on an accessory's page."""
+    fields = _device_fields(with_status.device, with_status)
+    return LinkedHardwareResponse(
+        id=fields["id"],
+        uuid=fields["uuid"],
+        official_name=fields["official_name"],
+        manufacturer_name=fields["manufacturer_name"],
+        detail=fields["hardware_platform_name"],
+        image_url=fields["image_url"],
+        is_custom=fields["is_custom"],
+        owned=fields["owned"],
+        wishlisted=fields["wishlisted"],
+    )
+
+
+def device_detail_from_orm(
+    with_status: DeviceWithStatus, tags: list[Tag], linked_accessories: list[LinkedHardwareResponse]
+) -> DeviceDetailResponse:
     device = with_status.device
     return DeviceDetailResponse(
         **_device_fields(device, with_status),
-        linked_accessories=[
-            LinkedAccessoryResponse(
-                id=link.accessory.id, uuid=link.accessory.uuid, official_name=link.accessory.official_name
-            )
-            for link in device.linked_accessories
-        ],
+        linked_accessories=linked_accessories,
         hardware_reference=(
             hardware_reference_summary_from_orm(device.hardware_reference_entry)
             if device.hardware_reference_entry

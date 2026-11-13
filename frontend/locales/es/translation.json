@@ -522,8 +522,17 @@
       "seconds_other": "{{count}} segundos",
       "current_one": "Cada portada se muestra durante {{count}} segundo.",
       "current_other": "Cada portada se muestra durante {{count}} segundos.",
-      "included": "Se incluyen todos los juegos que tienes con portada. Oculta uno del salvapantallas en su página, o varios a la vez desde la lista de juegos.",
-      "saveFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
+      "included": "Oculta un juego del salvapantallas en su página, o varios a la vez desde la lista de juegos.",
+      "saveFailed": "No se pudo guardar el cambio. Inténtalo de nuevo.",
+      "showHeading": "Qué mostrar",
+      "showLead": "Solo aparecen juegos con portada, y nunca los que hayas ocultado.",
+      "showOwned": "Juegos que tengo",
+      "showOwnedDescription": "Juegos con al menos una copia en tu colección.",
+      "showWishlist": "Juegos de mi lista de deseos",
+      "showWishlistDescription": "Juegos que quieres pero aún no tienes.",
+      "keepOne": "El salvapantallas necesita algo que mostrar: activa primero el otro grupo.",
+      "includeCustom": "Incluir juegos personalizados",
+      "includeCustomDescription": "Juegos que añadiste a mano en lugar de desde IGDB."
     },
     "tagManager": {
       "description": "Elimina una etiqueta de forma permanente. Esto la quita de todos los juegos, dispositivos y accesorios que la tengan — no solo de uno. Para quitar una etiqueta de un solo elemento, usa el campo Etiquetas en la página de ese elemento.",
@@ -798,7 +807,10 @@
       "screensaverShownOption": "Mostrados",
       "screensaverHiddenOption": "Ocultos",
       "screensaverHiddenChip": "Salvapantallas: ocultos",
-      "screensaverShownChip": "Salvapantallas: mostrados"
+      "screensaverShownChip": "Salvapantallas: mostrados",
+      "includeAddonsLabel": "Incluir expansiones",
+      "includeAddonsChip": "Incluye expansiones",
+      "includeAddonsHint": "Muestra también un juego cuando una de sus expansiones coincide con la búsqueda o los filtros. Las exclusiones, el tipo de juego y la propiedad siguen mirando el juego en sí."
     },
     "card": {
       "playStatusBacklog": "Pendiente",
@@ -813,7 +825,8 @@
       "nameYearTooltip": "{{name}} ({{year}})",
       "onSaleLabel": "En oferta",
       "missingLabel": "Falta",
-      "customLabel": "Personalizado"
+      "customLabel": "Personalizado",
+      "viaAddon": "Por expansión"
     },
     "add": {
       "addGameError": "Error al añadir el juego. Inténtalo de nuevo.",

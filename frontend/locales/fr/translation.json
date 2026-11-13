@@ -522,8 +522,17 @@
       "seconds_other": "{{count}} secondes",
       "current_one": "Chaque jaquette s'affiche pendant {{count}} seconde.",
       "current_other": "Chaque jaquette s'affiche pendant {{count}} secondes.",
-      "included": "Tous les jeux que vous possédez avec une jaquette sont inclus. Masquez-en un depuis sa page, ou plusieurs à la fois depuis la liste des jeux.",
-      "saveFailed": "Impossible d'enregistrer ce changement. Veuillez réessayer."
+      "included": "Masquez un jeu de l'économiseur d'écran depuis sa page, ou plusieurs à la fois depuis la liste des jeux.",
+      "saveFailed": "Impossible d'enregistrer ce changement. Veuillez réessayer.",
+      "showHeading": "Quoi afficher",
+      "showLead": "Seuls les jeux avec une jaquette apparaissent, jamais ceux que vous avez masqués.",
+      "showOwned": "Jeux que je possède",
+      "showOwnedDescription": "Les jeux avec au moins un exemplaire dans votre collection.",
+      "showWishlist": "Jeux de ma liste de souhaits",
+      "showWishlistDescription": "Les jeux que vous voulez mais ne possédez pas encore.",
+      "keepOne": "L'économiseur d'écran doit avoir quelque chose à afficher : activez d'abord l'autre groupe.",
+      "includeCustom": "Inclure les jeux personnalisés",
+      "includeCustomDescription": "Les jeux ajoutés à la main plutôt que depuis IGDB."
     },
     "tagManager": {
       "description": "Supprime une étiquette de façon permanente. Cela la retire de tous les jeux, appareils et accessoires qui la portent — pas seulement d'un seul élément. Pour retirer une étiquette d'un seul élément, utilisez le champ Étiquettes sur la page de cet élément.",
@@ -798,7 +807,10 @@
       "screensaverShownOption": "Affichés",
       "screensaverHiddenOption": "Masqués",
       "screensaverHiddenChip": "Économiseur : masqués",
-      "screensaverShownChip": "Économiseur : affichés"
+      "screensaverShownChip": "Économiseur : affichés",
+      "includeAddonsLabel": "Inclure les compléments",
+      "includeAddonsChip": "Compléments inclus",
+      "includeAddonsHint": "Affiche aussi un jeu quand l'un de ses compléments correspond à la recherche ou aux filtres. Les exclusions, le type de jeu et la possession portent toujours sur le jeu lui-même."
     },
     "card": {
       "playStatusBacklog": "À faire",
@@ -813,7 +825,8 @@
       "nameYearTooltip": "{{name}} ({{year}})",
       "onSaleLabel": "En promotion",
       "missingLabel": "Manquant",
-      "customLabel": "Personnalisé"
+      "customLabel": "Personnalisé",
+      "viaAddon": "Par complément"
     },
     "add": {
       "addGameError": "Erreur lors de l'ajout du jeu. Veuillez réessayer.",
