@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import type { GameSummary, IgdbSearchResult } from "../../api/types";
 import AddGame from "../AddGame";
@@ -126,5 +126,30 @@ describe("AddGame bulk selection", () => {
     await user.click(screen.getByRole("button", { name: "Select games" }));
 
     expect(screen.getByText("0 selected")).toBeInTheDocument();
+  });
+});
+
+function LocationProbe() {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname}</div>;
+}
+
+describe("AddGame sync buttons", () => {
+  it("shows Steam Sync and GOG Sync buttons; GOG goes to the GOG sync page", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/games/add"]}>
+        <AddGame />
+        <LocationProbe />
+      </MemoryRouter>
+    );
+
+    const steamButton = await screen.findByRole("button", { name: "Steam Sync" });
+    const gogButton = screen.getByRole("button", { name: "GOG Sync" });
+    // Steam Sync renders first in the buttons row, GOG Sync after it.
+    expect(steamButton.compareDocumentPosition(gogButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await user.click(gogButton);
+    expect(screen.getByTestId("location")).toHaveTextContent("/settings/gog-sync");
   });
 });

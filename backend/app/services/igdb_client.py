@@ -34,6 +34,10 @@ _BROWSABLE_GAME_TYPES = (0, 3, 4, 8, 9, 10, 11)
 # searching for it directly, not a side effect of adding something else.
 _HIERARCHICAL_ADDON_GAME_TYPES = (1, 2, 13)
 
+# IGDB's external_game_source ids for the stores this app reads (Steam is 1, see
+# get_igdb_id_for_steam_appid; GOG is 5 per the IGDB docs' External Game Enums).
+EXTERNAL_SOURCE_GOG = 5
+
 # IGDB's Apicalypse query language expands relations inline via dot-notation — no extra
 # round trips needed for genres/companies/franchises/collections/screenshots/videos/
 # release_dates/platforms, verified against the real API while building this (M8). `fields
@@ -284,6 +288,37 @@ class IGDBClient:
         response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
         matches = response.json()
         return matches[0]["game"] if matches and "game" in matches[0] else None
+
+    async def get_igdb_id_for_external(self, source: int, uid: str) -> int | None:
+        """Matches a store's own id to an IGDB game id via external_games, like
+        get_igdb_id_for_steam_appid but for any store: EXTERNAL_SOURCE_GOG (a GOG
+        product id)."""
+        headers = await self._auth_headers()
+        escaped_uid = _escape_apicalypse_string(uid)
+        body = f'fields game;\nwhere uid = "{escaped_uid}" & external_game_source = {source};\nlimit 1;'
+        response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
+        matches = response.json()
+        return matches[0]["game"] if matches and "game" in matches[0] else None
+
+    async def get_igdb_ids_for_external(self, source: int, uids: list[int]) -> dict[int, int]:
+        """The batched form of get_igdb_id_for_external: one external_games query for
+        the whole list (Apicalypse accepts a uid tuple), instead of one query per game.
+        Rows with no game are dropped — the caller treats an absent id as unmatched."""
+        if not uids:
+            return {}
+        headers = await self._auth_headers()
+        uid_list = ", ".join(f'"{_escape_apicalypse_string(str(uid))}"' for uid in uids)
+        body = (
+            "fields game, uid;\n"
+            f"where uid = ({uid_list}) & external_game_source = {source};\n"
+            f"limit {len(uids)};"
+        )
+        response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
+        return {
+            int(row["uid"]): row["game"]
+            for row in response.json()
+            if "game" in row and "uid" in row and str(row["uid"]).isdigit()
+        }
 
     async def get_upcoming_events(self) -> list[dict]:
         """Events whose end_time hasn't passed yet, soonest first — matches the app's
