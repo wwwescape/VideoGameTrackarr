@@ -96,3 +96,26 @@ def test_other_lists_ignore_it(auth_client, library, db_session):
     db_session.add(LabFeature(id="game_shelf", enabled=True))
     db_session.commit()
     assert auth_client.get("/api/games/shelf", params={"includeAddons": True}).status_code == 200
+
+
+def test_library_filters_with_add_ons(auth_client, db_session, library):
+    """#55's filters under Include add-ons: a genre can come from an add-on, like tags, while
+    release, rating and players describe the game itself and stay on it."""
+    from app.models.catalog import GameGenre, Genre
+
+    elden, erdtree = library["elden"], library["erdtree"]
+    soulslike = Genre(name="Soulslike", igdb_id=990001)
+    db_session.add(soulslike)
+    db_session.flush()
+    db_session.add(GameGenre(game_id=erdtree.id, genre_id=soulslike.id))
+    # Only the add-on is "out in 2024", rated 9.5 and for 4 players.
+    elden.first_release_date, erdtree.first_release_date = 1645747200, 1718928000  # 2022, 2024
+    elden.igdb_rating, erdtree.igdb_rating = 70.0, 95.0
+    elden.local_players, erdtree.local_players = 1, 4
+    db_session.commit()
+
+    assert _games(auth_client, genreId=soulslike.id) == {}
+    assert _games(auth_client, genreId=soulslike.id, includeAddons=True) == {"Elden Ring": True}
+
+    for params in ({"releaseYearFrom": 2024}, {"ratingMin": 90}, {"localPlayersMin": 4}):
+        assert _games(auth_client, includeAddons=True, **params) == {}, params
