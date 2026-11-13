@@ -76,6 +76,7 @@
     "emulation": "Emulación",
     "gameCases": "Cajas de juegos",
     "screensaver": "Salvapantallas",
+    "filterPresets": "Preajustes de filtros",
     "overview": "Resumen",
     "settingsGeneral": "General",
     "primary": "Navegación principal",
@@ -495,6 +496,10 @@
         "screensaver": {
           "name": "Salvapantallas",
           "description": "Un botón flotante que muestra las portadas de tus juegos a pantalla completa, una tras otra. Desliza para explorar y toca una portada para abrir el juego. Añade Ajustes → Salvapantallas."
+        },
+        "filter_presets": {
+          "name": "Preajustes de filtros",
+          "description": "Elige qué campos muestra el diálogo Filtros de las listas de juegos y guarda sus filtros con un nombre («Cooperativo en el sofá») para volver a aplicarlos con un toque. Añade una flecha junto al botón Filtrar con tus preajustes, y Configuración → Preajustes de filtros."
         }
       }
     },
@@ -626,6 +631,20 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "filterPresets": {
+      "description": "Qué campos muestra el diálogo Filtros de las listas de juegos, y los preajustes guardados desde la flecha junto a su botón Filtrar. Guardado en tu cuenta, así que todos tus navegadores los tienen."
+    },
+    "gameFilters": {
+      "heading": "Listas de juegos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visibles en el diálogo Filtros. Guardado en tu cuenta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desactiva los campos que nunca usas. El filtro de un campo oculto se conserva y aún puede quitarse desde su chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Preajustes guardados",
+      "savedHelp": "Creados desde la flecha junto a Filtrar en las listas de juegos. Edita uno para renombrarlo o eliminarlo."
     }
   },
   "screensaver": {
@@ -810,7 +829,26 @@
       "screensaverShownChip": "Salvapantallas: mostrados",
       "includeAddonsLabel": "Incluir expansiones",
       "includeAddonsChip": "Incluye expansiones",
-      "includeAddonsHint": "Muestra también un juego cuando una de sus expansiones coincide con la búsqueda o los filtros. Las exclusiones, el tipo de juego y la propiedad siguen mirando el juego en sí."
+      "includeAddonsHint": "Muestra también un juego cuando una de sus expansiones coincide con la búsqueda o los filtros. Las exclusiones, el tipo de juego y la propiedad siguen mirando el juego en sí.",
+      "genreLabel": "Géneros",
+      "releaseStatusLabel": "Lanzamiento",
+      "releaseReleased": "Publicado",
+      "releaseUpcoming": "Próximamente",
+      "releaseYearFromLabel": "Publicado desde",
+      "releaseYearToLabel": "Publicado hasta",
+      "releaseYearFromChip": "Desde {{year}}",
+      "releaseYearToChip": "Hasta {{year}}",
+      "localPlayersLabel": "Jugadores en local",
+      "localPlayersOption_one": "{{count}}+ jugador",
+      "localPlayersOption_other": "{{count}}+ jugadores",
+      "onlineMultiplayerOnlyLabel": "Multijugador en línea",
+      "coopOnlyLabel": "Cooperativo",
+      "timeToBeatLabel": "Duración",
+      "timeToBeatUnder": "Menos de {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h o más",
+      "ratingLabel": "Valoración",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Pendiente",
@@ -1122,6 +1160,21 @@
       "empty": "Aún no hay juegos en tu estantería. Los juegos físicos que tienes aparecen aquí como cajas, una por cada plataforma en la que los tienes.",
       "noMatches": "Ninguna caja coincide.",
       "caseLabel": "{{name}} en {{platform}}"
+    },
+    "savedViews": {
+      "button": "Preajustes",
+      "modifiedLabel": "{{name}} (modificado)",
+      "empty": "Aún no hay preajustes",
+      "saveCurrent": "Guardar los filtros actuales…",
+      "saveAsNew": "Guardar como nuevo preajuste…",
+      "update": "Actualizar «{{name}}»",
+      "saveTitle": "Guardar estos filtros",
+      "editTitle": "Editar preajuste",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nombre",
+      "replaceHelp": "Reemplaza el preajuste con este nombre.",
+      "deleted": "Preajuste «{{name}}» eliminado",
+      "clearChip": "Quitar los filtros de {{name}}"
     }
   },
   "events": {

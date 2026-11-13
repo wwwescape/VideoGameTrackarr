@@ -6,7 +6,11 @@ from app.models.game_cases import GameCase
 from app.models.labs import LabFeature
 from tests.test_backup_routes import _upload_backup, _wait_for_restore_completion
 
-ALL_OFF = [{"id": "game_shelf", "enabled": False}, {"id": "screensaver", "enabled": False}]
+ALL_OFF = [
+    {"id": "game_shelf", "enabled": False},
+    {"id": "screensaver", "enabled": False},
+    {"id": "filter_presets", "enabled": False},
+]
 
 
 def _share_token(client) -> str:

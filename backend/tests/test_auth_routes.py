@@ -54,6 +54,8 @@ def test_me_returns_current_user_with_valid_access_token(client, test_user):
         "screensaverShowOwned": True,
         "screensaverShowWishlist": False,
         "screensaverIncludeCustom": True,
+        "gameFilterFields": None,
+        "savedGameFilters": None,
     }
 
 
@@ -370,3 +372,48 @@ def test_overview_layout_keys_are_validated(auth_client):
     response = auth_client.put("/api/auth/me/preferences", json={"overviewLayout": layout})
 
     assert response.status_code == 422
+
+
+def test_game_filter_fields_are_saved_on_the_account(auth_client, filter_presets_lab):
+    fields = [{"key": "format", "hidden": True}, {"key": "genre", "hidden": False}]
+
+    response = auth_client.put("/api/auth/me/preferences", json={"gameFilterFields": fields})
+
+    assert response.status_code == 200
+    assert auth_client.get("/api/auth/me").json()["gameFilterFields"] == fields
+
+
+def test_saved_game_filters_are_kept_as_sent(auth_client, filter_presets_lab):
+    saved = [{"name": "Couch Switch", "filters": {"platformScopes": ["130"], "localPlayersMin": 2, "coopOnly": True}}]
+
+    response = auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": saved})
+
+    assert response.status_code == 200
+    me = auth_client.get("/api/auth/me").json()
+    assert me["savedGameFilters"] == saved
+    # Saving filters leaves the other preferences alone.
+    assert me["gameFilterFields"] is None
+
+
+def test_saved_game_filters_need_a_name_and_stay_small(auth_client, filter_presets_lab):
+    unnamed = [{"name": "", "filters": {}}]
+    huge = [{"name": "Huge", "filters": {"tagIds": list(range(5000))}}]
+
+    assert auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": unnamed}).status_code == 422
+    assert auth_client.put("/api/auth/me/preferences", json={"savedGameFilters": huge}).status_code == 422
+
+
+def test_filter_fields_and_presets_are_left_alone_while_the_lab_is_off(auth_client):
+    saved = [{"name": "Couch", "filters": {"coopOnly": True}}]
+    fields = [{"key": "steelbook", "hidden": True}]
+
+    response = auth_client.put(
+        "/api/auth/me/preferences", json={"savedGameFilters": saved, "gameFilterFields": fields, "currency": "EUR"}
+    )
+
+    assert response.status_code == 200
+    me = auth_client.get("/api/auth/me").json()
+    assert me["savedGameFilters"] is None
+    assert me["gameFilterFields"] is None
+    # The rest of the request still applies.
+    assert me["currency"] == "EUR"

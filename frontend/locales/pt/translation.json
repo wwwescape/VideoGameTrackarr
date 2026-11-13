@@ -76,6 +76,7 @@
     "emulation": "Emulação",
     "gameCases": "Caixas de jogos",
     "screensaver": "Protetor de ecrã",
+    "filterPresets": "Predefinições de filtros",
     "overview": "Visão geral",
     "settingsGeneral": "Geral",
     "primary": "Navegação principal",
@@ -495,6 +496,10 @@
         "screensaver": {
           "name": "Protetor de ecrã",
           "description": "Um botão flutuante que mostra as capas dos seus jogos em ecrã inteiro, uma após a outra. Deslize para explorar e toque numa capa para abrir o jogo. Adiciona Definições → Protetor de ecrã."
+        },
+        "filter_presets": {
+          "name": "Predefinições de filtros",
+          "description": "Escolha os campos que a janela Filtros das listas de jogos mostra, e guarde os seus filtros com um nome («Cooperativo no sofá») para os voltar a aplicar com um toque. Adiciona uma seta junto ao botão Filtrar com as suas predefinições, e Definições → Predefinições de filtros."
         }
       }
     },
@@ -626,6 +631,20 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "filterPresets": {
+      "description": "Os campos que a janela Filtros das listas de jogos mostra, e as predefinições guardadas na seta junto ao seu botão Filtrar. Guardado na sua conta, para que todos os seus navegadores as tenham."
+    },
+    "gameFilters": {
+      "heading": "Listas de jogos",
+      "fields": "Campos de filtro",
+      "fieldsHelp": "{{shown}} de {{total}} campos visíveis na janela Filtros. Guardado na sua conta.",
+      "customizeButton": "Personalizar",
+      "customizeTitle": "Campos de filtro",
+      "customizeDescription": "Desative os campos que nunca usa. O filtro de um campo oculto mantém-se e ainda pode ser removido a partir do seu chip.",
+      "showAll": "Mostrar todos",
+      "saved": "Predefinições guardadas",
+      "savedHelp": "Criadas na seta junto a Filtrar nas listas de jogos. Edite uma para a renomear ou eliminar."
     }
   },
   "screensaver": {
@@ -810,7 +829,26 @@
       "screensaverShownChip": "Protetor de ecrã: mostrados",
       "includeAddonsLabel": "Incluir complementos",
       "includeAddonsChip": "Complementos incluídos",
-      "includeAddonsHint": "Mostra também um jogo quando um dos seus complementos corresponde à pesquisa ou aos filtros. As exclusões, o tipo de jogo e a posse continuam a olhar para o próprio jogo."
+      "includeAddonsHint": "Mostra também um jogo quando um dos seus complementos corresponde à pesquisa ou aos filtros. As exclusões, o tipo de jogo e a posse continuam a olhar para o próprio jogo.",
+      "genreLabel": "Gêneros",
+      "releaseStatusLabel": "Lançamento",
+      "releaseReleased": "Lançado",
+      "releaseUpcoming": "Em breve",
+      "releaseYearFromLabel": "Lançado a partir de",
+      "releaseYearToLabel": "Lançado até",
+      "releaseYearFromChip": "A partir de {{year}}",
+      "releaseYearToChip": "Até {{year}}",
+      "localPlayersLabel": "Jogadores locais",
+      "localPlayersOption_one": "{{count}}+ jogador",
+      "localPlayersOption_other": "{{count}}+ jogadores",
+      "onlineMultiplayerOnlyLabel": "Multijogador online",
+      "coopOnlyLabel": "Cooperativo",
+      "timeToBeatLabel": "Tempo para zerar",
+      "timeToBeatUnder": "Menos de {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h ou mais",
+      "ratingLabel": "Avaliação",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -1122,6 +1160,21 @@
       "empty": "Ainda não há jogos na sua estante. Os jogos físicos que tem aparecem aqui como caixas, uma por cada plataforma em que os tem.",
       "noMatches": "Nenhuma caixa corresponde.",
       "caseLabel": "{{name}} em {{platform}}"
+    },
+    "savedViews": {
+      "button": "Predefinições",
+      "modifiedLabel": "{{name}} (alterada)",
+      "empty": "Ainda sem predefinições",
+      "saveCurrent": "Guardar os filtros atuais…",
+      "saveAsNew": "Guardar como nova predefinição…",
+      "update": "Atualizar «{{name}}»",
+      "saveTitle": "Guardar estes filtros",
+      "editTitle": "Editar predefinição",
+      "editAria": "Editar {{name}}",
+      "nameLabel": "Nome",
+      "replaceHelp": "Substitui a predefinição com este nome.",
+      "deleted": "Predefinição «{{name}}» eliminada",
+      "clearChip": "Remover os filtros de {{name}}"
     }
   },
   "events": {

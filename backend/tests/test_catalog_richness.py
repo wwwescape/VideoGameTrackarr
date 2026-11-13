@@ -80,6 +80,7 @@ def _rich_payload(igdb_id: int = 3212, genre_count: int = 1) -> dict:
 @respx.mock
 def test_import_persists_full_catalog_richness(auth_client, db_session, igdb_client):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[_rich_payload()]),
@@ -127,6 +128,7 @@ def test_resync_response_includes_richness_for_a_game_synced_for_the_first_time(
     since by then the (correct, unchanged) values were already cached. Caught by actually
     resyncing a real game against the live IGDB API and checking the response, not assumed."""
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[_rich_payload(igdb_id=seed_game.igdb_id)]),
@@ -146,6 +148,7 @@ def test_resync_response_includes_richness_for_a_game_synced_for_the_first_time(
 @respx.mock
 def test_resync_replaces_genres_wholesale_not_additively(auth_client, db_session, igdb_client):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[_rich_payload(genre_count=2)]),
@@ -171,6 +174,7 @@ def test_resync_replaces_genres_wholesale_not_additively(auth_client, db_session
 @respx.mock
 def test_delete_game_cleans_up_catalog_richness_tables(auth_client, db_session, igdb_client):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[_rich_payload()]),
@@ -228,6 +232,7 @@ def test_import_persists_two_release_dates_sharing_a_platform_and_region(auth_cl
         },
     ]
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[payload]),
@@ -251,6 +256,7 @@ def test_release_date_region_enum_maps_correctly():
 
 def _mock_rich_payload_for(seed_game):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[_rich_payload(igdb_id=seed_game.igdb_id)]),

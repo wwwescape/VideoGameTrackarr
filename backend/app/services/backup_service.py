@@ -311,6 +311,8 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 screensaver_show_owned=user.screensaver_show_owned,
                 screensaver_show_wishlist=user.screensaver_show_wishlist,
                 screensaver_include_custom=user.screensaver_include_custom,
+                game_filter_fields=user.game_filter_fields,
+                saved_game_filters=user.saved_game_filters,
             )
             if user
             else None
@@ -841,6 +843,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     if user is not None and payload.settings is not None:
         user.currency = payload.settings.currency
         user.overview_layout = payload.settings.overview_layout
+        user.game_filter_fields = payload.settings.game_filter_fields
+        user.saved_game_filters = payload.settings.saved_game_filters
         user.steam_id_64 = payload.settings.steam_id_64
         user.screensaver_interval_seconds = payload.settings.screensaver_interval_seconds
         # A hand-edited backup can't leave the screensaver with nothing to show.

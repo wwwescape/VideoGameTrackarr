@@ -76,6 +76,7 @@
     "emulation": "Emulation",
     "gameCases": "Game Cases",
     "screensaver": "Screensaver",
+    "filterPresets": "Filter Presets",
     "overview": "Overview",
     "settingsGeneral": "General",
     "primary": "Main navigation",
@@ -495,6 +496,10 @@
         "screensaver": {
           "name": "Screensaver",
           "description": "A floating button that shows your game covers full screen, one after another. Swipe to browse, tap a cover to open the game. Adds Settings → Screensaver."
+        },
+        "filter_presets": {
+          "name": "Filter Presets",
+          "description": "Choose which fields the game lists' Filter dialog shows, and save its filters under a name (\"Couch co-op\") to put back in one tap. Adds an arrow beside the Filter button for your presets, and Settings → Filter Presets."
         }
       }
     },
@@ -626,6 +631,20 @@
     },
     "regional": {
       "heading": "Regional"
+    },
+    "filterPresets": {
+      "description": "Which fields the game lists' Filter dialog shows, and the presets saved from the arrow beside their Filter button. Saved to your account, so every browser has them."
+    },
+    "gameFilters": {
+      "heading": "Game lists",
+      "fields": "Filter fields",
+      "fieldsHelp": "{{shown}} of {{total}} fields shown in the Filter dialog. Saved to your account.",
+      "customizeButton": "Customize",
+      "customizeTitle": "Filter fields",
+      "customizeDescription": "Switch off the fields you never use. A hidden field's filter is kept, and can still be cleared from its chip.",
+      "showAll": "Show all",
+      "saved": "Saved presets",
+      "savedHelp": "Made from the arrow beside Filter on the game lists. Edit one to rename or delete it."
     }
   },
   "screensaver": {
@@ -810,7 +829,26 @@
       "screensaverShownChip": "Screensaver: Shown",
       "includeAddonsLabel": "Include add-ons",
       "includeAddonsChip": "Including add-ons",
-      "includeAddonsHint": "Also match a game when one of its add-ons matches the search or filters. Excludes, game type and ownership still look at the game itself."
+      "includeAddonsHint": "Also match a game when one of its add-ons matches the search or filters. Excludes, game type and ownership still look at the game itself.",
+      "genreLabel": "Genres",
+      "releaseStatusLabel": "Release",
+      "releaseReleased": "Released",
+      "releaseUpcoming": "Upcoming",
+      "releaseYearFromLabel": "Released from",
+      "releaseYearToLabel": "Released until",
+      "releaseYearFromChip": "From {{year}}",
+      "releaseYearToChip": "Until {{year}}",
+      "localPlayersLabel": "Local players",
+      "localPlayersOption_one": "{{count}}+ player",
+      "localPlayersOption_other": "{{count}}+ players",
+      "onlineMultiplayerOnlyLabel": "Online multiplayer",
+      "coopOnlyLabel": "Co-op",
+      "timeToBeatLabel": "Time to beat",
+      "timeToBeatUnder": "Under {{max}} h",
+      "timeToBeatBetween": "{{min}}–{{max}} h",
+      "timeToBeatOver": "{{min}} h or more",
+      "ratingLabel": "Rating",
+      "ratingOption": "{{min}}+ / 10"
     },
     "card": {
       "playStatusBacklog": "Backlog",
@@ -1122,6 +1160,21 @@
       "empty": "No games on your shelf yet. Physical games you own show up here as cases, one for each platform you own them on.",
       "noMatches": "No cases match.",
       "caseLabel": "{{name}} on {{platform}}"
+    },
+    "savedViews": {
+      "button": "Presets",
+      "modifiedLabel": "{{name}} (changed)",
+      "empty": "No presets yet",
+      "saveCurrent": "Save current filters…",
+      "saveAsNew": "Save as a new preset…",
+      "update": "Update “{{name}}”",
+      "saveTitle": "Save these filters",
+      "editTitle": "Edit preset",
+      "editAria": "Edit {{name}}",
+      "nameLabel": "Name",
+      "replaceHelp": "Replaces the preset with this name.",
+      "deleted": "Preset “{{name}}” deleted",
+      "clearChip": "Clear the filters of {{name}}"
     }
   },
   "events": {

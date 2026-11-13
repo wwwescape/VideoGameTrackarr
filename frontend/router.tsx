@@ -40,6 +40,7 @@ import {
   labsCrumbs,
   gameCasesCrumbs,
   screensaverSettingsCrumbs,
+  filterPresetsSettingsCrumbs,
   platformCrumbs,
   platformsCrumbs,
   seriesCrumbs,
@@ -295,6 +296,11 @@ const router = createBrowserRouter([
             path: "/settings/screensaver",
             lazy: page(() => import("./components/ScreensaverSettingsPage")),
             handle: { crumbs: screensaverSettingsCrumbs },
+          },
+          {
+            path: "/settings/filter-presets",
+            lazy: page(() => import("./components/FilterPresetsSettingsPage")),
+            handle: { crumbs: filterPresetsSettingsCrumbs },
           },
           {
             path: "/settings/igdb-import",
