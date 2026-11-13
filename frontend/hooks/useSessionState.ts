@@ -38,10 +38,10 @@ export function useSessionState<T>(key: string, initial: T): [T, Dispatch<SetSta
  * platform deleted since it was saved) — otherwise an invisible filter could quietly empty
  * the page, with no chip left in the filter dialog to clear it.
  */
-export function usePruneStaleIds(
-  ids: number[],
-  setIds: Dispatch<SetStateAction<number[]>>,
-  options: { id: number }[] | undefined,
+export function usePruneStaleIds<T extends number | string>(
+  ids: T[],
+  setIds: Dispatch<SetStateAction<T[]>>,
+  options: { id: T }[] | undefined,
   ready: boolean
 ): void {
   useEffect(() => {

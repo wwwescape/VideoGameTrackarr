@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { MatchAllFilters } from "../api/games";
 import type {
   GameCategory,
@@ -6,14 +7,17 @@ import type {
   GameSource,
   MediaFormat,
   PlayStatus,
+  ReleaseStatus,
   ScreensaverFilter,
 } from "../api/types";
-import type { OwnershipStatus } from "../components/GameFilterDialog";
+import { TIME_TO_BEAT_OPTIONS, type OwnershipStatus, type PlatformFilterOption, type TimeToBeatRange } from "../components/GameFilterDialog";
+import { platformDisplayName, platformScopeKey } from "../utils/platformScope";
 import { writeSessionValue } from "../utils/sessionViewState";
 import { ALL_KNOWN_STOREFRONTS } from "../utils/storefronts";
 import { useCollections, useFranchises } from "./useCatalogBrowse";
 import { useDebouncedValue } from "./useDebouncedValue";
-import { usePlatforms } from "./usePlatforms";
+import { useGenres } from "./useGenres";
+import { useLibraryPlatforms } from "./usePlatforms";
 import { usePruneStaleIds, useSessionState } from "./useSessionState";
 import { useStorefronts } from "./useStorefronts";
 import { useTags } from "./useTags";
@@ -32,6 +36,8 @@ export interface GameListStateOptions {
   screensaver?: boolean;
   // Games only: whether search and filters also look at each game's add-ons.
   includeAddons?: boolean;
+  // The Game Shelf: only platform cards that can have physical cases (not PC · Steam and co).
+  physicalPlatforms?: boolean;
 }
 
 // Every filter a game list remembers, at its cleared value (the sort is left as it is).
@@ -61,6 +67,17 @@ const CLEARED_FILTERS = {
   sourceExclude: false,
   screensaverFilter: null as ScreensaverFilter | null,
   includeAddons: false,
+  platformScopes: [] as string[],
+  genreIds: [] as number[],
+  genreExclude: false,
+  releaseStatuses: [] as ReleaseStatus[],
+  releaseYearFrom: null as number | null,
+  releaseYearTo: null as number | null,
+  localPlayersMin: null as number | null,
+  onlineMultiplayerOnly: false,
+  coopOnly: false,
+  timeToBeat: null as TimeToBeatRange | null,
+  ratingMin: null as number | null,
 };
 
 export type GameListPreset = Partial<typeof CLEARED_FILTERS>;
@@ -85,6 +102,7 @@ export function useGameListState(
     sources = false,
     screensaver = false,
     includeAddons: offersAddons = false,
+    physicalPlatforms = false,
   }: GameListStateOptions = {}
 ) {
   const key = (name: string) => `${prefix}.${name}`;
@@ -116,6 +134,17 @@ export function useGameListState(
     key("screensaverFilter"),
     null
   );
+  const [platformScopes, setPlatformScopes] = useSessionState<string[]>(key("platformScopes"), []);
+  const [genreIds, setGenreIds] = useSessionState<number[]>(key("genreIds"), []);
+  const [genreExclude, setGenreExclude] = useSessionState(key("genreExclude"), false);
+  const [releaseStatuses, setReleaseStatuses] = useSessionState<ReleaseStatus[]>(key("releaseStatuses"), []);
+  const [releaseYearFrom, setReleaseYearFrom] = useSessionState<number | null>(key("releaseYearFrom"), null);
+  const [releaseYearTo, setReleaseYearTo] = useSessionState<number | null>(key("releaseYearTo"), null);
+  const [localPlayersMin, setLocalPlayersMin] = useSessionState<number | null>(key("localPlayersMin"), null);
+  const [onlineMultiplayerOnly, setOnlineMultiplayerOnly] = useSessionState(key("onlineMultiplayerOnly"), false);
+  const [coopOnly, setCoopOnly] = useSessionState(key("coopOnly"), false);
+  const [timeToBeat, setTimeToBeat] = useSessionState<TimeToBeatRange | null>(key("timeToBeat"), null);
+  const [ratingMin, setRatingMin] = useSessionState<number | null>(key("ratingMin"), null);
   const [sort, setSort] = useSessionState<GameSortOption>(key("sort"), "name_asc");
   // A page without a field ignores whatever was once remembered for it.
   const gameTypesList = useMemo(() => (gameTypes ? gameTypeValues : []), [gameTypes, gameTypeValues]);
@@ -131,11 +160,55 @@ export function useGameListState(
   const isSearchActive = debouncedKeyword.length >= MIN_SEARCH_LENGTH;
   const isPendingDebounce = trimmedKeyword.length >= MIN_SEARCH_LENGTH && trimmedKeyword !== debouncedKeyword;
 
-  const { data: platforms = [], isSuccess: platformsLoaded } = usePlatforms();
+  const { t } = useTranslation();
+  // Only the Platforms-page cards the library actually has — PC split per storefront the same
+  // way — rather than every platform IGDB has ever attached to an imported game.
+  const { data: libraryPlatforms = [], isSuccess: platformsLoaded } = useLibraryPlatforms();
+  // An Insights row or Overview link still presets plain platformIds; the dialog edits both as
+  // one list of card keys and writes them back as scopes.
+  const platformKeys = useMemo(
+    () => [...platformIds.map(String), ...platformScopes],
+    [platformIds, platformScopes]
+  );
+  const platformOptions = useMemo<PlatformFilterOption[]>(() => {
+    const cards = libraryPlatforms
+      .filter((platform) => !physicalPlatforms || !platform.format || platform.format === "physical")
+      .map((platform) => {
+        const scope = { format: platform.format ?? undefined, storefront: platform.storefront ?? undefined };
+        return { id: platformScopeKey(platform.id, scope), label: platformDisplayName(platform, scope, t) };
+      });
+    // PC only has per-storefront cards, so a whole-PC value (a preset plain id) gets an option
+    // of its own while it's picked — otherwise it would show as a bare number.
+    const wholes: PlatformFilterOption[] = [];
+    for (const platform of libraryPlatforms) {
+      const id = String(platform.id);
+      if (platformKeys.includes(id) && !cards.some((card) => card.id === id) && !wholes.some((w) => w.id === id)) {
+        wholes.push({ id, label: platform.name });
+      }
+    }
+    return [...cards, ...wholes];
+  }, [libraryPlatforms, physicalPlatforms, platformKeys, t]);
+  const platformIdOptions = useMemo(() => libraryPlatforms.map((platform) => ({ id: platform.id })), [libraryPlatforms]);
+  // What a remembered card value is checked against: every card, plus each library platform as a
+  // whole ("6" for all of PC).
+  const platformScopeOptions = useMemo(
+    () => [...platformOptions.map((option) => ({ id: option.id })), ...platformIdOptions.map((o) => ({ id: String(o.id) }))],
+    [platformOptions, platformIdOptions]
+  );
+  const setPlatformKeys = useCallback(
+    (keys: string[]) => {
+      setPlatformIds([]);
+      setPlatformScopes(keys);
+    },
+    [setPlatformIds, setPlatformScopes]
+  );
+  const { data: genres = [], isSuccess: genresLoaded } = useGenres();
   const { data: tags = [], isSuccess: tagsLoaded } = useTags();
   const { data: collections = [], isSuccess: collectionsLoaded } = useCollections();
   const { data: franchises = [], isSuccess: franchisesLoaded } = useFranchises();
-  usePruneStaleIds(platformIds, setPlatformIds, platforms, platformsLoaded);
+  usePruneStaleIds(platformIds, setPlatformIds, platformIdOptions, platformsLoaded);
+  usePruneStaleIds(platformScopes, setPlatformScopes, platformScopeOptions, platformsLoaded);
+  usePruneStaleIds(genreIds, setGenreIds, genres, genresLoaded);
   usePruneStaleIds(tagIds, setTagIds, tags, tagsLoaded);
   usePruneStaleIds(collectionIds, setCollectionIds, collections, collectionsLoaded);
   usePruneStaleIds(franchiseIds, setFranchiseIds, franchises, franchisesLoaded);
@@ -174,6 +247,18 @@ export function useGameListState(
       ...(sources ? { sources: sourcesList.length > 0 ? sourcesList : undefined, sourceExclude } : {}),
       ...(screensaverFilter ? { screensaver: screensaverFilter } : {}),
       ...(includeAddons ? { includeAddons } : {}),
+      platformScopes: platformScopes.length > 0 ? platformScopes : undefined,
+      genreIds: genreIds.length > 0 ? genreIds : undefined,
+      genreExclude,
+      releaseStatuses: releaseStatuses.length > 0 ? releaseStatuses : undefined,
+      releaseYearFrom: releaseYearFrom ?? undefined,
+      releaseYearTo: releaseYearTo ?? undefined,
+      localPlayersMin: localPlayersMin ?? undefined,
+      onlineMultiplayerOnly,
+      coopOnly,
+      timeToBeatMin: TIME_TO_BEAT_OPTIONS.find((option) => option.value === timeToBeat)?.min,
+      timeToBeatMax: TIME_TO_BEAT_OPTIONS.find((option) => option.value === timeToBeat)?.max,
+      ratingMin: ratingMin ?? undefined,
       sort,
     }),
     [
@@ -204,6 +289,17 @@ export function useGameListState(
       sourceExclude,
       screensaverFilter,
       includeAddons,
+      platformScopes,
+      genreIds,
+      genreExclude,
+      releaseStatuses,
+      releaseYearFrom,
+      releaseYearTo,
+      localPlayersMin,
+      onlineMultiplayerOnly,
+      coopOnly,
+      timeToBeat,
+      ratingMin,
       sort,
     ]
   );
@@ -214,9 +310,9 @@ export function useGameListState(
     onOwnershipStatusesChange: setOwnershipStatuses,
     ownershipExclude,
     onOwnershipExcludeChange: setOwnershipExclude,
-    platformOptions: platforms,
-    platformIds,
-    onPlatformIdsChange: setPlatformIds,
+    platformOptions,
+    platformKeys,
+    onPlatformKeysChange: setPlatformKeys,
     platformExclude,
     onPlatformExcludeChange: setPlatformExclude,
     tagOptions: tags,
@@ -258,6 +354,27 @@ export function useGameListState(
     onPlayStatusExcludeChange: setPlayStatusExclude,
     matchAll,
     onMatchAllChange: setMatchAll,
+    genreOptions: genres,
+    genreIds,
+    onGenreIdsChange: setGenreIds,
+    genreExclude,
+    onGenreExcludeChange: setGenreExclude,
+    releaseStatuses,
+    onReleaseStatusesChange: setReleaseStatuses,
+    releaseYearFrom,
+    onReleaseYearFromChange: setReleaseYearFrom,
+    releaseYearTo,
+    onReleaseYearToChange: setReleaseYearTo,
+    localPlayersMin,
+    onLocalPlayersMinChange: setLocalPlayersMin,
+    onlineMultiplayerOnly,
+    onOnlineMultiplayerOnlyChange: setOnlineMultiplayerOnly,
+    coopOnly,
+    onCoopOnlyChange: setCoopOnly,
+    timeToBeat,
+    onTimeToBeatChange: setTimeToBeat,
+    ratingMin,
+    onRatingMinChange: setRatingMin,
   };
 
   return {

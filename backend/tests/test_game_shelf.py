@@ -160,6 +160,24 @@ def test_platform_filter_narrows_cases_not_just_games(auth_client, db_session, p
     ]
 
 
+def test_platform_card_filter_narrows_cases_like_a_platform_id(auth_client, db_session, platforms):
+    # The Filter dialog sends Platforms-page cards (platformScope), not plain ids.
+    game = _game(db_session, "Both")
+    _copy(db_session, game, platforms["ps4"])
+    _copy(db_session, game, platforms["ps5"])
+    _copy(db_session, _game(db_session, "PS4 Only"), platforms["ps4"])
+    ps5 = str(platforms["ps5"].id)
+
+    assert _cases(auth_client, platformScope=ps5) == [("Both", "PlayStation 5")]
+    # "Not PS5" drops only the PS5 cases, not every game with one.
+    assert _cases(auth_client, platformScope=ps5, platformExclude="true") == [
+        ("Both", "PlayStation 4"),
+        ("PS4 Only", "PlayStation 4"),
+    ]
+    # A card for another format has no physical cases.
+    assert _cases(auth_client, platformScope=f"{ps5}:digital:") == []
+
+
 def test_steelbook_filter_narrows_cases_and_format_filters_dont_apply(auth_client, db_session, platforms):
     game = _game(db_session, "Steel")
     _copy(db_session, game, platforms["ps4"], steelbook=True)

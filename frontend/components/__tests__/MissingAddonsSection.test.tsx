@@ -30,7 +30,11 @@ const ENTRIES: MissingAddonsEntry[] = [
 ];
 
 vi.mock("../../hooks/useInsights", () => ({ useMissingAddons: () => ({ data: ENTRIES }) }));
-vi.mock("../../hooks/usePlatforms", () => ({ usePlatforms: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/usePlatforms", () => ({
+  usePlatforms: () => ({ data: [], isSuccess: true }),
+  useLibraryPlatforms: () => ({ data: [], isSuccess: true }),
+}));
+vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
 vi.mock("../../hooks/useTags", () => ({ useTags: () => ({ data: [], isSuccess: true }) }));
 vi.mock("../../hooks/useCatalogBrowse", () => ({
   useCollections: () => ({ data: [], isSuccess: true }),
