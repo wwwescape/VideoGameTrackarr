@@ -30,7 +30,7 @@ describe("GameFilterSettings", () => {
   it("counts the fields shown and switches more off on Save", async () => {
     const user = userEvent.setup();
     render(<GameFilterSettings />);
-    expect(screen.getByText(/17 of 18 fields shown/)).toBeInTheDocument();
+    expect(screen.getByText(/18 of 19 fields shown/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Customize" }));
     const dialog = screen.getByRole("dialog");

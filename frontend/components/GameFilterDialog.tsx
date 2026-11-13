@@ -791,7 +791,7 @@ const GameFilterDialog = ({
               />
             </Grid>
           ) : null}
-          {onIncludeAddonsChange ? (
+          {onIncludeAddonsChange && shown("includeAddons") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Tooltip title={t("games.listToolbar.includeAddonsHint")} placement="top-start" describeChild>
                 <FormControlLabel
