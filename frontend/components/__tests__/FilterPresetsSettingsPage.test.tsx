@@ -55,7 +55,7 @@ describe("FilterPresetsSettingsPage", () => {
     renderPage();
 
     expect(screen.getByText(/Which fields the game lists' Filter dialog shows/)).toBeInTheDocument();
-    expect(screen.getByText(/17 of 18 fields shown/)).toBeInTheDocument();
+    expect(screen.getByText(/18 of 19 fields shown/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Customize" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit Couch co-op" })).toBeInTheDocument();
   });
