@@ -59,6 +59,19 @@ describe("useGameListState saved filters", () => {
     expect(result.current.fields.screensaverFilter).toBe("hidden");
   });
 
+  it("keeps Include add-ons in a preset", () => {
+    const { result } = renderHook(() => useGameListState("games", { includeAddons: true }));
+
+    act(() => result.current.fields.onIncludeAddonsChange?.(true));
+    const saved = JSON.parse(JSON.stringify(result.current.snapshotFilters()));
+    expect(saved.includeAddons).toBe(true);
+
+    act(() => result.current.fields.onIncludeAddonsChange?.(false));
+    expect(result.current.matchesFilters(saved)).toBe(false);
+    act(() => result.current.applyFilters(saved));
+    expect(result.current.fields.includeAddons).toBe(true);
+  });
+
   it("leaves the fields a page fixes alone: not saved, not compared, not put back", () => {
     // Like a Platform page: its own platform filter has no field or chip there.
     const { result } = renderHook(() => useGameListState("platform.ps5"));

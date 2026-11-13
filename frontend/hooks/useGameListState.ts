@@ -430,6 +430,7 @@ export function useGameListState(
     timeToBeat,
     ratingMin,
     screensaverFilter: screensaverValue,
+    includeAddons: includeAddonsValue,
   };
   const skippedNames = (fixed: readonly PresetField[]): ReadonlySet<string> =>
     new Set<string>(fixed.flatMap((field) => PRESET_FIELD_NAMES[field]));
@@ -487,6 +488,7 @@ export function useGameListState(
     apply("timeToBeat", setTimeToBeat);
     apply("ratingMin", setRatingMin);
     apply("screensaverFilter", setScreensaverFilter);
+    apply("includeAddons", setIncludeAddons);
   };
 
   return {
