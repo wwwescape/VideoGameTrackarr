@@ -12,6 +12,7 @@ import type {
   MediaFormat,
   PlayStatus,
   ScreensaverFilter,
+  ReleaseStatus,
 } from "./types";
 
 // Filters with an "Any / All" choice in the Filters dialog. Each one is off ("Any": a game
@@ -26,7 +27,8 @@ export type MatchAllField =
   | "franchise"
   | "format"
   | "storefront"
-  | "playStatus";
+  | "playStatus"
+  | "genre";
 export type MatchAllFilters = Partial<Record<MatchAllField, boolean>>;
 
 export interface GameListFilters {
@@ -58,6 +60,23 @@ export interface GameListFilters {
   screensaver?: ScreensaverFilter;
   // Games list only: search and filters may be met by a game's add-ons too.
   includeAddons?: boolean;
+  // A Platforms-page card as a filter value ("<id>", or "<id>:<format>:<storefront>" for
+  // PC · Steam and friends). Shares platformExclude and the "platform" match-all choice with
+  // platformIds — it's the same field in the Filter dialog.
+  platformScopes?: string[];
+  genreIds?: number[];
+  genreExclude?: boolean;
+  releaseStatuses?: ReleaseStatus[];
+  releaseYearFrom?: number;
+  releaseYearTo?: number;
+  // Thresholds rather than lists: a game has one value for each, from IGDB.
+  localPlayersMin?: number;
+  onlineMultiplayerOnly?: boolean;
+  coopOnly?: boolean;
+  // Hours, on IGDB's main-story estimate.
+  timeToBeatMin?: number;
+  timeToBeatMax?: number;
+  ratingMin?: number;
   sort?: GameSortOption;
   // Only meaningful on GET /api/games — an always-applied AND-scope, independent of the
   // collectionIds/franchiseIds OR-filter above. Used by a Collection/Series detail page's
@@ -100,6 +119,18 @@ export function buildGameFilterParams(filters: GameListFilters) {
     sourceExclude,
     screensaver,
     includeAddons,
+    platformScopes,
+    genreIds,
+    genreExclude,
+    releaseStatuses,
+    releaseYearFrom,
+    releaseYearTo,
+    localPlayersMin,
+    onlineMultiplayerOnly,
+    coopOnly,
+    timeToBeatMin,
+    timeToBeatMax,
+    ratingMin,
     sort,
     requiredCollectionId,
     requiredFranchiseId,
@@ -113,8 +144,9 @@ export function buildGameFilterParams(filters: GameListFilters) {
   return {
     search: search || undefined,
     platformId: platformIds?.length ? platformIds : undefined,
-    platformExclude: platformIds?.length ? platformExclude : undefined,
-    platformMatchAll: matchAllParam("platform", platformIds),
+    platformScope: platformScopes?.length ? platformScopes : undefined,
+    platformExclude: platformIds?.length || platformScopes?.length ? platformExclude : undefined,
+    platformMatchAll: matchAllParam("platform", [...(platformIds ?? []), ...(platformScopes ?? [])]),
     tagId: tagIds?.length ? tagIds : undefined,
     tagExclude: tagIds?.length ? tagExclude : undefined,
     tagMatchAll: matchAllParam("tag", tagIds),
@@ -140,6 +172,18 @@ export function buildGameFilterParams(filters: GameListFilters) {
     sourceExclude: sources?.length ? sourceExclude : undefined,
     screensaver: screensaver || undefined,
     includeAddons: includeAddons || undefined,
+    genreId: genreIds?.length ? genreIds : undefined,
+    genreExclude: genreIds?.length ? genreExclude : undefined,
+    genreMatchAll: matchAllParam("genre", genreIds),
+    releaseStatus: releaseStatuses?.length ? releaseStatuses : undefined,
+    releaseYearFrom,
+    releaseYearTo,
+    localPlayersMin,
+    onlineMultiplayerOnly: onlineMultiplayerOnly || undefined,
+    coopOnly: coopOnly || undefined,
+    timeToBeatMin,
+    timeToBeatMax,
+    ratingMin,
     sort: sort || undefined,
     requiredCollectionId,
     requiredFranchiseId,

@@ -54,9 +54,28 @@ vi.mock("../../hooks/useLabs", () => ({
     fetchStatus: "idle",
   }),
 }));
+const libraryPlatform = (id: number, name: string, format: "physical" | "digital" | null, storefront: string | null) => ({
+  id,
+  name,
+  slug: null,
+  abbreviation: id === 6 ? "PC" : null,
+  format,
+  storefront,
+  ownedCount: 1,
+  wishlistedCount: 0,
+});
 vi.mock("../../hooks/usePlatforms", () => ({
   usePlatforms: () => ({ data: [], isSuccess: true }),
+  useLibraryPlatforms: () => ({
+    data: [
+      libraryPlatform(6, "PC (Microsoft Windows)", "digital", "Steam"),
+      libraryPlatform(6, "PC (Microsoft Windows)", "physical", null),
+      libraryPlatform(167, "PlayStation 5", null, null),
+    ],
+    isSuccess: true,
+  }),
 }));
+vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
 vi.mock("../../hooks/useTags", () => ({
   useTags: () => ({ data: [], isSuccess: true }),
   useCreateTag: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -160,6 +179,16 @@ describe("Game Shelf page", () => {
     expect(screen.queryByLabelText("Ownership")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Formats")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Platforms")).toBeInTheDocument();
+  });
+
+  it("only offers platform cards that can have physical cases", async () => {
+    const { user } = renderShelf();
+    await user.click(within(screen.getByRole("toolbar")).getByRole("button", { name: "Filter" }));
+    await user.click(screen.getByLabelText("Platforms"));
+
+    expect(await screen.findByRole("option", { name: "PlayStation 5" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "PC · Physical" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "PC · Steam" })).not.toBeInTheDocument();
   });
 
   it("opens a game from its case", async () => {
