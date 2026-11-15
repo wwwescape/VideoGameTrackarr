@@ -176,8 +176,9 @@ Other options: `ROM_MAX_UPLOAD_MB` (default `2048`) caps ROM uploads — raise y
 proxy's upload limit to match. Behind a reverse proxy, set `FORWARDED_ALLOW_IPS` to the proxy's
 address (or its Docker network, such as `172.16.0.0/12`) so login rate limits count each visitor
 rather than the proxy. Set `TZ` (such as `Europe/Lisbon`) so job schedules run in your
-timezone; Docker containers otherwise use UTC. `DATABASE_URL` (SQLite by default), `REDIS_URL`, and
-`CORS_ORIGINS` are optional.
+timezone; Docker containers otherwise use UTC. `REFRESH_TOKEN_EXPIRE_DAYS` (default `90`) is how
+long you stay signed in without opening the app; using it renews that. `DATABASE_URL` (SQLite by
+default), `REDIS_URL`, and `CORS_ORIGINS` are optional.
 
 ## Development
 
