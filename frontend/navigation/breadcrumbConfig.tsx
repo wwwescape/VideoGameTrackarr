@@ -11,6 +11,7 @@ import { useGame } from "../hooks/useGames";
 import { useDeviceItem } from "../hooks/useDevice";
 import { useIgdbGamePreview } from "../hooks/useIgdbSearch";
 import { usePlatform } from "../hooks/usePlatforms";
+import { useHardwarePlatformBySlug } from "../hooks/useHardwareLookups";
 import { useToysToLifeItem, useToysToLifeLines } from "../hooks/useToysToLife";
 import { parsePlatformScope, platformDisplayName } from "../utils/platformScope";
 import { setNumberFromIdentifier } from "../utils/toysToLife";
@@ -58,6 +59,13 @@ const PlatformCrumbLabel = ({ slug }: { slug: string | undefined }) => {
   const { data: platform, isError } = usePlatform(slug, DISPLAY_ONLY);
   if (isError) return <>{t("errors.platformNotFoundTitle")}</>;
   return <>{platform ? platformDisplayName(platform, parsePlatformScope(searchParams), t) : t("common.loading")}</>;
+};
+
+const HardwarePlatformCrumbLabel = ({ slug }: { slug: string | undefined }) => {
+  const { t } = useTranslation();
+  const { platform, notFound } = useHardwarePlatformBySlug(slug);
+  if (notFound) return <>{t("errors.platformNotFoundTitle")}</>;
+  return <>{platform?.name ?? t("common.loading")}</>;
 };
 
 const DeviceCrumbLabel = ({ identifier }: { identifier: string | undefined }) => {
@@ -154,6 +162,16 @@ export const platformCrumbs: CrumbsFn = (params, t) => [
 ];
 
 export const hardwareCrumbs: CrumbsFn = (_params, t) => [{ label: t("nav.hardware") }];
+
+export const hardwarePlatformsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.hardware"), to: "/hardware" },
+  { label: t("nav.platforms") },
+];
+
+export const hardwarePlatformCrumbs: CrumbsFn = (params, t) => [
+  { label: t("nav.platforms"), to: "/hardware/platforms" },
+  { label: <HardwarePlatformCrumbLabel slug={params.platformSlug} /> },
+];
 
 export const addDeviceCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.hardware"), to: "/hardware" },

@@ -16,10 +16,12 @@ from app.schemas.hardware_lookups import (
     ColorResponse,
     DeviceTypeResponse,
     HardwarePlatformResponse,
+    LibraryHardwarePlatformResponse,
     ManufacturerResponse,
     StorageVariantResponse,
 )
 from app.schemas.hardware_reference import HardwareReferenceEntryResponse, hardware_reference_entry_from_orm
+from app.services import hardware_platform_service
 
 router = APIRouter(prefix="/api", tags=["hardware-lookups"], dependencies=[Depends(get_current_user)])
 
@@ -34,6 +36,22 @@ def list_manufacturers(db: Session = Depends(get_db)) -> list[ManufacturerRespon
 def list_hardware_platforms(db: Session = Depends(get_db)) -> list[HardwarePlatformResponse]:
     platforms = hardware_platform_repository.list_hardware_platforms(db)
     return [HardwarePlatformResponse.model_validate(platform) for platform in platforms]
+
+
+@router.get("/hardware-platforms/library", response_model=list[LibraryHardwarePlatformResponse])
+def list_library_hardware_platforms(db: Session = Depends(get_db)) -> list[LibraryHardwarePlatformResponse]:
+    return [
+        LibraryHardwarePlatformResponse(
+            id=row.platform.id,
+            name=row.platform.name,
+            device_count=row.device_count,
+            accessory_count=row.accessory_count,
+            owned_count=row.owned_count,
+            wishlisted_count=row.wishlisted_count,
+            image_urls=row.image_urls,
+        )
+        for row in hardware_platform_service.list_library_hardware_platforms(db)
+    ]
 
 
 @router.get("/device-types", response_model=list[DeviceTypeResponse])

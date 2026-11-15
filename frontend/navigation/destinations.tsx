@@ -115,6 +115,7 @@ export const navGroups: NavGroup[] = [
             labelKey: "nav.addAccessory",
             icon: <AddCircleOutlineIcon />,
           },
+          { to: "/hardware/platforms", labelKey: "nav.platforms", icon: <VideogameAssetIcon /> },
         ],
       },
     ],

@@ -26,6 +26,8 @@ import {
   gameDetailCrumbs,
   gamesCrumbs,
   hardwareCrumbs,
+  hardwarePlatformCrumbs,
+  hardwarePlatformsCrumbs,
   insightsCrumbs,
   integrationsCrumbs,
   jobsCrumbs,
@@ -195,6 +197,16 @@ const router = createBrowserRouter([
             path: "/hardware",
             lazy: page(() => import("./components/HardwarePage")),
             handle: { crumbs: hardwareCrumbs },
+          },
+          {
+            path: "/hardware/platforms",
+            lazy: page(() => import("./components/HardwarePlatformsPage")),
+            handle: { crumbs: hardwarePlatformsCrumbs },
+          },
+          {
+            path: "/hardware/platforms/:platformSlug",
+            lazy: page(() => import("./components/HardwarePlatformPage")),
+            handle: { crumbs: hardwarePlatformCrumbs },
           },
           {
             path: "/hardware/device/add",

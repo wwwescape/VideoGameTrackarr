@@ -966,6 +966,17 @@ export interface NamedLookup {
   name: string;
 }
 
+// A Hardware → Platforms card: a hardware platform with owned or wishlisted devices or
+// accessories (an accessory counts on every platform it's compatible with).
+export interface LibraryHardwarePlatform extends NamedLookup {
+  deviceCount: number;
+  accessoryCount: number;
+  ownedCount: number;
+  wishlistedCount: number;
+  // Up to 4 product shots for the card: devices first, then accessories.
+  imageUrls: string[];
+}
+
 export type HardwareCondition = "sealed" | "new" | "like_new" | "good" | "fair" | "poor";
 
 export type HardwareReferenceType = "Device" | "Accessory";

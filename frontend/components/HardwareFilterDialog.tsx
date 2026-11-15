@@ -47,11 +47,14 @@ interface HardwareFilterDialogProps {
   lookups: HardwareLookups;
   open: boolean;
   onClose: () => void;
+  // A Hardware → Platforms page is already one platform, so it has no Platform filter.
+  hidePlatform?: boolean;
 }
 
 // Status for both kinds, then Manufacturer, Type and Platform for Devices and for Accessories
 // (their type vocabularies differ, so each kind keeps its own filters).
-const HardwareFilterDialog = ({ state, lookups, open, onClose }: HardwareFilterDialogProps) => {
+const HardwareFilterDialog = ({ state, lookups, open, onClose, hidePlatform = false }: HardwareFilterDialogProps) => {
+  const fieldSize = { xs: 12, sm: hidePlatform ? 6 : 4 };
   const { t } = useTranslation();
   const statusOptions: { value: HardwareStatusFilter; label: string }[] = [
     { value: "all", label: t("hardware.searchBar.statusAll") },
@@ -64,7 +67,7 @@ const HardwareFilterDialog = ({ state, lookups, open, onClose }: HardwareFilterD
       <Grid size={12}>
         <Box sx={{ typography: "overline", color: "vgt.text3", mt: 1 }}>{heading}</Box>
       </Grid>
-      <Grid size={{ xs: 12, sm: 4 }}>
+      <Grid size={fieldSize}>
         <LookupFilter
           label={t("hardware.listToolbar.manufacturerLabel")}
           options={lookups.manufacturers}
@@ -72,17 +75,19 @@ const HardwareFilterDialog = ({ state, lookups, open, onClose }: HardwareFilterD
           onChange={filters.setManufacturerIds}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 4 }}>
+      <Grid size={fieldSize}>
         <LookupFilter label={typeLabel} options={typeOptions} value={filters.typeIds} onChange={filters.setTypeIds} />
       </Grid>
-      <Grid size={{ xs: 12, sm: 4 }}>
-        <LookupFilter
-          label={t("hardware.listToolbar.platformLabel")}
-          options={lookups.platforms}
-          value={filters.platformIds}
-          onChange={filters.setPlatformIds}
-        />
-      </Grid>
+      {hidePlatform ? null : (
+        <Grid size={fieldSize}>
+          <LookupFilter
+            label={t("hardware.listToolbar.platformLabel")}
+            options={lookups.platforms}
+            value={filters.platformIds}
+            onChange={filters.setPlatformIds}
+          />
+        </Grid>
+      )}
     </>
   );
 

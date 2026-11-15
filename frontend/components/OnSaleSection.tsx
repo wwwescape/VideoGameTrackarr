@@ -17,7 +17,7 @@ import { isAddon } from "../utils/utils";
 import GameCard from "./GameCard";
 import { SortHeaderCell } from "./ListControls";
 import type { OnSaleSort } from "./OnSalePage";
-import { phoneGridColumns } from "./VirtualGameGrid";
+import { CardGrid } from "./cardColumns";
 
 export type OnSaleView = "covers" | "table";
 
@@ -285,20 +285,11 @@ const OnSaleSection = ({ items, view, cardSize, sort }: OnSaleSectionProps) => {
 
   return (
     // 1–3 columns on phones (by card size), then as many cards of the chosen size as fit.
-    <Box
-      sx={{
-        display: "grid",
-        gridTemplateColumns: {
-          xs: phoneGridColumns(cardSize),
-          sm: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
-        },
-        gap: "18px 14px",
-      }}
-    >
+    <CardGrid cardSize={cardSize}>
       {items.map((item) => (
         <OnSaleTile key={item.libraryItemId} item={item} />
       ))}
-    </Box>
+    </CardGrid>
   );
 };
 

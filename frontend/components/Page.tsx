@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { Crumb, RouteHandle } from "../navigation/breadcrumbConfig";
 import { HEADER_HEIGHT } from "../navigation/Sidebar";
+import { CARD_FRAME_ATTRIBUTE } from "./cardColumns";
 
 // The page toolbar's height; content that sticks under it (a list's own filter bar) uses
 // STICKY_TOP, and sections scrolled to by an in-page link leave SECTION_SCROLL_MARGIN_TOP
@@ -101,7 +102,8 @@ const Page = ({
         </Box>
       ) : null}
       {hero}
-      <Box sx={{ px: { xs: 1.5, sm: 2.75 }, pt: { xs: 1.75, sm: 2.25 }, pb: 5 }}>
+      {/* The card frame: every card grid counts its columns from this width (cardColumns). */}
+      <Box {...{ [CARD_FRAME_ATTRIBUTE]: "" }} sx={{ px: { xs: 1.5, sm: 2.75 }, pt: { xs: 1.75, sm: 2.25 }, pb: 5 }}>
         {crumbs.length || actions ? (
           <Box
             sx={{

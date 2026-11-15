@@ -38,7 +38,9 @@ class Settings(BaseSettings):
     setup_code: str | None = None
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
-    refresh_token_expire_days: int = 30
+    # Each refresh starts a new window, so this is how long you can stay away and still be
+    # signed in when you come back (REFRESH_TOKEN_EXPIRE_DAYS in .env to change it).
+    refresh_token_expire_days: int = 90
 
     # IGDB credentials. No default — see app/services/igdb_client.py, which raises a clear
     # error rather than silently failing if these aren't set.

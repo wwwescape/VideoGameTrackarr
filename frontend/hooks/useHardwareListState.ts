@@ -17,24 +17,25 @@ export interface HardwareKindFilters {
   setPlatformIds: (ids: number[]) => void;
 }
 
-function useKindFilters(kind: "devices" | "accessories"): HardwareKindFilters {
+function useKindFilters(scope: string, kind: "devices" | "accessories"): HardwareKindFilters {
   const [manufacturerIds, setManufacturerIds] = useSessionState<number[]>(
-    `hardware.${kind}.manufacturerIds`,
+    `${scope}.${kind}.manufacturerIds`,
     []
   );
-  const [typeIds, setTypeIds] = useSessionState<number[]>(`hardware.${kind}.typeIds`, []);
+  const [typeIds, setTypeIds] = useSessionState<number[]>(`${scope}.${kind}.typeIds`, []);
   const [platformIds, setPlatformIds] = useSessionState<number[]>(
-    `hardware.${kind}.platformIds`,
+    `${scope}.${kind}.platformIds`,
     []
   );
   return { manufacturerIds, setManufacturerIds, typeIds, setTypeIds, platformIds, setPlatformIds };
 }
 
 // The Hardware page's search, status, sort and per-kind filters, remembered for the browser
-// session like the Games list's (see hooks/useSessionState.ts).
-export function useHardwareListState() {
-  const [searchKeyword, setSearchKeyword] = useSessionState("hardware.searchKeyword", "");
-  const [status, setStatus] = useSessionState<HardwareStatusFilter>("hardware.status", "all");
+// session like the Games list's (see hooks/useSessionState.ts). `scope` keeps another page's
+// copy apart (Hardware → Platforms pages use "hardwarePlatform").
+export function useHardwareListState(scope = "hardware") {
+  const [searchKeyword, setSearchKeyword] = useSessionState(`${scope}.searchKeyword`, "");
+  const [status, setStatus] = useSessionState<HardwareStatusFilter>(`${scope}.status`, "all");
   // Shared by the Devices and Accessories sections. Release date only exists on accessories,
   // so devices (which have none of their own) stay by name for it.
   const { t } = useTranslation();
@@ -46,9 +47,9 @@ export function useHardwareListState() {
     { field: "date_added", label: t("games.listView.sortDateAdded"), defaultDirection: "desc" },
     { field: "release_date", label: t("hardware.listToolbar.sortOptionReleaseDate"), defaultDirection: "desc" },
   ];
-  const sort = useListSort("hardware.sortBy", sortFields, { field: "name", direction: "asc" });
-  const devices = useKindFilters("devices");
-  const accessories = useKindFilters("accessories");
+  const sort = useListSort(`${scope}.sortBy`, sortFields, { field: "name", direction: "asc" });
+  const devices = useKindFilters(scope, "devices");
+  const accessories = useKindFilters(scope, "accessories");
 
   const kindCount = (filters: HardwareKindFilters) =>
     filters.manufacturerIds.length + filters.typeIds.length + filters.platformIds.length;

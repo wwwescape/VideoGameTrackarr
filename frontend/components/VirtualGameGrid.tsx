@@ -12,6 +12,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Box from "@mui/material/Box";
 import { useLocation, useNavigationType } from "react-router-dom";
 import { useResponsiveColumns } from "../hooks/useResponsiveColumns";
+import { CARD_GRID_GAP_PX, phoneColumns, phoneGridColumns, useCardColumns } from "./cardColumns";
 
 // Rough card-row-height guess per column count (narrower columns => taller cover-art
 // aspect ratio relative to text below it). Only affects the very first paint / how many
@@ -24,21 +25,9 @@ const ESTIMATED_ROW_HEIGHT_BY_COLUMNS: Record<number, number> = {
   6: 180,
 };
 
-const GRID_GAP_PX = 16;
-// Below this container width there's no room to fit cards by size, so the card size picks a
-// column count instead (phoneColumns).
-const PHONE_MAX_WIDTH_PX = 600;
-
-// On phones, Options → Card size chooses 1, 2 or 3 columns: the smallest sizes 3, the default
-// (170) 2, the largest sizes 1. Shared by every card grid with the slider, so they all agree.
-export function phoneColumns(cardSize: number): number {
-  if (cardSize < 160) return 3;
-  if (cardSize <= 230) return 2;
-  return 1;
-}
-
-// The CSS-grid equivalent, for grids that aren't windowed (On Sale, Missing Add-ons, Events).
-export const phoneGridColumns = (cardSize: number) => `repeat(${phoneColumns(cardSize)}, minmax(0, 1fr))`;
+const GRID_GAP_PX = CARD_GRID_GAP_PX;
+// Re-exported for the grids and tests that already import them from here.
+export { phoneColumns, phoneGridColumns };
 const SAVE_THROTTLE_MS = 100;
 
 // Session-lifetime, in-memory — the topmost-visible item's own key (e.g. a game id), not a
@@ -63,18 +52,13 @@ interface VirtualGameGridProps<T> {
   // Overrides the cover-art-card height guess below — for grids of shorter, imageless
   // tiles (e.g. catalog ref cards) where that estimate would be way too tall.
   estimateRowHeight?: (columns: number) => number;
-  // Columns from the grid's own width instead of the screen breakpoint: as many cards of at
-  // least this width as fit (the Games list's card-size slider). Phones keep two columns.
+  // Columns by card size instead of the screen breakpoint: as many cards of at
+  // least this width as fit in the page frame (the card-size slider). Phones pick 1–3 by size.
   minItemWidth?: number;
   // Height of sticky chrome above the grid (header, page toolbar), so a jump to an item
   // (scrollToIndex, Back restoring the position) lands below it rather than under it.
   scrollPaddingStart?: number;
   handleRef?: Ref<VirtualGridHandle>;
-}
-
-function columnsForWidth(width: number, minItemWidth: number): number {
-  if (width < PHONE_MAX_WIDTH_PX) return phoneColumns(minItemWidth);
-  return Math.max(1, Math.floor((width + GRID_GAP_PX) / (minItemWidth + GRID_GAP_PX)));
 }
 
 // A responsive, windowed grid for the game card layout. Renders only the rows near the
@@ -91,7 +75,9 @@ function VirtualGameGrid<T>({
   handleRef,
 }: VirtualGameGridProps<T>) {
   const breakpointColumns = useResponsiveColumns();
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Columns come from the page frame's width (see useCardColumns), so every list agrees; the
+  // grid's own width only sizes the cards within them.
+  const { ref: containerRef, columns: sizedColumns } = useCardColumns(minItemWidth);
   const [containerWidth, setContainerWidth] = useState<number | null>(null);
   useLayoutEffect(() => {
     if (minItemWidth === undefined || !containerRef.current) return;
@@ -101,9 +87,9 @@ function VirtualGameGrid<T>({
     const observer = new ResizeObserver(update);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [minItemWidth]);
-  const columns =
-    minItemWidth !== undefined && containerWidth ? columnsForWidth(containerWidth, minItemWidth) : breakpointColumns;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minItemWidth === undefined]);
+  const columns = sizedColumns ?? breakpointColumns;
   // null (not 0) while not yet measured — 0 is a legitimate real value (a grid with nothing
   // above it), so the POP-restore effect below needs to tell "not measured yet" apart from
   // "measured, and it happens to be zero" before it can safely call scrollToIndex.
@@ -150,7 +136,7 @@ function VirtualGameGrid<T>({
     const observer = new ResizeObserver(updateScrollMargin);
     observer.observe(document.body);
     return () => observer.disconnect();
-  }, [columns]);
+  }, [columns, containerRef]);
 
   const virtualizer = useWindowVirtualizer({
     count: items.length,

@@ -24,10 +24,18 @@ import type { HardwareListView } from "./HardwareListViews";
 import { CardSizeSlider, ChoiceMenu, ListSearchField, SortMenu } from "./ListControls";
 import Page, { ToolbarButton } from "./Page";
 
-const HardwarePage = () => {
+interface HardwarePageProps {
+  // A Hardware → Platforms page: the same lists, kept to devices on this platform and
+  // accessories compatible with it, with their own search, sort and filters.
+  platformId?: number;
+}
+
+const HardwarePage = ({ platformId }: HardwarePageProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const state = useHardwareListState();
+  const state = useHardwareListState(platformId === undefined ? "hardware" : "hardwarePlatform");
+  const onPlatform = (filters: HardwareKindFilters): HardwareKindFilters =>
+    platformId === undefined ? filters : { ...filters, platformIds: [platformId] };
   const [view, setView] = useLocalPreference<HardwareListView>("hardware.view", "cards");
   const [cardSize, setCardSize] = useLocalPreference("hardware.cardSize", CARD_SIZE_DEFAULT);
   const [menu, setMenu] = useState<{ name: "options" | "view" | "sort"; anchor: HTMLElement } | null>(null);
@@ -145,7 +153,7 @@ const HardwarePage = () => {
       <DeviceList
         searchKeyword={debouncedKeyword}
         status={state.status}
-        filters={state.devices}
+        filters={onPlatform(state.devices)}
         sort={state.sort}
         view={view}
         cardSize={cardSize}
@@ -153,7 +161,7 @@ const HardwarePage = () => {
       <AccessoryList
         searchKeyword={debouncedKeyword}
         status={state.status}
-        filters={state.accessories}
+        filters={onPlatform(state.accessories)}
         sort={state.sort}
         view={view}
         cardSize={cardSize}
@@ -181,7 +189,13 @@ const HardwarePage = () => {
         onFieldChange={state.sort.pickField}
         onDirectionChange={state.sort.setDirection}
       />
-      <HardwareFilterDialog state={state} lookups={lookups} open={filtersOpen} onClose={() => setFiltersOpen(false)} />
+      <HardwareFilterDialog
+        state={state}
+        lookups={lookups}
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        hidePlatform={platformId !== undefined}
+      />
     </Page>
   );
 };

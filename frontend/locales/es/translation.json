@@ -1596,6 +1596,15 @@
     "filter": {
       "statusLabel": "Estado",
       "kindChip": "{{kind}}: {{label}}"
+    },
+    "platformsPage": {
+      "cardCounts": "{{devices}} · {{accessories}}",
+      "deviceCount_one": "{{count}} dispositivo",
+      "deviceCount_other": "{{count}} dispositivos",
+      "accessoryCount_one": "{{count}} accesorio",
+      "accessoryCount_other": "{{count}} accesorios",
+      "noImage": "Sin imagen",
+      "emptyMessage": "Aún no hay plataformas: aparecen aquí cuando tienes o deseas un dispositivo de una plataforma, o un accesorio compatible con ella."
     }
   },
   "notes": {

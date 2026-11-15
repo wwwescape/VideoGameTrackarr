@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import type { EventSummary } from "../api/types";
@@ -19,7 +18,7 @@ import {
   type FilterChip,
 } from "./ListToolbar";
 import Page from "./Page";
-import { phoneGridColumns } from "./VirtualGameGrid";
+import { CardGrid } from "./cardColumns";
 
 type EventSort = "start" | "name";
 type EventStatus = "all" | "ongoing" | "upcoming";
@@ -27,22 +26,13 @@ type EventStatus = "all" | "ongoing" | "upcoming";
 // Event cards are landscape, so they start wider than game covers.
 const EVENT_CARD_SIZE_DEFAULT = 260;
 
+// The default event size (260) keeps phones at one column, as before.
 const EventGrid = ({ events, cardSize }: { events: EventSummary[]; cardSize: number }) => (
-  <Box
-    sx={{
-      display: "grid",
-      gridTemplateColumns: {
-        // The default event size (260) keeps phones at one column, as before.
-        xs: phoneGridColumns(cardSize),
-        sm: `repeat(auto-fill, minmax(${cardSize}px, 1fr))`,
-      },
-      gap: "18px 14px",
-    }}
-  >
+  <CardGrid cardSize={cardSize}>
     {events.map((event) => (
       <EventCard key={event.id} event={event} />
     ))}
-  </Box>
+  </CardGrid>
 );
 
 const EventsPage = () => {
