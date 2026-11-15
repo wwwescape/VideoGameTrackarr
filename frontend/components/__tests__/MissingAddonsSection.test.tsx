@@ -30,8 +30,16 @@ const ENTRIES: MissingAddonsEntry[] = [
 ];
 
 vi.mock("../../hooks/useInsights", () => ({ useMissingAddons: () => ({ data: ENTRIES }) }));
-vi.mock("../../hooks/usePlatforms", () => ({ usePlatforms: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/usePlatforms", () => ({
+  usePlatforms: () => ({ data: [], isSuccess: true }),
+  useLibraryPlatforms: () => ({ data: [], isSuccess: true }),
+}));
+vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/useGameFilterPreferences", () => ({
+  useGameFilterPreferences: () => ({ hiddenFields: new Set(), savedFilters: [], saveFilter: vi.fn(), deleteFilter: vi.fn() }),
+}));
 vi.mock("../../hooks/useTags", () => ({ useTags: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/useLabs", () => ({ useEnabledLabs: () => new Set() }));
 vi.mock("../../hooks/useCatalogBrowse", () => ({
   useCollections: () => ({ data: [], isSuccess: true }),
   useFranchises: () => ({ data: [], isSuccess: true }),

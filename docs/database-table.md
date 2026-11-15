@@ -47,6 +47,9 @@ One row per game (IGDB-sourced or manually added).
 | external_parent_name, external_parent_igdb_url | string | Fallback display data when the conceptual parent was never imported locally |
 | similar_game_igdb_ids | JSON | Cached IGDB `similar_games`, powers recommendations |
 | screensaver_excluded | bool | Left out of the Screensaver lab's carousel (the game page's toggle, the Games list's bulk Hide/Show); every game starts in |
+| local_players | int, nullable | Most players on one console or screen, from IGDB's multiplayer modes (1 for a single-player-only game); null when IGDB doesn't say. The Games list's Local players filter |
+| online_multiplayer, coop | bool, nullable | Online multiplayer and any co-op mode, from IGDB's multiplayer and game modes; null when IGDB doesn't say |
+| time_to_beat_main, time_to_beat_complete | int, nullable | Seconds, IGDB's "normally" and "completely" estimates; the Time to beat filter reads the first |
 | created_at, updated_at | timestamp | |
 
 ### `platforms`
@@ -437,7 +440,7 @@ column but `shown` comes from the CSV; a re-import updates them and keeps `shown
 ### `lab_features`
 
 Settings → Labs: one row per lab feature you've switched on or off. The labs themselves
-(`game_shelf`, `screensaver`) are defined in code, in `app/services/labs.py`; no row means off.
+(`game_shelf`, `screensaver`, `filter_presets`) are defined in code, in `app/services/labs.py`; no row means off.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -463,6 +466,8 @@ scoped by `user_id`.
 | steam_id_64 | string(32), nullable | Steam profile SteamID64, for Steam sync |
 | currency | string(3), nullable | Display currency (ISO 4217), shared by every browser |
 | overview_layout | JSON, nullable | The Overview's sections in order, each `{key, hidden}`; null = the default layout |
+| game_filter_fields | JSON, nullable | Filter Presets lab: the game lists' Filter dialog fields, each `{key, hidden}` (Settings → Filter Presets); null = every field shown |
+| saved_game_filters | JSON, nullable | Filter Presets lab: named game-list filters, each `{name, filters}` where `filters` is the frontend's own filter state; null = none saved |
 | screensaver_interval_seconds | int, nullable | Screensaver lab: seconds each cover is shown, 5–15; null = the default (8) |
 | last_seen_version | string(32), nullable | Newest app version whose **What's New** was closed. Set to the running version when the account is created (a new install has nothing new to show); null on an account from before What's New, which then sees the running version's notes once |
 | created_at, updated_at | timestamp | |

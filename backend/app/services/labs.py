@@ -15,6 +15,9 @@ from app.services.exceptions import NotFoundError
 
 LAB_GAME_SHELF = "game_shelf"
 LAB_SCREENSAVER = "screensaver"
+# Named game-list filters (Presets on the list toolbar); stored on the account like other
+# display preferences.
+LAB_FILTER_PRESETS = "filter_presets"
 
 
 @dataclass(frozen=True)
@@ -25,7 +28,11 @@ class Lab:
 
 
 # In the order Settings > Labs lists them.
-LABS: tuple[Lab, ...] = (Lab(LAB_GAME_SHELF, on_share_page=True), Lab(LAB_SCREENSAVER))
+LABS: tuple[Lab, ...] = (
+    Lab(LAB_GAME_SHELF, on_share_page=True),
+    Lab(LAB_SCREENSAVER),
+    Lab(LAB_FILTER_PRESETS),
+)
 _KNOWN = {lab.id for lab in LABS}
 
 

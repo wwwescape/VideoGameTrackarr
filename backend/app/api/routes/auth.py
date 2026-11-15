@@ -14,7 +14,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
-from app.services import auth_service
+from app.services import auth_service, labs
 from app.services.auth_service import AuthError, ScreensaverShowsNothingError, SetupCodeError, WrongPasswordError
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -79,20 +79,28 @@ def update_preferences(
     body: PreferencesRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> UserResponse:
     """Display preferences kept on the server, so every browser shows the same (the currency,
-    the Overview's section order and the Screensaver's time per cover; colour mode and language
-    stay per browser). Only the
-    fields sent are changed."""
-    layout = [section.model_dump() for section in body.overview_layout] if body.overview_layout is not None else None
+    the Overview's section order, the Screensaver's time per cover and what it shows, the game
+    list's Filter dialog fields and saved filters; colour mode and language stay per browser).
+    Only the fields sent are changed."""
+
+    def dump(rows: list | None) -> list[dict] | None:
+        return [row.model_dump() for row in rows] if rows is not None else None
+
+    # Filter fields and presets are the Filter Presets lab's: while it's off they're left as
+    # they are, the same as a field this version doesn't know.
+    filter_presets = labs.is_enabled(db, labs.LAB_FILTER_PRESETS)
     try:
         user = auth_service.set_preferences(
             db,
             current_user,
             currency=body.currency,
-            overview_layout=layout,
+            overview_layout=dump(body.overview_layout),
             screensaver_interval_seconds=body.screensaver_interval_seconds,
             screensaver_show_owned=body.screensaver_show_owned,
             screensaver_show_wishlist=body.screensaver_show_wishlist,
             screensaver_include_custom=body.screensaver_include_custom,
+            game_filter_fields=dump(body.game_filter_fields) if filter_presets else None,
+            saved_game_filters=dump(body.saved_game_filters) if filter_presets else None,
         )
     except ScreensaverShowsNothingError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
@@ -109,6 +117,8 @@ def _user_response(user: User) -> UserResponse:
         screensaver_show_owned=user.screensaver_show_owned,
         screensaver_show_wishlist=user.screensaver_show_wishlist,
         screensaver_include_custom=user.screensaver_include_custom,
+        game_filter_fields=user.game_filter_fields,
+        saved_game_filters=user.saved_game_filters,
     )
 
 

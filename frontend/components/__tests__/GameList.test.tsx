@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
@@ -62,7 +62,16 @@ vi.mock("../../hooks/useGames", () => ({
   useGames: (...args: unknown[]) => useGamesMock(...args),
   useDeleteGame: () => ({ mutateAsync: vi.fn() }),
 }));
-vi.mock("../../hooks/usePlatforms", () => ({ usePlatforms: () => ({ data: [], isSuccess: true }) }));
+vi.mock("../../hooks/usePlatforms", () => ({
+  usePlatforms: () => ({ data: [], isSuccess: true }),
+  useLibraryPlatforms: () => ({ data: [], isSuccess: true }),
+}));
+vi.mock("../../hooks/useGenres", () => ({ useGenres: () => ({ data: [], isSuccess: true }) }));
+let savedFilters: { name: string; filters: Record<string, unknown> }[] = [];
+let hiddenFields = new Set<string>();
+vi.mock("../../hooks/useGameFilterPreferences", () => ({
+  useGameFilterPreferences: () => ({ hiddenFields, savedFilters, saveFilter: vi.fn(), deleteFilter: vi.fn() }),
+}));
 vi.mock("../../hooks/useTags", () => ({
   useTags: () => ({ data: [], isSuccess: true }),
   useCreateTag: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -76,7 +85,10 @@ vi.mock("../../hooks/useLibrary", () => ({
   useLibraryItems: () => ({ data: [] }),
 }));
 let labOn = false;
-vi.mock("../../hooks/useLabs", () => ({ useEnabledLabs: () => new Set(labOn ? ["screensaver"] : []) }));
+let presetsLab = false;
+vi.mock("../../hooks/useLabs", () => ({
+  useEnabledLabs: () => new Set([...(labOn ? ["screensaver"] : []), ...(presetsLab ? ["filter_presets"] : [])]),
+}));
 const bulkMutate = vi.fn();
 vi.mock("../../hooks/useScreensaver", () => ({
   useSetScreensaverExcludedBulk: () => ({ mutate: bulkMutate, isPending: false }),
@@ -111,6 +123,9 @@ describe("Games list", () => {
     vi.stubGlobal("ResizeObserver", ResizeObserverStub);
     useGamesMock.mockClear();
     labOn = false;
+    presetsLab = false;
+    savedFilters = [];
+    hiddenFields = new Set();
     bulkMutate.mockReset();
     showUndoToast.mockReset();
   });
@@ -125,6 +140,46 @@ describe("Games list", () => {
     }
     expect(screen.getByRole("textbox", { name: "Search games" })).toBeInTheDocument();
     expect(screen.getByText("3 games")).toBeInTheDocument();
+  });
+
+  it("has a Presets button only while the Filter Presets lab is on", () => {
+    renderList();
+    expect(within(screen.getByRole("toolbar")).queryByRole("button", { name: "Presets" })).not.toBeInTheDocument();
+    cleanup();
+
+    presetsLab = true;
+    renderList();
+    expect(within(screen.getByRole("toolbar")).getByRole("button", { name: "Presets" })).toBeInTheDocument();
+  });
+
+  it("hides the fields switched off in Settings only while the Filter Presets lab is on", async () => {
+    hiddenFields = new Set(["steelbook"]);
+    const { user } = renderList();
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    expect(within(screen.getByRole("dialog")).getByText("Steelbooks only")).toBeInTheDocument();
+    cleanup();
+
+    presetsLab = true;
+    const second = renderList();
+    await second.user.click(screen.getByRole("button", { name: "Filter" }));
+    expect(within(screen.getByRole("dialog")).queryByText("Steelbooks only")).not.toBeInTheDocument();
+  });
+
+  it("shows the preset in use as the first chip, which opens the presets", async () => {
+    presetsLab = true;
+    savedFilters = [{ name: "Couch co-op", filters: { coopOnly: true } }];
+    writeSessionValue("games.coopOnly", true);
+    writeSessionValue("games.activeView", "Couch co-op");
+    const { user } = renderList();
+
+    await user.click(screen.getByRole("button", { name: "Couch co-op" }));
+    expect(within(screen.getByRole("menu")).getByRole("menuitem", { name: /Couch co-op/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    // Its × clears the preset's filters, and so the chip.
+    await user.click(screen.getByLabelText("Clear the filters of Couch co-op"));
+    expect(screen.queryByRole("button", { name: "Couch co-op" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Remove filter Co-op")).not.toBeInTheDocument();
   });
 
   it("switches to the Table view, shows each game's platforms and remembers the view", async () => {
