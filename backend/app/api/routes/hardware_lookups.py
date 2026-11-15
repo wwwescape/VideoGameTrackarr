@@ -48,7 +48,6 @@ def list_library_hardware_platforms(db: Session = Depends(get_db)) -> list[Libra
             accessory_count=row.accessory_count,
             owned_count=row.owned_count,
             wishlisted_count=row.wishlisted_count,
-            image_urls=row.image_urls,
         )
         for row in hardware_platform_service.list_library_hardware_platforms(db)
     ]

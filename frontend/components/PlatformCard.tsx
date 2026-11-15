@@ -20,7 +20,13 @@ export const PlatformLogo = ({ platform, scope, height }: { platform: LibraryPla
   const mode = useTheme().palette.mode;
   const logoUrl = scope.storefront ? storefrontLogoUrl(scope.storefront, mode) : platformLogoUrl(platform.slug, mode);
   const badgeText = scope.storefront ?? (platform.abbreviation || platform.name);
-  return logoUrl ? (
+  return <LogoOrBadge logoUrl={logoUrl} badgeText={badgeText} height={height} />;
+};
+
+// A logo image, or the text standing in for one that hasn't been added yet. Also used by the
+// Hardware → Platforms cards.
+export const LogoOrBadge = ({ logoUrl, badgeText, height }: { logoUrl: string | undefined; badgeText: string; height: number }) =>
+  logoUrl ? (
     <Box component="img" loading="lazy" src={logoUrl} alt="" sx={{ maxHeight: height, maxWidth: "100%", objectFit: "contain", display: "block" }} />
   ) : (
     <Box
@@ -38,7 +44,6 @@ export const PlatformLogo = ({ platform, scope, height }: { platform: LibraryPla
       {badgeText}
     </Box>
   );
-};
 
 // CatalogRefCard's sibling for Games → Platforms: the logo in a short well, plus separate
 // owned/wishlisted counts.

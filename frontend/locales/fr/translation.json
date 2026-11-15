@@ -1598,12 +1598,10 @@
       "kindChip": "{{kind}} : {{label}}"
     },
     "platformsPage": {
-      "cardCounts": "{{devices}} · {{accessories}}",
       "deviceCount_one": "{{count}} appareil",
       "deviceCount_other": "{{count}} appareils",
       "accessoryCount_one": "{{count}} accessoire",
       "accessoryCount_other": "{{count}} accessoires",
-      "noImage": "Pas d'image",
       "emptyMessage": "Aucune plateforme pour l'instant : elles apparaissent ici dès que vous possédez ou souhaitez un appareil d'une plateforme, ou un accessoire compatible."
     }
   },
@@ -1910,7 +1908,10 @@
       "show": "Afficher {{name}}",
       "reset": "Réinitialiser",
       "saveError": "Impossible d'enregistrer la disposition de l'aperçu. Veuillez réessayer.",
-      "allHidden": "Toutes les sections sont masquées. Utilisez Personnaliser pour en réafficher."
+      "allHidden": "Toutes les sections sont masquées. Utilisez Personnaliser pour en réafficher.",
+      "cardSizeHeading": "Cartes",
+      "cardSizeDescription": "La taille des cartes de chaque rangée. Chaque rangée en affiche autant qu'il en tient, le même nombre que les pages de listes à cette taille. Enregistré dans ce navigateur.",
+      "sectionsHeading": "Sections"
     }
   },
   "uploads": {

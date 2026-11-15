@@ -41,4 +41,3 @@ class LibraryHardwarePlatformResponse(CamelModel):
     accessory_count: int
     owned_count: int
     wishlisted_count: int
-    image_urls: list[str]

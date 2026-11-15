@@ -184,13 +184,15 @@ interface CardSizeSliderProps {
   onChange: (value: number) => void;
   // Only the card views use it.
   disabled?: boolean;
+  // Fills its container (a dialog) instead of the Options menu's fixed width and padding.
+  fullWidth?: boolean;
 }
 
 // The Options menu's card size.
-export function CardSizeSlider({ value, onChange, disabled }: CardSizeSliderProps) {
+export function CardSizeSlider({ value, onChange, disabled, fullWidth = false }: CardSizeSliderProps) {
   const { t } = useTranslation();
   return (
-    <Box sx={{ px: 2, pt: 1, pb: 1.5, width: 260 }}>
+    <Box sx={fullWidth ? { px: 1 } : { px: 2, pt: 1, pb: 1.5, width: 260 }}>
       <Box id="card-size-label" sx={{ typography: "overline", color: "vgt.text3" }}>
         {t("games.listView.cardSize")}
       </Box>

@@ -13,6 +13,7 @@ import { useDashboardStats, useReleaseCalendar } from "../hooks/useDashboard";
 import { useEvents } from "../hooks/useEvents";
 import { useGames } from "../hooks/useGames";
 import { useHardwareStats } from "../hooks/useHardwareStats";
+import { useLocalPreference } from "../hooks/useLocalPreference";
 import { useOpenFilteredGames } from "../hooks/useOpenFilteredGames";
 import { useOverviewLayout, type OverviewSection, type OverviewSectionKey } from "../hooks/useOverviewLayout";
 import { useAccessoriesWithoutOwnedHardware, useDuplicateLibraryItems, useMissingAddons, useOnSale } from "../hooks/useInsights";
@@ -25,13 +26,13 @@ import CardCarousel from "./CardCarousel";
 import { Section } from "./Detail";
 import EventsTeaserSection from "./EventsTeaserSection";
 import GameCard from "./GameCard";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
 import HardwareCard from "./HardwareCard";
 import OnSaleTeaserSection from "./OnSaleTeaserSection";
 import Page from "./Page";
 import ReleaseCalendarSection from "./ReleaseCalendarSection";
 import { formatPlaytime, StatTile, TileGrid } from "./Stats";
 
-const STRIP_COLUMN = 150;
 
 const SectionLink = ({ children, onClick, to }: { children: ReactNode; onClick?: () => void; to?: string }) => (
   <Box
@@ -64,6 +65,9 @@ const OverviewPage = () => {
   const { data: events } = useEvents();
   const { layout, save: saveLayout } = useOverviewLayout();
   const [customizing, setCustomizing] = useState(false);
+  // Every row of cards: as many per row as the list pages show at this size. Per browser, like
+  // their card sizes; the section layout is saved on the account.
+  const [cardSize, setCardSize] = useLocalPreference("overview.cardSize", CARD_SIZE_DEFAULT);
 
   const gameCard = (game: GameSummary) => (
     <GameCard key={game.id} game={game} context="list" contextFunction={() => navigate(`/game/${gameIdentifier(game)}`)} />
@@ -199,14 +203,13 @@ const OverviewPage = () => {
         </TileGrid>
       </Section>
     ),
-    events: events?.length ? <EventsTeaserSection /> : null,
-    // Same card widths as the strips below (games, and hardware a little wider).
-    onSale: onSaleItems?.length ? <OnSaleTeaserSection columnWidth={STRIP_COLUMN} /> : null,
+    events: events?.length ? <EventsTeaserSection cardSize={cardSize} /> : null,
+    onSale: onSaleItems?.length ? <OnSaleTeaserSection cardSize={cardSize} /> : null,
     gamesCalendar: hasGameReleases ? (
-      <ReleaseCalendarSection scope="games" title={labels.gamesCalendar} columnWidth={STRIP_COLUMN} />
+      <ReleaseCalendarSection scope="games" title={labels.gamesCalendar} cardSize={cardSize} />
     ) : null,
     hardwareCalendar: hasHardwareReleases ? (
-      <ReleaseCalendarSection scope="hardware" title={labels.hardwareCalendar} columnWidth={STRIP_COLUMN + 20} />
+      <ReleaseCalendarSection scope="hardware" title={labels.hardwareCalendar} cardSize={cardSize} />
     ) : null,
     // Every row of cards is a CardCarousel: < and > page through it, with no scrollbar.
     nowPlaying: playing?.length ? (
@@ -216,7 +219,7 @@ const OverviewPage = () => {
         items={playing}
         getItemKey={(game) => game.id}
         renderItem={gameCard}
-        columnWidth={STRIP_COLUMN}
+        cardSize={cardSize}
         actions={
           <>
             <SectionLink onClick={() => openGames({ playStatuses: ["backlog"] })}>
@@ -248,7 +251,7 @@ const OverviewPage = () => {
         items={stats.recentlyPlayed}
         getItemKey={(game) => game.id}
         renderItem={gameCard}
-        columnWidth={STRIP_COLUMN}
+        cardSize={cardSize}
       />
     ) : null,
     recentlyAddedGames: stats?.recentlyAdded.length ? (
@@ -258,7 +261,7 @@ const OverviewPage = () => {
         items={stats.recentlyAdded}
         getItemKey={(game) => game.id}
         renderItem={gameCard}
-        columnWidth={STRIP_COLUMN}
+        cardSize={cardSize}
         viewAllHref="/games"
       />
     ) : null,
@@ -269,7 +272,7 @@ const OverviewPage = () => {
         items={hardwareStats.recentlyAdded}
         getItemKey={(item) => `${item.kind}-${item.device?.id ?? item.accessory?.id}`}
         renderItem={hardwareCard}
-        columnWidth={STRIP_COLUMN + 20}
+        cardSize={cardSize}
         viewAllHref="/hardware"
       />
     ) : null,
@@ -291,7 +294,8 @@ const OverviewPage = () => {
     ),
   };
 
-  const handleSaveLayout = async (next: OverviewSection[]) => {
+  const handleSave = async (next: OverviewSection[], nextCardSize: number) => {
+    setCardSize(nextCardSize);
     try {
       await saveLayout.mutateAsync(next);
       setCustomizing(false);
@@ -329,10 +333,11 @@ const OverviewPage = () => {
       {customizing ? (
         <CustomizeOverviewDialog
           layout={layout}
+          cardSize={cardSize}
           labels={labels}
           saving={saveLayout.isPending}
           onClose={() => setCustomizing(false)}
-          onSave={(next) => void handleSaveLayout(next)}
+          onSave={(next, nextCardSize) => void handleSave(next, nextCardSize)}
         />
       ) : null}
     </Page>

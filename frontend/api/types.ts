@@ -973,8 +973,6 @@ export interface LibraryHardwarePlatform extends NamedLookup {
   accessoryCount: number;
   ownedCount: number;
   wishlistedCount: number;
-  // Up to 4 product shots for the card: devices first, then accessories.
-  imageUrls: string[];
 }
 
 export type HardwareCondition = "sealed" | "new" | "like_new" | "good" | "fair" | "poor";

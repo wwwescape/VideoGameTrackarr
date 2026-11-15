@@ -1598,12 +1598,10 @@
       "kindChip": "{{kind}}: {{label}}"
     },
     "platformsPage": {
-      "cardCounts": "{{devices}} · {{accessories}}",
       "deviceCount_one": "{{count}} dispositivo",
       "deviceCount_other": "{{count}} dispositivos",
       "accessoryCount_one": "{{count}} accesorio",
       "accessoryCount_other": "{{count}} accesorios",
-      "noImage": "Sin imagen",
       "emptyMessage": "Aún no hay plataformas: aparecen aquí cuando tienes o deseas un dispositivo de una plataforma, o un accesorio compatible con ella."
     }
   },
@@ -1910,7 +1908,10 @@
       "show": "Mostrar {{name}}",
       "reset": "Restablecer",
       "saveError": "No se pudo guardar el diseño del Resumen. Inténtalo de nuevo.",
-      "allHidden": "Todas las secciones están ocultas. Usa Personalizar para volver a mostrar alguna."
+      "allHidden": "Todas las secciones están ocultas. Usa Personalizar para volver a mostrar alguna.",
+      "cardSizeHeading": "Tarjetas",
+      "cardSizeDescription": "El tamaño de las tarjetas de cada fila. Cada fila muestra tantas como quepan, las mismas que las páginas de listas con ese tamaño. Se guarda en este navegador.",
+      "sectionsHeading": "Secciones"
     }
   },
   "uploads": {

@@ -17,20 +17,24 @@ import {
   type OverviewSection,
   type OverviewSectionKey,
 } from "../hooks/useOverviewLayout";
+import { CARD_SIZE_DEFAULT } from "./GameListViews";
+import { CardSizeSlider } from "./ListControls";
 
 interface CustomizeOverviewDialogProps {
   layout: OverviewSection[];
+  cardSize: number;
   labels: Record<OverviewSectionKey, string>;
   saving: boolean;
   onClose: () => void;
-  onSave: (layout: OverviewSection[]) => void;
+  onSave: (layout: OverviewSection[], cardSize: number) => void;
 }
 
-// Show/hide and reorder the Overview's sections: drag a row by its handle, or use the arrows
-// (keyboard and touch). Nothing changes until Save. Mounted only while open, so each opening
-// starts from the saved layout.
+// Two parts: the card size of every row of cards (top), then show/hide and reorder the
+// Overview's sections (drag a row by its handle, or use the arrows for keyboard and touch).
+// Nothing changes until Save. Mounted only while open, so each opening starts from what's saved.
 const CustomizeOverviewDialog = ({
   layout,
+  cardSize,
   labels,
   saving,
   onClose,
@@ -38,6 +42,7 @@ const CustomizeOverviewDialog = ({
 }: CustomizeOverviewDialogProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(layout);
+  const [draftCardSize, setDraftCardSize] = useState(cardSize);
   const [dragKey, setDragKey] = useState<OverviewSectionKey | null>(null);
 
   const moveTo = (key: OverviewSectionKey, index: number) =>
@@ -71,10 +76,22 @@ const CustomizeOverviewDialog = ({
     <Dialog open onClose={saving ? undefined : onClose} fullWidth maxWidth="xs">
       <DialogTitle>{t("overview.customize.title")}</DialogTitle>
       <DialogContent>
+        <Box component="section" aria-labelledby="customize-card-size" sx={{ mb: 2.5 }}>
+          <Typography id="customize-card-size" variant="subtitle2" component="h3">
+            {t("overview.customize.cardSizeHeading")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t("overview.customize.cardSizeDescription")}
+          </Typography>
+          <CardSizeSlider value={draftCardSize} onChange={setDraftCardSize} fullWidth />
+        </Box>
+        <Typography id="customize-sections" variant="subtitle2" component="h3">
+          {t("overview.customize.sectionsHeading")}
+        </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
           {t("overview.customize.description")}
         </Typography>
-        <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", gap: 0.75 }}>
+        <Box component="ul" aria-labelledby="customize-sections" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", gap: 0.75 }}>
           {draft.map((section, index) => {
             const label = labels[section.key];
             return (
@@ -153,14 +170,20 @@ const CustomizeOverviewDialog = ({
         </Box>
       </DialogContent>
       <DialogActions sx={{ justifyContent: "space-between" }}>
-        <Button onClick={() => setDraft(DEFAULT_OVERVIEW_LAYOUT)} disabled={saving}>
+        <Button
+          onClick={() => {
+            setDraft(DEFAULT_OVERVIEW_LAYOUT);
+            setDraftCardSize(CARD_SIZE_DEFAULT);
+          }}
+          disabled={saving}
+        >
           {t("overview.customize.reset")}
         </Button>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button onClick={onClose} disabled={saving}>
             {t("common.cancel")}
           </Button>
-          <Button variant="contained" onClick={() => onSave(draft)} disabled={saving}>
+          <Button variant="contained" onClick={() => onSave(draft, draftCardSize)} disabled={saving}>
             {t("common.save")}
           </Button>
         </Box>

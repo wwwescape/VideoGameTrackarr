@@ -7,6 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import { useResponsiveColumns } from "../hooks/useResponsiveColumns";
+import { useCardColumns } from "./cardColumns";
 import { Section } from "./Detail";
 
 // Same breakpoint -> column-count mapping the Games/Hardware grid uses (useResponsiveColumns,
@@ -29,9 +30,10 @@ interface CardCarouselProps<T> {
   viewAllHref?: string;
   // In-page anchor for the section.
   id?: string;
-  // A fixed card width in px instead of the grid's per-breakpoint share of the row, as the
-  // Overview's rows use.
-  columnWidth?: number;
+  // Columns by card size instead of the screen breakpoint: as many cards of at least this width
+  // as fit in the page frame, the same count the list pages show at that size (Overview →
+  // Customize → Card size).
+  cardSize?: number;
   // More links beside the title, before "View all" (Now Playing's Backlog link).
   actions?: ReactNode;
 }
@@ -43,11 +45,13 @@ function CardCarousel<T>({
   title,
   viewAllHref,
   id,
-  columnWidth,
+  cardSize,
   actions,
 }: CardCarouselProps<T>) {
   const { t } = useTranslation();
-  const columns = useResponsiveColumns();
+  const breakpointColumns = useResponsiveColumns();
+  const { ref: sizeRef, columns: sizedColumns } = useCardColumns(cardSize);
+  const columns = sizedColumns ?? breakpointColumns;
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -67,8 +71,7 @@ function CardCarousel<T>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length, columns]);
 
-  // With fixed-width cards the column count doesn't change on resize, but whether the row
-  // overflows (and so whether > is enabled) does.
+  // Whether the row overflows (and so whether > is enabled) changes with the window width.
   useEffect(() => {
     window.addEventListener("resize", updateScrollState);
     return () => window.removeEventListener("resize", updateScrollState);
@@ -109,37 +112,40 @@ function CardCarousel<T>({
         </Stack>
       }
     >
-      <Box
-        ref={scrollRef}
-        onScroll={updateScrollState}
-        sx={{
-          display: "flex",
-          gap: `${GAP_PX}px`,
-          overflowX: "auto",
-          scrollSnapType: "x mandatory",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-      >
-        {items.map((item) => (
-          <Box
-            key={getItemKey(item)}
-            sx={{
-              flex: `0 0 ${columnWidth ? `${columnWidth}px` : itemFlexBasis(columns)}`,
-              // Without this, a flex item's automatic minimum size defaults to its content's
-              // min-content width — a long, unwrapped (white-space: nowrap) game title can
-              // exceed the fixed flex-basis above and silently blow the card up past its
-              // intended width despite flex-grow: 0. minWidth: 0 (the standard fix for this
-              // exact flexbox gotcha) forces the item to respect its fixed width regardless of
-              // title length; overflow: hidden is the belt-and-suspenders backstop.
-              minWidth: 0,
-              overflow: "hidden",
-              scrollSnapAlign: "start",
-            }}
-          >
-            {renderItem(item)}
-          </Box>
-        ))}
+      {/* Measured for the column count: the page frame decides it, as on the list pages. */}
+      <Box ref={sizeRef}>
+        <Box
+          ref={scrollRef}
+          onScroll={updateScrollState}
+          sx={{
+            display: "flex",
+            gap: `${GAP_PX}px`,
+            overflowX: "auto",
+            scrollSnapType: "x mandatory",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          {items.map((item) => (
+            <Box
+              key={getItemKey(item)}
+              sx={{
+                flex: `0 0 ${itemFlexBasis(columns)}`,
+                // Without this, a flex item's automatic minimum size defaults to its content's
+                // min-content width — a long, unwrapped (white-space: nowrap) game title can
+                // exceed the fixed flex-basis above and silently blow the card up past its
+                // intended width despite flex-grow: 0. minWidth: 0 (the standard fix for this
+                // exact flexbox gotcha) forces the item to respect its fixed width regardless of
+                // title length; overflow: hidden is the belt-and-suspenders backstop.
+                minWidth: 0,
+                overflow: "hidden",
+                scrollSnapAlign: "start",
+              }}
+            >
+              {renderItem(item)}
+            </Box>
+          ))}
+        </Box>
       </Box>
     </Section>
   );

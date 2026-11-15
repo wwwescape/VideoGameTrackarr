@@ -1598,12 +1598,10 @@
       "kindChip": "{{kind}}: {{label}}"
     },
     "platformsPage": {
-      "cardCounts": "{{devices}} · {{accessories}}",
       "deviceCount_one": "{{count}} device",
       "deviceCount_other": "{{count}} devices",
       "accessoryCount_one": "{{count}} accessory",
       "accessoryCount_other": "{{count}} accessories",
-      "noImage": "No image",
       "emptyMessage": "No platforms yet — they show up here once you own or wishlist a device on one, or an accessory compatible with one."
     }
   },
@@ -1910,7 +1908,10 @@
       "show": "Show {{name}}",
       "reset": "Reset to default",
       "saveError": "Couldn't save the Overview layout. Please try again.",
-      "allHidden": "Every section is hidden. Use Customize to show some again."
+      "allHidden": "Every section is hidden. Use Customize to show some again.",
+      "cardSizeHeading": "Cards",
+      "cardSizeDescription": "How big the cards in each row are. Every row shows as many as fit, the same number as the list pages at that size. Saved in this browser.",
+      "sectionsHeading": "Sections"
     }
   },
   "uploads": {

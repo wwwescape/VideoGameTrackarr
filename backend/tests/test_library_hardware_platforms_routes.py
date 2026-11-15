@@ -37,14 +37,13 @@ def test_library_hardware_platforms_counts_devices_and_compatible_accessories(
     assert response.status_code == 200
     rows = {row["name"]: row for row in response.json()}
     assert list(rows) == ["Nintendo Switch", "PlayStation 5"]
-    assert rows["PlayStation 5"] | {"imageUrls": []} == {
+    assert rows["PlayStation 5"] == {
         "id": seed_hardware_platform.id,
         "name": "PlayStation 5",
         "deviceCount": 1,
         "accessoryCount": 1,
         "ownedCount": 1,
         "wishlistedCount": 1,
-        "imageUrls": [],
     }
     assert rows["Nintendo Switch"]["deviceCount"] == 0
     assert rows["Nintendo Switch"]["accessoryCount"] == 1
