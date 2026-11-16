@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -9,11 +10,18 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { Trans, useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import gogLogo from "../assets/services/gog.png";
 import igdbLogo from "../assets/services/igdb.png";
 import itadLogo from "../assets/services/isthereanydeal.png";
 import platpricesLogo from "../assets/services/platprices.png";
 import steamLogo from "../assets/services/steam.png";
-import { useIntegrationsStatus, useUpdateSteamId } from "../hooks/useIntegrations";
+import {
+  useConnectGog,
+  useDisconnectGog,
+  useGogStatus,
+  useIntegrationsStatus,
+  useUpdateSteamId,
+} from "../hooks/useIntegrations";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -42,6 +50,104 @@ const ConfiguredChip = ({ configured }: { configured: boolean | undefined }) => 
       color={configured ? "success" : "default"}
       variant={configured ? "filled" : "outlined"}
     />
+  );
+};
+
+const GogSection = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { data: status } = useIntegrationsStatus();
+  const { data: gogStatus } = useGogStatus();
+  const connectGog = useConnectGog();
+  const disconnectGog = useDisconnectGog();
+  const [redirectUrl, setRedirectUrl] = useState("");
+
+  const configured = gogStatus?.configured ?? status?.gogConfigured ?? false;
+  const username = gogStatus?.username ?? status?.gogUsername;
+
+  const handleConnect = async () => {
+    try {
+      await connectGog.mutateAsync(redirectUrl.trim());
+      setRedirectUrl("");
+      toast.success(t("settings.integrations.gogConnectSuccessToast"), TOAST_OPTIONS);
+    } catch {
+      toast.error(t("settings.integrations.gogConnectErrorToast"), TOAST_OPTIONS);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnectGog.mutateAsync();
+      toast.success(t("settings.integrations.gogDisconnectSuccessToast"), TOAST_OPTIONS);
+    } catch {
+      toast.error(t("settings.integrations.gogDisconnectErrorToast"), TOAST_OPTIONS);
+    }
+  };
+
+  return (
+    <SettingsGroup
+      title={
+        <Stack direction="row" spacing={1.25} component="span" sx={{ alignItems: "center" }}>
+          <Box component="img" src={gogLogo} alt={t("settings.integrations.gogLogoAlt")} sx={{ width: 28, display: "block" }} />
+          <span>{t("settings.integrations.gogHeading")}</span>
+        </Stack>
+      }
+      aside={<ConfiguredChip configured={configured} />}
+    >
+      <SettingRow stacked>
+        <Typography variant="body2" color="text.secondary">
+          {t("settings.integrations.gogDescription")}
+        </Typography>
+      </SettingRow>
+      {configured ? (
+        <SettingRow stacked>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Typography variant="body2" color="text.secondary">
+              {t("settings.integrations.gogConnectedAs", { username: username ?? "" })}
+            </Typography>
+            <Button variant="outlined" onClick={() => navigate("/settings/gog-sync")}>
+              {t("nav.gogSync")}
+            </Button>
+            <Button variant="outlined" onClick={handleDisconnect} disabled={disconnectGog.isPending}>
+              {t("settings.integrations.gogDisconnectButton")}
+            </Button>
+          </Box>
+        </SettingRow>
+      ) : (
+        <SettingRow stacked>
+          <Typography variant="body2" color="text.secondary">
+            {t("settings.integrations.gogConnectSteps")}
+          </Typography>
+          <Box sx={{ mt: 1.5 }}>
+            <Button
+              variant="contained"
+              onClick={() => window.open(gogStatus?.authorizeUrl, "_blank", "noopener,noreferrer")}
+              disabled={!gogStatus?.authorizeUrl}
+            >
+              {t("settings.integrations.gogSignInButton")}
+            </Button>
+          </Box>
+          <TextField
+            label={t("settings.integrations.gogRedirectUrlLabel")}
+            placeholder={t("settings.integrations.gogRedirectUrlPlaceholder")}
+            value={redirectUrl}
+            onChange={(e) => setRedirectUrl(e.target.value)}
+            helperText={t("settings.integrations.gogRedirectUrlHelper")}
+            fullWidth
+            sx={{ mt: 1.5 }}
+          />
+          <Box sx={{ mt: 1.5 }}>
+            <Button
+              variant="contained"
+              onClick={handleConnect}
+              disabled={connectGog.isPending || redirectUrl.trim() === ""}
+            >
+              {t("settings.integrations.gogConnectButton")}
+            </Button>
+          </Box>
+        </SettingRow>
+      )}
+    </SettingsGroup>
   );
 };
 
@@ -126,6 +232,8 @@ const IntegrationsPage = () => {
             </Box>
           </SettingRow>
         </SettingsGroup>
+
+        <GogSection />
 
         <SettingsGroup
           title={

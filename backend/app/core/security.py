@@ -14,6 +14,7 @@ class TokenType(StrEnum):
     ROM = "rom"
     BIOS = "bios"
     BACKUP_DOWNLOAD = "backup_download"
+    GOG_INSTALLER_DOWNLOAD = "gog_installer_download"
 
 
 class TokenError(Exception):
@@ -128,6 +129,27 @@ def create_backup_download_token(user_id: int, expires_minutes: int = 5) -> str:
     payload = {
         "sub": str(user_id),
         "type": TokenType.BACKUP_DOWNLOAD.value,
+        "iat": now,
+        "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
+
+
+def create_gog_installer_download_token(
+    user_id: int, game_id: int, file_id: str, expires_minutes: int = 5
+) -> str:
+    """Same idea as create_rom_token, scoped to one completed GOG installer download:
+    the file can be many GB, so the browser downloads it directly (streamed to disk)
+    instead of through a script holding it in memory — and a plain navigation can't
+    carry an Authorization header. Only checked when the request starts, so a slow
+    download isn't cut off mid-transfer."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.GOG_INSTALLER_DOWNLOAD.value,
+        "game": game_id,
+        "file": file_id,
         "iat": now,
         "exp": now + timedelta(minutes=expires_minutes),
     }

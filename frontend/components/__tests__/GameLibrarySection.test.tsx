@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibraryItem, PlatformResponse } from "../../api/types";
+import type { GogInstallers } from "../../api/integrations";
 import { createVgtTheme } from "../../theme/createVgtTheme";
 import GameLibrarySection from "../GameLibrarySection";
 
@@ -22,9 +23,22 @@ vi.mock("../../hooks/useLibrary", () => ({
   useDeleteRom: () => mutation(),
 }));
 vi.mock("../UndoToast", () => ({ showUndoToast: (...args: unknown[]) => undoToast(...args) }));
+// The section's GOG row icon (and the dialog's installers section) read this
+// hook; the stub data is swapped per test (undefined = no installers).
+let gogInstallersData: import("../../api/integrations").GogInstallers | undefined;
+vi.mock("../../hooks/useIntegrations", () => ({
+  useGogInstallers: () => ({ data: gogInstallersData, isError: false }),
+  useQueueGogInstallerDownload: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useGogInstallerFileLink: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
 // The dialog has its own tests; here it only needs to say it opened, and for what.
 vi.mock("../LibraryItemDialog", () => ({
-  default: ({ open, title }: { open: boolean; title: string }) => (open ? <div role="dialog">{title}</div> : null),
+  default: ({ open, title, gameId, showGogInstallers }: { open: boolean; title: string; gameId?: number; showGogInstallers?: boolean }) =>
+    open ? (
+      <div role="dialog" data-game-id={gameId} data-show-gog-installers={String(showGogInstallers ?? false)}>
+        {title}
+      </div>
+    ) : null,
 }));
 
 const item = (overrides: Partial<LibraryItem>): LibraryItem =>
@@ -69,6 +83,7 @@ describe("GameLibrarySection", () => {
   beforeEach(() => {
     updateItem.mockClear();
     undoToast.mockClear();
+    gogInstallersData = undefined;
   });
 
   it("lists each copy as a row, owned first, with its details", () => {
@@ -140,5 +155,126 @@ describe("GameLibrarySection", () => {
 
     expect(undoToast).toHaveBeenCalledWith("Entry removed from your wishlist", expect.any(Function), 5000);
     expect(screen.queryByRole("button", { name: "PC (Microsoft Windows)" })).toBeNull();
+  });
+
+  const gogItem = item({ id: 3, platformId: 2, platformName: "PC (Microsoft Windows)", format: "digital", digitalStorefront: "GOG" });
+
+  const downloadedInstallers: GogInstallers = {
+    gameId: 7,
+    gogProductId: 1207658695,
+    groups: [
+      {
+        productId: 1207658695,
+        title: "Absolute Drift",
+        installers: [
+          {
+            id: "installer_windows_en",
+            os: "windows",
+            language: "en",
+            version: "1.0",
+            totalSize: 20,
+            files: [
+              {
+                id: "en1installer0",
+                size: 20,
+                downloadState: "completed",
+                downloadedBytes: 20,
+                downloadError: null,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("shows the GOG gamepad icon on a GOG row with a downloaded installer", () => {
+    gogInstallersData = downloadedInstallers;
+    renderSection([gogItem]);
+
+    expect(screen.getByLabelText("GOG installer downloaded to the NAS: windows · en · 1.0")).toBeInTheDocument();
+  });
+
+  it("shows no GOG icon on a GOG row whose installer has not finished downloading", () => {
+    gogInstallersData = {
+      ...downloadedInstallers,
+      groups: [
+        {
+          ...downloadedInstallers.groups[0],
+          installers: [
+            {
+              ...downloadedInstallers.groups[0].installers[0],
+              files: [
+                {
+                  id: "en1installer0",
+                  size: 20,
+                  downloadState: "not_downloaded",
+                  downloadedBytes: 0,
+                  downloadError: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    renderSection([gogItem]);
+
+    expect(screen.queryByLabelText(/GOG installer downloaded/)).not.toBeInTheDocument();
+  });
+
+  it("passes gameId and showGogInstallers to the edit dialog for a GOG copy", async () => {
+    const user = renderSection([gogItem]);
+
+    await user.click(row("PC (Microsoft Windows)"));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("Update game in your collection");
+    expect(dialog).toHaveAttribute("data-game-id", "7");
+    expect(dialog).toHaveAttribute("data-show-gog-installers", "true");
+  });
+
+  it("does not pass showGogInstallers to the edit dialog for a non-GOG copy", async () => {
+    const user = renderSection();
+
+    await user.click(row("PlayStation 5"));
+
+    expect(screen.getByRole("dialog")).toHaveAttribute("data-show-gog-installers", "false");
+  });
+
+  const steamItem = item({ id: 4, platformId: 2, platformName: "Steam", format: "digital", digitalStorefront: "Steam" });
+
+  it("does not pass showGogInstallers to the edit dialog for a Steam copy of a GOG game", async () => {
+    gogInstallersData = downloadedInstallers;
+    const user = renderSection([gogItem, steamItem]);
+
+    await user.click(row("Steam"));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("Update game in your collection");
+    expect(dialog).toHaveAttribute("data-show-gog-installers", "false");
+  });
+
+  it("passes showGogInstallers to the edit dialog for the GOG copy of a game with a Steam copy", async () => {
+    gogInstallersData = downloadedInstallers;
+    const user = renderSection([gogItem, steamItem]);
+
+    await user.click(row("PC (Microsoft Windows)"));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("Update game in your collection");
+    expect(dialog).toHaveAttribute("data-show-gog-installers", "true");
+  });
+
+  it("does not pass showGogInstallers when adding a copy to a GOG game", async () => {
+    gogInstallersData = downloadedInstallers;
+    const user = renderSection([gogItem]);
+
+    await user.click(screen.getByRole("button", { name: "Add copy" }));
+    await user.click(screen.getByRole("menuitem", { name: "To your collection" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("Add game to your collection");
+    expect(dialog).toHaveAttribute("data-show-gog-installers", "false");
   });
 });

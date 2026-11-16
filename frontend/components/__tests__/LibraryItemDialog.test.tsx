@@ -26,6 +26,17 @@ vi.mock("../../hooks/useLibrary", () => ({
   useEmulationConfig: () => ({ data: emulationConfig }),
 }));
 
+// The GOG Installers section inside the dialog reads these hooks; the stub data is
+// swapped per test (undefined = no installers, so the section stays hidden).
+let gogInstallersData: import("../../api/integrations").GogInstallers | undefined;
+const queueGogDownload = vi.fn();
+const gogFileLink = vi.fn();
+vi.mock("../../hooks/useIntegrations", () => ({
+  useGogInstallers: () => ({ data: gogInstallersData, isError: false }),
+  useQueueGogInstallerDownload: () => ({ mutateAsync: queueGogDownload, isPending: false }),
+  useGogInstallerFileLink: () => ({ mutateAsync: gogFileLink, isPending: false }),
+}));
+
 const nesRom: RomFileSummary = {
   id: 7,
   label: null,
@@ -396,5 +407,72 @@ describe("LibraryItemDialog", () => {
 
     expect(createRomDownloadLink).toHaveBeenCalledWith(7);
     expect(downloadFromUrl).toHaveBeenCalledWith(expect.stringMatching(/\/api\/roms\/7\/content\/tok\//));
+  });
+
+  it("shows the GOG Installers section at the bottom when the game has a GOG copy", () => {
+    gogInstallersData = {
+      gameId: 1,
+      gogProductId: 1207658695,
+      groups: [
+        {
+          productId: 1207658695,
+          title: "The Witcher 3",
+          installers: [
+            {
+              id: "installer_windows_en",
+              os: "windows",
+              language: "en",
+              version: "1.32",
+              totalSize: 20,
+              files: [
+                {
+                  id: "en1installer0",
+                  size: 20,
+                  downloadState: "not_downloaded",
+                  downloadedBytes: 0,
+                  downloadError: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    render(
+      <LibraryItemDialog
+        open
+        title="Update game in your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        gameId={1}
+        showGogInstallers
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Update"
+      />
+    );
+
+    expect(screen.getByText("GOG Installers")).toBeInTheDocument();
+    expect(screen.getByText("The Witcher 3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cache Download" })).toBeInTheDocument();
+  });
+
+  it("hides the GOG Installers section without a GOG copy", () => {
+    gogInstallersData = undefined;
+    render(
+      <LibraryItemDialog
+        open
+        title="Update game in your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Update"
+      />
+    );
+
+    expect(screen.queryByText("GOG Installers")).not.toBeInTheDocument();
   });
 });

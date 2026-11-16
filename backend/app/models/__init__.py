@@ -25,6 +25,7 @@ from app.models.catalog import (  # noqa: F401
 )
 from app.models.events import Event, EventGame, EventNetwork, EventVideo  # noqa: F401
 from app.models.game_cases import GameCase  # noqa: F401
+from app.models.gog import GogDownload, GogLibraryEntry  # noqa: F401
 from app.models.hardware import (  # noqa: F401
     Accessory,
     AccessoryCompatibility,

@@ -237,6 +237,14 @@ const AddGame = () => {
           <CircularProgress color="inherit" />
         </Backdrop>
       )}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 2 }}>
+        <Button variant="outlined" onClick={() => navigate("/settings/steam-sync")}>
+          {t("games.add.steamSyncButton")}
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/settings/gog-sync")}>
+          {t("games.add.gogSyncButton")}
+        </Button>
+      </Box>
       <Box sx={{ width: "100%", typography: "body1" }}>
         <RadioGroup
           row

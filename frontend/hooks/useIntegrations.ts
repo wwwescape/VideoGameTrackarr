@@ -1,18 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getIntegrationsStatus,
+  connectGog,
+  disconnectGog,
+  getGogEntries,
+  getGogInstallers,
+  getGogInstallerFileLink,
+  getGogStatus,
   getSteamEntries,
   getSteamWishlistEntries,
+  ignoreGogEntries,
+  ignoreGogEntry,
   ignoreSteamEntries,
   ignoreSteamEntry,
   ignoreSteamWishlistEntries,
   ignoreSteamWishlistEntry,
+  queueGogInstallerDownload,
+  relinkGogEntry,
   relinkSteamEntry,
   relinkSteamWishlistEntry,
+  syncGogEntries,
   syncSteamEntries,
   syncSteamWishlistEntries,
+  unignoreGogEntry,
   unignoreSteamEntry,
   unignoreSteamWishlistEntry,
+  unlinkGogEntry,
   unlinkSteamEntry,
   unlinkSteamWishlistEntry,
   updateSteamId,
@@ -139,5 +152,123 @@ export function useUnlinkSteamWishlistEntry() {
   return useMutation({
     mutationFn: unlinkSteamWishlistEntry,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["steam-wishlist-entries"] }),
+  });
+}
+
+export function useGogStatus() {
+  return useQuery({ queryKey: ["gog-status"], queryFn: getGogStatus });
+}
+
+export function useConnectGog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: connectGog,
+    onSuccess: (status) => {
+      queryClient.setQueryData(["gog-status"], status);
+      queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+    },
+  });
+}
+
+export function useDisconnectGog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: disconnectGog,
+    onSuccess: (status) => {
+      queryClient.setQueryData(["gog-status"], status);
+      queryClient.invalidateQueries({ queryKey: ["integrations-status"] });
+    },
+  });
+}
+
+export function useGogEntries() {
+  return useQuery({ queryKey: ["gog-entries"], queryFn: getGogEntries });
+}
+
+export function useSyncGogEntries() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: syncGogEntries,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gog-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+    },
+  });
+}
+
+export function useIgnoreGogEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ignoreGogEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gog-entries"] }),
+  });
+}
+
+export function useIgnoreGogEntries() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ignoreGogEntries,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gog-entries"] }),
+  });
+}
+
+export function useUnignoreGogEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: unignoreGogEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gog-entries"] }),
+  });
+}
+
+export function useRelinkGogEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gogProductId, gameId }: { gogProductId: number; gameId: number }) =>
+      relinkGogEntry(gogProductId, gameId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gog-entries"] }),
+  });
+}
+
+export function useUnlinkGogEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: unlinkGogEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gog-entries"] }),
+  });
+}
+
+export function useGogInstallers(gameId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["gog-installers", gameId],
+    queryFn: () => getGogInstallers(gameId),
+    enabled,
+    // While a file is queued or downloading on the NAS, poll every 3 s so the
+    // progress bar moves; once everything settles, stop polling.
+    refetchInterval: (query) =>
+      query.state.data?.groups.some((group) =>
+        group.installers.some((installer) =>
+          installer.files.some(
+            (file) => file.downloadState === "queued" || file.downloadState === "downloading"
+          )
+        )
+      )
+        ? 3000
+        : false,
+  });
+}
+
+export function useQueueGogInstallerDownload(gameId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ installerId, fileId }: { installerId: string; fileId: string }) =>
+      queueGogInstallerDownload(gameId, installerId, fileId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gog-installers", gameId] }),
+  });
+}
+
+export function useGogInstallerFileLink() {
+  return useMutation({
+    mutationFn: ({ gameId, fileId }: { gameId: number; fileId: string }) =>
+      getGogInstallerFileLink(gameId, fileId),
   });
 }

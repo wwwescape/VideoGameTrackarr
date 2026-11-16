@@ -15,6 +15,8 @@ def get_status(user: User) -> IntegrationsStatusResponse:
         itad_country=settings.itad_country.strip().upper(),
         platprices_configured=bool(settings.platprices_api_key),
         platprices_region=settings.platprices_region,
+        gog_configured=bool(user.gog_refresh_token),
+        gog_username=user.gog_username,
     )
 
 
