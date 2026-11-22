@@ -76,6 +76,7 @@
     "emulation": "Emulation",
     "gameCases": "Game Cases",
     "screensaver": "Screensaver",
+    "linkedAddons": "Linked Add-ons",
     "overview": "Overview",
     "settingsGeneral": "General",
     "primary": "Main navigation",
@@ -506,6 +507,10 @@
         "screensaver": {
           "name": "Screensaver",
           "description": "A floating button that shows your game covers full screen, one after another. Swipe to browse, tap a cover to open the game. Adds Settings → Screensaver."
+        },
+        "linked_addons": {
+          "name": "Linked Add-ons",
+          "description": "Link add-ons to more games than IGDB does, e.g. DLC IGDB lists under a game's Standard edition that also works with its Premium edition. Adds a Linked section to game pages, Works with on add-on pages, add-ons from an edition's base game, and Settings → Linked Add-ons. Turning it off keeps your links for later."
         }
       }
     },
@@ -544,6 +549,18 @@
       "keepOne": "The screensaver needs something to show: turn on the other group first.",
       "includeCustom": "Include custom games",
       "includeCustomDescription": "Games you added by hand rather than from IGDB."
+    },
+    "linkedAddons": {
+      "description": "Every add-on you've linked to more games than IGDB does. Link more from a game or add-on page, below Notes.",
+      "heading": "Links",
+      "lead_one": "{{count}} add-on",
+      "lead_other": "{{count}} add-ons",
+      "worksWith_one": "Works with {{count}} more game",
+      "worksWith_other": "Works with {{count}} more games",
+      "empty": "No links yet. Open a game or add-on and use Link, below Notes.",
+      "unlinkLabel": "Unlink {{addon}} from {{game}}",
+      "lastLinkError": "That's the last link of {{name}}, which has no IGDB parent in your library. Open the add-on to delete it instead.",
+      "loadFailed": "Couldn't load your links."
     },
     "tagManager": {
       "description": "Permanently delete a tag. This removes it from every game, device, and accessory that has it — not just one item. To remove a tag from a single item instead, use the Tags field on that item's own page.",
@@ -838,7 +855,8 @@
       "onSaleLabel": "On Sale",
       "missingLabel": "Missing",
       "customLabel": "Custom",
-      "viaAddon": "Via add-on"
+      "viaAddon": "Via add-on",
+      "linked": "Linked"
     },
     "add": {
       "addGameError": "Error adding game. Please try again.",
@@ -984,6 +1002,55 @@
       "title": "Addons",
       "subheader": "DLC, expansions, and packs for this game",
       "empty": "No addons found"
+    },
+    "addonLinks": {
+      "worksWithTitle": "Works with",
+      "worksWithEmpty": "Not linked to any game yet. Use Link under Linked games to add one.",
+      "linkedGamesTitle": "Linked games",
+      "linkedAddonsTitle": "Linked add-ons",
+      "linkAction": "Link",
+      "emptyForAddon": "Works with another edition or version too? Link it here.",
+      "emptyForGame": "Have add-ons from another edition that also work with this one? Link them here.",
+      "unlink": "Unlink",
+      "unlinkLabel": "Unlink {{name}}",
+      "unlinkedToast": "Unlinked {{name}}",
+      "unlinkError": "Couldn't unlink. Please try again.",
+      "linkError": "Couldn't link. Please try again.",
+      "linkedGamesToast_one": "Linked to {{count}} game",
+      "linkedGamesToast_other": "Linked to {{count}} games",
+      "linkedAddonsToast_one": "Linked {{count}} add-on to {{name}}",
+      "linkedAddonsToast_other": "Linked {{count}} add-ons to {{name}}",
+      "pickGamesTitle": "Link to games",
+      "pickAddonsTitle": "Link add-ons",
+      "pickGamesHelp": "Pick the games {{name}} also works with. Games from the same collection come first.",
+      "pickAddonsHelp": "Pick the add-ons that also work with {{name}}. Add-ons from the same collection come first.",
+      "searchPlaceholder": "Search",
+      "searchLabel": "Search",
+      "sameCollection": "Same collection",
+      "sameSeries": "Same series",
+      "alreadyLinked": "Already linked",
+      "noMatches": "Nothing matches your search.",
+      "noGameCandidates": "No games from the same collection or series in your library.",
+      "noAddonCandidates": "No add-ons from the same collection or series in your library.",
+      "linkButtonEmpty": "Link",
+      "linkGamesButton_one": "Link {{count}} game",
+      "linkGamesButton_other": "Link {{count}} games",
+      "linkAddonsButton_one": "Link {{count}} add-on",
+      "linkAddonsButton_other": "Link {{count}} add-ons",
+      "lastLinkTitle": "Delete this add-on?",
+      "lastLinkDescription": "\"{{name}}\" isn't linked to any other game and its IGDB parent isn't in your library, so unlinking it would leave it nowhere. Delete the add-on instead? Its copies, progress and notes are deleted too. This cannot be undone.",
+      "deleteAddon": "Delete add-on",
+      "addonDeletedToast": "Deleted {{name}}",
+      "removeKeepsAddons_one": "{{names}} is linked to another game, so it will be kept.",
+      "removeKeepsAddons_other": "These add-ons are linked to other games, so they will be kept: {{names}}.",
+      "fromBaseGame": "From {{name}} (IGDB)",
+      "willBeAdded": "Will be added",
+      "someFailed_one": "Couldn't add {{count}} add-on. Please try again.",
+      "someFailed_other": "Couldn't add {{count}} add-ons. Please try again.",
+      "hint_one": "{{name}} has {{count}} add-on that isn't linked here. Link it if it works with this edition.",
+      "hint_other": "{{name}} has {{count}} add-ons that aren't linked here. Link the ones that work with this edition.",
+      "hintAction": "Link add-ons",
+      "hintDismiss": "Dismiss"
     },
     "coverCard": {
       "noImageAvailable": "No Image Available"

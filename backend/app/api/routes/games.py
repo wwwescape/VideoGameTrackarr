@@ -9,6 +9,19 @@ from app.models.library import MediaFormat
 from app.models.system import User
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
+from app.schemas.addon_link import (
+    AddonLinkCandidateResponse,
+    AddonLinkRequest,
+    AddonLinkResponse,
+    BaseGameAddonsLinkRequest,
+    BaseGameAddonsLinkResponse,
+    BaseGameAddonsResponse,
+    GameRemovalPreviewResponse,
+    addon_link_candidate_from,
+    addon_ref_from_orm,
+    base_game_addons_from,
+    base_game_link_results_from,
+)
 from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
 from app.schemas.game import (
     GameDetailResponse,
@@ -30,6 +43,7 @@ from app.schemas.screensaver import (
 )
 from app.schemas.shelf import GameShelfResponse, game_shelf_response
 from app.services import (
+    addon_link_service,
     bulk_import_job,
     game_card_service,
     game_service,
@@ -41,7 +55,7 @@ from app.services import (
     tag_service,
 )
 from app.services.igdb_client import IGDBClient
-from app.services.labs import LAB_GAME_SHELF, LAB_SCREENSAVER, require_lab
+from app.services.labs import LAB_GAME_SHELF, LAB_LINKED_ADDONS, LAB_SCREENSAVER, require_lab
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(get_current_user)])
 
@@ -196,9 +210,80 @@ def set_rating(game_id: int, body: GameRatingRequest, db: Session = Depends(get_
 
 @router.get("/{game_id}/addons", response_model=list[GameSummaryResponse])
 def list_addons(game_id: int, db: Session = Depends(get_db)) -> list[GameSummaryResponse]:
+    """IGDB's add-ons and the manually linked ones (manualLink)."""
     addons = game_service.list_addons(db, game_id)
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     return [game_summary_from_orm(addon, on_sale_game_ids) for addon in addons]
+
+
+# Linked Add-ons lab: 404 while it's off. The removal preview below isn't gated: deletes keep
+# linked add-ons whether the lab is on or not, so the confirmation always names them.
+_linked_addons_lab = [Depends(require_lab(LAB_LINKED_ADDONS))]
+
+
+@router.get("/{game_id}/works-with", response_model=list[GameSummaryResponse], dependencies=_linked_addons_lab)
+def list_works_with(game_id: int, db: Session = Depends(get_db)) -> list[GameSummaryResponse]:
+    """An add-on's games: its IGDB parent first, then the manually linked ones (manualLink)."""
+    games = addon_link_service.list_works_with(db, game_id)
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return [game_summary_from_orm(game, on_sale_game_ids) for game in games]
+
+
+@router.get(
+    "/{game_id}/addon-links/candidates",
+    response_model=list[AddonLinkCandidateResponse],
+    dependencies=_linked_addons_lab,
+)
+def list_addon_link_candidates(
+    game_id: int, q: str | None = Query(default=None, max_length=200), db: Session = Depends(get_db)
+) -> list[AddonLinkCandidateResponse]:
+    """What the link picker offers: games for an add-on, add-ons for a game, from the same
+    Collection/Franchise; already-linked ones are flagged."""
+    return [addon_link_candidate_from(c) for c in addon_link_service.list_candidates(db, game_id, q)]
+
+
+@router.post("/{game_id}/addon-links", response_model=AddonLinkResponse, dependencies=_linked_addons_lab)
+def add_addon_links(game_id: int, body: AddonLinkRequest, db: Session = Depends(get_db)) -> AddonLinkResponse:
+    return AddonLinkResponse(added=addon_link_service.link(db, game_id, body.ids))
+
+
+@router.delete(
+    "/{game_id}/addon-links/{other_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=_linked_addons_lab
+)
+def remove_addon_link(game_id: int, other_id: int, db: Session = Depends(get_db)) -> None:
+    """409 last_link_orphan when it's the add-on's last link and it has no IGDB parent here."""
+    addon_link_service.unlink(db, game_id, other_id)
+
+
+@router.get("/{game_id}/base-game-addons", response_model=BaseGameAddonsResponse, dependencies=_linked_addons_lab)
+async def list_base_game_addons(
+    game_id: int,
+    db: Session = Depends(get_db),
+    igdb_client: IGDBClient = Depends(get_igdb_client),
+) -> BaseGameAddonsResponse:
+    """An edition's base game on IGDB (version_parent) and its add-ons, read live; baseGame is
+    null when IGDB doesn't record one."""
+    return base_game_addons_from(await addon_link_service.list_base_game_addons(db, igdb_client, game_id))
+
+
+@router.post("/{game_id}/base-game-addons", response_model=BaseGameAddonsLinkResponse, dependencies=_linked_addons_lab)
+async def link_base_game_addons(
+    game_id: int,
+    body: BaseGameAddonsLinkRequest,
+    db: Session = Depends(get_db),
+    igdb_client: IGDBClient = Depends(get_igdb_client),
+) -> BaseGameAddonsLinkResponse:
+    """Imports the picked base-game add-ons that aren't in the library (with no parent) and
+    links them all to this game; a result per add-on."""
+    results = await addon_link_service.link_base_game_addons(db, igdb_client, game_id, body.igdb_ids)
+    return base_game_link_results_from(results)
+
+
+@router.get("/{game_id}/removal-preview", response_model=GameRemovalPreviewResponse)
+def get_removal_preview(game_id: int, db: Session = Depends(get_db)) -> GameRemovalPreviewResponse:
+    """For the Remove Game confirmation: add-ons deleting it keeps, detached."""
+    kept = addon_link_service.kept_addons_on_delete(db, game_id)
+    return GameRemovalPreviewResponse(kept_addons=[addon_ref_from_orm(addon) for addon in kept])
 
 
 @router.post("", response_model=GameDetailResponse, status_code=status.HTTP_201_CREATED)

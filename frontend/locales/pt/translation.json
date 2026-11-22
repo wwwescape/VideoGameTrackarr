@@ -76,6 +76,7 @@
     "emulation": "Emulação",
     "gameCases": "Caixas de jogos",
     "screensaver": "Protetor de ecrã",
+    "linkedAddons": "Complementos ligados",
     "overview": "Visão geral",
     "settingsGeneral": "Geral",
     "primary": "Navegação principal",
@@ -506,6 +507,10 @@
         "screensaver": {
           "name": "Protetor de ecrã",
           "description": "Um botão flutuante que mostra as capas dos seus jogos em ecrã inteiro, uma após a outra. Deslize para explorar e toque numa capa para abrir o jogo. Adiciona Definições → Protetor de ecrã."
+        },
+        "linked_addons": {
+          "name": "Complementos ligados",
+          "description": "Ligue complementos a mais jogos do que o IGDB, p. ex. um DLC que o IGDB lista na edição Standard de um jogo e que também funciona com a edição Premium. Adiciona uma secção de ligações às páginas de jogos, Funciona com nas páginas de complementos, complementos do jogo base de uma edição e Definições → Complementos ligados. Desativá-lo mantém as suas ligações."
         }
       }
     },
@@ -544,6 +549,18 @@
       "keepOne": "O protetor de ecrã precisa de algo para mostrar: ative primeiro o outro grupo.",
       "includeCustom": "Incluir jogos personalizados",
       "includeCustomDescription": "Jogos que adicionou à mão em vez de a partir do IGDB."
+    },
+    "linkedAddons": {
+      "description": "Todos os complementos que ligou a mais jogos do que o IGDB. Ligue mais a partir da página de um jogo ou complemento, abaixo de Notas.",
+      "heading": "Ligações",
+      "lead_one": "{{count}} complemento",
+      "lead_other": "{{count}} complementos",
+      "worksWith_one": "Funciona com mais {{count}} jogo",
+      "worksWith_other": "Funciona com mais {{count}} jogos",
+      "empty": "Ainda não há ligações. Abra um jogo ou complemento e use Ligar, abaixo de Notas.",
+      "unlinkLabel": "Desligar {{addon}} de {{game}}",
+      "lastLinkError": "É a última ligação de {{name}}, que não tem jogo principal do IGDB na sua biblioteca. Abra o complemento para o eliminar.",
+      "loadFailed": "Não foi possível carregar as suas ligações."
     },
     "tagManager": {
       "description": "Elimina uma etiqueta de forma permanente. Isto remove-a de todos os jogos, dispositivos e acessórios que a tenham — não apenas de um. Para remover uma etiqueta de um único item, utilize o campo Etiquetas na página desse item.",
@@ -838,7 +855,8 @@
       "onSaleLabel": "Em Promoção",
       "missingLabel": "Em Falta",
       "customLabel": "Personalizado",
-      "viaAddon": "Por complemento"
+      "viaAddon": "Por complemento",
+      "linked": "Ligado"
     },
     "add": {
       "addGameError": "Erro ao adicionar o jogo. Por favor, tente novamente.",
@@ -984,6 +1002,55 @@
       "title": "Complementos",
       "subheader": "DLC, expansões e pacotes para este jogo",
       "empty": "Nenhum complemento encontrado"
+    },
+    "addonLinks": {
+      "worksWithTitle": "Funciona com",
+      "worksWithEmpty": "Ainda não está ligado a nenhum jogo. Use Ligar em Jogos ligados para adicionar um.",
+      "linkedGamesTitle": "Jogos ligados",
+      "linkedAddonsTitle": "Complementos ligados",
+      "linkAction": "Ligar",
+      "emptyForAddon": "Também funciona com outra edição ou versão? Ligue-a aqui.",
+      "emptyForGame": "Tem complementos de outra edição que também funcionam com esta? Ligue-os aqui.",
+      "unlink": "Desligar",
+      "unlinkLabel": "Desligar {{name}}",
+      "unlinkedToast": "{{name}} desligado",
+      "unlinkError": "Não foi possível desligar. Tente novamente.",
+      "linkError": "Não foi possível ligar. Tente novamente.",
+      "linkedGamesToast_one": "Ligado a {{count}} jogo",
+      "linkedGamesToast_other": "Ligado a {{count}} jogos",
+      "linkedAddonsToast_one": "{{count}} complemento ligado a {{name}}",
+      "linkedAddonsToast_other": "{{count}} complementos ligados a {{name}}",
+      "pickGamesTitle": "Ligar a jogos",
+      "pickAddonsTitle": "Ligar complementos",
+      "pickGamesHelp": "Escolha os jogos com que {{name}} também funciona. Os da mesma coleção aparecem primeiro.",
+      "pickAddonsHelp": "Escolha os complementos que também funcionam com {{name}}. Os da mesma coleção aparecem primeiro.",
+      "searchPlaceholder": "Pesquisar",
+      "searchLabel": "Pesquisar",
+      "sameCollection": "Mesma coleção",
+      "sameSeries": "Mesma série",
+      "alreadyLinked": "Já ligado",
+      "noMatches": "Nada corresponde à sua pesquisa.",
+      "noGameCandidates": "Não há jogos da mesma coleção ou série na sua biblioteca.",
+      "noAddonCandidates": "Não há complementos da mesma coleção ou série na sua biblioteca.",
+      "linkButtonEmpty": "Ligar",
+      "linkGamesButton_one": "Ligar {{count}} jogo",
+      "linkGamesButton_other": "Ligar {{count}} jogos",
+      "linkAddonsButton_one": "Ligar {{count}} complemento",
+      "linkAddonsButton_other": "Ligar {{count}} complementos",
+      "lastLinkTitle": "Eliminar este complemento?",
+      "lastLinkDescription": "\"{{name}}\" não está ligado a nenhum outro jogo e o seu jogo principal do IGDB não está na sua biblioteca, por isso desligá-lo deixá-lo-ia sem lugar. Eliminar o complemento em vez disso? As suas cópias, progresso e notas também são eliminados. Isto não pode ser anulado.",
+      "deleteAddon": "Eliminar complemento",
+      "addonDeletedToast": "{{name}} eliminado",
+      "removeKeepsAddons_one": "{{names}} está ligado a outro jogo, por isso será mantido.",
+      "removeKeepsAddons_other": "Estes complementos estão ligados a outros jogos, por isso serão mantidos: {{names}}.",
+      "fromBaseGame": "De {{name}} (IGDB)",
+      "willBeAdded": "Será adicionado",
+      "someFailed_one": "Não foi possível adicionar {{count}} complemento. Tente novamente.",
+      "someFailed_other": "Não foi possível adicionar {{count}} complementos. Tente novamente.",
+      "hint_one": "{{name}} tem {{count}} complemento que não está ligado aqui. Ligue-o se funcionar com esta edição.",
+      "hint_other": "{{name}} tem {{count}} complementos que não estão ligados aqui. Ligue os que funcionam com esta edição.",
+      "hintAction": "Ligar complementos",
+      "hintDismiss": "Dispensar"
     },
     "coverCard": {
       "noImageAvailable": "Imagem Não Disponível"

@@ -9,6 +9,7 @@ from app.models.catalog import (  # noqa: F401
     CompanyRole,
     Franchise,
     Game,
+    GameAddonLink,
     GameCategory,
     GameCollection,
     GameCompany,

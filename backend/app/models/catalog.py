@@ -1,11 +1,12 @@
 import enum
 import uuid
+from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, Boolean, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Boolean, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.mixins import TimestampMixin, enum_column
+from app.models.mixins import TimestampMixin, UTCDateTime, enum_column
 
 
 class GameCategory(enum.Enum):
@@ -297,6 +298,23 @@ class GameCollection(Base):
 
     game: Mapped["Game"] = relationship(back_populates="collections")
     collection: Mapped["Collection"] = relationship()
+
+
+class GameAddonLink(Base):
+    """A manual "works with" link between an add-on and another game, e.g. an FH5 car pack
+    that IGDB lists under the Standard edition only, linked to the Premium edition too.
+
+    Kept apart from Game.parent_game_id on purpose: that column is IGDB's own link and drives
+    list visibility, deletes and resyncs, and every resync rewrites it. Nothing IGDB-driven
+    reads or writes this table; see addon_link_service."""
+
+    __tablename__ = "game_addon_links"
+    __table_args__ = (UniqueConstraint("addon_game_id", "game_id", name="uq_game_addon_links_addon_game"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    addon_game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), server_default=func.now(), nullable=False)
 
 
 class Screenshot(Base):

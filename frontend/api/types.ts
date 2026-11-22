@@ -140,6 +140,9 @@ export interface GameSummary {
   // Games list with Include add-ons: listed only because one of its add-ons matched the search
   // or filters (the "Via add-on" chip). Always false elsewhere.
   matchedViaAddon: boolean;
+  // A game's Add-ons / an add-on's Works with: there through a manual link rather than IGDB's
+  // own (the "Linked" chip; only these can be unlinked). Optional: false or absent elsewhere.
+  manualLink?: boolean;
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;

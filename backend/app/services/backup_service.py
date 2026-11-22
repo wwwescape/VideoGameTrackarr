@@ -13,6 +13,7 @@ from app.core.config import BACKEND_DIR
 from app.models.catalog import (
     Artwork,
     Game,
+    GameAddonLink,
     GameCategory,
     GameCollection,
     GameCompany,
@@ -67,6 +68,7 @@ from app.schemas.backup import (
     BackupAccessory,
     BackupAccessoryCompatibility,
     BackupAccessoryType,
+    BackupAddonLink,
     BackupBiosFile,
     BackupColor,
     BackupGame,
@@ -221,6 +223,10 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
         ],
         notes=[BackupNote(id=n.id, game_id=n.game_id, body=n.body) for n in db.scalars(select(Note))],
         game_tags=[BackupGameTag(game_id=gt.game_id, tag_id=gt.tag_id) for gt in db.scalars(select(GameTag))],
+        addon_links=[
+            BackupAddonLink(addon_game_id=link.addon_game_id, game_id=link.game_id)
+            for link in db.scalars(select(GameAddonLink).order_by(GameAddonLink.id))
+        ],
         manufacturers=[BackupManufacturer(id=m.id, name=m.name) for m in db.scalars(select(Manufacturer))],
         hardware_platforms=[BackupHardwarePlatform(id=p.id, name=p.name) for p in db.scalars(select(HardwarePlatform))],
         hardware_types=[BackupHardwareType(id=t.id, name=t.name) for t in db.scalars(select(DeviceType))],
@@ -614,6 +620,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     db.execute(delete(Color))
 
     db.execute(delete(GameTag))
+    db.execute(delete(GameAddonLink))
     db.execute(delete(Note))
     # Toys-to-Life: only your state on the packs goes — the packs are reference data.
     db.execute(delete(ToysToLifeTag))
@@ -759,6 +766,15 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         db.add(Note(id=n.id, game_id=n.game_id, body=n.body))
     for gt in payload.game_tags:
         db.add(GameTag(game_id=gt.game_id, tag_id=gt.tag_id))
+    restored_ids = {g.id for g in payload.games}
+    seen_links: set[tuple[int, int]] = set()
+    for link in payload.addon_links:
+        pair = (link.addon_game_id, link.game_id)
+        # A hand-edited or partial file could name a missing game or repeat a pair.
+        if pair in seen_links or not {link.addon_game_id, link.game_id} <= restored_ids:
+            continue
+        seen_links.add(pair)
+        db.add(GameAddonLink(addon_game_id=link.addon_game_id, game_id=link.game_id))
     db.flush()
     _restore_toys_to_life(db, payload.toys_to_life)
     _restore_labs_and_game_cases(db, payload)

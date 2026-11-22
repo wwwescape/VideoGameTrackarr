@@ -26,6 +26,9 @@ export function useSetLabEnabled() {
       queryClient.invalidateQueries({ queryKey: ["games", "shelf"] });
       queryClient.invalidateQueries({ queryKey: ["game-cases"] });
       queryClient.invalidateQueries({ queryKey: ["screensaver"] });
+      // Linked Add-ons: a game's Add-ons and the Include add-ons matches change with it.
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      queryClient.invalidateQueries({ queryKey: ["addon-links"] });
     },
   });
 }

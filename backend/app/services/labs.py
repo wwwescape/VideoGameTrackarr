@@ -10,7 +10,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.models.labs import LabFeature
+from app.models.labs import LAB_LINKED_ADDONS, LabFeature
 from app.services.exceptions import NotFoundError
 
 LAB_GAME_SHELF = "game_shelf"
@@ -25,7 +25,7 @@ class Lab:
 
 
 # In the order Settings > Labs lists them.
-LABS: tuple[Lab, ...] = (Lab(LAB_GAME_SHELF, on_share_page=True), Lab(LAB_SCREENSAVER))
+LABS: tuple[Lab, ...] = (Lab(LAB_GAME_SHELF, on_share_page=True), Lab(LAB_SCREENSAVER), Lab(LAB_LINKED_ADDONS))
 _KNOWN = {lab.id for lab in LABS}
 
 

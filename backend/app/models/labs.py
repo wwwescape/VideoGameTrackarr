@@ -13,3 +13,8 @@ class LabFeature(TimestampMixin, Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+# Defined here rather than only in app/services/labs.py because repositories gate on it in SQL
+# (game_repository's manual add-on links), and they can't import the services layer.
+LAB_LINKED_ADDONS = "linked_addons"

@@ -16,6 +16,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.api.routes import (
     accessories,
+    addon_links,
     auth,
     catalog_resync,
     collections,
@@ -312,6 +313,7 @@ app.include_router(auth.router)
 app.include_router(platforms.router)
 app.include_router(regions.router)
 app.include_router(games.router)
+app.include_router(addon_links.router)
 app.include_router(game_cases.router)
 app.include_router(igdb.router)
 app.include_router(igdb_import.router)

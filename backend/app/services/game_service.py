@@ -242,7 +242,8 @@ def set_user_rating(db: Session, game_id: int, rating: int | None) -> int | None
 
 def delete_game(db: Session, game_id: int) -> None:
     game_with_status = get_game_detail(db, game_id)
-    images = game_repository.image_urls(db, [game_id, *game_repository.addon_ids(db, game_id)])
+    removal = game_repository.plan_addon_removal(db, game_id)
+    images = game_repository.image_urls(db, [game_id, *removal.deleted_ids])
     rom_filenames = game_repository.delete_game_with_addons(db, game_with_status.game)
     db.commit()
     rom_service.delete_files(rom_filenames)
