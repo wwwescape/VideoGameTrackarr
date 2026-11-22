@@ -177,7 +177,9 @@
       "romDownloadButton": "Download ROM",
       "romDownloadError": "Couldn't download the ROM. Please try again.",
       "romUnsupportedPlatformNote": "ROMs aren't supported for {{platform}} — it can't be played in the browser, so ROM files can't be uploaded for it.",
-      "romChoosePlatformNote": "Choose a platform to upload ROMs. Only platforms that can be played in the browser accept them."
+      "romChoosePlatformNote": "Choose a platform to upload ROMs. Only platforms that can be played in the browser accept them.",
+      "gogInstallersLabel": "Offline installers",
+      "gogInstallersHelperText": "GOG's DRM-free installers for this game and its DLC. Download one to the server, then save its files to any device."
     },
     "manageTags": {
       "title": "Tags",

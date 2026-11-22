@@ -177,7 +177,9 @@
       "romDownloadButton": "Baixar ROM",
       "romDownloadError": "Não foi possível baixar a ROM. Tente novamente.",
       "romUnsupportedPlatformNote": "ROMs não são compatíveis com {{platform}} — ela não pode ser jogada no navegador, então não é possível enviar arquivos ROM para ela.",
-      "romChoosePlatformNote": "Escolha uma plataforma para enviar ROMs. Só plataformas que podem ser jogadas no navegador as aceitam."
+      "romChoosePlatformNote": "Escolha uma plataforma para enviar ROMs. Só plataformas que podem ser jogadas no navegador as aceitam.",
+      "gogInstallersLabel": "Instaladores offline",
+      "gogInstallersHelperText": "Os instaladores sem DRM da GOG para este jogo e os seus DLC. Transfira um para o servidor e depois guarde os ficheiros em qualquer dispositivo."
     },
     "manageTags": {
       "title": "Tags",

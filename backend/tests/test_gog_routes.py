@@ -353,7 +353,15 @@ def _wish(db_session, gog_product_id=1423049311, game=None, dismissed=False, nam
 def test_wishlist_entries_report_each_status(auth_client, db_session, seed_platform):
     wanted = _game(db_session, "Wanted", igdb_id=1)
     tracked = _game(db_session, "Tracked", igdb_id=2)
-    db_session.add(LibraryItem(game_id=tracked.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.add(
+        LibraryItem(
+            game_id=tracked.id,
+            platform_id=seed_platform.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="GOG",
+        )
+    )
     db_session.commit()
     _wish(db_session, 1, wanted, name="Wanted")
     _wish(db_session, 2, tracked, name="Tracked")
@@ -432,3 +440,31 @@ def test_deleting_a_game_unmatches_its_wishlist_entry(auth_client, db_session):
     db_session.expire_all()
     [row] = auth_client.get("/api/integrations/gog/wishlist/entries").json()
     assert row["status"] == "no_match"
+
+
+def test_a_wishlist_copy_on_another_store_still_gets_its_own_gog_wishlist_copy(auth_client, db_session, seed_platform):
+    game = _game(db_session)
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.commit()
+    _wish(db_session, 8, game)
+
+    [row] = auth_client.get("/api/integrations/gog/wishlist/entries").json()
+    assert row["status"] == "new"
+    auth_client.post("/api/integrations/gog/wishlist/sync", json={"gogProductIds": [8]})
+
+    items = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    assert sorted(item.digital_storefront or "" for item in items) == ["", "GOG"]
+
+
+def test_a_game_owned_elsewhere_still_gets_its_owned_gog_copy(auth_client, db_session, seed_platform):
+    game = _game(db_session)
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+    _entry(db_session, game=game)
+
+    [row] = auth_client.get("/api/integrations/gog/entries").json()
+    assert row["status"] == "new"
+    auth_client.post("/api/integrations/gog/sync", json={"gogProductIds": [1207664663]})
+
+    owned = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    assert sorted(item.digital_storefront or "" for item in owned) == ["", "GOG"]

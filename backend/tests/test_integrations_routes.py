@@ -616,12 +616,50 @@ def test_get_steam_wishlist_entries_reports_new_for_a_matched_untracked_game(aut
 
 def test_get_steam_wishlist_entries_reports_already_wishlisted(auth_client, db_session, seed_pc_platform):
     game = _seed_matched_wishlist_entry(db_session)
-    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_pc_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.add(
+        LibraryItem(
+            game_id=game.id,
+            platform_id=seed_pc_platform.id,
+            status=LibraryStatus.WISHLIST,
+            format=MediaFormat.DIGITAL,
+            digital_storefront="Steam",
+        )
+    )
     db_session.commit()
 
     [entry] = auth_client.get("/api/integrations/steam/wishlist/entries").json()
 
     assert entry["status"] == "already_wishlisted"
+
+
+def test_a_wishlist_copy_on_another_store_still_gets_its_own_steam_wishlist_copy(
+    auth_client, db_session, seed_platform
+):
+    game = _seed_matched_wishlist_entry(db_session)
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.WISHLIST))
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/integrations/steam/wishlist/entries").json()
+    assert entry["status"] == "new"
+    auth_client.post("/api/integrations/steam/wishlist/sync", json={"steamAppIds": [220]})
+
+    items = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    assert sorted(item.digital_storefront or "" for item in items) == ["", "Steam"]
+    [entry] = auth_client.get("/api/integrations/steam/wishlist/entries").json()
+    assert entry["status"] == "already_wishlisted"
+
+
+def test_a_game_owned_on_another_platform_still_gets_its_owned_steam_copy(auth_client, db_session, seed_platform):
+    game = _seed_matched_entry(db_session)
+    db_session.add(LibraryItem(game_id=game.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED))
+    db_session.commit()
+
+    [entry] = auth_client.get("/api/integrations/steam/entries").json()
+    assert entry["status"] == "new"
+    auth_client.post("/api/integrations/steam/sync", json={"steamAppIds": [220]})
+
+    owned = db_session.query(LibraryItem).filter(LibraryItem.game_id == game.id).all()
+    assert sorted(item.digital_storefront or "" for item in owned) == ["", "Steam"]
 
 
 def test_get_steam_wishlist_entries_reports_no_match_for_an_unmatched_entry(auth_client, db_session):

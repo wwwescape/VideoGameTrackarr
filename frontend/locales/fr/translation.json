@@ -177,7 +177,9 @@
       "romDownloadButton": "Télécharger la ROM",
       "romDownloadError": "Impossible de télécharger la ROM. Veuillez réessayer.",
       "romUnsupportedPlatformNote": "Les ROM ne sont pas prises en charge pour {{platform}} — elle ne peut pas être jouée dans le navigateur, donc aucun fichier ROM ne peut être envoyé pour elle.",
-      "romChoosePlatformNote": "Choisissez une plateforme pour envoyer des ROM. Seules les plateformes jouables dans le navigateur les acceptent."
+      "romChoosePlatformNote": "Choisissez une plateforme pour envoyer des ROM. Seules les plateformes jouables dans le navigateur les acceptent.",
+      "gogInstallersLabel": "Installateurs hors ligne",
+      "gogInstallersHelperText": "Les installateurs sans DRM de GOG pour ce jeu et ses DLC. Téléchargez-en un sur le serveur, puis enregistrez ses fichiers sur n'importe quel appareil."
     },
     "manageTags": {
       "title": "Tags",

@@ -447,6 +447,9 @@ const GameLibrarySection = ({
               : undefined
           }
           existingRoms={dialogItem?.roms ?? []}
+          gogInstallersGameId={
+            integrations?.gogConnected && dialogItem && isGogCopy(dialogItem) ? gameId : undefined
+          }
           uploadProgress={uploadProgress}
           uploadStep={uploadStep}
           onClose={() => setDialogOpen(false)}

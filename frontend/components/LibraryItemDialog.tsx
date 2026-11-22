@@ -48,6 +48,9 @@ import { useEmulationConfig } from "../hooks/useLibrary";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { getCurrencySymbol } from "../utils/currency";
 import { resolveStorefront } from "../utils/digitalStorefronts";
+import { GogInstallersList } from "./GogInstallersDialog";
+
+const GOG_STOREFRONT = "GOG";
 import { RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { downloadFromUrl } from "../utils/download";
 import { canHoldRom, fileExtension, formatFileSize } from "../utils/roms";
@@ -161,6 +164,11 @@ interface RatingBoardOption {
   label: string;
 }
 
+function storefrontModeFor(platform: PlatformResponse | undefined, isDigital: boolean) {
+  const { showEditableStorefront, fixedStorefront } = resolveStorefront(platform, isDigital);
+  return fixedStorefront != null ? "fixed" : showEditableStorefront ? "editable" : "none";
+}
+
 interface LibraryItemDialogProps {
   open: boolean;
   title: string;
@@ -177,6 +185,9 @@ interface LibraryItemDialogProps {
   onClose: () => void;
   onSubmit: (values: LibraryItemFormValues, romChanges: RomChanges) => void;
   submitLabel: string;
+  // Set when editing an owned GOG copy while a GOG account is connected: the dialog then
+  // lists the game's offline installers, the way a ROM copy lists its ROM files.
+  gogInstallersGameId?: number;
 }
 
 const LibraryItemDialog = ({
@@ -193,6 +204,7 @@ const LibraryItemDialog = ({
   onClose,
   onSubmit,
   submitLabel,
+  gogInstallersGameId,
 }: LibraryItemDialogProps) => {
   const { t } = useTranslation();
   const { data: emulationConfig } = useEmulationConfig();
@@ -220,11 +232,19 @@ const LibraryItemDialog = ({
     if (open) {
       setRomDrafts({});
       setNewRoms([]);
-      reset({
+      const values: Partial<LibraryItemFormValues> = {
         format: "physical",
         ...defaultValues,
         ...(lockFormatToDigital ? { format: "digital" } : {}),
-      });
+      };
+      // The dialog stays mounted while closed, so opening it on a digital PC copy would
+      // otherwise look like a switch into the editable storefront field, and the effect
+      // below would clear the copy's saved storefront (its "Steam" or "GOG").
+      previousStorefrontMode.current = storefrontModeFor(
+        platforms.find((platform) => platform.id === values.platformId),
+        values.format === "digital"
+      );
+      reset(values);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -266,6 +286,11 @@ const LibraryItemDialog = ({
     selectedPlatform?.slug != null &&
     SALES_TRACKING_ELIGIBLE_PLATFORM_SLUGS.has(selectedPlatform.slug);
   const watchedTrackForSales = useWatch({ control, name: "trackForSales" });
+  const watchedStorefront = useWatch({ control, name: "digitalStorefront" });
+  // Only while the form still describes an owned Digital GOG copy: switch the store or the
+  // format and the installers make way, like the ROM files do.
+  const showGogInstallers =
+    gogInstallersGameId != null && status === "owned" && isDigital && watchedStorefront === GOG_STOREFRONT;
 
   // "fixed" (a locked single-choice store, e.g. Xbox Store), "editable" (the PC-family
   // freeSolo list), or "none" (field hidden). Tracked so a value only ever gets cleared on
@@ -273,7 +298,7 @@ const LibraryItemDialog = ({
   // the whole time (Windows -> Mac) should keep whatever the user already typed/picked,
   // but switching away from a "fixed" platform (Xbox -> PC) must not leave that platform's
   // locked store name sitting in the field as if the user had chosen it themselves.
-  const storefrontMode = fixedStorefront != null ? "fixed" : showEditableStorefront ? "editable" : "none";
+  const storefrontMode = storefrontModeFor(selectedPlatform, isDigital);
   const previousStorefrontMode = useRef(storefrontMode);
   useEffect(() => {
     if (storefrontMode === "fixed") {
@@ -829,6 +854,15 @@ const LibraryItemDialog = ({
                 <TextField {...params} label={t("dialogs.libraryItem.digitalStorefrontLabel")} />
               )}
             />
+          </FormControl>
+        ) : null}
+        {showGogInstallers && gogInstallersGameId != null ? (
+          <FormControl fullWidth sx={{ margin: "0 0 20px 0" }}>
+            <FormLabel>{t("dialogs.libraryItem.gogInstallersLabel")}</FormLabel>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5 }}>
+              {t("dialogs.libraryItem.gogInstallersHelperText")}
+            </Typography>
+            <GogInstallersList gameId={gogInstallersGameId} enabled={open} />
           </FormControl>
         ) : null}
         <FormControl fullWidth sx={{ margin: "10px 0 20px 0" }}>

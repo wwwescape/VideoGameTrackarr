@@ -53,16 +53,18 @@ function installerState(installer: GogInstaller) {
   };
 }
 
-interface GogInstallersDialogProps {
+interface GogInstallersListProps {
   gameId: number;
-  gameName: string;
-  open: boolean;
-  onClose: () => void;
+  // Fetches (and polls) only while shown.
+  enabled: boolean;
 }
 
-const GogInstallersDialog = ({ gameId, gameName, open, onClose }: GogInstallersDialogProps) => {
+// The installers for one game and its DLC, each with Download to server, progress, and Save
+// to device per finished part. Shown in the Offline installers dialog and inline in a GOG
+// copy's own dialog, the way a ROM copy lists its ROM files.
+export const GogInstallersList = ({ gameId, enabled }: GogInstallersListProps) => {
   const { t } = useTranslation();
-  const { data, isLoading, error } = useGogInstallers(gameId, open);
+  const { data, isLoading, error } = useGogInstallers(gameId, enabled);
   const download = useDownloadGogInstaller(gameId);
 
   const handleDownload = async (productId: number, installerId: string) => {
@@ -203,6 +205,37 @@ const GogInstallersDialog = ({ gameId, gameName, open, onClose }: GogInstallersD
     );
   };
 
+  return isLoading ? (
+    <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+      <CircularProgress size={28} />
+    </Box>
+  ) : errorMessage ? (
+    <Alert severity="info">{errorMessage}</Alert>
+  ) : !data || data.groups.length === 0 ? (
+    <Alert severity="info">{t("games.gogInstallers.empty")}</Alert>
+  ) : (
+    <Stack spacing={2.5}>
+      {data.groups.map((group) => (
+        <Box key={group.productId}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            {group.title}
+          </Typography>
+          <Stack spacing={1}>{group.installers.map((installer) => renderInstaller(group.productId, installer))}</Stack>
+        </Box>
+      ))}
+    </Stack>
+  );
+};
+
+interface GogInstallersDialogProps {
+  gameId: number;
+  gameName: string;
+  open: boolean;
+  onClose: () => void;
+}
+
+const GogInstallersDialog = ({ gameId, gameName, open, onClose }: GogInstallersDialogProps) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("games.gogInstallers.title", { name: gameName })}</DialogTitle>
@@ -210,28 +243,7 @@ const GogInstallersDialog = ({ gameId, gameName, open, onClose }: GogInstallersD
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {t("games.gogInstallers.description")}
         </Typography>
-        {isLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-            <CircularProgress size={28} />
-          </Box>
-        ) : errorMessage ? (
-          <Alert severity="info">{errorMessage}</Alert>
-        ) : !data || data.groups.length === 0 ? (
-          <Alert severity="info">{t("games.gogInstallers.empty")}</Alert>
-        ) : (
-          <Stack spacing={2.5}>
-            {data.groups.map((group) => (
-              <Box key={group.productId}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  {group.title}
-                </Typography>
-                <Stack spacing={1}>
-                  {group.installers.map((installer) => renderInstaller(group.productId, installer))}
-                </Stack>
-              </Box>
-            ))}
-          </Stack>
-        )}
+        <GogInstallersList gameId={gameId} enabled={open} />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("common.close")}</Button>

@@ -104,14 +104,21 @@ def unlink_entry(db: Session, steam_app_id: int) -> SteamWishlistEntryWithStatus
     return _with_status(db, entry)
 
 
+def _is_wishlisted_on_steam(db: Session, game_id: int) -> bool:
+    """Whether the game already has a Steam wishlist copy (Digital, storefront Steam). A
+    wishlist copy for another platform or store doesn't count: each store's wishlist gets its
+    own row in Your Library, the same way each store's owned copy does."""
+    return any(
+        item.format == MediaFormat.DIGITAL and item.digital_storefront == "Steam"
+        for item in library_item_repository.list_library_items(db, game_id, status=LibraryStatus.WISHLIST)
+    )
+
+
 def _sync_one(db: Session, entry: SteamWishlistEntry) -> None:
     pc_platform = platform_repository.get_or_create_by_igdb(
         db, igdb_id=PC_IGDB_PLATFORM_ID, name="PC (Microsoft Windows)", slug="win", abbreviation="PC"
     )
-    already_tracked = (
-        len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.WISHLIST)) > 0
-    )
-    if not already_tracked:
+    if not _is_wishlisted_on_steam(db, entry.game_id):
         library_service.add_library_item(
             db,
             entry.game_id,
@@ -139,11 +146,10 @@ def _with_status(db: Session, entry: SteamWishlistEntry) -> SteamWishlistEntryWi
     if entry.game_id is None:
         return SteamWishlistEntryWithStatus(entry, SteamWishlistEntryStatus.NO_MATCH)
 
-    already_tracked = (
-        len(library_item_repository.list_library_items(db, entry.game_id, status=LibraryStatus.WISHLIST)) > 0
-    )
     status = (
-        SteamWishlistEntryStatus.ALREADY_WISHLISTED if already_tracked else SteamWishlistEntryStatus.NEW
+        SteamWishlistEntryStatus.ALREADY_WISHLISTED
+        if _is_wishlisted_on_steam(db, entry.game_id)
+        else SteamWishlistEntryStatus.NEW
     )
     return SteamWishlistEntryWithStatus(entry, status)
 

@@ -22,6 +22,11 @@ vi.mock("../../utils/download", () => ({
   downloadFromUrl: (...args: unknown[]) => downloadFromUrl(...args),
 }));
 
+// The installers list has its own tests; here it only needs to say it's shown, and for which game.
+vi.mock("../GogInstallersDialog", () => ({
+  GogInstallersList: ({ gameId }: { gameId: number }) => <div>Installers for game {gameId}</div>,
+}));
+
 vi.mock("../../hooks/useLibrary", () => ({
   useEmulationConfig: () => ({ data: emulationConfig }),
 }));
@@ -396,5 +401,84 @@ describe("LibraryItemDialog", () => {
 
     expect(createRomDownloadLink).toHaveBeenCalledWith(7);
     expect(downloadFromUrl).toHaveBeenCalledWith(expect.stringMatching(/\/api\/roms\/7\/content\/tok\//));
+  });
+
+  it("keeps a copy's saved storefront when the dialog opens on it", () => {
+    // The dialog stays mounted while closed, as on a game's page, and opens on a copy.
+    const props = {
+      title: "Update game in your collection",
+      status: "owned" as const,
+      platforms,
+      regions,
+      onClose: vi.fn(),
+      onSubmit: vi.fn(),
+      submitLabel: "Update",
+      defaultValues: { platformId: 1, format: "digital" as const, digitalStorefront: "GOG" },
+    };
+    const { rerender } = render(<LibraryItemDialog open={false} {...props} />);
+
+    rerender(<LibraryItemDialog open {...props} />);
+
+    expect(screen.getByLabelText("Digital Storefront")).toHaveValue("GOG");
+  });
+
+  it("lists the offline installers for an owned GOG copy", () => {
+    render(
+      <LibraryItemDialog
+        open
+        title="Update game in your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        defaultValues={{ platformId: 1, format: "digital", digitalStorefront: "GOG" }}
+        gogInstallersGameId={42}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Update"
+      />
+    );
+
+    expect(screen.getByText("Offline installers")).toBeInTheDocument();
+    expect(screen.getByText("Installers for game 42")).toBeInTheDocument();
+  });
+
+  it("hides the installers once the copy is no longer a GOG copy", async () => {
+    const user = userEvent.setup();
+    render(
+      <LibraryItemDialog
+        open
+        title="Update game in your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        defaultValues={{ platformId: 1, format: "digital", digitalStorefront: "GOG" }}
+        gogInstallersGameId={42}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Update"
+      />
+    );
+
+    await user.click(screen.getByRole("radio", { name: "Physical" }));
+
+    expect(screen.queryByText("Installers for game 42")).not.toBeInTheDocument();
+  });
+
+  it("shows no installers without a game to list them for", () => {
+    render(
+      <LibraryItemDialog
+        open
+        title="Update game in your collection"
+        status="owned"
+        platforms={platforms}
+        regions={regions}
+        defaultValues={{ platformId: 1, format: "digital", digitalStorefront: "GOG" }}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        submitLabel="Update"
+      />
+    );
+
+    expect(screen.queryByText("Offline installers")).not.toBeInTheDocument();
   });
 });

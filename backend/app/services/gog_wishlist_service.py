@@ -98,9 +98,13 @@ def _set_ignored(db: Session, gog_product_id: int, ignored: bool) -> GogWishlist
 
 
 def _is_wishlisted(db: Session, game_id: int) -> bool:
-    # Any wishlist copy counts, the same as Steam Sync: a wishlist entry is about the game,
-    # not which store it came from.
-    return len(library_item_repository.list_library_items(db, game_id, status=LibraryStatus.WISHLIST)) > 0
+    """Whether the game already has a GOG wishlist copy (Digital, storefront GOG). A wishlist
+    copy for another platform or store doesn't count: each store's wishlist gets its own row
+    in Your Library, the same way each store's owned copy does."""
+    return any(
+        item.format == MediaFormat.DIGITAL and item.digital_storefront == GOG_STOREFRONT
+        for item in library_item_repository.list_library_items(db, game_id, status=LibraryStatus.WISHLIST)
+    )
 
 
 def _sync_one(db: Session, entry: GogWishlistEntry) -> None:
