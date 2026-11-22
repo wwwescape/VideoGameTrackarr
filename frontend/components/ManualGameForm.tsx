@@ -67,9 +67,11 @@ interface ManualGameFormProps {
   // SteamLibraryEntry (see backend/app/services/manual_game_service.py). Not a form field:
   // there's nothing here for the user to edit.
   steamAppId?: number;
+  // The same for GOG Sync's "Add as custom game" (links the GOG entry).
+  gogProductId?: number;
 }
 
-const ManualGameForm = ({ initialValues, steamAppId }: ManualGameFormProps) => {
+const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameFormProps) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -131,6 +133,7 @@ const ManualGameForm = ({ initialValues, steamAppId }: ManualGameFormProps) => {
         notes: notes.trim() || null,
         parentGameId: showParentGameField ? (parentGame?.id ?? null) : null,
         steamAppId,
+        gogProductId,
         ...media,
       });
       toast.success(t("games.manualForm.addSuccessToast"), TOAST_OPTIONS);

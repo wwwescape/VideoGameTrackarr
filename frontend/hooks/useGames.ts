@@ -143,10 +143,15 @@ export function useCreateManualGame() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createManualGame,
-    onSuccess: () => {
+    onSuccess: (_game, input) => {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["insights"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      // "Add as custom game" from GOG Sync links the new game to that row.
+      if (input.gogProductId !== undefined) {
+        queryClient.invalidateQueries({ queryKey: ["gog-entries"] });
+        queryClient.invalidateQueries({ queryKey: ["gog-wishlist-entries"] });
+      }
     },
   });
 }

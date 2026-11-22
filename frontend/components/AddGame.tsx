@@ -51,13 +51,15 @@ const MIN_SEARCH_LENGTH = 3;
 
 type AddMode = "igdb" | "manual";
 
-interface SteamPrefillState {
-  steamPrefill?: {
-    steamAppId?: number;
-    name?: string;
-    coverUrl?: string;
-    summary?: string;
-  };
+interface StorePrefill {
+  name?: string;
+  coverUrl?: string;
+  summary?: string;
+}
+
+interface StorePrefillState {
+  steamPrefill?: StorePrefill & { steamAppId?: number };
+  gogPrefill?: StorePrefill & { gogProductId?: number };
 }
 
 // Matches backend's _IGDB_ID_QUERY_PATTERN (app/api/routes/igdb.py) — an exact-ID search
@@ -87,7 +89,9 @@ function isAddableCategory(category: GameCategory | null): boolean {
 const AddGame = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const steamPrefill = (location.state as SteamPrefillState | null)?.steamPrefill;
+  const prefillState = location.state as StorePrefillState | null;
+  const steamPrefill = prefillState?.steamPrefill;
+  const gogPrefill = prefillState?.gogPrefill;
   // Keyword and tab are remembered for the session (see hooks/useSessionState.ts).
   const [searchKeyword, setSearchKeyword] = useSessionState("addGame.searchKeyword", "");
   const [rememberedMode, setMode] = useSessionState<AddMode>("addGame.mode", "igdb");
@@ -99,7 +103,8 @@ const AddGame = () => {
   // Landing here from Settings → Steam Sync's "Add as custom game" (see SteamSyncPage.tsx)
   // skips straight to the manual form, pre-filled — there's no IGDB entry to search for —
   // whatever tab was remembered, until the user switches tabs themselves.
-  const [prefillForcesManual, setPrefillForcesManual] = useState(Boolean(steamPrefill));
+  // GOG Sync's "Add as custom game" lands here the same way.
+  const [prefillForcesManual, setPrefillForcesManual] = useState(Boolean(steamPrefill ?? gogPrefill));
   const mode: AddMode = prefillForcesManual ? "manual" : rememberedMode;
   // Only Options (card size): IGDB returns results by relevance a page at a time, so sorting or
   // filtering here would only reorder what has loaded so far.
@@ -390,7 +395,11 @@ const AddGame = () => {
           </Grid>
         </SimpleTabPanel>
         <SimpleTabPanel value="manual" activeValue={mode} sx={{ py: 2 }}>
-          <ManualGameForm initialValues={steamPrefill} steamAppId={steamPrefill?.steamAppId} />
+          <ManualGameForm
+            initialValues={steamPrefill ?? gogPrefill}
+            steamAppId={steamPrefill?.steamAppId}
+            gogProductId={gogPrefill?.gogProductId}
+          />
         </SimpleTabPanel>
       </Box>
       <BulkAddDialog

@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.models.library import LibraryStatus
-from app.repositories import itad_repository, platprices_repository
+from app.repositories import itad_repository, library_item_repository, platprices_repository
 from app.schemas.library import (
     LibraryItemCreateRequest,
     LibraryItemResponse,
     LibraryItemUpdateRequest,
     library_item_from_orm,
 )
-from app.services import library_service
+from app.services import gog_service, library_service
 
 router = APIRouter(tags=["library"], dependencies=[Depends(get_current_user)])
 
@@ -47,6 +47,9 @@ def update_library_item(
     item_id: int, body: LibraryItemUpdateRequest, db: Session = Depends(get_db)
 ) -> LibraryItemResponse:
     item = library_service.update_library_item(db, item_id, **body.model_dump(exclude_unset=True))
+    # A GOG copy changed into something else (another store, physical, wishlist) takes its
+    # downloaded installers with it once no GOG copy is left.
+    gog_service.remove_downloads_without_gog_copy(db, item.game_id)
     itad_cache = itad_repository.get_cache(db, item.game_id)
     platprices_cache = platprices_repository.get_cache(db, item.game_id)
     return library_item_from_orm(item, itad_cache, platprices_cache)
@@ -54,4 +57,8 @@ def update_library_item(
 
 @router.delete("/api/library/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_library_item(item_id: int, db: Session = Depends(get_db)) -> None:
+    item = library_item_repository.get_library_item(db, item_id)
+    game_id = item.game_id if item else None
     library_service.delete_library_item(db, item_id)
+    if game_id is not None:
+        gog_service.remove_downloads_without_gog_copy(db, game_id)

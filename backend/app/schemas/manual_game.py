@@ -28,6 +28,8 @@ class ManualGameCreateRequest(CamelModel):
     # links the originating SteamLibraryEntry to the new game so its Steam store page shows
     # up on the game's own details page (see manual_game_service.create_manual_game).
     steam_app_id: int | None = None
+    # The same link for GOG Sync's "Add as custom game" (see gog_service.link_custom_game).
+    gog_product_id: int | None = None
     # Uploaded with POST /api/uploads/game-media, in display order (the first artwork is the
     # hero background). Up to 10 of each — see manual_game_service._check_media.
     screenshot_urls: list[str] = Field(default_factory=list)

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
+import CloudDownloadIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -34,16 +35,20 @@ import {
   useUpdateLibraryItem,
   useUpdateRomLabel,
 } from "../hooks/useLibrary";
+import { useIntegrationsStatus } from "../hooks/useIntegrations";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
+import GogInstallersDialog from "./GogInstallersDialog";
 import LibraryItemDialog, { type LibraryItemFormValues, type RomChanges } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
 import { EmptyLine, ListRow, Panel, Pill, PlatformBadge, RowAction, Section, SectionAction } from "./Detail";
 
 interface GameLibrarySectionProps {
   gameId: number;
+  // For the Offline installers dialog's title.
+  gameName?: string;
   libraryItems: LibraryItem[] | undefined;
   platforms: PlatformResponse[] | undefined;
   regions: RegionResponse[] | undefined;
@@ -52,12 +57,18 @@ interface GameLibrarySectionProps {
 
 const GameLibrarySection = ({
   gameId,
+  gameName = "",
   libraryItems,
   platforms,
   regions,
   gameCategory,
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
+  const { data: integrations } = useIntegrationsStatus();
+  const [installersOpen, setInstallersOpen] = useState(false);
+  // An owned GOG copy offers its offline installers once a GOG account is connected.
+  const isGogCopy = (item: LibraryItem) =>
+    item.status === "owned" && item.format === "digital" && item.digitalStorefront === "GOG";
   const addLibraryItem = useAddLibraryItem(gameId);
   const updateLibraryItem = useUpdateLibraryItem(gameId);
   const deleteLibraryItem = useDeleteLibraryItem(gameId);
@@ -375,6 +386,13 @@ const GameLibrarySection = ({
                   }
                   actions={
                     <>
+                      {integrations?.gogConnected && isGogCopy(item) && (
+                        <RowAction
+                          title={t("games.gogInstallers.openButton")}
+                          icon={<CloudDownloadIcon fontSize="small" />}
+                          onClick={() => setInstallersOpen(true)}
+                        />
+                      )}
                       <RowAction
                         title={owned ? t("table.moveToWishlist") : t("table.moveToCollection")}
                         icon={owned ? <FavoriteBorderIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
@@ -393,6 +411,9 @@ const GameLibrarySection = ({
           </Panel>
         )}
       </Section>
+      {installersOpen && (
+        <GogInstallersDialog open gameId={gameId} gameName={gameName} onClose={() => setInstallersOpen(false)} />
+      )}
 
         <LibraryItemDialog
           open={dialogOpen}

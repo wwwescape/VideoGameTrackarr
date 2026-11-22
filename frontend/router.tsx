@@ -48,6 +48,7 @@ import {
   seriesCrumbs,
   settingsCrumbs,
   steamSyncCrumbs,
+  gogSyncCrumbs,
   igdbImportCrumbs,
   tagManagerCrumbs,
   toyCrumbs,
@@ -323,6 +324,11 @@ const router = createBrowserRouter([
             path: "/settings/steam-sync",
             lazy: page(() => import("./components/SteamSyncPage")),
             handle: { crumbs: steamSyncCrumbs },
+          },
+          {
+            path: "/settings/gog-sync",
+            lazy: page(() => import("./components/GogSyncPage")),
+            handle: { crumbs: gogSyncCrumbs },
           },
           {
             path: "/settings/sale-tracked",

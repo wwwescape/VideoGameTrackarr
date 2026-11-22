@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.models.catalog import Collection, Franchise, Game
 from app.models.events import EventGame
+from app.models.gog import GogDownload, GogLibraryEntry, GogWishlistEntry
 from app.models.hardware import (
     Accessory,
     AccessoryAccessoryLink,
@@ -31,7 +32,7 @@ from app.models.platprices import PlatPricesCache
 from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
 from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote, ToysToLifeTag
 from app.repositories import game_repository
-from app.services import backup_service, rom_service, upload_service
+from app.services import backup_service, gog_download_service, rom_service, upload_service
 from app.services.exceptions import ConflictError
 
 
@@ -93,6 +94,7 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
     rom_service.delete_files(rom_files)
     for url in uploads:
         upload_service.delete_if_local_upload(url)
+    gog_download_service.prune_orphan_files(db)
     return result
 
 
@@ -135,13 +137,15 @@ def _clear_tags(db: Session, result: DangerZoneResult) -> None:
 
 
 def _clear_sync_caches(db: Session, result: DangerZoneResult, keep_ignored: bool = True) -> None:
-    """Steam Sync's library and wishlist, IGDB Import's matches and the price caches — all
+    """Steam Sync's and GOG Sync's libraries and wishlists, IGDB Import's matches and the price caches — all
     fetched again on their next run. Ignoring a game there is your choice, not cached data,
     so those rows stay (except for Reset everything)."""
     removed = 0
     for model, flag in (
         (SteamLibraryEntry, SteamLibraryEntry.dismissed),
         (SteamWishlistEntry, SteamWishlistEntry.dismissed),
+        (GogLibraryEntry, GogLibraryEntry.dismissed),
+        (GogWishlistEntry, GogWishlistEntry.dismissed),
         (IgdbImportEntry, IgdbImportEntry.dismissed),
         (ItadPriceCache, ItadPriceCache.ignored),
         (PlatPricesCache, PlatPricesCache.ignored),
@@ -161,6 +165,9 @@ def _reset_library(db: Session, result: DangerZoneResult) -> tuple[list[str], li
     db.execute(update(EventGame).values(game_id=None))
     db.execute(delete(SteamLibraryEntry))
     db.execute(delete(SteamWishlistEntry))
+    db.execute(delete(GogLibraryEntry))
+    db.execute(delete(GogWishlistEntry))
+    db.execute(delete(GogDownload))
     db.execute(delete(ItadPriceCache))
     db.execute(delete(PlatPricesCache))
     rom_files = game_repository._delete_games(db, game_ids) if game_ids else []

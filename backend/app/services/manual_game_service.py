@@ -12,7 +12,7 @@ from app.repositories import (
     steam_repository,
 )
 from app.repositories.game_repository import GameWithStatus
-from app.services import upload_service
+from app.services import gog_service, upload_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.game_service import get_game_detail
 
@@ -83,6 +83,7 @@ def create_manual_game(
     platform_names: list[str] | None = None,
     notes: str | None = None,
     steam_app_id: int | None = None,
+    gog_product_id: int | None = None,
     screenshot_urls: list[str] | None = None,
     artwork_urls: list[str] | None = None,
     videos: list[VideoInput] | None = None,
@@ -131,6 +132,10 @@ def create_manual_game(
         entry = steam_repository.get_entry(db, steam_app_id)
         if entry is not None:
             steam_repository.set_game_id(db, entry, game.id)
+
+    if gog_product_id is not None:
+        # Same best-effort link for GOG Sync's "Add as custom game".
+        gog_service.link_custom_game(db, gog_product_id, game.id)
 
     db.commit()
     return get_game_detail(db, game.id)

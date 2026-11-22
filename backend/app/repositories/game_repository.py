@@ -23,6 +23,7 @@ from app.models.catalog import (
     ReleaseDate,
     Screenshot,
 )
+from app.models.gog import GogDownload, GogLibraryEntry, GogWishlistEntry
 from app.models.igdb_import import IgdbImportEntry
 from app.models.labs import LAB_LINKED_ADDONS, LabFeature
 from app.models.library import (
@@ -1157,6 +1158,16 @@ def merge_game(db: Session, source: Game, target: Game) -> None:
         target.user_rating = source.user_rating
     # Source's IGDB Import match goes with it (target is linked, so has none to keep).
     db.execute(delete(IgdbImportEntry).where(IgdbImportEntry.game_id == source.id))
+    # A GOG Sync match (owned or wishlist) follows the game, unless the target already has
+    # one of its own in that table.
+    for gog_model in (GogLibraryEntry, GogWishlistEntry):
+        target_has_gog = db.scalar(select(exists().where(gog_model.game_id == target.id)))
+        db.execute(
+            update(gog_model)
+            .where(gog_model.game_id == source.id)
+            .values(game_id=None if target_has_gog else target.id)
+        )
+    db.execute(update(GogDownload).where(GogDownload.game_id == source.id).values(game_id=target.id))
     db.delete(source)
     db.flush()
 
@@ -1306,6 +1317,11 @@ def _delete_games(db: Session, game_ids: list[int]) -> list[str]:
     db.execute(delete(ReleaseDate).where(ReleaseDate.game_id.in_(game_ids)))
     db.execute(delete(GameAlternativeName).where(GameAlternativeName.game_id.in_(game_ids)))
     db.execute(delete(IgdbImportEntry).where(IgdbImportEntry.game_id.in_(game_ids)))
+    # GOG Sync entries stay (the game is still owned on GOG) but lose their match; queued or
+    # downloaded installer rows go with the game.
+    db.execute(update(GogLibraryEntry).where(GogLibraryEntry.game_id.in_(game_ids)).values(game_id=None))
+    db.execute(update(GogWishlistEntry).where(GogWishlistEntry.game_id.in_(game_ids)).values(game_id=None))
+    db.execute(delete(GogDownload).where(GogDownload.game_id.in_(game_ids)))
     db.execute(
         delete(GameAddonLink).where(or_(GameAddonLink.addon_game_id.in_(game_ids), GameAddonLink.game_id.in_(game_ids)))
     )

@@ -64,6 +64,10 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
     nameKey: "settings.jobs.jobs.steamImport.name",
     descriptionKey: "settings.jobs.jobs.steamImport.description",
   },
+  gog_import: {
+    nameKey: "settings.jobs.jobs.gogImport.name",
+    descriptionKey: "settings.jobs.jobs.gogImport.description",
+  },
   itad_refresh: {
     nameKey: "settings.jobs.jobs.itadRefresh.name",
     descriptionKey: "settings.jobs.jobs.itadRefresh.description",

@@ -22,6 +22,15 @@ class User(TimestampMixin, Base):
     steam_id_64: Mapped[str | None] = mapped_column(
         String(32), comment="Steam profile SteamID64, used for Steam Web API sync"
     )
+    # The connected GOG account (see app/services/gog_service.py). GOG hands out a new
+    # refresh token on every refresh, so this value is replaced after each GOG call. Stored
+    # as plain text like every other stored secret here, never sent to the browser, and
+    # never included in backups.
+    gog_refresh_token: Mapped[str | None] = mapped_column(
+        String(255), comment="GOG OAuth refresh token, saved when GOG is connected on the Integrations page"
+    )
+    gog_user_id: Mapped[str | None] = mapped_column(String(64), comment="Connected GOG account id")
+    gog_username: Mapped[str | None] = mapped_column(String(64), comment="Connected GOG account's username")
     currency: Mapped[str | None] = mapped_column(
         String(3), comment="Display currency (ISO 4217 code), shared by every browser"
     )
