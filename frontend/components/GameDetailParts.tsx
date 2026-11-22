@@ -244,7 +244,8 @@ const AboutCard = ({ title, children }: { title: string; children: ReactNode }) 
   </Box>
 );
 
-// About: summary and storyline, then one row per platform with its release dates (IGDB lists
+// About: summary and storyline, IGDB's other names for the game (each with its IGDB label as a
+// tooltip), then one row per platform with its release dates (IGDB lists
 // the platforms and the release dates separately, and they usually name the same platforms).
 // Developer, publisher and genres are in the hero, and the store links are chips there too.
 export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
@@ -290,6 +291,21 @@ export const GameAboutBlock = ({ game }: { game: GameAboutData }) => {
           </Typography>
           <Box sx={{ color: "text.secondary" }}>
             <ExpandableText text={game.storyline as string} />
+          </Box>
+        </Box>
+      ) : null}
+      {game.alternativeNames?.length ? (
+        <Box sx={{ mt: 2, maxWidth: 900 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            {t("games.about.alsoKnownAsTitle")}
+          </Typography>
+          <Box component="p" sx={{ m: 0, color: "text.secondary", fontSize: 14 }}>
+            {game.alternativeNames.map((alternative, index) => (
+              <span key={`${alternative.name}-${index}`}>
+                {index ? ", " : null}
+                <span title={alternative.comment ?? undefined}>{alternative.name}</span>
+              </span>
+            ))}
           </Box>
         </Box>
       ) : null}

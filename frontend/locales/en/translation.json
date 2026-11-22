@@ -446,6 +446,10 @@
           "name": "Resync Series",
           "description": "Re-fetches only Series data for every IGDB-linked game — restores Series after a backup restore, which doesn't carry it over."
         },
+        "alternativeNames": {
+          "name": "Fetch alternative names",
+          "description": "Fetches IGDB's other names (short names like “GTA 6”, other spellings, foreign titles) for every IGDB-linked game, so search finds them. A few requests for the whole library; a resync fetches them too."
+        },
         "igdbMatch": {
           "name": "Find IGDB matches",
           "description": "Searches IGDB by name for every custom game (added by hand) and saves the matches for Settings → IGDB Import, where you link them."
@@ -953,6 +957,7 @@
       "collectionLabel": "Collection: {{name}}",
       "unknownPlatform": "Unknown platform",
       "storylineTitle": "Storyline",
+      "alsoKnownAsTitle": "Also known as",
       "artworkTitle": "Artwork",
       "videosTitle": "Videos",
       "watchOnYoutube": "Watch on YouTube",
@@ -1957,6 +1962,7 @@
     "placeholder": "Search games, hardware, series…",
     "label": "Search",
     "igdb": "Search IGDB for “{{query}}”",
+    "matchedAlias": "aka {{name}}",
     "groups": {
       "game": "Games",
       "device": "Devices",

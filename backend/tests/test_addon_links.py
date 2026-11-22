@@ -9,7 +9,16 @@ import httpx
 import pytest
 import respx
 
-from app.models.catalog import Collection, Franchise, Game, GameAddonLink, GameCategory, GameCollection, GameFranchise
+from app.models.catalog import (
+    Collection,
+    Franchise,
+    Game,
+    GameAddonLink,
+    GameAlternativeName,
+    GameCategory,
+    GameCollection,
+    GameFranchise,
+)
 from app.models.labs import LAB_LINKED_ADDONS, LabFeature
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat
 from app.services import game_service
@@ -165,6 +174,14 @@ def test_candidates_for_an_add_on_come_from_its_parents_family(auth_client, fh5)
         ("Forza Horizon 5: Premium Edition", True, True),
         ("Forza Motorsport", False, False),
     ]
+
+
+def test_candidate_search_matches_alternative_names_and_ignores_punctuation(auth_client, db_session, fh5):
+    db_session.add(GameAlternativeName(game_id=fh5["orphan"].id, name="FH5 RA", comment="Acronym"))
+    db_session.commit()
+    url = f"/api/games/{fh5['premium'].id}/addon-links/candidates"
+    assert _names(auth_client.get(url, params={"q": "fh5 ra"})) == ["Forza Horizon 5: Rally Adventure"]
+    assert _names(auth_client.get(url, params={"q": "5:car"})) == ["Forza Horizon 5: Car Collection"]
 
 
 def test_candidates_for_a_game_are_add_ons_from_its_family(auth_client, fh5):

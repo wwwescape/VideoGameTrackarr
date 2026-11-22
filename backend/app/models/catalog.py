@@ -3,8 +3,9 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import JSON, BigInteger, Boolean, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
+from app.core.search_keys import search_key
 from app.db.base import Base
 from app.models.mixins import TimestampMixin, UTCDateTime, enum_column
 
@@ -116,6 +117,10 @@ class Game(TimestampMixin, Base):
     uuid: Mapped[str] = mapped_column(String(36), nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
     igdb_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True)
     name: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
+    # The name reduced to letters and digits (see app/core/search_keys.py), so search can
+    # ignore punctuation, spaces, case and accents: "gtav" finds "GTA V". Kept in step with
+    # name by _sync_search_key below; nothing writes it directly.
+    search_key: Mapped[str] = mapped_column(String(512), nullable=False, default="", server_default="")
     # The public lookup key for /api/games/{slug} — populated from IGDB at sync time for
     # IGDB-sourced games; stays NULL for manually-added ones, which use {name-slug}-{uuid}
     # instead (see app/core/identifiers.py). NULLs don't conflict under a unique index.
@@ -239,6 +244,38 @@ class Game(TimestampMixin, Base):
         back_populates="game", cascade="all, delete-orphan", order_by="Artwork.id"
     )
     release_dates: Mapped[list["ReleaseDate"]] = relationship(back_populates="game", cascade="all, delete-orphan")
+    # IGDB's other names for the game (acronyms like "GTA 5", other spellings, foreign titles),
+    # matched by search alongside name.
+    alternative_names: Mapped[list["GameAlternativeName"]] = relationship(
+        back_populates="game", cascade="all, delete-orphan", order_by="GameAlternativeName.id"
+    )
+
+    @validates("name")
+    def _sync_search_key(self, _key: str, value: str) -> str:
+        self.search_key = search_key(value)
+        return value
+
+
+class GameAlternativeName(Base):
+    """One of IGDB's alternative names for a game, e.g. "GTA 5" (comment "Acronym") for Grand
+    Theft Auto V. Catalog data like genres: replaced wholesale on every import/resync, and
+    not part of the backup payload (a resync brings it back)."""
+
+    __tablename__ = "game_alternative_names"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(512), nullable=False)
+    # IGDB's label for the name, e.g. "Acronym", "Japanese title", "Alternative spelling".
+    comment: Mapped[str | None] = mapped_column(String(255))
+    search_key: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+
+    game: Mapped["Game"] = relationship(back_populates="alternative_names")
+
+    @validates("name")
+    def _sync_search_key(self, _key: str, value: str) -> str:
+        self.search_key = search_key(value)
+        return value
 
 
 class GameGenre(Base):

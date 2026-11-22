@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.identifiers import extract_uuid
+from app.core.search_keys import alternative_names_from_igdb
 from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion
 from app.models.library import MediaFormat, PhysicalContents, PlayStatus
 from app.repositories import (
@@ -135,6 +136,12 @@ def search_local_games(
         required_platform_storefront=required_platform_storefront,
         include_missing=include_missing,
     )
+
+
+def matched_alternative_names(db: Session, game_ids: list[int], search: str) -> dict[int, str]:
+    """Game id → the alternative name that matched the search, for games whose own name
+    didn't (see game_repository.matched_alternative_names)."""
+    return game_repository.matched_alternative_names(db, game_ids, search)
 
 
 def sort_by_labels(
@@ -583,7 +590,8 @@ def _sync_catalog_richness(
     db: Session, game: Game, igdb_game: dict[str, Any], scope: CatalogSyncScope = CatalogSyncScope.ALL
 ) -> None:
     """Persists everything GAME_FIELDS' relation expansions add beyond the base columns —
-    genres/companies/franchises/collections/platforms/screenshots/videos/release_dates.
+    genres/companies/franchises/collections/platforms/screenshots/videos/release_dates/
+    alternative names.
     Each call replaces these wholesale: IGDB's current response is the source of truth on
     every resync, not something to merge with whatever was previously recorded.
 
@@ -661,6 +669,10 @@ def _sync_catalog_richness(
             for release_date in igdb_game.get("release_dates") or []
         ]
         game_media_repository.sync_release_dates(db, game.id, release_dates)
+
+        game_media_repository.sync_alternative_names(
+            db, game.id, alternative_names_from_igdb(game.name, igdb_game.get("alternative_names"))
+        )
 
     if scope in (CatalogSyncScope.ALL, CatalogSyncScope.SERIES):
         franchise_ids = [

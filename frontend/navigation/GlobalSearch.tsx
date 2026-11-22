@@ -118,9 +118,13 @@ const GlobalSearch = () => {
         kind: "game" as const,
         id: game.id,
         label: game.name,
-        detail: game.firstReleaseDate
-          ? String(new Date(game.firstReleaseDate * 1000).getUTCFullYear())
-          : "",
+        // Says why a game whose name doesn't contain the text turned up ("GTA 6").
+        detail: [
+          game.matchedAlias ? t("search.matchedAlias", { name: game.matchedAlias }) : "",
+          game.firstReleaseDate ? String(new Date(game.firstReleaseDate * 1000).getUTCFullYear()) : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
         to: `/game/${gameIdentifier(game)}`,
         imageUrl: game.coverUrl,
       })),
