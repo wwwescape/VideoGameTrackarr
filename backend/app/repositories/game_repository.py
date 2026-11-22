@@ -6,10 +6,12 @@ from typing import Any
 from sqlalchemy import ColumnElement, Select, and_, case, delete, exists, false, func, or_, select, true, update
 from sqlalchemy.orm import Session, aliased, joinedload, selectinload
 
+from app.core.search_keys import search_key
 from app.models.catalog import (
     Artwork,
     Game,
     GameAddonLink,
+    GameAlternativeName,
     GameCategory,
     GameCollection,
     GameCompany,
@@ -318,6 +320,48 @@ def _order_by_for_sort(sort: GameSortOption) -> list[ColumnElement[Any]]:
     return [value.is_(None), direction, Game.name.asc()]
 
 
+def name_matches(game: Any, search: str) -> ColumnElement[bool]:
+    """Whether a game's name or one of its IGDB alternative names contains the search text,
+    ignoring case, spaces, punctuation and accents: "gta 6" finds Grand Theft Auto VI through
+    its "GTA 6" alternative name, and "gtav" finds "GTA V". Both sides are compared as search
+    keys (app/core/search_keys.py), which also leaves no LIKE wildcards in the pattern. A
+    query with no letters or digits at all (e.g. "+") falls back to a plain name match."""
+    key = search_key(search)
+    if not key:
+        # Escaped, so a search for "%" or "_" means that character, not "anything".
+        literal = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        return game.name.ilike(f"%{literal}%", escape="\\")
+    pattern = f"%{key}%"
+    return or_(
+        game.search_key.like(pattern),
+        exists().where(GameAlternativeName.game_id == game.id, GameAlternativeName.search_key.like(pattern)),
+    )
+
+
+def matched_alternative_names(db: Session, game_ids: list[int], search: str) -> dict[int, str]:
+    """For games whose own name doesn't match the search, the first alternative name that
+    does: game id → that name. Lets a result list say why "Grand Theft Auto VI" turned up
+    for "gta 6"."""
+    key = search_key(search)
+    if not key or not game_ids:
+        return {}
+    pattern = f"%{key}%"
+    rows = db.execute(
+        select(GameAlternativeName.game_id, GameAlternativeName.name)
+        .join(Game, Game.id == GameAlternativeName.game_id)
+        .where(
+            GameAlternativeName.game_id.in_(game_ids),
+            GameAlternativeName.search_key.like(pattern),
+            ~Game.search_key.like(pattern),
+        )
+        .order_by(GameAlternativeName.game_id, GameAlternativeName.id)
+    )
+    matches: dict[int, str] = {}
+    for game_id, name in rows:
+        matches.setdefault(game_id, name)
+    return matches
+
+
 def _maybe_negate(clause: ColumnElement[bool], exclude: bool) -> ColumnElement[bool]:
     """Flips a filter's own predicate when its "Exclude" toggle is on — "show everything
     except what's selected" is just the logical negation of the same clause inclusion
@@ -455,7 +499,7 @@ def _game_filters(
 ) -> _GameFilters:
     filters = _GameFilters(include_addons=include_addons)
     if search:
-        filters.positive([lambda game: game.name.ilike(f"%{search}%")])
+        filters.positive([lambda game: name_matches(game, search)])
     if platform_ids:
         # The platform of the user's *owned/wishlisted copy* (library_items), not
         # game_platforms — IGDB's full list of platforms a game was ever released on.
@@ -805,6 +849,7 @@ def _get_game_options() -> tuple[Any, ...]:
         selectinload(Game.artworks),
         selectinload(Game.videos),
         selectinload(Game.release_dates).joinedload(ReleaseDate.platform),
+        selectinload(Game.alternative_names),
     )
 
 
@@ -995,7 +1040,7 @@ def list_link_candidates(
         .limit(limit)
     )
     if search and search.strip():
-        stmt = stmt.where(Game.name.ilike(f"%{search.strip()}%"))
+        stmt = stmt.where(name_matches(Game, search))
     return [(_row_to_game_with_status(row[:5]), bool(row[5])) for row in db.execute(stmt)]
 
 
@@ -1259,6 +1304,7 @@ def _delete_games(db: Session, game_ids: list[int]) -> list[str]:
     db.execute(delete(Artwork).where(Artwork.game_id.in_(game_ids)))
     db.execute(delete(GameVideo).where(GameVideo.game_id.in_(game_ids)))
     db.execute(delete(ReleaseDate).where(ReleaseDate.game_id.in_(game_ids)))
+    db.execute(delete(GameAlternativeName).where(GameAlternativeName.game_id.in_(game_ids)))
     db.execute(delete(IgdbImportEntry).where(IgdbImportEntry.game_id.in_(game_ids)))
     db.execute(
         delete(GameAddonLink).where(or_(GameAddonLink.addon_game_id.in_(game_ids), GameAddonLink.game_id.in_(game_ids)))

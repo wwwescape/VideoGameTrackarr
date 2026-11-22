@@ -104,8 +104,13 @@ def list_games(
     )
     on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
     games = game_service.sort_by_labels(games, params.sort, on_sale_game_ids)
-    extras = game_card_service.get_card_extras(db, [game.game.id for game in games])
-    return [game_summary_from_orm(game, on_sale_game_ids, extras[game.game.id]) for game in games]
+    game_ids = [game.game.id for game in games]
+    extras = game_card_service.get_card_extras(db, game_ids)
+    aliases = game_service.matched_alternative_names(db, game_ids, params.search) if params.search else {}
+    return [
+        game_summary_from_orm(game, on_sale_game_ids, extras[game.game.id], matched_alias=aliases.get(game.game.id))
+        for game in games
+    ]
 
 
 # Before the /{identifier} wildcard below, or "shelf" would be read as a game identifier.

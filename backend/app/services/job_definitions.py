@@ -1,4 +1,5 @@
 from app.services import (
+    alternative_names_job,
     event_sync_jobs,
     igdb_import_jobs,
     itad_jobs,
@@ -20,6 +21,7 @@ def register_builtin_jobs() -> None:
     job_registry.register(resync_jobs.DEFINITION_GAMES)
     job_registry.register(resync_jobs.DEFINITION_COLLECTIONS)
     job_registry.register(resync_jobs.DEFINITION_SERIES)
+    job_registry.register(alternative_names_job.DEFINITION_ALTERNATIVE_NAMES)
     job_registry.register(igdb_import_jobs.DEFINITION_IGDB_MATCH)
     job_registry.register(igdb_import_jobs.DEFINITION_IGDB_LINK)
     job_registry.register(steam_jobs.DEFINITION_STEAM_IMPORT)

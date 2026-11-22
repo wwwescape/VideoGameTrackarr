@@ -16,6 +16,8 @@ IGDB_TOKEN_URL = "https://id.twitch.tv/oauth2/token"
 IGDB_API_BASE = "https://api.igdb.com/v4"
 
 SEARCH_CACHE_TTL_SECONDS = 5 * 60
+# IGDB's maximum `limit` per request.
+ALTERNATIVE_NAMES_BATCH_SIZE = 500
 COVER_CACHE_TTL_SECONDS = 24 * 60 * 60
 VERSION_PARENT_CACHE_TTL_SECONDS = 24 * 60 * 60
 
@@ -69,7 +71,10 @@ GAME_FIELDS = (
     # list (it's what actually powers the store icons shown on a game's own igdb.com page)
     # and reliably has entries — including Nintendo, which external_games never had at all —
     # confirmed live (2026-09-05) against both a base game and one of its addons.
-    "websites.url,websites.type;"
+    "websites.url,websites.type,"
+    # IGDB's other names for the game ("GTA 5", "Grand Theft Auto 5", foreign titles), stored
+    # so library search can match them — see game_service.alternative_names_from_igdb.
+    "alternative_names.name,alternative_names.comment;"
 )
 
 # Events' nested relations, expanded the same dot-notation way GAME_FIELDS expands
@@ -247,6 +252,23 @@ class IGDBClient:
         await self._attach_covers(games, headers)
         _normalize_nested_image_urls(games)
         return games
+
+    async def get_alternative_names_by_ids(self, ids: list[int]) -> dict[int, list[dict]]:
+        """IGDB id → that game's alternative_names entries ({name, comment}), for the
+        "Fetch alternative names" job. Queried on /games with the names expanded rather than
+        on /alternative_names: one row per game means `limit` is exactly len(ids), however
+        many names each game has. Callers pass at most ALTERNATIVE_NAMES_BATCH_SIZE ids."""
+        if not ids:
+            return {}
+
+        headers = await self._auth_headers()
+        id_list = ",".join(str(int(i)) for i in ids)
+        body = (
+            "fields alternative_names.name,alternative_names.comment;\n"
+            f"where id = ({id_list});\nlimit {len(ids)};"
+        )
+        response = await self._request("POST", f"{IGDB_API_BASE}/games", headers=headers, content=body)
+        return {game["id"]: game.get("alternative_names") or [] for game in response.json()}
 
     async def get_addons_by_parent_igdb_id(self, parent_igdb_id: int) -> list[dict]:
         """The hierarchical addons (DLC/expansion/pack only) of a game per IGDB's

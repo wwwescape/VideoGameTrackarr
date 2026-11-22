@@ -446,6 +446,10 @@
           "name": "Resynchroniser les séries",
           "description": "Récupère à nouveau uniquement les données de séries de chaque jeu lié à IGDB — restaure les séries après une restauration de sauvegarde, qui ne les conserve pas."
         },
+        "alternativeNames": {
+          "name": "Récupérer les noms alternatifs",
+          "description": "Récupère sur IGDB les autres noms (abréviations comme « GTA 6 », autres graphies, titres étrangers) de chaque jeu lié à IGDB, pour que la recherche les trouve. Quelques requêtes pour toute la bibliothèque ; une resynchronisation les récupère aussi."
+        },
         "igdbMatch": {
           "name": "Trouver les correspondances IGDB",
           "description": "Recherche sur IGDB, par nom, chaque jeu personnalisé (ajouté à la main) et enregistre les correspondances pour Paramètres → Import IGDB, où vous les liez."
@@ -953,6 +957,7 @@
       "collectionLabel": "Collection : {{name}}",
       "unknownPlatform": "Plateforme inconnue",
       "storylineTitle": "Scénario",
+      "alsoKnownAsTitle": "Aussi connu sous le nom de",
       "artworkTitle": "Illustrations",
       "videosTitle": "Vidéos",
       "watchOnYoutube": "Regarder sur YouTube",
@@ -1957,6 +1962,7 @@
     "placeholder": "Rechercher des jeux, du matériel, des séries…",
     "label": "Rechercher",
     "igdb": "Rechercher « {{query}} » sur IGDB",
+    "matchedAlias": "alias {{name}}",
     "groups": {
       "game": "Jeux",
       "device": "Appareils",

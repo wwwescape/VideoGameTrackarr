@@ -52,6 +52,10 @@ const JOB_DISPLAY_KEYS: Record<string, { nameKey: string; descriptionKey: string
     nameKey: "settings.jobs.jobs.resyncSeries.name",
     descriptionKey: "settings.jobs.jobs.resyncSeries.description",
   },
+  alternative_names: {
+    nameKey: "settings.jobs.jobs.alternativeNames.name",
+    descriptionKey: "settings.jobs.jobs.alternativeNames.description",
+  },
   igdb_match: {
     nameKey: "settings.jobs.jobs.igdbMatch.name",
     descriptionKey: "settings.jobs.jobs.igdbMatch.description",

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from app.models.catalog import Artwork, GameVideo, IgdbReleaseRegion, ReleaseDate, Screenshot
+from app.models.catalog import Artwork, GameAlternativeName, GameVideo, IgdbReleaseRegion, ReleaseDate, Screenshot
 
 
 def sync_screenshots(db: Session, game_id: int, screenshots: list[tuple[int | None, str]]) -> None:
@@ -28,6 +28,14 @@ def sync_videos(db: Session, game_id: int, videos: list[tuple[int | None, str | 
     db.execute(delete(GameVideo).where(GameVideo.game_id == game_id))
     for igdb_id, name, video_id in videos:
         db.add(GameVideo(game_id=game_id, igdb_id=igdb_id, name=name, video_id=video_id))
+    db.flush()
+
+
+def sync_alternative_names(db: Session, game_id: int, names: list[tuple[str, str | None]]) -> None:
+    """names: (name, comment) pairs, already cleaned (see game_service.alternative_names_from_igdb)."""
+    db.execute(delete(GameAlternativeName).where(GameAlternativeName.game_id == game_id))
+    for name, comment in names:
+        db.add(GameAlternativeName(game_id=game_id, name=name, comment=comment))
     db.flush()
 
 

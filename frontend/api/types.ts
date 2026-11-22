@@ -143,6 +143,9 @@ export interface GameSummary {
   // A game's Add-ons / an add-on's Works with: there through a manual link rather than IGDB's
   // own (the "Linked" chip; only these can be unlinked). Optional: false or absent elsewhere.
   manualLink?: boolean;
+  // Only on a GET /api/games search: the alternative name that matched when the game's own
+  // name didn't (e.g. "GTA 6" for Grand Theft Auto VI). Shown by the header search.
+  matchedAlias?: string | null;
   steamStoreUrl: string | null;
   xboxStoreUrl: string | null;
   playstationStoreUrl: string | null;
@@ -370,6 +373,14 @@ export interface GameDetail extends GameSummary {
   artworkUrls: string[];
   videos: GameVideo[];
   releaseDates: GameReleaseDate[];
+  alternativeNames: GameAlternativeName[];
+}
+
+// One of IGDB's other names for a game (the About section's "Also known as").
+export interface GameAlternativeName {
+  name: string;
+  // IGDB's label, e.g. "Acronym" or "Japanese title".
+  comment: string | null;
 }
 
 // Exactly what GameAboutSection reads — satisfied by a real GameDetail and by the Add Game
@@ -413,7 +424,10 @@ export type GameAboutData = Pick<
   | "nintendoStoreUrl"
   | "epicGamesStoreUrl"
   | "gogStoreUrl"
->;
+> & {
+  // On a library game and the Add Game preview; absent on the public share page.
+  alternativeNames?: GameAlternativeName[];
+};
 
 // GET /api/igdb/games/{igdbId}: a game straight from IGDB for the Add Game preview page —
 // never stored locally. Same field shapes as GameDetail for everything GameAboutSection reads.

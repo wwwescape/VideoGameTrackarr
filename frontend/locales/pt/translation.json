@@ -446,6 +446,10 @@
           "name": "Ressincronizar séries",
           "description": "Obtém novamente apenas os dados de séries de cada jogo associado ao IGDB — restaura as séries após uma restauração de cópia de segurança, que não as inclui."
         },
+        "alternativeNames": {
+          "name": "Buscar nomes alternativos",
+          "description": "Busca no IGDB os outros nomes (abreviações como “GTA 6”, outras grafias, títulos estrangeiros) de cada jogo vinculado ao IGDB, para que a pesquisa os encontre. Poucas requisições para a biblioteca inteira; uma ressincronização também os busca."
+        },
         "igdbMatch": {
           "name": "Encontrar correspondências no IGDB",
           "description": "Pesquisa no IGDB pelo nome cada jogo personalizado (adicionado manualmente) e guarda as correspondências para Configurações → Importação do IGDB, onde você os vincula."
@@ -953,6 +957,7 @@
       "collectionLabel": "Coleção: {{name}}",
       "unknownPlatform": "Plataforma desconhecida",
       "storylineTitle": "Enredo",
+      "alsoKnownAsTitle": "Também conhecido como",
       "artworkTitle": "Arte",
       "videosTitle": "Vídeos",
       "watchOnYoutube": "Ver no YouTube",
@@ -1957,6 +1962,7 @@
     "placeholder": "Pesquisar jogos, hardware, séries…",
     "label": "Pesquisar",
     "igdb": "Pesquisar «{{query}}» no IGDB",
+    "matchedAlias": "aka {{name}}",
     "groups": {
       "game": "Jogos",
       "device": "Dispositivos",
