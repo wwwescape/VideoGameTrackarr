@@ -10,6 +10,7 @@ import type {
   GameSummary,
   ManualGameInput,
   MediaFormat,
+  PhysicalContents,
   PlayStatus,
   ScreensaverFilter,
 } from "./types";
@@ -25,6 +26,7 @@ export type MatchAllField =
   | "collection"
   | "franchise"
   | "format"
+  | "contents"
   | "storefront"
   | "playStatus";
 export type MatchAllFilters = Partial<Record<MatchAllField, boolean>>;
@@ -51,6 +53,9 @@ export interface GameListFilters {
   // Plain boolean, unlike every filter above — a copy either is or isn't a Steelbook, so
   // there's no list/Exclude pair for it. See game_repository._apply_optional_game_filters.
   steelbookOnly?: boolean;
+  // What's inside a physical copy's case. Only physical copies with contents set match.
+  contents?: PhysicalContents[];
+  contentsExclude?: boolean;
   // No "match all", same as categories: a game is either IGDB-backed or custom.
   sources?: GameSource[];
   sourceExclude?: boolean;
@@ -96,6 +101,8 @@ export function buildGameFilterParams(filters: GameListFilters) {
     playStatusExclude,
     matchAll,
     steelbookOnly,
+    contents,
+    contentsExclude,
     sources,
     sourceExclude,
     screensaver,
@@ -136,6 +143,9 @@ export function buildGameFilterParams(filters: GameListFilters) {
     playStatusExclude: playStatuses?.length ? playStatusExclude : undefined,
     playStatusMatchAll: matchAllParam("playStatus", playStatuses),
     steelbookOnly: steelbookOnly || undefined,
+    contents: contents?.length ? contents : undefined,
+    contentsExclude: contents?.length ? contentsExclude : undefined,
+    contentsMatchAll: matchAllParam("contents", contents),
     source: sources?.length ? sources : undefined,
     sourceExclude: sources?.length ? sourceExclude : undefined,
     screensaver: screensaver || undefined,

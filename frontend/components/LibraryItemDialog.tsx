@@ -22,6 +22,7 @@ import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import InputAdornment from "@mui/material/InputAdornment";
 import LinearProgress from "@mui/material/LinearProgress";
+import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
@@ -37,6 +38,7 @@ import type {
   GameCategory,
   LibraryStatus,
   MediaFormat,
+  PhysicalContents,
   PlatformResponse,
   RatingBoard,
   RegionResponse,
@@ -64,6 +66,11 @@ const formSchema = z.object({
   targetPrice: z.number().optional(),
   trackForSales: z.boolean().optional(),
   steelbook: z.boolean().optional(),
+  physicalContents: z
+    .enum(["disc", "cartridge", "floppy_disk", "cassette", "game_key_card", "code_in_box"])
+    .optional(),
+  mediaCount: z.number().int().min(1).max(99).optional(),
+  formatOther: z.string().max(100).optional(),
   notes: z.string().optional(),
 });
 
@@ -112,6 +119,19 @@ const FORMAT_OPTIONS: { value: MediaFormat; labelKey: string }[] = [
   { value: "abandonware", labelKey: "dialogs.libraryItem.formatAbandonware" },
   { value: "other", labelKey: "dialogs.libraryItem.formatOther" },
 ];
+
+// What's inside a physical copy's case; optional, with a None entry first like Region.
+const PHYSICAL_CONTENTS_OPTIONS: { value: PhysicalContents; labelKey: string }[] = [
+  { value: "disc", labelKey: "games.library.contents.disc" },
+  { value: "cartridge", labelKey: "games.library.contents.cartridge" },
+  { value: "floppy_disk", labelKey: "games.library.contents.floppy_disk" },
+  { value: "cassette", labelKey: "games.library.contents.cassette" },
+  { value: "game_key_card", labelKey: "games.library.contents.game_key_card" },
+  { value: "code_in_box", labelKey: "games.library.contents.code_in_box" },
+];
+
+// The contents that come in a countable number of pieces (the copy's mediaCount).
+const COUNTABLE_CONTENTS: PhysicalContents[] = ["disc", "floppy_disk", "cassette"];
 
 // Must stay in sync with the backend's ITAD_ELIGIBLE_PLATFORM_SLUGS
 // (app/services/itad_service.py) and PLATPRICES_ELIGIBLE_PLATFORM_SLUGS
@@ -278,11 +298,27 @@ const LibraryItemDialog = ({
   // Steelbook only means anything for a physical copy — cleared the same way trackForSales
   // is cleared above when its own gating condition stops holding, rather than leaving a
   // stale true value sitting unseen behind a hidden checkbox.
+  // Contents and the custom Other text are cleared the same way when their format goes.
   useEffect(() => {
     if (watchedFormat !== "physical") {
       setValue("steelbook", false);
+      setValue("physicalContents", undefined);
+    }
+    if (watchedFormat !== "other") {
+      setValue("formatOther", "");
     }
   }, [watchedFormat, setValue]);
+
+  // How many discs, floppy disks or cassettes: optional (empty means one), and cleared when
+  // the contents change to something that isn't counted.
+  const watchedContents = useWatch({ control, name: "physicalContents" });
+  const countedContents =
+    watchedFormat === "physical" && watchedContents && COUNTABLE_CONTENTS.includes(watchedContents)
+      ? watchedContents
+      : null;
+  useEffect(() => {
+    if (!countedContents) setValue("mediaCount", undefined);
+  }, [countedContents, setValue]);
 
   // The "" digitalStorefront sentinel above (see that effect) is purely a workaround for
   // react-hook-form/MUI Autocomplete's display sync — callers should still only ever see
@@ -350,7 +386,15 @@ const LibraryItemDialog = ({
         changes.added = newRoms.map((draft) => ({ file: draft.file, label: draft.label.trim() || null }));
       }
     }
-    onSubmit({ ...values, digitalStorefront: values.digitalStorefront || undefined }, changes);
+    onSubmit(
+      {
+        ...values,
+        digitalStorefront: values.digitalStorefront || undefined,
+        mediaCount: countedContents ? values.mediaCount : undefined,
+        formatOther: values.formatOther?.trim() || undefined,
+      },
+      changes
+    );
   };
 
   const [downloadingRomId, setDownloadingRomId] = useState<number | null>(null);
@@ -449,8 +493,82 @@ const LibraryItemDialog = ({
             />
           )}
         </FormControl>
-        {watchedFormat === "physical" ? (
+        {watchedFormat === "other" ? (
           <FormControl fullWidth sx={{ margin: "-10px 0 20px 0" }}>
+            <Controller
+              name="formatOther"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  label={t("dialogs.libraryItem.formatOtherLabel")}
+                  helperText={t("dialogs.libraryItem.formatOtherHelperText")}
+                  value={field.value ?? ""}
+                  onChange={(event) => field.onChange(event.target.value)}
+                  slotProps={{ htmlInput: { maxLength: 100 } }}
+                />
+              )}
+            />
+          </FormControl>
+        ) : null}
+        {watchedFormat === "physical" ? (
+          <FormControl fullWidth sx={{ margin: "-10px 0 10px 0" }}>
+            <Controller
+              name="physicalContents"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  fullWidth
+                  label={t("dialogs.libraryItem.contentsLabel")}
+                  helperText={t("dialogs.libraryItem.contentsHelperText")}
+                  value={field.value ?? ""}
+                  onChange={(event) =>
+                    field.onChange(event.target.value === "" ? undefined : (event.target.value as PhysicalContents))
+                  }
+                >
+                  <MenuItem value="">
+                    <em>{t("common.none")}</em>
+                  </MenuItem>
+                  {PHYSICAL_CONTENTS_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {t(option.labelKey)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </FormControl>
+        ) : null}
+        {countedContents ? (
+          <FormControl fullWidth sx={{ margin: "10px 0 10px 0" }}>
+            <Controller
+              name="mediaCount"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t(`dialogs.libraryItem.mediaCountLabel.${countedContents}`)}
+                  value={field.value ?? ""}
+                  onChange={(event) => {
+                    const digits = event.target.value.replace(/\D/g, "");
+                    field.onChange(digits === "" ? undefined : Number(digits));
+                  }}
+                  error={Boolean(errors.mediaCount)}
+                  helperText={
+                    errors.mediaCount
+                      ? t("dialogs.libraryItem.mediaCountError")
+                      : t("dialogs.libraryItem.mediaCountHelperText")
+                  }
+                  slotProps={{ htmlInput: { min: 1, max: 99, step: 1, inputMode: "numeric" } }}
+                />
+              )}
+            />
+          </FormControl>
+        ) : null}
+        {watchedFormat === "physical" ? (
+          <FormControl fullWidth sx={{ margin: "0 0 20px 0" }}>
             <Controller
               name="steelbook"
               control={control}

@@ -126,6 +126,17 @@
       "formatOther": "Other",
       "digitalStorefrontLabel": "Digital Storefront",
       "steelbookLabel": "Steelbook",
+      "contentsLabel": "Contents",
+      "contentsHelperText": "What's actually in the case",
+      "mediaCountLabel": {
+        "disc": "Number of discs",
+        "floppy_disk": "Number of floppy disks",
+        "cassette": "Number of cassettes"
+      },
+      "mediaCountHelperText": "Optional, leave empty for one",
+      "mediaCountError": "Enter a number from 1 to 99",
+      "formatOtherLabel": "Format name",
+      "formatOtherHelperText": "Optional, e.g. \"Laserdisc\"",
       "editionLabel": "Edition",
       "editionHelperText": "Optional, e.g. \"Limited Edition\"",
       "priceLabel": "Purchase Price",
@@ -792,6 +803,7 @@
       "allOption": "All",
       "showMissingLabel": "Show what I am missing?",
       "steelbookOnlyLabel": "Steelbooks only",
+      "contentsLabel": "Contents",
       "clearFiltersButton": "Clear filters",
       "noSearchMatches": "No matches found.",
       "screensaverButton": "Screensaver",
@@ -984,6 +996,22 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Other",
       "steelbookColumn": "Steelbook",
+      "contents": {
+        "disc": "Disc",
+        "cartridge": "Cartridge",
+        "floppy_disk": "Floppy disk",
+        "cassette": "Cassette",
+        "game_key_card": "Game-key card",
+        "code_in_box": "Code in the box"
+      },
+      "mediaCount": {
+        "disc_one": "{{count}} disc",
+        "disc_other": "{{count}} discs",
+        "floppy_disk_one": "{{count}} floppy disk",
+        "floppy_disk_other": "{{count}} floppy disks",
+        "cassette_one": "{{count}} cassette",
+        "cassette_other": "{{count}} cassettes"
+      },
       "collectionPhrase": "collection",
       "wishlistPhrase": "wishlist",
       "removedFromToast_one": "Entry removed from your {{phrase}}",

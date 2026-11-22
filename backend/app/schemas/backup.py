@@ -8,9 +8,10 @@ from app.schemas.base import CamelModel
 # 3 added target prices, ignored price lookups, account settings and included_files (which
 # kinds of files a .zip carries); 4 added a custom game's screenshots, artwork and videos;
 # 5 added Toys-to-Life ownership, ratings, notes and tags; 7 added a game's screensaver opt-out;
-# 8 added the screensaver's What to show settings.
+# 8 added the screensaver's What to show settings; 9 added a copy's Steelbook flag, physical
+# contents (e.g. code in the box, number of discs) and custom Other format text.
 # Older files still restore — the new parts default to empty.
-BACKUP_FORMAT_VERSION = 8
+BACKUP_FORMAT_VERSION = 9
 
 
 class _BackupRow(BaseModel):
@@ -93,6 +94,11 @@ class BackupLibraryItem(_BackupRow):
     notes: str | None = None
     # The Sale - Tracked target price (version 3+).
     target_price: float | None = None
+    # Version 9+.
+    steelbook: bool = False
+    physical_contents: str | None = None
+    media_count: int | None = None
+    format_other: str | None = None
 
 
 class BackupGameProgress(_BackupRow):

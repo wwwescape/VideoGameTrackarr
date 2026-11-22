@@ -28,6 +28,7 @@ from app.models.library import (
     LibraryStatus,
     MediaFormat,
     Note,
+    PhysicalContents,
     PlaySession,
     PlayStatus,
     RomFile,
@@ -328,6 +329,16 @@ def _play_status_clause(statuses: list[PlayStatus], game: Any = Game) -> ColumnE
     return or_(*clauses)
 
 
+def _contents_clause(contents: list[PhysicalContents], game: Any = Game) -> ColumnElement[bool]:
+    """Any *physical* copy with one of these contents — the same "any copy" rule as the
+    format filter. Copies with no contents set never match."""
+    return exists().where(
+        LibraryItem.game_id == game.id,
+        LibraryItem.format == MediaFormat.PHYSICAL,
+        LibraryItem.physical_contents.in_(contents),
+    )
+
+
 # A condition on one game, given the game to test: Game itself, or an aliased add-on.
 GameCondition = Callable[[Any], ColumnElement[bool]]
 
@@ -405,6 +416,9 @@ def _game_filters(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    contents: list[PhysicalContents] | None = None,
+    contents_exclude: bool = False,
+    contents_match_all: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
@@ -475,6 +489,8 @@ def _game_filters(
         # A plain presence check, unlike the list-based filters above — no Exclude toggle,
         # since "not a Steelbook" isn't a meaningful thing to filter for on its own.
         filters.positive([lambda game: exists().where(LibraryItem.game_id == game.id, LibraryItem.steelbook.is_(True))])
+    if contents:
+        filters.values(_contents_clause, contents, contents_match_all, contents_exclude)
     if sources:
         # No "match all", same as categories: a game is either IGDB-backed or custom, never both.
         def source_clause(chosen: list[GameSource], game: Any) -> ColumnElement[bool]:
@@ -536,6 +552,9 @@ def list_top_level_games(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    contents: list[PhysicalContents] | None = None,
+    contents_exclude: bool = False,
+    contents_match_all: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
@@ -574,6 +593,9 @@ def list_top_level_games(
         "play_status_exclude": play_status_exclude,
         "play_status_match_all": play_status_match_all,
         "steelbook_only": steelbook_only,
+        "contents": contents,
+        "contents_exclude": contents_exclude,
+        "contents_match_all": contents_match_all,
         "sources": sources,
         "source_exclude": source_exclude,
         "screensaver": screensaver,
@@ -629,6 +651,7 @@ class ShelfCopy:
     format: MediaFormat | None
     digital_storefront: str | None
     steelbook: bool
+    physical_contents: PhysicalContents | None = None
 
 
 def list_shelf_games(db: Session, **filters: Any) -> list[ShelfGame]:
@@ -655,6 +678,7 @@ def list_owned_copies(db: Session, game_ids: list[int]) -> list[ShelfCopy]:
             LibraryItem.format,
             LibraryItem.digital_storefront,
             LibraryItem.steelbook,
+            LibraryItem.physical_contents,
         )
         .where(
             LibraryItem.game_id.in_(game_ids),

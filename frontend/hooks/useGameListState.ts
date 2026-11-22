@@ -5,6 +5,7 @@ import type {
   GameSortOption,
   GameSource,
   MediaFormat,
+  PhysicalContents,
   PlayStatus,
   ScreensaverFilter,
 } from "../api/types";
@@ -24,7 +25,8 @@ const MIN_SEARCH_LENGTH = 3;
 export interface GameListStateOptions {
   // Not on Missing Add-ons: everything there is an add-on.
   gameTypes?: boolean;
-  // Games and the Series/Collection/Platform pages, not Missing Add-ons.
+  // Games and the Series/Collection/Platform pages, not Missing Add-ons. Also gates the
+  // Contents filter: both describe a physical copy you own, which an add-on there isn't.
   steelbook?: boolean;
   // Games only: IGDB vs custom.
   sources?: boolean;
@@ -57,6 +59,8 @@ const CLEARED_FILTERS = {
   playStatusExclude: false,
   matchAll: {} as MatchAllFilters,
   steelbookOnly: false,
+  contents: [] as PhysicalContents[],
+  contentsExclude: false,
   sources: [] as GameSource[],
   sourceExclude: false,
   screensaverFilter: null as ScreensaverFilter | null,
@@ -109,6 +113,8 @@ export function useGameListState(
   const [playStatusExclude, setPlayStatusExclude] = useSessionState(key("playStatusExclude"), false);
   const [matchAll, setMatchAll] = useSessionState<MatchAllFilters>(key("matchAll"), {});
   const [steelbookValue, setSteelbookOnly] = useSessionState(key("steelbookOnly"), false);
+  const [contentsValues, setContents] = useSessionState<PhysicalContents[]>(key("contents"), []);
+  const [contentsExcludeValue, setContentsExclude] = useSessionState(key("contentsExclude"), false);
   const [sourceValues, setSources] = useSessionState<GameSource[]>(key("sources"), []);
   const [sourceExclude, setSourceExclude] = useSessionState(key("sourceExclude"), false);
   const [includeAddonsValue, setIncludeAddons] = useSessionState(key("includeAddons"), false);
@@ -120,6 +126,8 @@ export function useGameListState(
   // A page without a field ignores whatever was once remembered for it.
   const gameTypesList = useMemo(() => (gameTypes ? gameTypeValues : []), [gameTypes, gameTypeValues]);
   const steelbookOnly = steelbook ? steelbookValue : false;
+  const contents = useMemo(() => (steelbook ? contentsValues : []), [steelbook, contentsValues]);
+  const contentsExclude = steelbook ? contentsExcludeValue : false;
   const sourcesList = useMemo(() => (sources ? sourceValues : []), [sources, sourceValues]);
   // Also when the Screensaver lab has since been turned off: a remembered choice must not keep
   // filtering a list that no longer shows the field.
@@ -170,7 +178,7 @@ export function useGameListState(
       playStatuses: playStatuses.length > 0 ? playStatuses : undefined,
       playStatusExclude,
       matchAll,
-      ...(steelbook ? { steelbookOnly } : {}),
+      ...(steelbook ? { steelbookOnly, contents: contents.length > 0 ? contents : undefined, contentsExclude } : {}),
       ...(sources ? { sources: sourcesList.length > 0 ? sourcesList : undefined, sourceExclude } : {}),
       ...(screensaverFilter ? { screensaver: screensaverFilter } : {}),
       ...(includeAddons ? { includeAddons } : {}),
@@ -199,6 +207,8 @@ export function useGameListState(
       matchAll,
       steelbook,
       steelbookOnly,
+      contents,
+      contentsExclude,
       sources,
       sourcesList,
       sourceExclude,
@@ -248,7 +258,16 @@ export function useGameListState(
     onStorefrontsChange: setStorefronts,
     storefrontExclude,
     onStorefrontExcludeChange: setStorefrontExclude,
-    ...(steelbook ? { steelbookOnly, onSteelbookOnlyChange: setSteelbookOnly } : {}),
+    ...(steelbook
+      ? {
+          steelbookOnly,
+          onSteelbookOnlyChange: setSteelbookOnly,
+          contents,
+          onContentsChange: setContents,
+          contentsExclude,
+          onContentsExcludeChange: setContentsExclude,
+        }
+      : {}),
     ...(sources ? { sources: sourcesList, onSourcesChange: setSources, sourceExclude, onSourceExcludeChange: setSourceExclude } : {}),
     ...(screensaver ? { screensaverFilter, onScreensaverFilterChange: setScreensaverFilter } : {}),
     ...(offersAddons ? { includeAddons, onIncludeAddonsChange: setIncludeAddons } : {}),

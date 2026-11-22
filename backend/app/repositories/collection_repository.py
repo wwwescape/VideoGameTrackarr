@@ -2,7 +2,7 @@ from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Collection, Game, GameCategory, GameCollection
-from app.models.library import MediaFormat, PlayStatus
+from app.models.library import MediaFormat, PhysicalContents, PlayStatus
 from app.repositories import toys_to_life_repository
 from app.repositories.game_repository import (
     GameSortOption,
@@ -122,6 +122,9 @@ def list_addons_for_collection(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    contents: list[PhysicalContents] | None = None,
+    contents_exclude: bool = False,
+    contents_match_all: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
@@ -185,6 +188,9 @@ def list_addons_for_collection(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        contents=contents,
+        contents_exclude=contents_exclude,
+        contents_match_all=contents_match_all,
         sources=sources,
         source_exclude=source_exclude,
         screensaver=screensaver,

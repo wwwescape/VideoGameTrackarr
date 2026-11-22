@@ -126,6 +126,17 @@
       "formatOther": "Autre",
       "digitalStorefrontLabel": "Boutique numérique",
       "steelbookLabel": "Steelbook",
+      "contentsLabel": "Contenu",
+      "contentsHelperText": "Ce que contient réellement la boîte",
+      "mediaCountLabel": {
+        "disc": "Nombre de disques",
+        "floppy_disk": "Nombre de disquettes",
+        "cassette": "Nombre de cassettes"
+      },
+      "mediaCountHelperText": "Facultatif, laissez vide s'il n'y en a qu'un",
+      "mediaCountError": "Saisissez un nombre de 1 à 99",
+      "formatOtherLabel": "Nom du format",
+      "formatOtherHelperText": "Facultatif, ex. « Laserdisc »",
       "editionLabel": "Édition",
       "editionHelperText": "Facultatif, ex. « Édition Limitée »",
       "priceLabel": "Prix d'achat",
@@ -792,6 +803,7 @@
       "allOption": "Tous",
       "showMissingLabel": "Afficher ce qu'il me manque ?",
       "steelbookOnlyLabel": "Steelbooks uniquement",
+      "contentsLabel": "Contenu",
       "clearFiltersButton": "Effacer les filtres",
       "noSearchMatches": "Aucun résultat trouvé.",
       "screensaverButton": "Économiseur d'écran",
@@ -984,6 +996,22 @@
       "formatAbandonware": "Abandonware",
       "formatOther": "Autre",
       "steelbookColumn": "Steelbook",
+      "contents": {
+        "disc": "Disque",
+        "cartridge": "Cartouche",
+        "floppy_disk": "Disquette",
+        "cassette": "Cassette",
+        "game_key_card": "Carte clé de jeu",
+        "code_in_box": "Code dans la boîte"
+      },
+      "mediaCount": {
+        "disc_one": "{{count}} disque",
+        "disc_other": "{{count}} disques",
+        "floppy_disk_one": "{{count}} disquette",
+        "floppy_disk_other": "{{count}} disquettes",
+        "cassette_one": "{{count}} cassette",
+        "cassette_other": "{{count}} cassettes"
+      },
       "collectionPhrase": "collection",
       "wishlistPhrase": "liste de souhaits",
       "removedFromToast_one": "Entrée retirée de votre {{phrase}}",

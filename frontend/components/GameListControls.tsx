@@ -22,6 +22,7 @@ import {
 } from "../utils/gameSortOptions";
 import GameFilterDialog, {
   countActiveFilters,
+  CONTENTS_OPTIONS,
   FORMAT_OPTIONS,
   GAME_TYPE_OPTIONS,
   OWNERSHIP_OPTIONS,
@@ -110,6 +111,7 @@ export function useGameListControls(
     playStatuses: fields.playStatuses,
     sources: fields.sources,
     steelbookOnly: fields.steelbookOnly,
+    contents: fields.contents,
     screensaverFilter: fields.screensaverFilter,
     includeAddons: fields.includeAddons,
   });
@@ -156,6 +158,9 @@ export function useGameListControls(
   addChips("type", fields.gameTypes, fields.gameTypeExclude, (value) => GAME_TYPE_OPTIONS.find((o) => o.value === value)?.label, fields.onGameTypesChange, fields.onGameTypeExcludeChange);
   if (!hideFormatsField) addChips("format", fields.formats, fields.formatExclude, (value) => FORMAT_OPTIONS.find((o) => o.value === value)?.label, fields.onFormatsChange, fields.onFormatExcludeChange);
   if (!hideFormatsField) addChips("storefront", fields.storefronts, fields.storefrontExclude, (value) => value, fields.onStorefrontsChange, fields.onStorefrontExcludeChange);
+  if (fields.contents && fields.onContentsChange) {
+    addChips("contents", fields.contents, fields.contentsExclude, (value) => t(CONTENTS_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onContentsChange, fields.onContentsExcludeChange);
+  }
   if (fields.sources && fields.onSourcesChange) {
     addChips("source", fields.sources, fields.sourceExclude, (value) => t(SOURCE_OPTIONS.find((o) => o.value === value)?.labelKey ?? ""), fields.onSourcesChange, fields.onSourceExcludeChange);
   }

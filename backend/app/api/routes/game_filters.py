@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from fastapi import Query
 
 from app.models.catalog import GameCategory
-from app.models.library import MediaFormat, PlayStatus
+from app.models.library import MediaFormat, PhysicalContents, PlayStatus
 from app.repositories.game_repository import GameSortOption, GameSource, ScreensaverFilter
 
 
@@ -43,6 +43,11 @@ class GameFilterParams:
     # A plain boolean, unlike every filter above — a copy either is or isn't a Steelbook, so
     # there's no multi-value list and no "Exclude" toggle worth offering for a single flag.
     steelbook_only: bool = Query(default=False, alias="steelbookOnly")
+    # What's inside a physical copy's case (code in the box, game-key card, ...). Only
+    # physical copies with contents set ever match.
+    contents: list[PhysicalContents] | None = Query(default=None, alias="contents")
+    contents_exclude: bool = Query(default=False, alias="contentsExclude")
+    contents_match_all: bool = Query(default=False, alias="contentsMatchAll")
     sources: list[GameSource] | None = Query(default=None, alias="source")
     source_exclude: bool = Query(default=False, alias="sourceExclude")
     # Screensaver lab: games shown in it or hidden from it (the per-game opt-out). Only the

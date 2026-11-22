@@ -3,8 +3,8 @@ shelf. Only platforms with a shown standard case (game_cases, Settings > Game Ca
 no digital copies, nothing wishlisted, no cartridge-only systems.
 
 Game-level filters (search, tags, collections, series, type, play status, source) pick the
-games exactly as on the Games list. The platform and Steelbook filters also pick which of a
-game's copies become cases, so filtering by PS5 shows a game's PS5 case and not its PS4 one.
+games exactly as on the Games list. The platform, Steelbook and Contents filters also pick which of
+a game's copies become cases, so filtering by PS5 shows a game's PS5 case and not its PS4 one.
 Format and storefront filters don't apply: everything here is physical.
 """
 
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.models.catalog import Platform
 from app.models.game_cases import GameCase
-from app.models.library import MediaFormat
+from app.models.library import MediaFormat, PhysicalContents
 from app.repositories import game_repository
 from app.repositories.game_repository import GameSortOption, ShelfCopy
 from app.services import game_case_service
@@ -48,11 +48,19 @@ class Shelf:
 
 
 def _copy_matches(
-    copy: ShelfCopy, platform_ids: list[int] | None, platform_exclude: bool, steelbook_only: bool
+    copy: ShelfCopy,
+    platform_ids: list[int] | None,
+    platform_exclude: bool,
+    steelbook_only: bool,
+    contents: set[PhysicalContents] | None,
+    contents_exclude: bool,
 ) -> bool:
     if copy.format != MediaFormat.PHYSICAL:
         return False
     if platform_ids and (copy.platform_id in platform_ids) == platform_exclude:
+        return False
+    # A copy with no contents set matches no value, so "Not code in the box" keeps it.
+    if contents is not None and (copy.physical_contents in contents) == contents_exclude:
         return False
     return not steelbook_only or copy.steelbook
 
@@ -70,6 +78,8 @@ def build_shelf(db: Session, **filters: Any) -> Shelf:
     platform_ids = filters.get("platform_ids")
     platform_exclude = filters.get("platform_exclude", False)
     steelbook_only = filters.get("steelbook_only", False)
+    contents = set(filters["contents"]) if filters.get("contents") else None
+    contents_exclude = filters.get("contents_exclude", False)
 
     game_filters = dict(filters)
     # Everything on the shelf is physical, so format and storefront filters don't apply.
@@ -81,6 +91,10 @@ def build_shelf(db: Session, **filters: Any) -> Shelf:
     if platform_exclude:
         game_filters["platform_ids"] = None
         game_filters["platform_exclude"] = False
+    # Same for "Not code in the box": drop those cases, keep the game's other ones.
+    if contents_exclude:
+        game_filters["contents"] = None
+        game_filters["contents_exclude"] = False
 
     games = game_repository.list_shelf_games(db, **game_filters)
     copies = game_repository.list_owned_copies(db, [game.id for game in games])
@@ -91,7 +105,7 @@ def build_shelf(db: Session, **filters: Any) -> Shelf:
     for copy in copies:
         if copy.platform_id not in cases_by_platform:
             continue
-        if not _copy_matches(copy, platform_ids, platform_exclude, steelbook_only):
+        if not _copy_matches(copy, platform_ids, platform_exclude, steelbook_only, contents, contents_exclude):
             continue
         platforms = by_game.setdefault(copy.game_id, [])
         if copy.platform_id not in platforms:

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, aliased, joinedload
 
 from app.models.catalog import Game, GameCategory
 from app.models.hardware import Accessory, AccessoryDeviceLink, UserAccessory, UserDevice
-from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PlayStatus
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PhysicalContents, PlayStatus
 from app.repositories import toys_to_life_repository
 from app.repositories.game_repository import (
     GameSortOption,
@@ -69,6 +69,9 @@ def find_missing_addons(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    contents: list[PhysicalContents] | None = None,
+    contents_exclude: bool = False,
+    contents_match_all: bool = False,
     sources: list[GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: ScreensaverFilter | None = None,
@@ -132,6 +135,9 @@ def find_missing_addons(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        contents=contents,
+        contents_exclude=contents_exclude,
+        contents_match_all=contents_match_all,
         sources=sources,
         source_exclude=source_exclude,
         screensaver=screensaver,

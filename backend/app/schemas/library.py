@@ -1,9 +1,10 @@
 from datetime import date
 
+from pydantic import Field
 from sqlalchemy.orm import object_session
 
 from app.models.itad import ItadPriceCache
-from app.models.library import LibraryItem, LibraryStatus, MediaFormat, RatingBoard, RomFile
+from app.models.library import LibraryItem, LibraryStatus, MediaFormat, PhysicalContents, RatingBoard, RomFile
 from app.models.platprices import PlatPricesCache
 from app.schemas.base import CamelModel
 from app.services import bios_service, emulation_cores, storefront_matching
@@ -76,6 +77,9 @@ class LibraryItemResponse(CamelModel):
     acquired_at: date | None
     notes: str | None
     steelbook: bool
+    physical_contents: PhysicalContents | None
+    media_count: int | None
+    format_other: str | None
     is_on_sale: bool
     sale_price_amount: float | None
     sale_price_currency: str | None
@@ -148,6 +152,9 @@ def library_item_from_orm(
         acquired_at=item.acquired_at,
         notes=item.notes,
         steelbook=item.steelbook,
+        physical_contents=item.physical_contents,
+        media_count=item.media_count,
+        format_other=item.format_other,
         is_on_sale=is_on_sale,
         sale_price_amount=sale_price_amount,
         sale_price_currency=sale_price_currency,
@@ -171,6 +178,9 @@ class LibraryItemCreateRequest(CamelModel):
     acquired_at: date | None = None
     notes: str | None = None
     steelbook: bool = False
+    physical_contents: PhysicalContents | None = None
+    media_count: int | None = Field(default=None, ge=1, le=99)
+    format_other: str | None = Field(default=None, max_length=100)
 
 
 class LibraryItemUpdateRequest(CamelModel):
@@ -187,3 +197,6 @@ class LibraryItemUpdateRequest(CamelModel):
     acquired_at: date | None = None
     notes: str | None = None
     steelbook: bool | None = None
+    physical_contents: PhysicalContents | None = None
+    media_count: int | None = Field(default=None, ge=1, le=99)
+    format_other: str | None = Field(default=None, max_length=100)

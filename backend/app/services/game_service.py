@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.identifiers import extract_uuid
 from app.models.catalog import CompanyRole, Game, GameCategory, IgdbReleaseRegion
-from app.models.library import MediaFormat, PlayStatus
+from app.models.library import MediaFormat, PhysicalContents, PlayStatus
 from app.repositories import (
     collection_repository,
     company_repository,
@@ -78,6 +78,9 @@ def search_local_games(
     play_status_exclude: bool = False,
     play_status_match_all: bool = False,
     steelbook_only: bool = False,
+    contents: list[PhysicalContents] | None = None,
+    contents_exclude: bool = False,
+    contents_match_all: bool = False,
     sources: list[game_repository.GameSource] | None = None,
     source_exclude: bool = False,
     screensaver: game_repository.ScreensaverFilter | None = None,
@@ -117,6 +120,9 @@ def search_local_games(
         play_status_exclude=play_status_exclude,
         play_status_match_all=play_status_match_all,
         steelbook_only=steelbook_only,
+        contents=contents,
+        contents_exclude=contents_exclude,
+        contents_match_all=contents_match_all,
         sources=sources,
         source_exclude=source_exclude,
         screensaver=screensaver,

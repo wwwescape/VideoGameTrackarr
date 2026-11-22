@@ -111,7 +111,8 @@ const GameLibrarySection = ({
   // format (see LibraryItemDialog.tsx).
   const formatStorefrontLabel = (item: LibraryItem): string | null => {
     if (!item.format) return null;
-    const label = formatLabels[item.format];
+    // Other shows the user's own name for the format when they gave one.
+    const label = item.format === "other" && item.formatOther ? item.formatOther : formatLabels[item.format];
     return item.format === "digital" && item.digitalStorefront
       ? `${label}: ${item.digitalStorefront}`
       : label;
@@ -238,7 +239,15 @@ const GameLibrarySection = ({
     }
   };
 
-  const handleDialogSubmit = async (values: LibraryItemFormValues, romChanges: RomChanges) => {
+  const handleDialogSubmit = async (formValues: LibraryItemFormValues, romChanges: RomChanges) => {
+    // null, not undefined: an update leaves out undefined fields, so clearing Contents, the
+    // count or the Other text would otherwise never reach the server.
+    const values = {
+      ...formValues,
+      physicalContents: formValues.physicalContents ?? null,
+      mediaCount: formValues.mediaCount ?? null,
+      formatOther: formValues.formatOther ?? null,
+    };
     let savedItem: LibraryItem;
     try {
       if (dialogItem) {
@@ -327,10 +336,16 @@ const GameLibrarySection = ({
           <Panel>
             {visibleItems.map((item) => {
               const owned = item.status === "owned";
-              // Format, with Steelbook only for a physical copy marked as one.
+              // Format, then a physical copy's contents ("Cartridge", "3 discs") and Steelbook.
+              const physical = item.format === "physical";
               const formatLine = [
                 formatStorefrontLabel(item),
-                item.format === "physical" && item.steelbook ? t("games.library.steelbookColumn") : null,
+                physical && item.physicalContents
+                  ? item.mediaCount && item.mediaCount > 1
+                    ? t(`games.library.mediaCount.${item.physicalContents}`, { count: item.mediaCount })
+                    : t(`games.library.contents.${item.physicalContents}`)
+                  : null,
+                physical && item.steelbook ? t("games.library.steelbookColumn") : null,
               ]
                 .filter(Boolean)
                 .join(" · ");
@@ -403,6 +418,9 @@ const GameLibrarySection = ({
                   targetPrice: dialogItem.targetPrice ?? undefined,
                   trackForSales: dialogItem.trackForSales,
                   steelbook: dialogItem.steelbook,
+                  physicalContents: dialogItem.physicalContents ?? undefined,
+                  mediaCount: dialogItem.mediaCount ?? undefined,
+                  formatOther: dialogItem.formatOther ?? "",
                   notes: dialogItem.notes ?? "",
                 }
               : undefined

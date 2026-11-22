@@ -20,6 +20,7 @@ import type {
   GameCategory,
   GameSource,
   MediaFormat,
+  PhysicalContents,
   PlatformResponse,
   PlayStatus,
   ScreensaverFilter,
@@ -105,6 +106,21 @@ export const FORMAT_OPTIONS: FormatOption[] = [
   { value: "rom", label: "ROM" },
   { value: "abandonware", label: "Abandonware" },
   { value: "other", label: "Other" },
+];
+
+interface ContentsOption {
+  value: PhysicalContents;
+  labelKey: string;
+}
+
+// Mirrors the backend's PhysicalContents enum (backend/app/models/library.py).
+export const CONTENTS_OPTIONS: ContentsOption[] = [
+  { value: "disc", labelKey: "games.library.contents.disc" },
+  { value: "cartridge", labelKey: "games.library.contents.cartridge" },
+  { value: "floppy_disk", labelKey: "games.library.contents.floppy_disk" },
+  { value: "cassette", labelKey: "games.library.contents.cassette" },
+  { value: "game_key_card", labelKey: "games.library.contents.game_key_card" },
+  { value: "code_in_box", labelKey: "games.library.contents.code_in_box" },
 ];
 
 interface ExcludeCheckboxProps {
@@ -250,6 +266,12 @@ export interface GameFilterFieldsProps {
   // Steelbooks" state worth a second control for a single boolean.
   steelbookOnly?: boolean;
   onSteelbookOnlyChange?: (value: boolean) => void;
+  // Optional, passed by the same pages as steelbookOnly: what's inside a physical copy's
+  // case (code in the box, game-key card, ...). Only physical copies ever match.
+  contents?: PhysicalContents[];
+  onContentsChange?: (value: PhysicalContents[]) => void;
+  contentsExclude?: boolean;
+  onContentsExcludeChange?: (value: boolean) => void;
   // Optional, same "only rendered when provided" pattern as steelbookOnly — only the Games
   // page passes these. IGDB-imported vs manually-added (custom) games.
   sources?: GameSource[];
@@ -293,6 +315,7 @@ export function countActiveFilters(fields: {
   playStatuses: unknown[];
   sources?: unknown[];
   steelbookOnly?: boolean;
+  contents?: unknown[];
   screensaverFilter?: ScreensaverFilter | null;
   includeAddons?: boolean;
 }): number {
@@ -308,6 +331,7 @@ export function countActiveFilters(fields: {
     fields.playStatuses.length +
     (fields.sources?.length ?? 0) +
     (fields.steelbookOnly ? 1 : 0) +
+    (fields.contents?.length ?? 0) +
     (fields.screensaverFilter ? 1 : 0) +
     (fields.includeAddons ? 1 : 0)
   );
@@ -361,6 +385,10 @@ const GameFilterDialog = ({
   onStorefrontExcludeChange,
   steelbookOnly,
   onSteelbookOnlyChange,
+  contents = [],
+  onContentsChange,
+  contentsExclude = false,
+  onContentsExcludeChange,
   sources = [],
   onSourcesChange,
   sourceExclude = false,
@@ -390,6 +418,7 @@ const GameFilterDialog = ({
   );
   const selectedGameTypes = GAME_TYPE_OPTIONS.filter((option) => gameTypes.includes(option.value));
   const selectedFormats = FORMAT_OPTIONS.filter((option) => formats.includes(option.value));
+  const selectedContents = CONTENTS_OPTIONS.filter((option) => contents.includes(option.value));
   const selectedOwnershipStatuses = OWNERSHIP_OPTIONS.filter((option) =>
     ownershipStatuses.includes(option.value)
   );
@@ -415,6 +444,7 @@ const GameFilterDialog = ({
       playStatuses,
       sources,
       steelbookOnly,
+      contents,
       screensaverFilter,
       includeAddons,
     }) > 0;
@@ -457,6 +487,8 @@ const GameFilterDialog = ({
     onPlayStatusExcludeChange(false);
     onMatchAllChange({});
     onSteelbookOnlyChange?.(false);
+    onContentsChange?.([]);
+    onContentsExcludeChange?.(false);
     onSourcesChange?.([]);
     onSourceExcludeChange?.(false);
     onScreensaverFilterChange?.(null);
@@ -629,6 +661,28 @@ const GameFilterDialog = ({
                   exclude={storefrontExclude}
                   onExcludeChange={onStorefrontExcludeChange}
                   {...matchAllProps("storefront")}
+                />
+              </Stack>
+            </Grid>
+          ) : null}
+          {onContentsChange && onContentsExcludeChange ? (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Stack spacing={0.5}>
+                <AutocompleteMultiSelect<ContentsOption>
+                  label={t("games.listToolbar.contentsLabel")}
+                  options={CONTENTS_OPTIONS}
+                  value={selectedContents}
+                  onChange={(newValue) => onContentsChange(newValue.map((option) => option.value))}
+                  getOptionLabel={(option) => t(option.labelKey)}
+                  isOptionEqualToValue={(option, val) => option.value === val.value}
+                  placeholder={allPlaceholder}
+                  fullWidth
+                />
+                <FilterFieldOptions
+                  selectedCount={contents.length}
+                  exclude={contentsExclude}
+                  onExcludeChange={onContentsExcludeChange}
+                  {...matchAllProps("contents")}
                 />
               </Stack>
             </Grid>

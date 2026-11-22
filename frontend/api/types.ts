@@ -645,6 +645,14 @@ export interface WhatsNewInfo {
 
 export type LibraryStatus = "owned" | "wishlist";
 export type MediaFormat = "physical" | "digital" | "iso" | "rom" | "abandonware" | "other";
+// What's inside a physical copy's case; null on a copy means not set.
+export type PhysicalContents =
+  | "disc"
+  | "cartridge"
+  | "floppy_disk"
+  | "cassette"
+  | "game_key_card"
+  | "code_in_box";
 export type GameSortOption =
   | "name_asc"
   | "name_desc"
@@ -685,6 +693,10 @@ export interface LibraryItem {
   acquiredAt: string | null;
   notes: string | null;
   steelbook: boolean;
+  physicalContents: PhysicalContents | null;
+  // How many discs, floppy disks or cassettes; only set for those contents.
+  mediaCount: number | null;
+  formatOther: string | null;
   isOnSale: boolean;
   salePriceAmount: number | null;
   salePriceCurrency: string | null;
@@ -797,6 +809,9 @@ export interface LibraryItemInput {
   acquiredAt?: string | null;
   notes?: string | null;
   steelbook?: boolean;
+  physicalContents?: PhysicalContents | null;
+  mediaCount?: number | null;
+  formatOther?: string | null;
 }
 
 // Step 3 of BulkAddDialog — a deliberate subset of LibraryItemInput (just Ownership/

@@ -51,6 +51,7 @@ from app.models.library import (
     LibraryStatus,
     MediaFormat,
     Note,
+    PhysicalContents,
     PlaySession,
     PlayStatus,
     RatingBoard,
@@ -185,6 +186,10 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 acquired_at=li.acquired_at.isoformat() if li.acquired_at else None,
                 notes=li.notes,
                 target_price=li.target_price,
+                steelbook=li.steelbook,
+                physical_contents=li.physical_contents.value if li.physical_contents else None,
+                media_count=li.media_count,
+                format_other=li.format_other,
             )
             for li in db.scalars(select(LibraryItem))
         ],
@@ -711,6 +716,10 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
                 acquired_at=date.fromisoformat(li.acquired_at) if li.acquired_at else None,
                 notes=li.notes,
                 target_price=li.target_price,
+                steelbook=li.steelbook,
+                physical_contents=PhysicalContents(li.physical_contents) if li.physical_contents else None,
+                media_count=li.media_count,
+                format_other=li.format_other,
             )
         )
     # platform_id is required now — a backup taken before per-platform Progress has no way

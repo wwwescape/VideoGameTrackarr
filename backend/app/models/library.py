@@ -22,6 +22,18 @@ class MediaFormat(enum.Enum):
     OTHER = "other"
 
 
+class PhysicalContents(enum.Enum):
+    """What's actually inside a physical copy's case. NULL means not set, so rows from
+    before this column existed need no backfill."""
+
+    DISC = "disc"
+    CARTRIDGE = "cartridge"
+    FLOPPY_DISK = "floppy_disk"
+    CASSETTE = "cassette"
+    GAME_KEY_CARD = "game_key_card"
+    CODE_IN_BOX = "code_in_box"
+
+
 class RatingBoard(enum.Enum):
     ESRB = "esrb"
     PEGI = "pegi"
@@ -81,6 +93,16 @@ class LibraryItem(TimestampMixin, Base):
         default=False,
         server_default="false",
         comment="Only meaningful when format=physical — a Steelbook/metal-case copy vs. a standard case",
+    )
+    physical_contents: Mapped[PhysicalContents | None] = mapped_column(
+        enum_column(PhysicalContents),
+        comment="Only meaningful when format=physical — NULL means not set",
+    )
+    media_count: Mapped[int | None] = mapped_column(
+        Integer, comment="How many discs, floppy disks or cassettes — only meaningful for those contents"
+    )
+    format_other: Mapped[str | None] = mapped_column(
+        String(100), comment="Only meaningful when format=other — the user's own name for the format"
     )
 
     game: Mapped["Game"] = relationship()  # noqa: F821
