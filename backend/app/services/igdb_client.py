@@ -137,6 +137,12 @@ class IGDBCredentialsError(Exception):
     """Raised when IGDB_CLIENT_ID / IGDB_CLIENT_SECRET aren't configured."""
 
 
+# IGDB's external_game_source id for GOG (Steam is 1, see get_igdb_id_for_steam_appid).
+EXTERNAL_SOURCE_GOG = 5
+# How many GOG product ids go into one external_games lookup.
+GOG_LOOKUP_BATCH_SIZE = 50
+
+
 def _escape_apicalypse_string(value: str) -> str:
     """Apicalypse (IGDB's query language) delimits strings with double quotes; without
     escaping, a search term containing a `"` could break out of the string and inject
@@ -339,6 +345,27 @@ class IGDBClient:
         response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
         matches = response.json()
         return matches[0]["game"] if matches and "game" in matches[0] else None
+
+    async def get_igdb_ids_for_gog_products(self, gog_product_ids: list[int]) -> dict[int, int]:
+        """GOG product ids -> IGDB game ids in one external_games query (Apicalypse accepts a
+        uid tuple), instead of one request per game like the Steam lookup above. GOG is
+        external_game_source 5 in IGDB's External Game Source enum. Ids with no mapping are
+        simply absent from the result. Callers keep each batch at or under
+        GOG_LOOKUP_BATCH_SIZE, well inside IGDB's 500-row limit."""
+        if not gog_product_ids:
+            return {}
+        headers = await self._auth_headers()
+        uids = ", ".join(f'"{_escape_apicalypse_string(str(product_id))}"' for product_id in gog_product_ids)
+        body = (
+            f"fields game, uid;\nwhere uid = ({uids}) & external_game_source = {EXTERNAL_SOURCE_GOG};\n"
+            f"limit {len(gog_product_ids)};"
+        )
+        response = await self._request("POST", f"{IGDB_API_BASE}/external_games", headers=headers, content=body)
+        return {
+            int(row["uid"]): int(row["game"])
+            for row in response.json()
+            if "game" in row and str(row.get("uid", "")).isdigit()
+        }
 
     async def get_upcoming_events(self) -> list[dict]:
         """Events whose end_time hasn't passed yet, soonest first — matches the app's

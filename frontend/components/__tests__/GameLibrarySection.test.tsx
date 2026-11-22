@@ -21,6 +21,13 @@ vi.mock("../../hooks/useLibrary", () => ({
   useUpdateRomLabel: () => mutation(),
   useDeleteRom: () => mutation(),
 }));
+let gogConnected = false;
+vi.mock("../../hooks/useIntegrations", () => ({
+  useIntegrationsStatus: () => ({ data: { gogConnected } }),
+}));
+vi.mock("../GogInstallersDialog", () => ({
+  default: ({ gameName }: { gameName: string }) => <div role="dialog">Installers for {gameName}</div>,
+}));
 vi.mock("../UndoToast", () => ({ showUndoToast: (...args: unknown[]) => undoToast(...args) }));
 // The dialog has its own tests; here it only needs to say it opened, and for what.
 vi.mock("../LibraryItemDialog", () => ({
@@ -70,6 +77,7 @@ const row = (name: string) => screen.getByRole("button", { name });
 
 describe("GameLibrarySection", () => {
   beforeEach(() => {
+    gogConnected = false;
     updateItem.mockClear();
     undoToast.mockClear();
   });
@@ -143,5 +151,36 @@ describe("GameLibrarySection", () => {
 
     expect(undoToast).toHaveBeenCalledWith("Entry removed from your wishlist", expect.any(Function), 5000);
     expect(screen.queryByRole("button", { name: "PC (Microsoft Windows)" })).toBeNull();
+  });
+  it("hides Offline installers while GOG isn't connected", () => {
+    const gogCopy = item({
+      id: 3,
+      platformId: 2,
+      platformName: "PC (Microsoft Windows)",
+      format: "digital",
+      digitalStorefront: "GOG",
+    });
+    const steamCopy = item({ id: 4, format: "digital", digitalStorefront: "Steam" });
+
+    renderSection([gogCopy, steamCopy]);
+    expect(screen.queryByRole("button", { name: "Offline installers" })).not.toBeInTheDocument();
+  });
+
+  it("opens the installers for the GOG copy", async () => {
+    gogConnected = true;
+    const gogCopy = item({
+      id: 3,
+      platformId: 2,
+      platformName: "PC (Microsoft Windows)",
+      format: "digital",
+      digitalStorefront: "GOG",
+    });
+    const user = renderSection([gogCopy, item({ id: 4, format: "digital", digitalStorefront: "Steam" })]);
+
+    const buttons = screen.getAllByRole("button", { name: "Offline installers" });
+    expect(buttons).toHaveLength(1);
+    await user.click(buttons[0]);
+
+    expect(screen.getByRole("dialog")).toHaveTextContent("Installers for");
   });
 });

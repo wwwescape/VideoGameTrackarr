@@ -318,6 +318,7 @@ def create_manual_game(body: ManualGameCreateRequest, db: Session = Depends(get_
         platform_names=body.platform_names,
         notes=body.notes,
         steam_app_id=body.steam_app_id,
+        gog_product_id=body.gog_product_id,
         screenshot_urls=body.screenshot_urls,
         artwork_urls=body.artwork_urls,
         videos=[(video.name, video.video_id) for video in body.videos],

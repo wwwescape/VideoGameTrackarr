@@ -14,6 +14,7 @@ class TokenType(StrEnum):
     ROM = "rom"
     BIOS = "bios"
     BACKUP_DOWNLOAD = "backup_download"
+    GOG_INSTALLER = "gog_installer"
 
 
 class TokenError(Exception):
@@ -128,6 +129,22 @@ def create_backup_download_token(user_id: int, expires_minutes: int = 5) -> str:
     payload = {
         "sub": str(user_id),
         "type": TokenType.BACKUP_DOWNLOAD.value,
+        "iat": now,
+        "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
+
+
+def create_gog_installer_token(user_id: int, download_id: int, expires_minutes: int = 5) -> str:
+    """A one-purpose link for saving one downloaded GOG installer file to the user's device,
+    for the same reason as the full-backup link: the file can be many GB. Checked only when
+    the download starts, so a slow transfer isn't cut off."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.GOG_INSTALLER.value,
+        "download": download_id,
         "iat": now,
         "exp": now + timedelta(minutes=expires_minutes),
     }

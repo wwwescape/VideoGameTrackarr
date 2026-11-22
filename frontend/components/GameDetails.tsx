@@ -243,6 +243,7 @@ const GameDetails = () => {
               <YourRatingSection gameId={gameId} rating={game.rating} />
               <GameLibrarySection
                 gameId={gameId}
+                gameName={game.name}
                 libraryItems={libraryItems}
                 platforms={platforms}
                 regions={regions}

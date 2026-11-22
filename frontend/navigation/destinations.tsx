@@ -28,6 +28,7 @@ import VisibilityIcon from "@mui/icons-material/VisibilityOutlined";
 import ViewWeekIcon from "@mui/icons-material/ViewWeekOutlined";
 import SlideshowIcon from "@mui/icons-material/SlideshowOutlined";
 import GamesIcon from "@mui/icons-material/Games";
+import GogIcon from "../icons/GogIcon";
 import IgdbIcon from "../icons/IgdbIcon";
 import LegoDimensionsIcon from "../icons/LegoDimensionsIcon";
 import SteamIcon from "../icons/SteamIcon";
@@ -194,6 +195,7 @@ export function settingsPages(): NavSubDestination[] {
       separatorBefore: true,
     },
     { to: "/settings/steam-sync", labelKey: "nav.steamSync", icon: <SteamIcon /> },
+    { to: "/settings/gog-sync", labelKey: "nav.gogSync", icon: <GogIcon /> },
     { to: "/settings/sale-tracked", labelKey: "nav.saleTracked", icon: <VisibilityIcon /> },
     { to: "/settings/sales-ignored", labelKey: "nav.salesIgnored", icon: <BlockIcon /> },
   ];

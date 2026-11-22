@@ -28,6 +28,7 @@ from app.models.catalog import (
     Screenshot,
 )
 from app.models.game_cases import GameCase
+from app.models.gog import GogDownload, GogLibraryEntry, GogWishlistEntry
 from app.models.hardware import (
     Accessory,
     AccessoryCompatibility,
@@ -101,7 +102,7 @@ from app.schemas.backup import (
     BackupUserAccessory,
     BackupUserHardware,
 )
-from app.services import rom_service, toys_to_life_adoption
+from app.services import gog_download_service, rom_service, toys_to_life_adoption
 from app.services.upload_service import (
     ACCESSORY_IMAGES_DIR,
     ACCESSORY_IMAGES_URL_PREFIX,
@@ -633,6 +634,11 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     db.execute(delete(ItadPriceCache))
     db.execute(delete(PlatPricesCache))
     db.execute(delete(IgdbImportEntry))
+    # GOG Sync entries keep their ignores but lose their match (the next Import re-matches
+    # them), and the installer download rows go. The GOG account itself is never in a backup.
+    db.execute(update(GogLibraryEntry).values(game_id=None))
+    db.execute(update(GogWishlistEntry).values(game_id=None))
+    db.execute(delete(GogDownload))
     db.execute(delete(PlaySession))
     db.execute(delete(GameProgress))
     db.execute(delete(LibraryItem))
@@ -968,6 +974,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
 
     db.commit()
     rom_service.delete_files(orphaned_rom_files)
+    # Installer rows don't survive a restore (game ids change), so neither do their files.
+    gog_download_service.prune_orphan_files(db)
 
     return BackupRestoreResult(
         restored_games=len(payload.games),

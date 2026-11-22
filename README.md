@@ -62,6 +62,9 @@
   the game's page lists them in place of its add-ons.
 - **Steam sync** — import your Steam library and wishlist with playtime, review every change
   before it's applied, and relink or unlink mismatched entries.
+- **GOG sync** — sign in to GOG to import your GOG library and wishlist the same way, and
+  download GOG's DRM-free offline installers to your server, then to any device. See
+  [docs/gog.md](docs/gog.md).
 - **Sale tracking** — opt-in wishlist price tracking via IsThereAnyDeal (PC, Mac, Linux, and
   Android) and PlatPrices (PlayStation), with target prices and an **On Sale** page.
 - **Events** — upcoming gaming-industry events from IGDB, with any featured games already in
@@ -76,7 +79,7 @@
   and side-by-side game comparison.
 - **Share links** — unlisted, read-only links to your Games, Game Shelf, or Hardware
   collection.
-- **Jobs** — scheduled catalog resyncs, Steam import, sale refreshes, and event syncs, with live
+- **Jobs** — scheduled catalog resyncs, Steam and GOG imports, sale refreshes, and event syncs, with live
   progress, a log of each run, and catch-up of runs missed while the app was down.
 - **Backup & restore** — one JSON backup of your library, hardware, target prices and settings,
   or a `.zip` that also carries your pick of ROMs and saves, BIOS files and uploaded images,

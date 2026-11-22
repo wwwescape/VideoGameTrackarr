@@ -490,6 +490,8 @@ export interface ManualGameInput {
   platformNames?: string[];
   notes?: string | null;
   steamAppId?: number;
+  // The same link back for GOG Sync's "Add as custom game".
+  gogProductId?: number;
   // Uploaded with uploadGameMedia, in display order (the first artwork is the hero background).
   screenshotUrls?: string[];
   artworkUrls?: string[];

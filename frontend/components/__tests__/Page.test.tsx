@@ -138,7 +138,8 @@ describe("Page toolbar", () => {
     );
 
     const toolbar = screen.getByRole("toolbar");
-    expect(within(toolbar).getAllByRole("link")).toHaveLength(10);
+    expect(within(toolbar).getAllByRole("link")).toHaveLength(11);
+    expect(within(toolbar).getByRole("link", { name: "GOG Sync" })).toHaveAttribute("href", "/settings/gog-sync");
     expect(within(toolbar).getByRole("link", { name: "Labs" })).toHaveAttribute("href", "/settings/labs");
     // Settings → Game Cases belongs to the Game Shelf lab, off here.
     expect(within(toolbar).queryByRole("link", { name: "Game Cases" })).not.toBeInTheDocument();

@@ -15,6 +15,7 @@ import platpricesLogo from "../assets/services/platprices.png";
 import steamLogo from "../assets/services/steam.png";
 import { useIntegrationsStatus, useUpdateSteamId } from "../hooks/useIntegrations";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import GogConnectSection from "./GogConnectSection";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
 
@@ -126,6 +127,8 @@ const IntegrationsPage = () => {
             </Box>
           </SettingRow>
         </SettingsGroup>
+
+        <GogConnectSection />
 
         <SettingsGroup
           title={

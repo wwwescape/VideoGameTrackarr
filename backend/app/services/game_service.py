@@ -18,7 +18,7 @@ from app.repositories import (
     toys_to_life_repository,
 )
 from app.repositories.game_repository import GameWithStatus
-from app.services import rom_service, upload_service
+from app.services import gog_download_service, rom_service, upload_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.igdb_client import IGDBClient, extract_store_urls
 
@@ -255,6 +255,8 @@ def delete_game(db: Session, game_id: int) -> None:
     db.commit()
     rom_service.delete_files(rom_filenames)
     _delete_uploads(images)
+    # The game's installer rows went with it; this removes their files.
+    gog_download_service.prune_orphan_files(db)
 
 
 def _delete_uploads(urls: list[str]) -> None:
