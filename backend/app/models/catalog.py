@@ -2,7 +2,19 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, Boolean, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    false,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.core.search_keys import search_key
@@ -341,6 +353,10 @@ class GameAddonLink(Base):
     """A manual "works with" link between an add-on and another game, e.g. an FH5 car pack
     that IGDB lists under the Standard edition only, linked to the Premium edition too.
 
+    `included` marks the add-on as part of that game (Car Pass included in FH5 Premium):
+    owning the game then counts as owning the add-on. A row for the add-on's own IGDB parent
+    only ever carries that mark; it's never a manual link (see addon_link_service).
+
     Kept apart from Game.parent_game_id on purpose: that column is IGDB's own link and drives
     list visibility, deletes and resyncs, and every resync rewrites it. Nothing IGDB-driven
     reads or writes this table; see addon_link_service."""
@@ -351,6 +367,7 @@ class GameAddonLink(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     addon_game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True)
+    included: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), server_default=func.now(), nullable=False)
 
 

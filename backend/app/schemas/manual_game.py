@@ -1,7 +1,17 @@
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.models.catalog import GameCategory
 from app.schemas.base import CamelModel
+from app.services.store_urls import store_field_for_url
+
+
+def _check_store_url(value: str | None) -> str | None:
+    """A custom add-on's Store URL must be a link to a store VGT knows (see store_urls)."""
+    if value is None or not value.strip():
+        return None
+    if store_field_for_url(value) is None:
+        raise ValueError("Store URL must be a Steam, Xbox, PlayStation, Nintendo, Epic Games or GOG store link")
+    return value.strip()
 
 
 class ManualGameVideo(CamelModel):
@@ -20,6 +30,8 @@ class ManualGameCreateRequest(CamelModel):
     edition: str | None = None
     cover_url: str | None = None
     parent_game_id: int | None = None
+    # One store link (an add-on's store page); stored in the matching store's column.
+    store_url: str | None = Field(default=None, max_length=1024)
     developed_by: list[str] = Field(default_factory=list)
     published_by: list[str] = Field(default_factory=list)
     platform_names: list[str] = Field(default_factory=list)
@@ -36,6 +48,8 @@ class ManualGameCreateRequest(CamelModel):
     artwork_urls: list[str] = Field(default_factory=list)
     videos: list[ManualGameVideo] = Field(default_factory=list)
 
+    _store_url = field_validator("store_url")(_check_store_url)
+
 
 class ManualGameUpdateRequest(CamelModel):
     name: str | None = Field(default=None, min_length=1, max_length=512)
@@ -46,6 +60,8 @@ class ManualGameUpdateRequest(CamelModel):
     edition: str | None = None
     cover_url: str | None = None
     parent_game_id: int | None = None
+    # Replaces the store link; null or "" clears it.
+    store_url: str | None = Field(default=None, max_length=1024)
     developed_by: list[str] | None = None
     published_by: list[str] | None = None
     platform_names: list[str] | None = None
@@ -54,3 +70,5 @@ class ManualGameUpdateRequest(CamelModel):
     screenshot_urls: list[str] | None = None
     artwork_urls: list[str] | None = None
     videos: list[ManualGameVideo] | None = None
+
+    _store_url = field_validator("store_url")(_check_store_url)

@@ -306,4 +306,38 @@ describe("GameCard", () => {
     renderWithTheme(<GameCard game={baseGame} context="list" contextFunction={vi.fn()} />);
     expect(screen.queryByTestId("via-addon-chip")).not.toBeInTheDocument();
   });
+
+  it("shows the link and box icons between the corner badges for linked and included add-ons", () => {
+    const { unmount } = renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, manualLink: true, included: true, owned: true, wishlisted: true }}
+        context="addon"
+        contextFunction={vi.fn()}
+      />
+    );
+    const badges = screen.getByTestId("link-badges");
+    expect(badges).toContainElement(screen.getByRole("img", { name: "Linked by you" }));
+    expect(badges).toContainElement(screen.getByRole("img", { name: "Included in this game" }));
+    unmount();
+
+    renderWithTheme(<GameCard game={{ ...baseGame, included: true }} context="addon" contextFunction={vi.fn()} />);
+    expect(screen.queryByRole("img", { name: "Linked by you" })).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Included in this game" })).toBeInTheDocument();
+  });
+
+  it("names the pack an add-on is Included through", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, included: true, includedVia: { name: "Expansions Bundle" } }}
+        context="addon"
+        contextFunction={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("img", { name: "Included via Expansions Bundle" })).toBeInTheDocument();
+  });
+
+  it("shows no link icons on a plain IGDB add-on", () => {
+    renderWithTheme(<GameCard game={baseGame} context="addon" contextFunction={vi.fn()} />);
+    expect(screen.queryByTestId("link-badges")).not.toBeInTheDocument();
+  });
 });

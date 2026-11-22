@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Box from "@mui/material/Box";
@@ -28,6 +29,20 @@ const badgeSx = {
   alignItems: "center",
   justifyContent: "center",
 } as const;
+
+// The same round glass badge, laid out by its parent instead of pinned to a corner: GameCard's
+// Linked and Included icons sit between the wishlist heart and the owned check.
+export const InlineBadge = ({ title, children }: { title: string; children: ReactNode }) => (
+  <Box sx={{ ...badgeSx, position: "static" }}>
+    <Tooltip title={title}>
+      <Box component="span" sx={{ display: "flex" }} aria-label={title} role="img">
+        {children}
+      </Box>
+    </Tooltip>
+  </Box>
+);
+
+export const BADGE_SIZE_PX = BADGE_SIZE;
 
 // Floating badges shared by GameCard and HardwareCard: a heart (wishlisted, top-left)
 // and a check (owned, top-right). They sit on cover art and product shots, so both use the

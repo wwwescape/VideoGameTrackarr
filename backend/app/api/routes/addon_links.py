@@ -18,6 +18,12 @@ router = APIRouter(
 @router.get("", response_model=list[AddonLinkPairResponse])
 def list_addon_links(db: Session = Depends(get_db)) -> list[AddonLinkPairResponse]:
     return [
-        AddonLinkPairResponse(addon=addon_ref_from_orm(addon), game=addon_ref_from_orm(game))
-        for addon, game in addon_link_service.list_all(db)
+        AddonLinkPairResponse(
+            addon=addon_ref_from_orm(row.addon),
+            game=addon_ref_from_orm(row.game),
+            included=row.included,
+            manual=row.manual,
+            pack=row.pack,
+        )
+        for row in addon_link_service.list_all(db)
     ]

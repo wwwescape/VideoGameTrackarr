@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
-import { useWorksWith } from "../hooks/useAddonLinks";
+import { usePackContents, usePacks, useWorksWith } from "../hooks/useAddonLinks";
 import { useAddons, useGame } from "../hooks/useGames";
 import { useEnabledLabs } from "../hooks/useLabs";
 import { useScreensaverShows } from "../hooks/useScreensaver";
@@ -26,6 +26,7 @@ import { ADDON_DISPLAY_CATEGORIES, GameAboutBlock, GameHero, GameMediaSections }
 import GameLibrarySection from "./GameLibrarySection";
 import GameProgressSection from "./GameProgressSection";
 import LinkedAddonsSection from "./LinkedAddonsSection";
+import PackLinksSection from "./PackLinksSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
@@ -57,6 +58,10 @@ const GameDetails = () => {
   // An add-on's own games (IGDB parent, then manual links); a game's add-ons come from useAddons.
   const isAddon = game ? ADDON_DISPLAY_CATEGORIES.has(game.category) : false;
   const { data: worksWith } = useWorksWith(gameId, linkedAddonsLab && isAddon);
+  // Packs (Season Pass, Ultimate Pack): what's inside one, and the packs an add-on is in.
+  const isPack = game?.category === "pack";
+  const { data: packContents } = usePackContents(gameId, linkedAddonsLab && isAddon);
+  const { data: packs } = usePacks(gameId, linkedAddonsLab && isAddon);
   // The link picker below Notes; the Add-ons hint opens it too.
   const [linkPickerOpen, setLinkPickerOpen] = useState(false);
   // Set only on a Toys-to-Life line's base game (LEGO Dimensions), which shows its packs instead of Addons.
@@ -214,6 +219,36 @@ const GameDetails = () => {
                 )}
               </Section>
             ) : null}
+            {showWorksWith && (isPack || (packContents ?? []).length > 0) ? (
+              // A pack's contents: Included, so owning the pack owns them.
+              <Section id="pack-contents" title={t("games.packs.contentsTitle")}>
+                {(packContents ?? []).length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {t("games.packs.contentsEmpty")}
+                  </Typography>
+                ) : (
+                  <Box sx={ADDON_GRID_SX}>
+                    {(packContents ?? []).map((addon) => (
+                      <GameCard key={addon.id} game={addon} context="addon" contextFunction={() => handleAddonClick(addon)} />
+                    ))}
+                  </Box>
+                )}
+              </Section>
+            ) : null}
+            {showWorksWith && (packs ?? []).length > 0 ? (
+              <Section id="part-of" title={t("games.packs.partOfTitle")}>
+                <Box sx={ADDON_GRID_SX}>
+                  {(packs ?? []).map((pack) => (
+                    <GameCard
+                      key={pack.id}
+                      game={{ ...pack, included: false }}
+                      context="addon"
+                      contextFunction={() => handleAddonClick(pack)}
+                    />
+                  ))}
+                </Box>
+              </Section>
+            ) : null}
             {!showWorksWith && !hasParentGame && !toysToLife ? (
               <Section id="addons" title={t("games.addons.title")}>
                 <BaseGameAddonsHint
@@ -248,6 +283,7 @@ const GameDetails = () => {
                 platforms={platforms}
                 regions={regions}
                 gameCategory={game.category}
+                ownedVia={game.ownedVia}
               />
               {!hasParentGame ? (
                 <GameProgressSection
@@ -274,12 +310,22 @@ const GameDetails = () => {
                 gameId={gameId}
                 gameName={game.name}
                 isAddon={isAddon}
-                links={manualLinks}
+                // On an add-on: its IGDB parent too, which can be marked Included there.
+                links={isAddon ? worksWith : manualLinks}
                 onCurrentGameDeleted={() => navigate("/games", { replace: true })}
                 offerBaseGameAddons={offerBaseGameAddons}
                 pickerOpen={linkPickerOpen}
                 onPickerOpenChange={setLinkPickerOpen}
               />
+              ) : null}
+              {linkedAddonsLab && isAddon ? (
+                <PackLinksSection
+                  gameId={gameId}
+                  gameName={game.name}
+                  isPack={isPack}
+                  items={isPack ? packContents : packs}
+                  onCurrentGameDeleted={() => navigate("/games", { replace: true })}
+                />
               ) : null}
             </>
           ) : null

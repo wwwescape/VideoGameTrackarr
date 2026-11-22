@@ -521,7 +521,7 @@
         },
         "linked_addons": {
           "name": "Complementos ligados",
-          "description": "Ligue complementos a mais jogos do que o IGDB, p. ex. um DLC que o IGDB lista na edição Standard de um jogo e que também funciona com a edição Premium. Adiciona uma secção de ligações às páginas de jogos, Funciona com nas páginas de complementos, complementos do jogo base de uma edição e Definições → Complementos ligados. Desativá-lo mantém as suas ligações."
+          "description": "Ligue complementos a mais jogos do que o IGDB, p. ex. um DLC que o IGDB lista na edição Standard de um jogo e que também funciona com a edição Premium, e marque os que uma edição inclui para contarem como seus. Adiciona uma secção de ligações às páginas de jogos, Funciona com nas páginas de complementos, complementos do jogo base de uma edição e Definições → Complementos ligados. Um complemento personalizado com a categoria Pack, como um passe de temporada, pode conter outros complementos, por isso tê-lo conta como tê-los. Desativá-lo mantém as suas ligações."
         }
       }
     },
@@ -777,7 +777,11 @@
         "removeVideoAriaLabel": "Remover vídeo {{index}}",
         "untitledVideo": "Sem título",
         "waitForUploads": "Aguarde que as imagens terminem de carregar."
-      }
+      },
+      "storeUrlLabel": "URL da loja",
+      "storeUrlHelperText": "Opcional: a página do complemento na Steam, Xbox, PlayStation, Nintendo, Epic Games ou GOG",
+      "storeUrlInvalid": "Use uma ligação de loja da Steam, Xbox, PlayStation, Nintendo, Epic Games ou GOG",
+      "storeUrlRecognised": "Ligação da loja {{store}}"
     },
     "edit": {
       "notEditableMessage": "Este jogo não pode ser editado. Todas as informações provêm do IGDB.",
@@ -891,7 +895,9 @@
       "missingLabel": "Em Falta",
       "customLabel": "Personalizado",
       "viaAddon": "Por complemento",
-      "linked": "Ligado"
+      "linkedTooltip": "Ligado por si",
+      "includedTooltip": "Incluído neste jogo",
+      "includedViaTooltip": "Incluído via {{name}}"
     },
     "add": {
       "addGameError": "Erro ao adicionar o jogo. Por favor, tente novamente.",
@@ -1058,8 +1064,8 @@
       "linkedAddonsToast_other": "{{count}} complementos ligados a {{name}}",
       "pickGamesTitle": "Ligar a jogos",
       "pickAddonsTitle": "Ligar complementos",
-      "pickGamesHelp": "Escolha os jogos com que {{name}} também funciona. Os da mesma coleção aparecem primeiro.",
-      "pickAddonsHelp": "Escolha os complementos que também funcionam com {{name}}. Os da mesma coleção aparecem primeiro.",
+      "pickGamesHelp": "Escolha os jogos com que {{name}} também funciona e escolha Incluído nos que o trazem. Os da mesma coleção aparecem primeiro.",
+      "pickAddonsHelp": "Escolha os complementos que também funcionam com {{name}} e escolha Incluído nos que vêm com ele. Os da mesma coleção aparecem primeiro.",
       "searchPlaceholder": "Pesquisar",
       "searchLabel": "Pesquisar",
       "sameCollection": "Mesma coleção",
@@ -1086,7 +1092,55 @@
       "hint_one": "{{name}} tem {{count}} complemento que não está ligado aqui. Ligue-o se funcionar com esta edição.",
       "hint_other": "{{name}} tem {{count}} complementos que não estão ligados aqui. Ligue os que funcionam com esta edição.",
       "hintAction": "Ligar complementos",
-      "hintDismiss": "Dispensar"
+      "hintDismiss": "Dispensar",
+      "relationLabel": "Como {{name}} se relaciona",
+      "worksWithOption": "Funciona com",
+      "includedOption": "Incluído",
+      "alreadyIncluded": "Já incluído",
+      "fromIgdb": "Do IGDB",
+      "markIncluded": "Marcar {{addon}} como incluído em {{game}}",
+      "unmarkIncluded": "{{addon}} está incluído em {{game}}. Clique para desmarcar",
+      "includedToggleLabel": "{{addon}} incluído em {{game}}",
+      "includedError": "Não foi possível alterar. Tente novamente.",
+      "ownedVia": "Seu através de"
+    },
+    "packs": {
+      "contentsTitle": "Conteúdo",
+      "contentsEmpty": "Este pacote ainda está vazio. Adicione os complementos que ele inclui em Conteúdo do pacote.",
+      "partOfTitle": "Faz parte de",
+      "sectionContentsTitle": "Conteúdo do pacote",
+      "sectionPacksTitle": "Em pacotes",
+      "addAction": "Adicionar",
+      "emptyForPack": "Um passe de temporada ou pacote? Adicione os complementos que ele inclui. Ter o pacote conta como tê-los também.",
+      "emptyForAddon": "Vem num passe de temporada ou pacote? Adicione-o a esse pacote.",
+      "inPackCaption": "Em pacote",
+      "remove": "Remover do pacote",
+      "removeLabel": "Remover {{addon}} de {{pack}}",
+      "removedToast": "{{addon}} removido de {{pack}}",
+      "removeError": "Não foi possível remover. Tente novamente.",
+      "addError": "Não foi possível adicionar. Tente novamente.",
+      "pickContentsTitle": "Adicionar a este pacote",
+      "pickPacksTitle": "Adicionar a pacotes",
+      "pickContentsHelp": "Escolha os complementos incluídos em {{name}}. Tê-lo, ou ter um jogo que o inclui, conta como tê-los. Complementos dos mesmos jogos primeiro.",
+      "pickPacksHelp": "Escolha os pacotes que incluem {{name}}, como um passe de temporada ou pacote Ultimate. Pacotes dos mesmos jogos primeiro.",
+      "groupSameGame": "Dos mesmos jogos",
+      "groupCollection": "Mesma coleção",
+      "groupSeries": "Mesma série",
+      "groupOther": "Outros resultados",
+      "alreadyInside": "Já incluído",
+      "alreadyInPack": "Já está dentro",
+      "noContentsCandidates": "Nenhum complemento dos mesmos jogos, coleção ou série. Pesquise para encontrar outros.",
+      "noPackCandidates": "Nenhum pacote dos mesmos jogos. Adicione primeiro um complemento personalizado com a categoria Pack, ou pesquise.",
+      "addButtonEmpty": "Adicionar",
+      "addContentsButton_one": "Adicionar {{count}} complemento",
+      "addContentsButton_other": "Adicionar {{count}} complementos",
+      "addPacksButton_one": "Adicionar a {{count}} pacote",
+      "addPacksButton_other": "Adicionar a {{count}} pacotes",
+      "addedContentsToast_one": "{{count}} complemento adicionado a {{name}}",
+      "addedContentsToast_other": "{{count}} complementos adicionados a {{name}}",
+      "addedPacksToast_one": "{{name}} adicionado a {{count}} pacote",
+      "addedPacksToast_other": "{{name}} adicionado a {{count}} pacotes",
+      "lastHolderDescription": "\"{{name}}\" não está noutro pacote nem ligado a um jogo, e o seu pai do IGDB não está na sua biblioteca, por isso retirá-lo deixá-lo-ia em lado nenhum. Excluir o complemento? As cópias, o progresso e as notas também são excluídos. Isto não pode ser desfeito."
     },
     "coverCard": {
       "noImageAvailable": "Imagem Não Disponível"

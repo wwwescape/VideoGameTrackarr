@@ -143,6 +143,11 @@ export interface GameSummary {
   // A game's Add-ons / an add-on's Works with: there through a manual link rather than IGDB's
   // own (the "Linked" chip; only these can be unlinked). Optional: false or absent elsewhere.
   manualLink?: boolean;
+  // Same lists: the add-on is Included in that game (the box icon). With the game owned, the
+  // add-on counts as owned too. Optional: false or absent elsewhere.
+  included?: boolean;
+  // A game's Add-ons: Included only through this pack, itself Included in the game.
+  includedVia?: GameRef | null;
   // Only on a GET /api/games search: the alternative name that matched when the game's own
   // name didn't (e.g. "GTA 6" for Grand Theft Auto VI). Shown by the header search.
   matchedAlias?: string | null;
@@ -362,6 +367,8 @@ export interface GameDetail extends GameSummary {
   // Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
   // Never shown as custom.
   linkedFromCustom: boolean;
+  // An add-on Included in games you own (Linked Add-ons lab): why it counts as owned.
+  ownedVia?: GameRef[];
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];
@@ -485,6 +492,8 @@ export interface ManualGameInput {
   edition?: string | null;
   coverUrl?: string | null;
   parentGameId?: number | null;
+  // One store link for a custom add-on; the server recognises the store from the address.
+  storeUrl?: string | null;
   developedBy?: string[];
   publishedBy?: string[];
   platformNames?: string[];
@@ -496,6 +505,16 @@ export interface ManualGameInput {
   screenshotUrls?: string[];
   artworkUrls?: string[];
   videos?: ManualGameVideoInput[];
+}
+
+// A game named and linked to elsewhere (e.g. GameDetail.ownedVia).
+export interface GameRef {
+  id: number;
+  uuid: string;
+  slug: string | null;
+  name: string;
+  // Whether a link goes to /game/ or /addon/.
+  category?: GameCategory | null;
 }
 
 // A YouTube video, stored like IGDB's: its title and YouTube's video id.

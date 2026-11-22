@@ -26,12 +26,14 @@ import { usePlatforms } from "../hooks/usePlatforms";
 import { useUploadCover } from "../hooks/useUploads";
 import { useLanguage } from "../theme/LanguageProvider";
 import { gameIdentifier } from "../utils/identifiers";
+import { currentStoreUrl } from "../utils/storeUrls";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import AutocompleteSelect from "./AutocompleteSelect";
 import GameMediaFields, { type GameMediaValue } from "./GameMediaFields";
 import Page from "./Page";
 import { useEditReturn } from "../utils/navState";
 import ImageUploadHint from "./ImageUploadHint";
+import StoreUrlField, { isValidStoreUrl } from "./StoreUrlField";
 
 interface CategoryOption {
   value: GameCategory;
@@ -72,6 +74,8 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
   const category = game.category ?? "main_game";
   const showParentGameField = category !== "main_game";
   const parentGameRequired = ADDON_TYPE_CATEGORIES.includes(category);
+  // A DLC, expansion or pack has a Store URL (its own store page).
+  const isAddonCategory = parentGameRequired;
   const parentGameOptions = existingGames ?? [];
 
   const [name, setName] = useState(game.name);
@@ -93,6 +97,7 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
   const [parentGame, setParentGame] = useState<GameSummary | null>(
     parentGameOptions.find((option) => option.id === game.parentGameId) ?? null
   );
+  const [storeUrl, setStoreUrl] = useState(() => currentStoreUrl(game));
   const [media, setMedia] = useState<GameMediaValue>({
     screenshotUrls: game.screenshotUrls,
     artworkUrls: game.artworkUrls,
@@ -122,6 +127,10 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
       toast.error(t("games.gameForm.linkedGameRequiredError"), TOAST_OPTIONS);
       return;
     }
+    if (isAddonCategory && !isValidStoreUrl(storeUrl)) {
+      toast.error(t("games.gameForm.storeUrlInvalid"), TOAST_OPTIONS);
+      return;
+    }
     if (mediaUploading) {
       toast.info(t("games.gameForm.media.waitForUploads"), TOAST_OPTIONS);
       return;
@@ -139,6 +148,8 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
         edition: edition.trim() || null,
         notes: notes.trim() || null,
         parentGameId: showParentGameField ? parentGame?.id ?? null : null,
+        // Only an add-on has one; anything else keeps its store links as they are.
+        ...(isAddonCategory ? { storeUrl: storeUrl.trim() || null } : {}),
         ...media,
       });
       toast.success(t("games.edit.updateSuccessToast"), TOAST_OPTIONS);
@@ -175,6 +186,30 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
             onChange={() => undefined}
           />
         </Grid>
+        {showParentGameField ? (
+          <Grid size={12}>
+            <Autocomplete<GameSummary>
+              options={parentGameOptions}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              value={parentGame}
+              onChange={(_event, option) => setParentGame(option)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t("games.gameForm.linkedGameLabel")}
+                  required={parentGameRequired}
+                  helperText={t("games.gameForm.linkedGameHelperText")}
+                />
+              )}
+            />
+          </Grid>
+        ) : null}
+        {isAddonCategory ? (
+          <Grid size={12}>
+            <StoreUrlField value={storeUrl} onChange={setStoreUrl} />
+          </Grid>
+        ) : null}
         <Grid size={{ xs: 12, sm: 6 }}>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={language}>
             <DatePicker
@@ -289,25 +324,6 @@ const EditGameForm = ({ game }: EditGameFormProps) => {
             helperText={t("games.edit.notesHelperText")}
           />
         </Grid>
-        {showParentGameField ? (
-          <Grid size={12}>
-            <Autocomplete<GameSummary>
-              options={parentGameOptions}
-              getOptionLabel={(option) => option.name}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              value={parentGame}
-              onChange={(_event, option) => setParentGame(option)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t("games.gameForm.linkedGameLabel")}
-                  required={parentGameRequired}
-                  helperText={t("games.gameForm.linkedGameHelperText")}
-                />
-              )}
-            />
-          </Grid>
-        ) : null}
         <Grid size={12}>
           <Typography variant="overline" component="h3" sx={{ display: "block", color: "text.secondary", mb: 1 }}>
             {t("games.gameForm.media.mediaHeading")}

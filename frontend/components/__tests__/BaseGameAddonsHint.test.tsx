@@ -12,6 +12,8 @@ const addon = (igdbId: number, linked: boolean) => ({
   firstReleaseDate: null,
   gameId: null,
   linked,
+  included: false,
+  suggestedIncluded: false,
 });
 
 const query = { data: undefined as BaseGameAddons | undefined };
@@ -44,14 +46,18 @@ describe("BaseGameAddonsHint", () => {
     render(<BaseGameAddonsHint gameId={7} enabled onOpenPicker={onOpenPicker} />);
 
     expect(
-      screen.getByText("Forza Horizon 5 has 2 add-ons that aren't linked here. Link the ones that work with this edition.")
+      screen.getByText(
+        "Forza Horizon 5 has 2 add-ons that aren't linked here. Link the ones that work with this edition."
+      )
     ).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Link add-ons" }));
     expect(onOpenPicker).toHaveBeenCalled();
   });
 
   it("stays away without a base game, with nothing left to link, or when disabled", () => {
-    const { unmount } = render(<BaseGameAddonsHint gameId={7} enabled={false} onOpenPicker={vi.fn()} />);
+    const { unmount } = render(
+      <BaseGameAddonsHint gameId={7} enabled={false} onOpenPicker={vi.fn()} />
+    );
     expect(screen.queryByRole("button", { name: "Link add-ons" })).not.toBeInTheDocument();
     unmount();
 
@@ -60,7 +66,10 @@ describe("BaseGameAddonsHint", () => {
     expect(screen.queryByRole("button", { name: "Link add-ons" })).not.toBeInTheDocument();
     second.unmount();
 
-    query.data = { baseGame: { igdbId: 100, name: "Forza Horizon 5", gameId: null }, addons: [addon(3, true)] };
+    query.data = {
+      baseGame: { igdbId: 100, name: "Forza Horizon 5", gameId: null },
+      addons: [addon(3, true)],
+    };
     render(<BaseGameAddonsHint gameId={7} enabled onOpenPicker={vi.fn()} />);
     expect(screen.queryByRole("button", { name: "Link add-ons" })).not.toBeInTheDocument();
   });

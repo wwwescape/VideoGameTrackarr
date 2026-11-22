@@ -31,6 +31,7 @@ import AddGameSuggestionsDialog from "./AddGameSuggestionsDialog";
 import AutocompleteSelect from "./AutocompleteSelect";
 import GameMediaFields, { EMPTY_GAME_MEDIA, type GameMediaValue } from "./GameMediaFields";
 import ImageUploadHint from "./ImageUploadHint";
+import StoreUrlField, { isValidStoreUrl } from "./StoreUrlField";
 
 interface CategoryOption {
   value: GameCategory;
@@ -93,6 +94,7 @@ const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameF
   const [edition, setEdition] = useState("");
   const [notes, setNotes] = useState("");
   const [parentGame, setParentGame] = useState<GameSummary | null>(null);
+  const [storeUrl, setStoreUrl] = useState("");
   const [media, setMedia] = useState<GameMediaValue>(EMPTY_GAME_MEDIA);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [suggestionsDialogOpen, setSuggestionsDialogOpen] = useState(false);
@@ -102,6 +104,8 @@ const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameF
   // Expansion can legitimately have its own addons too.
   const showParentGameField = category !== "main_game";
   const parentGameRequired = ADDON_TYPE_CATEGORIES.includes(category);
+  // A DLC, expansion or pack gets a Store URL (its own store page).
+  const isAddonCategory = parentGameRequired;
   const parentGameOptions = existingGames ?? [];
 
   const handleCoverFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,6 +136,7 @@ const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameF
         edition: edition.trim() || null,
         notes: notes.trim() || null,
         parentGameId: showParentGameField ? (parentGame?.id ?? null) : null,
+        storeUrl: isAddonCategory ? storeUrl.trim() || null : null,
         steamAppId,
         gogProductId,
         ...media,
@@ -151,6 +156,10 @@ const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameF
     }
     if (parentGameRequired && !parentGame) {
       toast.error(t("games.gameForm.linkedGameRequiredError"), TOAST_OPTIONS);
+      return;
+    }
+    if (isAddonCategory && !isValidStoreUrl(storeUrl)) {
+      toast.error(t("games.gameForm.storeUrlInvalid"), TOAST_OPTIONS);
       return;
     }
     if (mediaUploading) {
@@ -191,6 +200,30 @@ const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameF
             }}
           />
         </Grid>
+        {showParentGameField ? (
+          <Grid size={12}>
+            <Autocomplete<GameSummary>
+              options={parentGameOptions}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              value={parentGame}
+              onChange={(_event, option) => setParentGame(option)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t("games.gameForm.linkedGameLabel")}
+                  required={parentGameRequired}
+                  helperText={t("games.gameForm.linkedGameHelperText")}
+                />
+              )}
+            />
+          </Grid>
+        ) : null}
+        {isAddonCategory ? (
+          <Grid size={12}>
+            <StoreUrlField value={storeUrl} onChange={setStoreUrl} />
+          </Grid>
+        ) : null}
         <Grid size={{ xs: 12, sm: 6 }}>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={language}>
             <DatePicker
@@ -325,25 +358,6 @@ const ManualGameForm = ({ initialValues, steamAppId, gogProductId }: ManualGameF
             onChange={(event) => setNotes(event.target.value)}
           />
         </Grid>
-        {showParentGameField ? (
-          <Grid size={12}>
-            <Autocomplete<GameSummary>
-              options={parentGameOptions}
-              getOptionLabel={(option) => option.name}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              value={parentGame}
-              onChange={(_event, option) => setParentGame(option)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t("games.gameForm.linkedGameLabel")}
-                  required={parentGameRequired}
-                  helperText={t("games.gameForm.linkedGameHelperText")}
-                />
-              )}
-            />
-          </Grid>
-        ) : null}
         <Grid size={12}>
           <Typography variant="overline" component="h3" sx={{ display: "block", color: "text.secondary", mb: 1 }}>
             {t("games.gameForm.media.mediaHeading")}

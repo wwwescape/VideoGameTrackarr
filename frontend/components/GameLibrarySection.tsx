@@ -1,25 +1,30 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CloudDownloadIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import Link from "@mui/material/Link";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { isAxiosError } from "axios";
+import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type {
   GameCategory,
+  GameRef,
   LibraryItem,
   LibraryStatus,
   MediaFormat,
@@ -38,8 +43,10 @@ import {
 import { useIntegrationsStatus } from "../hooks/useIntegrations";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
+import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
+import { ADDON_DISPLAY_CATEGORIES } from "./GameDetailParts";
 import GogInstallersDialog from "./GogInstallersDialog";
 import LibraryItemDialog, { type LibraryItemFormValues, type RomChanges } from "./LibraryItemDialog";
 import { showUndoToast } from "./UndoToast";
@@ -53,6 +60,8 @@ interface GameLibrarySectionProps {
   platforms: PlatformResponse[] | undefined;
   regions: RegionResponse[] | undefined;
   gameCategory?: GameCategory | null;
+  // An add-on Included in games you own (Linked Add-ons lab): owned through them, no copy needed.
+  ownedVia?: GameRef[];
 }
 
 const GameLibrarySection = ({
@@ -62,6 +71,7 @@ const GameLibrarySection = ({
   platforms,
   regions,
   gameCategory,
+  ownedVia = [],
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
   const { data: integrations } = useIntegrationsStatus();
@@ -341,8 +351,33 @@ const GameLibrarySection = ({
             {t("games.library.addToWishlist")}
           </MenuItem>
         </Menu>
+        {ownedVia.length > 0 ? (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ display: "flex", alignItems: "center", gap: 1, mb: visibleItems.length > 0 ? 1.5 : 0 }}
+          >
+            <Inventory2Icon fontSize="small" color="primary" />
+            <span>
+              {t("games.addonLinks.ownedVia")}{" "}
+              {ownedVia.map((other, index) => (
+                <Fragment key={other.id}>
+                  {index > 0 ? ", " : null}
+                  <Link
+                    component={RouterLink}
+                    // A pack it's Included in has an add-on page.
+                    to={`/${other.category && ADDON_DISPLAY_CATEGORIES.has(other.category) ? "addon" : "game"}/${gameIdentifier(other)}`}
+                    underline="hover"
+                  >
+                    {other.name}
+                  </Link>
+                </Fragment>
+              ))}
+            </span>
+          </Typography>
+        ) : null}
         {visibleItems.length === 0 ? (
-          <EmptyLine>{t("games.library.empty")}</EmptyLine>
+          ownedVia.length > 0 ? null : <EmptyLine>{t("games.library.empty")}</EmptyLine>
         ) : (
           <Panel>
             {visibleItems.map((item) => {

@@ -1,13 +1,19 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addAddonLinks,
+  addPackLinks,
   getBaseGameAddons,
   getRemovalPreview,
   linkBaseGameAddons,
+  setAddonIncluded,
   listAddonLinkCandidates,
   listAllAddonLinks,
+  listPackCandidates,
+  listPackContents,
+  listPacks,
   listWorksWith,
   removeAddonLink,
+  removeFromPack,
 } from "../api/addonLinks";
 
 // Under ["games", id, ...] like useAddons, so anything that refreshes a game refreshes these.
@@ -78,7 +84,8 @@ export function useRemoveAddonLinkPair() {
 export function useAddAddonLinks(gameId: number) {
   const invalidate = useInvalidateGames();
   return useMutation({
-    mutationFn: (ids: number[]) => addAddonLinks(gameId, ids),
+    mutationFn: ({ ids, includedIds = [] }: { ids: number[]; includedIds?: number[] }) =>
+      addAddonLinks(gameId, ids, includedIds),
     onSuccess: invalidate,
   });
 }
@@ -95,7 +102,72 @@ export function useRemoveAddonLink(gameId: number) {
 export function useLinkBaseGameAddons(gameId: number) {
   const invalidate = useInvalidateGames();
   return useMutation({
-    mutationFn: (igdbIds: number[]) => linkBaseGameAddons(gameId, igdbIds),
+    mutationFn: ({ igdbIds, includedIgdbIds = [] }: { igdbIds: number[]; includedIgdbIds?: number[] }) =>
+      linkBaseGameAddons(gameId, igdbIds, includedIgdbIds),
+    onSuccess: invalidate,
+  });
+}
+
+// Marks an add-on Included in a game, or clears it; gameId and otherId can be either side.
+export function useSetAddonIncluded(gameId: number) {
+  const invalidate = useInvalidateGames();
+  return useMutation({
+    mutationFn: ({ otherId, included }: { otherId: number; included: boolean }) =>
+      setAddonIncluded(gameId, otherId, included),
+    onSuccess: invalidate,
+  });
+}
+
+// The same from Settings, where each row names both sides.
+export function useSetAddonIncludedPair() {
+  const invalidate = useInvalidateGames();
+  return useMutation({
+    mutationFn: ({ addonId, gameId, included }: { addonId: number; gameId: number; included: boolean }) =>
+      setAddonIncluded(addonId, gameId, included),
+    onSuccess: invalidate,
+  });
+}
+
+// --- Packs (Season Pass, Ultimate Pack) and what's inside them.
+
+export function usePackContents(packId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["games", packId, "pack-contents"],
+    queryFn: () => listPackContents(packId),
+    enabled: enabled && Number.isFinite(packId),
+  });
+}
+
+export function usePacks(addonId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["games", addonId, "packs"],
+    queryFn: () => listPacks(addonId),
+    enabled: enabled && Number.isFinite(addonId),
+  });
+}
+
+export function usePackCandidates(gameId: number, search: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["games", gameId, "pack-candidates", search],
+    queryFn: () => listPackCandidates(gameId, search || undefined),
+    enabled: enabled && Number.isFinite(gameId),
+    placeholderData: keepPreviousData,
+  });
+}
+
+// On a pack, puts add-ons inside it; on any other add-on, puts it inside packs.
+export function useAddPackLinks(gameId: number) {
+  const invalidate = useInvalidateGames();
+  return useMutation({
+    mutationFn: (ids: number[]) => addPackLinks(gameId, ids),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemoveFromPack() {
+  const invalidate = useInvalidateGames();
+  return useMutation({
+    mutationFn: ({ packId, addonId }: { packId: number; addonId: number }) => removeFromPack(packId, addonId),
     onSuccess: invalidate,
   });
 }

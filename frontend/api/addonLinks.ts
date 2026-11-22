@@ -11,6 +11,8 @@ export interface AddonLinkCandidate extends GameSummary {
   sameCollection: boolean;
   // Already linked: shown checked and disabled in the picker.
   linked: boolean;
+  // Already linked as Included.
+  linkedIncluded: boolean;
 }
 
 export interface AddonRef {
@@ -36,9 +38,16 @@ export async function listAddonLinkCandidates(gameId: number, q?: string): Promi
   return response.data;
 }
 
-export async function addAddonLinks(gameId: number, ids: number[]): Promise<number> {
-  const response = await apiClient.post<{ added: number }>(`/api/games/${gameId}/addon-links`, { ids });
+// includedIds: the ones among ids to mark Included (the add-on is part of that game).
+export async function addAddonLinks(gameId: number, ids: number[], includedIds: number[] = []): Promise<number> {
+  const response = await apiClient.post<{ added: number }>(`/api/games/${gameId}/addon-links`, { ids, includedIds });
   return response.data.added;
+}
+
+// Marks the add-on (either id) Included in the other game, or clears it. Works for an add-on's
+// own IGDB parent too.
+export async function setAddonIncluded(gameId: number, otherId: number, included: boolean): Promise<void> {
+  await apiClient.put(`/api/games/${gameId}/addon-links/${otherId}/included`, { included });
 }
 
 export async function removeAddonLink(gameId: number, otherId: number): Promise<void> {
@@ -70,6 +79,10 @@ export interface BaseGameAddon {
   // Null when it isn't in VGT yet ("Will be added").
   gameId: number | null;
   linked: boolean;
+  // Already marked Included in this game.
+  included: boolean;
+  // IGDB lists it in this game's bundle contents: the picker starts it as Included.
+  suggestedIncluded: boolean;
 }
 
 export interface BaseGameAddons {
@@ -89,17 +102,68 @@ export async function getBaseGameAddons(gameId: number): Promise<BaseGameAddons>
   return response.data;
 }
 
-export async function linkBaseGameAddons(gameId: number, igdbIds: number[]): Promise<BaseGameAddonResult[]> {
+export async function linkBaseGameAddons(
+  gameId: number,
+  igdbIds: number[],
+  includedIgdbIds: number[] = []
+): Promise<BaseGameAddonResult[]> {
   const response = await apiClient.post<{ results: BaseGameAddonResult[] }>(`/api/games/${gameId}/base-game-addons`, {
     igdbIds,
+    includedIgdbIds,
   });
   return response.data.results;
+}
+
+// --- Packs: a Season Pass or Ultimate Pack (a custom add-on with the Pack category) holding
+// other add-ons. Owning the pack, or a game it's Included in, owns what's inside.
+
+export type PackCandidateGroup = "same_game" | "collection" | "series" | "other";
+
+export interface PackCandidate extends GameSummary {
+  // For the same games, the same Collection, the same Series, or (only while searching) none.
+  group: PackCandidateGroup;
+  // Already inside (or already holding) it: shown checked and disabled.
+  linked: boolean;
+}
+
+export async function listPackContents(packId: number): Promise<GameSummary[]> {
+  const response = await apiClient.get<GameSummary[]>(`/api/games/${packId}/pack-contents`);
+  return response.data;
+}
+
+// The packs an add-on is inside.
+export async function listPacks(addonId: number): Promise<GameSummary[]> {
+  const response = await apiClient.get<GameSummary[]>(`/api/games/${addonId}/packs`);
+  return response.data;
+}
+
+// On a pack: add-ons to put inside it. On any other add-on: packs to put it in.
+export async function listPackCandidates(gameId: number, q?: string): Promise<PackCandidate[]> {
+  const response = await apiClient.get<PackCandidate[]>(`/api/games/${gameId}/pack-links/candidates`, {
+    params: q ? { q } : undefined,
+  });
+  return response.data;
+}
+
+// On a pack, puts the ids inside it; on any other add-on, puts it inside the ids (packs).
+export async function addPackLinks(gameId: number, ids: number[]): Promise<number> {
+  const response = await apiClient.post<{ added: number }>(`/api/games/${gameId}/pack-links`, { ids });
+  return response.data.added;
+}
+
+export async function removeFromPack(packId: number, addonId: number): Promise<void> {
+  await apiClient.delete(`/api/games/${packId}/pack-contents/${addonId}`);
 }
 
 // Settings → Linked Add-ons: every manual link, add-on and game.
 export interface AddonLinkPair {
   addon: AddonRef;
   game: AddonRef;
+  included: boolean;
+  // False for the add-on's own IGDB parent: only an Included mark, nothing to unlink.
+  manual: boolean;
+  // The "game" is a pack the add-on is inside (always Included).
+  pack?: boolean;
 }
 
 export async function listAllAddonLinks(): Promise<AddonLinkPair[]> {

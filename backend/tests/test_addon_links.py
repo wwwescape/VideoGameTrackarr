@@ -263,7 +263,7 @@ def test_links_round_trip_through_a_backup(auth_client, db_session, fh5):
     _link(auth_client, fh5["orphan"].id, [fh5["premium"].id])
     _link(auth_client, fh5["car_pack"].id, [fh5["premium"].id])
     body = auth_client.get("/api/export/backup").json()
-    assert body["version"] == 10
+    assert body["version"] == 11
     assert len(body["addon_links"]) == 2
 
     db_session.query(GameAddonLink).delete()
@@ -443,3 +443,275 @@ def test_settings_lists_every_link(auth_client, fh5):
         ("Forza Horizon 5: Car Collection", "Forza Horizon 5: Premium Edition"),
         ("Forza Horizon 5: Rally Adventure", "Forza Horizon 5: Premium Edition"),
     ]
+
+
+# --- Included -------------------------------------------------------------------------------
+
+
+def test_linking_as_included_counts_the_add_on_as_owned(auth_client, fh5):
+    car_pack, premium = fh5["car_pack"], fh5["premium"]
+    response = auth_client.post(
+        f"/api/games/{premium.id}/addon-links", json={"ids": [car_pack.id], "includedIds": [car_pack.id]}
+    )
+    assert response.json() == {"added": 1}
+
+    [addon] = auth_client.get(f"/api/games/{premium.id}/addons").json()
+    # Premium is owned (see the fixture), so the included car pack is too.
+    assert (addon["manualLink"], addon["included"], addon["owned"]) == (True, True, True)
+    detail = auth_client.get(f"/api/games/{car_pack.id}/works-with").json()
+    assert [(g["name"], g["included"]) for g in detail] == [
+        ("Forza Horizon 5", False),
+        ("Forza Horizon 5: Premium Edition", True),
+    ]
+
+
+def test_included_can_be_toggled_on_a_link_and_on_the_igdb_parent(auth_client, db_session, fh5):
+    car_pack, premium, standard = fh5["car_pack"], fh5["premium"], fh5["standard"]
+    _link(auth_client, car_pack.id, [premium.id])
+    url = f"/api/games/{car_pack.id}/addon-links/{premium.id}/included"
+    assert auth_client.put(url, json={"included": True}).status_code == 204
+    assert db_session.query(GameAddonLink).filter_by(game_id=premium.id).one().included is True
+    assert auth_client.put(url, json={"included": False}).status_code == 204
+    db_session.expire_all()
+    # A manual link stays when un-included.
+    assert db_session.query(GameAddonLink).filter_by(game_id=premium.id).one().included is False
+
+    # The IGDB parent: the row exists only while included, and isn't a link to unlink.
+    parent_url = f"/api/games/{standard.id}/addon-links/{car_pack.id}/included"
+    assert auth_client.put(parent_url, json={"included": True}).status_code == 204
+    [addon] = auth_client.get(f"/api/games/{standard.id}/addons").json()
+    assert (addon["manualLink"], addon["included"]) == (False, True)
+    assert auth_client.delete(f"/api/games/{car_pack.id}/addon-links/{standard.id}").status_code == 404
+    assert auth_client.put(parent_url, json={"included": False}).status_code == 204
+    db_session.expire_all()
+    assert db_session.query(GameAddonLink).filter_by(game_id=standard.id).count() == 0
+
+
+def test_included_needs_a_link(auth_client, fh5):
+    url = f"/api/games/{fh5['car_pack'].id}/addon-links/{fh5['motorsport'].id}/included"
+    assert auth_client.put(url, json={"included": True}).status_code == 404
+
+
+def test_an_included_add_on_shows_owned_via_and_leaves_missing_dlc(auth_client, db_session, seed_platform, fh5):
+    car_pack, premium, standard = fh5["car_pack"], fh5["premium"], fh5["standard"]
+    # Owning Standard too makes its car pack "missing" until Premium covers it.
+    db_session.add(
+        LibraryItem(
+            game_id=standard.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED, format=MediaFormat.DIGITAL
+        )
+    )
+    db_session.commit()
+
+    def missing_names() -> set[str]:
+        rows = auth_client.get("/api/insights/missing-addons").json()
+        return {addon["name"] for row in rows for addon in row["missingAddons"]}
+
+    assert "Forza Horizon 5: Car Collection" in missing_names()
+    _link(auth_client, car_pack.id, [premium.id])
+    auth_client.put(f"/api/games/{car_pack.id}/addon-links/{premium.id}/included", json={"included": True})
+
+    assert "Forza Horizon 5: Car Collection" not in missing_names()
+    detail = auth_client.get(f"/api/games/{car_pack.slug or car_pack.uuid}").json()
+    assert detail["owned"] is True
+    assert [g["name"] for g in detail["ownedVia"]] == ["Forza Horizon 5: Premium Edition"]
+
+
+def test_included_counts_nowhere_while_the_lab_is_off(auth_client, db_session, fh5):
+    car_pack, premium = fh5["car_pack"], fh5["premium"]
+    auth_client.post(f"/api/games/{premium.id}/addon-links", json={"ids": [car_pack.id], "includedIds": [car_pack.id]})
+    _lab_off(db_session)
+    assert auth_client.get(f"/api/games/{premium.id}/addons").json() == []
+    assert db_session.query(GameAddonLink).one().included is True
+
+
+def test_backup_round_trips_the_included_mark(auth_client, fh5):
+    car_pack, premium = fh5["car_pack"], fh5["premium"]
+    auth_client.post(f"/api/games/{premium.id}/addon-links", json={"ids": [car_pack.id], "includedIds": [car_pack.id]})
+    body = auth_client.get("/api/export/backup").json()
+    assert body["addon_links"] == [{"addon_game_id": car_pack.id, "game_id": premium.id, "included": True}]
+
+
+@respx.mock
+def test_base_game_add_ons_in_the_editions_bundle_are_suggested_as_included(auth_client, igdb_client, fh5):
+    premium = fh5["premium"]
+    in_bundle = {**_addon_payload(300, "Forza Horizon 5: VIP"), "bundles": [premium.igdb_id]}
+    _mock_igdb(FH5_IGDB, [in_bundle, _addon_payload(301, "Forza Horizon 5: Car Pass")])
+
+    body = auth_client.get(f"/api/games/{premium.id}/base-game-addons").json()
+    assert [(a["name"], a["suggestedIncluded"]) for a in body["addons"]] == [
+        ("Forza Horizon 5: Car Pass", False),
+        ("Forza Horizon 5: VIP", True),
+    ]
+    results = auth_client.post(
+        f"/api/games/{premium.id}/base-game-addons", json={"igdbIds": [300], "includedIgdbIds": [300]}
+    ).json()["results"]
+    assert results[0]["status"] == "linked"
+    [addon] = auth_client.get(f"/api/games/{premium.id}/addons").json()
+    assert (addon["name"], addon["included"], addon["owned"]) == ("Forza Horizon 5: VIP", True, True)
+
+
+# --- Packs ----------------------------------------------------------------------------------
+# A Season Pass / Ultimate Pack IGDB leaves out, added as a custom Pack holding other add-ons.
+
+
+@pytest.fixture()
+def season_pass(db_session, fh5):
+    """A custom Season Pass for FH5 Standard and the Hot Wheels expansion IGDB lists there."""
+    standard = fh5["standard"]
+    pass_ = Game(name="Forza Horizon 5: Expansions Bundle", category=GameCategory.PACK, parent_game_id=standard.id)
+    hot_wheels = Game(
+        name="Forza Horizon 5: Hot Wheels", category=GameCategory.EXPANSION, igdb_id=203, parent_game_id=standard.id
+    )
+    db_session.add_all([pass_, hot_wheels])
+    db_session.commit()
+    return {**fh5, "pass": pass_, "hot_wheels": hot_wheels}
+
+
+def _pack(client, game_id: int, ids: list[int]):
+    return client.post(f"/api/games/{game_id}/pack-links", json={"ids": ids})
+
+
+def test_contents_are_added_from_the_pack_or_from_the_add_on(auth_client, season_pass):
+    pass_, hot_wheels, orphan = season_pass["pass"], season_pass["hot_wheels"], season_pass["orphan"]
+    assert _pack(auth_client, pass_.id, [hot_wheels.id]).json() == {"added": 1}
+    # From the add-on's side the ids are packs.
+    assert _pack(auth_client, orphan.id, [pass_.id]).json() == {"added": 1}
+
+    contents = auth_client.get(f"/api/games/{pass_.id}/pack-contents").json()
+    assert [(g["name"], g["included"]) for g in contents] == [
+        ("Forza Horizon 5: Hot Wheels", True),
+        ("Forza Horizon 5: Rally Adventure", True),
+    ]
+    assert _names(auth_client.get(f"/api/games/{hot_wheels.id}/packs")) == ["Forza Horizon 5: Expansions Bundle"]
+    # A pack isn't a game the add-on works with.
+    assert _names(auth_client.get(f"/api/games/{hot_wheels.id}/works-with")) == ["Forza Horizon 5"]
+
+
+def test_only_a_pack_holds_add_ons_and_never_in_a_loop(auth_client, season_pass):
+    pass_, hot_wheels, car_pack = season_pass["pass"], season_pass["hot_wheels"], season_pass["car_pack"]
+    assert _pack(auth_client, hot_wheels.id, [season_pass["zelda_dlc"].id]).status_code == 409
+    assert _pack(auth_client, pass_.id, [season_pass["premium"].id]).status_code == 409
+    assert _pack(auth_client, pass_.id, [pass_.id]).status_code == 409
+    # Packs nest (an Ultimate Pack holding a Season Pass), but not in a loop.
+    assert _pack(auth_client, car_pack.id, [pass_.id]).status_code == 200
+    assert _pack(auth_client, pass_.id, [car_pack.id]).status_code == 409
+
+
+def test_a_pack_included_in_an_owned_game_owns_its_contents(auth_client, season_pass):
+    pass_, hot_wheels, premium = season_pass["pass"], season_pass["hot_wheels"], season_pass["premium"]
+    _pack(auth_client, pass_.id, [hot_wheels.id])
+    auth_client.post(f"/api/games/{premium.id}/addon-links", json={"ids": [pass_.id], "includedIds": [pass_.id]})
+
+    detail = auth_client.get(f"/api/games/{hot_wheels.uuid}").json()
+    assert detail["owned"] is True
+    assert [(g["name"], g["category"]) for g in detail["ownedVia"]] == [("Forza Horizon 5: Expansions Bundle", "pack")]
+
+    # Premium lists the pack and, through it, what's inside: Included, not a link of its own.
+    addons = {g["name"]: g for g in auth_client.get(f"/api/games/{premium.id}/addons").json()}
+    assert set(addons) == {"Forza Horizon 5: Expansions Bundle", "Forza Horizon 5: Hot Wheels"}
+    inside = addons["Forza Horizon 5: Hot Wheels"]
+    assert (inside["included"], inside["manualLink"], inside["owned"]) == (True, False, True)
+    assert inside["includedVia"]["name"] == "Forza Horizon 5: Expansions Bundle"
+    assert addons["Forza Horizon 5: Expansions Bundle"]["includedVia"] is None
+
+
+def test_owning_a_pack_owns_its_nested_contents(auth_client, db_session, seed_platform, season_pass):
+    pass_, hot_wheels, car_pack = season_pass["pass"], season_pass["hot_wheels"], season_pass["car_pack"]
+    _pack(auth_client, car_pack.id, [pass_.id])
+    _pack(auth_client, pass_.id, [hot_wheels.id])
+    assert auth_client.get(f"/api/games/{hot_wheels.uuid}").json()["owned"] is False
+    db_session.add(
+        LibraryItem(
+            game_id=car_pack.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED, format=MediaFormat.DIGITAL
+        )
+    )
+    db_session.commit()
+    assert auth_client.get(f"/api/games/{hot_wheels.uuid}").json()["owned"] is True
+    _lab_off(db_session)
+    assert auth_client.get(f"/api/games/{hot_wheels.uuid}").json()["owned"] is False
+
+
+def test_pack_candidates_come_closest_first_without_loops(auth_client, season_pass):
+    pass_, hot_wheels, car_pack = season_pass["pass"], season_pass["hot_wheels"], season_pass["car_pack"]
+
+    def candidates(game_id: int, q: str | None = None) -> list[tuple[str, str, bool]]:
+        params = {"q": q} if q else None
+        body = auth_client.get(f"/api/games/{game_id}/pack-links/candidates", params=params).json()
+        return [(c["name"], c["group"], c["linked"]) for c in body]
+
+    _pack(auth_client, pass_.id, [hot_wheels.id])
+    assert candidates(pass_.id) == [
+        ("Forza Horizon 5: Car Collection", "same_game", False),
+        ("Forza Horizon 5: Hot Wheels", "same_game", True),
+        ("Forza Horizon 5: Rally Adventure", "collection", False),
+    ]
+    # A search reaches beyond the family.
+    assert candidates(pass_.id, "Zelda") == [("Zelda DLC", "other", False)]
+    # From an add-on: only packs.
+    assert candidates(hot_wheels.id) == [
+        ("Forza Horizon 5: Car Collection", "same_game", False),
+        ("Forza Horizon 5: Expansions Bundle", "same_game", True),
+    ]
+    # The Car Collection holding the pass can't go inside it.
+    _pack(auth_client, car_pack.id, [pass_.id])
+    assert "Forza Horizon 5: Car Collection" not in [name for name, _, _ in candidates(pass_.id)]
+
+
+def test_taking_the_last_holder_away_is_refused(auth_client, season_pass):
+    pass_, orphan, premium = season_pass["pass"], season_pass["orphan"], season_pass["premium"]
+    url = f"/api/games/{pass_.id}/pack-contents/{orphan.id}"
+    assert auth_client.delete(url).status_code == 404
+    _pack(auth_client, pass_.id, [orphan.id])
+    response = auth_client.delete(url)
+    assert (response.status_code, response.json()["detail"]) == (409, "last_link_orphan")
+    _link(auth_client, orphan.id, [premium.id])
+    assert auth_client.delete(url).status_code == 204
+    assert _names(auth_client.get(f"/api/games/{pass_.id}/pack-contents")) == []
+
+
+def test_deleting_a_game_takes_its_pack_and_the_contents_with_it(auth_client, db_session, season_pass):
+    standard, pass_, hot_wheels = season_pass["standard"], season_pass["pass"], season_pass["hot_wheels"]
+    pass_id, hot_wheels_id = pass_.id, hot_wheels.id
+    _pack(auth_client, pass_.id, [hot_wheels.id])
+    # Both go with Standard, so the pass holding Hot Wheels doesn't keep it.
+    assert auth_client.get(f"/api/games/{standard.id}/removal-preview").json() == {"keptAddons": []}
+    assert auth_client.delete(f"/api/games/{standard.id}").status_code == 204
+    db_session.expire_all()
+    assert db_session.get(Game, pass_id) is None and db_session.get(Game, hot_wheels_id) is None
+
+
+def test_deleting_a_game_keeps_contents_of_a_pack_that_stays(auth_client, db_session, season_pass):
+    standard, car_pack, hot_wheels, premium = (
+        season_pass["standard"],
+        season_pass["car_pack"],
+        season_pass["hot_wheels"],
+        season_pass["premium"],
+    )
+    # The Car Collection stays (linked to Premium), so Hot Wheels inside it stays too.
+    _link(auth_client, car_pack.id, [premium.id])
+    _pack(auth_client, car_pack.id, [hot_wheels.id])
+    preview = auth_client.get(f"/api/games/{standard.id}/removal-preview").json()
+    assert sorted(a["name"] for a in preview["keptAddons"]) == [
+        "Forza Horizon 5: Car Collection",
+        "Forza Horizon 5: Hot Wheels",
+    ]
+
+
+def test_settings_marks_pack_rows(auth_client, season_pass):
+    _pack(auth_client, season_pass["pass"].id, [season_pass["hot_wheels"].id])
+    [row] = auth_client.get("/api/addon-links").json()
+    assert (row["game"]["name"], row["included"], row["manual"], row["pack"]) == (
+        "Forza Horizon 5: Expansions Bundle",
+        True,
+        True,
+        True,
+    )
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [("get", "pack-contents"), ("get", "packs"), ("get", "pack-links/candidates"), ("delete", "pack-contents/1")],
+)
+def test_pack_routes_are_404_while_the_lab_is_off(auth_client, db_session, season_pass, method, path):
+    _lab_off(db_session)
+    assert getattr(auth_client, method)(f"/api/games/{season_pass['pass'].id}/{path}").status_code == 404

@@ -521,7 +521,7 @@
         },
         "linked_addons": {
           "name": "Compléments liés",
-          "description": "Liez des compléments à plus de jeux qu'IGDB, p. ex. un DLC qu'IGDB range sous l'édition standard d'un jeu et qui fonctionne aussi avec son édition Premium. Ajoute une section de liens aux pages de jeux, Fonctionne avec sur les pages de compléments, les compléments du jeu de base d'une édition et Paramètres → Compléments liés. Le désactiver conserve vos liens."
+          "description": "Liez des compléments à plus de jeux qu'IGDB, p. ex. un DLC qu'IGDB range sous l'édition standard d'un jeu et qui fonctionne aussi avec son édition Premium, et marquez ceux qu'une édition inclut pour qu'ils comptent comme possédés. Ajoute une section de liens aux pages de jeux, Fonctionne avec sur les pages de compléments, les compléments du jeu de base d'une édition et Paramètres → Compléments liés. Un complément personnalisé de catégorie Pack, comme un Season Pass, peut contenir d'autres compléments : le posséder les fait posséder aussi. Le désactiver conserve vos liens."
         }
       }
     },
@@ -777,7 +777,11 @@
         "removeVideoAriaLabel": "Retirer la vidéo {{index}}",
         "untitledVideo": "Sans titre",
         "waitForUploads": "Attendez la fin du téléversement des images."
-      }
+      },
+      "storeUrlLabel": "URL de la boutique",
+      "storeUrlHelperText": "Facultatif : la page du complément sur Steam, Xbox, PlayStation, Nintendo, Epic Games ou GOG",
+      "storeUrlInvalid": "Utilisez un lien de boutique Steam, Xbox, PlayStation, Nintendo, Epic Games ou GOG",
+      "storeUrlRecognised": "Lien de la boutique {{store}}"
     },
     "edit": {
       "notEditableMessage": "Ce jeu ne peut pas être modifié. Toutes les informations proviennent d'IGDB.",
@@ -891,7 +895,9 @@
       "missingLabel": "Manquant",
       "customLabel": "Personnalisé",
       "viaAddon": "Par complément",
-      "linked": "Lié"
+      "linkedTooltip": "Lié par vous",
+      "includedTooltip": "Inclus dans ce jeu",
+      "includedViaTooltip": "Inclus via {{name}}"
     },
     "add": {
       "addGameError": "Erreur lors de l'ajout du jeu. Veuillez réessayer.",
@@ -1058,8 +1064,8 @@
       "linkedAddonsToast_other": "{{count}} compléments liés à {{name}}",
       "pickGamesTitle": "Lier à des jeux",
       "pickAddonsTitle": "Lier des compléments",
-      "pickGamesHelp": "Choisissez les jeux avec lesquels {{name}} fonctionne aussi. Ceux de la même collection apparaissent en premier.",
-      "pickAddonsHelp": "Choisissez les compléments qui fonctionnent aussi avec {{name}}. Ceux de la même collection apparaissent en premier.",
+      "pickGamesHelp": "Choisissez les jeux avec lesquels {{name}} fonctionne aussi, et choisissez Inclus pour ceux qui le contiennent. Ceux de la même collection apparaissent en premier.",
+      "pickAddonsHelp": "Choisissez les compléments qui fonctionnent aussi avec {{name}}, et choisissez Inclus pour ceux qu'il contient. Ceux de la même collection apparaissent en premier.",
       "searchPlaceholder": "Rechercher",
       "searchLabel": "Rechercher",
       "sameCollection": "Même collection",
@@ -1086,7 +1092,55 @@
       "hint_one": "{{name}} a {{count}} complément qui n'est pas lié ici. Liez-le s'il fonctionne avec cette édition.",
       "hint_other": "{{name}} a {{count}} compléments qui ne sont pas liés ici. Liez ceux qui fonctionnent avec cette édition.",
       "hintAction": "Lier des compléments",
-      "hintDismiss": "Ignorer"
+      "hintDismiss": "Ignorer",
+      "relationLabel": "Comment {{name}} va avec",
+      "worksWithOption": "Fonctionne avec",
+      "includedOption": "Inclus",
+      "alreadyIncluded": "Déjà inclus",
+      "fromIgdb": "D'IGDB",
+      "markIncluded": "Marquer {{addon}} comme inclus dans {{game}}",
+      "unmarkIncluded": "{{addon}} est inclus dans {{game}}. Cliquez pour retirer",
+      "includedToggleLabel": "{{addon}} inclus dans {{game}}",
+      "includedError": "Impossible de modifier. Veuillez réessayer.",
+      "ownedVia": "Possédé via"
+    },
+    "packs": {
+      "contentsTitle": "Contenu",
+      "contentsEmpty": "Ce pack est encore vide. Ajoutez les compléments qu'il contient dans Contenu du pack.",
+      "partOfTitle": "Fait partie de",
+      "sectionContentsTitle": "Contenu du pack",
+      "sectionPacksTitle": "Dans des packs",
+      "addAction": "Ajouter",
+      "emptyForPack": "Un Season Pass ou un lot ? Ajoutez les compléments qu'il contient. Posséder le pack les fait aussi posséder.",
+      "emptyForAddon": "Fourni dans un Season Pass ou un lot ? Ajoutez-le à ce pack.",
+      "inPackCaption": "Dans un pack",
+      "remove": "Retirer du pack",
+      "removeLabel": "Retirer {{addon}} de {{pack}}",
+      "removedToast": "{{addon}} retiré de {{pack}}",
+      "removeError": "Impossible de le retirer. Veuillez réessayer.",
+      "addError": "Impossible d'ajouter. Veuillez réessayer.",
+      "pickContentsTitle": "Ajouter à ce pack",
+      "pickPacksTitle": "Ajouter à des packs",
+      "pickContentsHelp": "Choisissez les compléments fournis avec {{name}}. Le posséder, ou posséder un jeu qui l'inclut, revient à les posséder. Les compléments des mêmes jeux d'abord.",
+      "pickPacksHelp": "Choisissez les packs qui incluent {{name}}, comme un Season Pass ou un pack Ultimate. Les packs des mêmes jeux d'abord.",
+      "groupSameGame": "Des mêmes jeux",
+      "groupCollection": "Même collection",
+      "groupSeries": "Même série",
+      "groupOther": "Autres résultats",
+      "alreadyInside": "Déjà dedans",
+      "alreadyInPack": "Déjà dedans",
+      "noContentsCandidates": "Aucun complément des mêmes jeux, de la même collection ou série. Recherchez pour en trouver d'autres.",
+      "noPackCandidates": "Aucun pack des mêmes jeux. Ajoutez d'abord un complément personnalisé de catégorie Pack, ou recherchez.",
+      "addButtonEmpty": "Ajouter",
+      "addContentsButton_one": "Ajouter {{count}} complément",
+      "addContentsButton_other": "Ajouter {{count}} compléments",
+      "addPacksButton_one": "Ajouter à {{count}} pack",
+      "addPacksButton_other": "Ajouter à {{count}} packs",
+      "addedContentsToast_one": "{{count}} complément ajouté à {{name}}",
+      "addedContentsToast_other": "{{count}} compléments ajoutés à {{name}}",
+      "addedPacksToast_one": "{{name}} ajouté à {{count}} pack",
+      "addedPacksToast_other": "{{name}} ajouté à {{count}} packs",
+      "lastHolderDescription": "« {{name}} » n'est dans aucun autre pack ni lié à un jeu, et son parent IGDB n'est pas dans votre bibliothèque : le retirer le laisserait nulle part. Supprimer le complément à la place ? Ses copies, sa progression et ses notes sont aussi supprimées. Cette action est irréversible."
     },
     "coverCard": {
       "noImageAvailable": "Aucune image disponible"

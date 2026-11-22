@@ -10,6 +10,7 @@ from app.models.system import User
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.addon_link import (
+    AddonIncludedRequest,
     AddonLinkCandidateResponse,
     AddonLinkRequest,
     AddonLinkResponse,
@@ -17,10 +18,13 @@ from app.schemas.addon_link import (
     BaseGameAddonsLinkResponse,
     BaseGameAddonsResponse,
     GameRemovalPreviewResponse,
+    PackCandidateResponse,
+    PackLinkRequest,
     addon_link_candidate_from,
     addon_ref_from_orm,
     base_game_addons_from,
     base_game_link_results_from,
+    pack_candidate_from,
 )
 from app.schemas.bulk_import import BulkImportRequest, BulkImportStatusResponse
 from app.schemas.game import (
@@ -71,6 +75,7 @@ def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailRespon
         tags,
         steam_app_id=steam_entry.steam_app_id if steam_entry else None,
         on_sale_game_ids=on_sale_game_ids,
+        owned_via=addon_link_service.owned_via(db, game.game.id),
     )
 
 
@@ -249,7 +254,7 @@ def list_addon_link_candidates(
 
 @router.post("/{game_id}/addon-links", response_model=AddonLinkResponse, dependencies=_linked_addons_lab)
 def add_addon_links(game_id: int, body: AddonLinkRequest, db: Session = Depends(get_db)) -> AddonLinkResponse:
-    return AddonLinkResponse(added=addon_link_service.link(db, game_id, body.ids))
+    return AddonLinkResponse(added=addon_link_service.link(db, game_id, body.ids, body.included_ids))
 
 
 @router.delete(
@@ -258,6 +263,60 @@ def add_addon_links(game_id: int, body: AddonLinkRequest, db: Session = Depends(
 def remove_addon_link(game_id: int, other_id: int, db: Session = Depends(get_db)) -> None:
     """409 last_link_orphan when it's the add-on's last link and it has no IGDB parent here."""
     addon_link_service.unlink(db, game_id, other_id)
+
+
+@router.put(
+    "/{game_id}/addon-links/{other_id}/included",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=_linked_addons_lab,
+)
+def set_addon_included(
+    game_id: int, other_id: int, body: AddonIncludedRequest, db: Session = Depends(get_db)
+) -> None:
+    """Marks the add-on (either id) Included in the other game, or clears it. Also works for an
+    add-on's own IGDB parent; 404 when the two aren't linked."""
+    addon_link_service.set_included(db, game_id, other_id, body.included)
+
+
+@router.get("/{game_id}/pack-contents", response_model=list[GameSummaryResponse], dependencies=_linked_addons_lab)
+def list_pack_contents(game_id: int, db: Session = Depends(get_db)) -> list[GameSummaryResponse]:
+    """The add-ons inside a pack (Season Pass, Ultimate Pack), by name."""
+    contents = addon_link_service.list_pack_contents(db, game_id)
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return [game_summary_from_orm(game, on_sale_game_ids) for game in contents]
+
+
+@router.get("/{game_id}/packs", response_model=list[GameSummaryResponse], dependencies=_linked_addons_lab)
+def list_packs(game_id: int, db: Session = Depends(get_db)) -> list[GameSummaryResponse]:
+    """The packs an add-on is inside, by name."""
+    packs = addon_link_service.list_packs(db, game_id)
+    on_sale_game_ids = insight_service.get_on_sale_game_ids(db)
+    return [game_summary_from_orm(game, on_sale_game_ids) for game in packs]
+
+
+@router.get(
+    "/{game_id}/pack-links/candidates", response_model=list[PackCandidateResponse], dependencies=_linked_addons_lab
+)
+def list_pack_candidates(
+    game_id: int, q: str | None = Query(default=None, max_length=200), db: Session = Depends(get_db)
+) -> list[PackCandidateResponse]:
+    """What the pack picker offers: add-ons for a pack, packs for any other add-on."""
+    return [pack_candidate_from(c) for c in addon_link_service.list_pack_candidates(db, game_id, q)]
+
+
+@router.post("/{game_id}/pack-links", response_model=AddonLinkResponse, dependencies=_linked_addons_lab)
+def add_pack_links(game_id: int, body: PackLinkRequest, db: Session = Depends(get_db)) -> AddonLinkResponse:
+    """On a pack, puts the add-ons inside it; on any other add-on, puts it inside the packs."""
+    return AddonLinkResponse(added=addon_link_service.add_pack_links(db, game_id, body.ids))
+
+
+@router.delete(
+    "/{game_id}/pack-contents/{addon_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=_linked_addons_lab
+)
+def remove_from_pack(game_id: int, addon_id: int, db: Session = Depends(get_db)) -> None:
+    """Takes an add-on out of the pack game_id. 409 last_link_orphan when the pack is all that
+    holds it and it has no IGDB parent here."""
+    addon_link_service.remove_from_pack(db, game_id, addon_id)
 
 
 @router.get("/{game_id}/base-game-addons", response_model=BaseGameAddonsResponse, dependencies=_linked_addons_lab)
@@ -280,7 +339,9 @@ async def link_base_game_addons(
 ) -> BaseGameAddonsLinkResponse:
     """Imports the picked base-game add-ons that aren't in the library (with no parent) and
     links them all to this game; a result per add-on."""
-    results = await addon_link_service.link_base_game_addons(db, igdb_client, game_id, body.igdb_ids)
+    results = await addon_link_service.link_base_game_addons(
+        db, igdb_client, game_id, body.igdb_ids, body.included_igdb_ids
+    )
     return base_game_link_results_from(results)
 
 
@@ -313,6 +374,7 @@ def create_manual_game(body: ManualGameCreateRequest, db: Session = Depends(get_
         edition=body.edition,
         cover_url=body.cover_url,
         parent_game_id=body.parent_game_id,
+        store_url=body.store_url,
         developed_by=body.developed_by,
         published_by=body.published_by,
         platform_names=body.platform_names,

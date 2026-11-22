@@ -521,7 +521,7 @@
         },
         "linked_addons": {
           "name": "Expansiones vinculadas",
-          "description": "Vincula expansiones a más juegos de los que indica IGDB, p. ej. un DLC que IGDB muestra en la edición estándar de un juego y que también funciona con su edición Premium. Añade una sección de vínculos a las páginas de juegos, Funciona con en las páginas de expansiones, expansiones del juego base de una edición y Ajustes → Expansiones vinculadas. Al desactivarlo, tus vínculos se conservan."
+          "description": "Vincula expansiones a más juegos de los que indica IGDB, p. ej. un DLC que IGDB muestra en la edición estándar de un juego y que también funciona con su edición Premium, y marca las que incluye una edición para que cuenten como tuyas. Añade una sección de vínculos a las páginas de juegos, Funciona con en las páginas de expansiones, expansiones del juego base de una edición y Ajustes → Expansiones vinculadas. Una expansión personalizada con la categoría Pack, como un pase de temporada, puede contener otras expansiones, así que tenerla cuenta como tenerlas. Al desactivarlo, tus vínculos se conservan."
         }
       }
     },
@@ -777,7 +777,11 @@
         "removeVideoAriaLabel": "Quitar vídeo {{index}}",
         "untitledVideo": "Sin título",
         "waitForUploads": "Espera a que terminen de subirse las imágenes."
-      }
+      },
+      "storeUrlLabel": "URL de la tienda",
+      "storeUrlHelperText": "Opcional: la página de la expansión en Steam, Xbox, PlayStation, Nintendo, Epic Games o GOG",
+      "storeUrlInvalid": "Usa un enlace de tienda de Steam, Xbox, PlayStation, Nintendo, Epic Games o GOG",
+      "storeUrlRecognised": "Enlace de la tienda de {{store}}"
     },
     "edit": {
       "notEditableMessage": "Este juego no se puede editar. Toda la información proviene de IGDB.",
@@ -891,7 +895,9 @@
       "missingLabel": "Falta",
       "customLabel": "Personalizado",
       "viaAddon": "Por expansión",
-      "linked": "Vinculada"
+      "linkedTooltip": "Vinculada por ti",
+      "includedTooltip": "Incluida en este juego",
+      "includedViaTooltip": "Incluido a través de {{name}}"
     },
     "add": {
       "addGameError": "Error al añadir el juego. Inténtalo de nuevo.",
@@ -1058,8 +1064,8 @@
       "linkedAddonsToast_other": "{{count}} expansiones vinculadas a {{name}}",
       "pickGamesTitle": "Vincular a juegos",
       "pickAddonsTitle": "Vincular expansiones",
-      "pickGamesHelp": "Elige los juegos con los que también funciona {{name}}. Primero aparecen los de la misma colección.",
-      "pickAddonsHelp": "Elige las expansiones que también funcionan con {{name}}. Primero aparecen las de la misma colección.",
+      "pickGamesHelp": "Elige los juegos con los que también funciona {{name}} y marca Incluida en los que la traen. Primero aparecen los de la misma colección.",
+      "pickAddonsHelp": "Elige las expansiones que también funcionan con {{name}} y marca Incluida en las que trae. Primero aparecen las de la misma colección.",
       "searchPlaceholder": "Buscar",
       "searchLabel": "Buscar",
       "sameCollection": "Misma colección",
@@ -1086,7 +1092,55 @@
       "hint_one": "{{name}} tiene {{count}} expansión que no está vinculada aquí. Vincúlala si funciona con esta edición.",
       "hint_other": "{{name}} tiene {{count}} expansiones que no están vinculadas aquí. Vincula las que funcionan con esta edición.",
       "hintAction": "Vincular expansiones",
-      "hintDismiss": "Descartar"
+      "hintDismiss": "Descartar",
+      "relationLabel": "Cómo va {{name}} con él",
+      "worksWithOption": "Funciona con",
+      "includedOption": "Incluida",
+      "alreadyIncluded": "Ya incluida",
+      "fromIgdb": "De IGDB",
+      "markIncluded": "Marcar {{addon}} como incluida en {{game}}",
+      "unmarkIncluded": "{{addon}} está incluida en {{game}}. Haz clic para desmarcar",
+      "includedToggleLabel": "{{addon}} incluida en {{game}}",
+      "includedError": "No se pudo cambiar. Inténtalo de nuevo.",
+      "ownedVia": "Tuya a través de"
+    },
+    "packs": {
+      "contentsTitle": "Contenido",
+      "contentsEmpty": "Este paquete aún está vacío. Añade las expansiones que incluye en Contenido del paquete.",
+      "partOfTitle": "Forma parte de",
+      "sectionContentsTitle": "Contenido del paquete",
+      "sectionPacksTitle": "En paquetes",
+      "addAction": "Añadir",
+      "emptyForPack": "¿Un pase de temporada o un lote? Añade las expansiones que incluye. Al tener el paquete, también las tienes a ellas.",
+      "emptyForAddon": "¿Viene en un pase de temporada o un lote? Añádelo a ese paquete.",
+      "inPackCaption": "En paquete",
+      "remove": "Quitar del paquete",
+      "removeLabel": "Quitar {{addon}} de {{pack}}",
+      "removedToast": "{{addon}} quitado de {{pack}}",
+      "removeError": "No se pudo quitar. Inténtalo de nuevo.",
+      "addError": "No se pudo añadir. Inténtalo de nuevo.",
+      "pickContentsTitle": "Añadir a este paquete",
+      "pickPacksTitle": "Añadir a paquetes",
+      "pickContentsHelp": "Elige las expansiones que incluye {{name}}. Tenerlo, o tener un juego que lo incluye, cuenta como tenerlas. Primero las expansiones de los mismos juegos.",
+      "pickPacksHelp": "Elige los paquetes que incluyen {{name}}, como un pase de temporada o un paquete Ultimate. Primero los paquetes de los mismos juegos.",
+      "groupSameGame": "De los mismos juegos",
+      "groupCollection": "Misma colección",
+      "groupSeries": "Misma serie",
+      "groupOther": "Otros resultados",
+      "alreadyInside": "Ya incluida",
+      "alreadyInPack": "Ya está dentro",
+      "noContentsCandidates": "No hay expansiones de los mismos juegos, colección o serie. Busca para encontrar otros.",
+      "noPackCandidates": "No hay paquetes de los mismos juegos. Añade primero una expansión personalizada con la categoría Pack, o busca.",
+      "addButtonEmpty": "Añadir",
+      "addContentsButton_one": "Añadir {{count}} expansión",
+      "addContentsButton_other": "Añadir {{count}} expansiones",
+      "addPacksButton_one": "Añadir a {{count}} paquete",
+      "addPacksButton_other": "Añadir a {{count}} paquetes",
+      "addedContentsToast_one": "{{count}} expansión añadida a {{name}}",
+      "addedContentsToast_other": "{{count}} expansiones añadidas a {{name}}",
+      "addedPacksToast_one": "{{name}} añadido a {{count}} paquete",
+      "addedPacksToast_other": "{{name}} añadido a {{count}} paquetes",
+      "lastHolderDescription": "«{{name}}» no está en otro paquete ni vinculado a un juego, y su padre de IGDB no está en tu biblioteca, así que quitarlo lo dejaría en ningún sitio. ¿Eliminar la expansión? También se eliminan sus copias, progreso y notas. No se puede deshacer."
     },
     "coverCard": {
       "noImageAvailable": "Imagen no disponible"

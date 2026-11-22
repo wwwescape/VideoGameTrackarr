@@ -12,6 +12,7 @@ from app.repositories.game_repository import (
     GameSource,
     ScreensaverFilter,
     _apply_optional_game_filters,
+    effective_owned,
 )
 
 # Mirrors the frontend's ADDON_DISPLAY_CATEGORIES (GameAddonsTab.tsx) — bundles, standalone
@@ -92,7 +93,8 @@ def find_missing_addons(
     storefronts already do here — an addon is never itself owned (that's the whole premise of
     "missing"), so there's no Addon-level copy to check it against."""
     Addon = aliased(Game)
-    addon_owned = exists().where(LibraryItem.game_id == Addon.id, LibraryItem.status == LibraryStatus.OWNED)
+    # Owned includes an add-on Included in a game you own (Linked Add-ons lab).
+    addon_owned = effective_owned(Addon.id)
     addon_wishlisted = exists().where(LibraryItem.game_id == Addon.id, LibraryItem.status == LibraryStatus.WISHLIST)
     game_owned = exists().where(LibraryItem.game_id == Game.id, LibraryItem.status == LibraryStatus.OWNED)
 

@@ -15,6 +15,7 @@ from app.repositories.game_repository import GameWithStatus
 from app.services import gog_service, upload_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.game_service import get_game_detail
+from app.services.store_urls import store_url_columns
 
 MAX_MEDIA_PER_KIND = 10
 
@@ -82,6 +83,7 @@ def create_manual_game(
     published_by: list[str] | None = None,
     platform_names: list[str] | None = None,
     notes: str | None = None,
+    store_url: str | None = None,
     steam_app_id: int | None = None,
     gog_product_id: int | None = None,
     screenshot_urls: list[str] | None = None,
@@ -101,6 +103,7 @@ def create_manual_game(
         edition=edition,
         cover_url=cover_url,
         parent_game_id=parent_game_id,
+        **store_url_columns(store_url),
     )
 
     company_roles = [
@@ -151,6 +154,8 @@ def update_manual_game(db: Session, game_id: int, notes: str | None = None, **fi
     if parent_game_id is not None and db.get(Game, parent_game_id) is None:
         raise NotFoundError(f"Game {parent_game_id} not found")
 
+    if "store_url" in fields:
+        fields.update(store_url_columns(fields.pop("store_url")))
     developed_by = fields.pop("developed_by", None)
     published_by = fields.pop("published_by", None)
     platform_names = fields.pop("platform_names", None)

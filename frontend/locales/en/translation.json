@@ -521,7 +521,7 @@
         },
         "linked_addons": {
           "name": "Linked Add-ons",
-          "description": "Link add-ons to more games than IGDB does, e.g. DLC IGDB lists under a game's Standard edition that also works with its Premium edition. Adds a Linked section to game pages, Works with on add-on pages, add-ons from an edition's base game, and Settings → Linked Add-ons. Turning it off keeps your links for later."
+          "description": "Link add-ons to more games than IGDB does, e.g. DLC IGDB lists under a game's Standard edition that also works with its Premium edition, and mark the ones an edition includes so they count as owned. Adds a Linked section to game pages, Works with on add-on pages, add-ons from an edition's base game, and Settings → Linked Add-ons. A custom add-on with the Pack category, like a Season Pass, can hold other add-ons, so owning it owns them too. Turning it off keeps your links for later."
         }
       }
     },
@@ -777,7 +777,11 @@
         "removeVideoAriaLabel": "Remove video {{index}}",
         "untitledVideo": "Untitled",
         "waitForUploads": "Wait for the images to finish uploading."
-      }
+      },
+      "storeUrlLabel": "Store URL",
+      "storeUrlHelperText": "Optional: the add-on's page on Steam, Xbox, PlayStation, Nintendo, Epic Games or GOG",
+      "storeUrlInvalid": "Use a Steam, Xbox, PlayStation, Nintendo, Epic Games or GOG store link",
+      "storeUrlRecognised": "{{store}} store link"
     },
     "edit": {
       "notEditableMessage": "This game cannot be edited. All information comes from IGDB.",
@@ -891,7 +895,9 @@
       "missingLabel": "Missing",
       "customLabel": "Custom",
       "viaAddon": "Via add-on",
-      "linked": "Linked"
+      "linkedTooltip": "Linked by you",
+      "includedTooltip": "Included in this game",
+      "includedViaTooltip": "Included via {{name}}"
     },
     "add": {
       "addGameError": "Error adding game. Please try again.",
@@ -1058,8 +1064,8 @@
       "linkedAddonsToast_other": "Linked {{count}} add-ons to {{name}}",
       "pickGamesTitle": "Link to games",
       "pickAddonsTitle": "Link add-ons",
-      "pickGamesHelp": "Pick the games {{name}} also works with. Games from the same collection come first.",
-      "pickAddonsHelp": "Pick the add-ons that also work with {{name}}. Add-ons from the same collection come first.",
+      "pickGamesHelp": "Pick the games {{name}} also works with, and choose Included for the ones that come with it. Games from the same collection come first.",
+      "pickAddonsHelp": "Pick the add-ons that also work with {{name}}, and choose Included for the ones it comes with. Add-ons from the same collection come first.",
       "searchPlaceholder": "Search",
       "searchLabel": "Search",
       "sameCollection": "Same collection",
@@ -1086,7 +1092,55 @@
       "hint_one": "{{name}} has {{count}} add-on that isn't linked here. Link it if it works with this edition.",
       "hint_other": "{{name}} has {{count}} add-ons that aren't linked here. Link the ones that work with this edition.",
       "hintAction": "Link add-ons",
-      "hintDismiss": "Dismiss"
+      "hintDismiss": "Dismiss",
+      "relationLabel": "How {{name}} goes with it",
+      "worksWithOption": "Works with",
+      "includedOption": "Included",
+      "alreadyIncluded": "Already included",
+      "fromIgdb": "From IGDB",
+      "markIncluded": "Mark {{addon}} as included in {{game}}",
+      "unmarkIncluded": "{{addon}} is included in {{game}}. Click to unmark",
+      "includedToggleLabel": "{{addon}} included in {{game}}",
+      "includedError": "Couldn't change that. Please try again.",
+      "ownedVia": "Owned via"
+    },
+    "packs": {
+      "contentsTitle": "What's inside",
+      "contentsEmpty": "Nothing inside this pack yet. Add the add-ons it comes with under Pack contents.",
+      "partOfTitle": "Part of",
+      "sectionContentsTitle": "Pack contents",
+      "sectionPacksTitle": "In packs",
+      "addAction": "Add",
+      "emptyForPack": "A Season Pass or bundle? Add the add-ons it comes with. Owning the pack then owns them too.",
+      "emptyForAddon": "Comes in a Season Pass or bundle? Add it to that pack.",
+      "inPackCaption": "In pack",
+      "remove": "Remove from pack",
+      "removeLabel": "Remove {{addon}} from {{pack}}",
+      "removedToast": "Removed {{addon}} from {{pack}}",
+      "removeError": "Couldn't remove it. Please try again.",
+      "addError": "Couldn't add. Please try again.",
+      "pickContentsTitle": "Add to this pack",
+      "pickPacksTitle": "Add to packs",
+      "pickContentsHelp": "Pick the add-ons {{name}} comes with. Owning it, or a game it's included in, counts as owning them. Add-ons for the same games come first.",
+      "pickPacksHelp": "Pick the packs that include {{name}}, like a Season Pass or Ultimate Pack. Packs for the same games come first.",
+      "groupSameGame": "For the same games",
+      "groupCollection": "Same collection",
+      "groupSeries": "Same series",
+      "groupOther": "Other matches",
+      "alreadyInside": "Already inside",
+      "alreadyInPack": "Already in it",
+      "noContentsCandidates": "No add-ons for the same games, collection or series. Search to find others.",
+      "noPackCandidates": "No packs for the same games. Add a custom add-on with the Pack category first, or search.",
+      "addButtonEmpty": "Add",
+      "addContentsButton_one": "Add {{count}} add-on",
+      "addContentsButton_other": "Add {{count}} add-ons",
+      "addPacksButton_one": "Add to {{count}} pack",
+      "addPacksButton_other": "Add to {{count}} packs",
+      "addedContentsToast_one": "Added {{count}} add-on to {{name}}",
+      "addedContentsToast_other": "Added {{count}} add-ons to {{name}}",
+      "addedPacksToast_one": "Added {{name}} to {{count}} pack",
+      "addedPacksToast_other": "Added {{name}} to {{count}} packs",
+      "lastHolderDescription": "\"{{name}}\" isn't in another pack or linked to a game, and its IGDB parent isn't in your library, so taking it out would leave it nowhere. Delete the add-on instead? Its copies, progress and notes are deleted too. This cannot be undone."
     },
     "coverCard": {
       "noImageAvailable": "No Image Available"

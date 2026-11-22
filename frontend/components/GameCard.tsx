@@ -9,11 +9,13 @@ import { styled } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import AddIcon from "@mui/icons-material/Add";
 import DoneIcon from "@mui/icons-material/Done";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
+import LinkIcon from "@mui/icons-material/Link";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
 import type { GameCategory, PlayStatus } from "../api/types";
 import { formatReleaseDate, getAddonType, getReleaseYear, isAddon } from "../utils/utils";
-import OwnershipBadges from "./OwnershipBadges";
+import OwnershipBadges, { BADGE_SIZE_PX, InlineBadge } from "./OwnershipBadges";
 
 const PLAY_STATUS_LABEL_KEYS: Record<PlayStatus, string> = {
   none: "",
@@ -60,6 +62,10 @@ export interface GameCardGame {
   matchedViaAddon?: boolean;
   // A game's Add-ons / an add-on's Works with: there through a manual link, not IGDB's own.
   manualLink?: boolean;
+  // Same lists: the add-on is Included in that game.
+  included?: boolean;
+  // Included only through this pack (itself Included in the game), for the box's tooltip.
+  includedVia?: { name: string } | null;
   playStatus?: PlayStatus | null;
   // Named to match GameSummary's own field so a GameSummary object can be passed straight
   // through as `game` everywhere (list, collections, series, addons, release calendar)
@@ -310,12 +316,11 @@ const GameCard = ({
             />
           </Box>
 
-          {game.matchedViaAddon || game.manualLink ? (
+          {game.matchedViaAddon ? (
             // Top centre, between the wishlist heart and the owned check: listed because one of
-            // its add-ons matched the search or filters (Include add-ons), or linked by hand
-            // rather than by IGDB (a game's Add-ons, an add-on's Works with).
+            // its add-ons matched the search or filters (Include add-ons).
             <Box
-              data-testid={game.manualLink ? "linked-chip" : "via-addon-chip"}
+              data-testid="via-addon-chip"
               sx={{
                 position: "absolute",
                 top: 7,
@@ -328,7 +333,48 @@ const GameCard = ({
                 [SMALL_CARD]: { top: 8, left: 31, right: 31 },
               }}
             >
-              {coverChip(t(game.manualLink ? "games.card.linked" : "games.card.viaAddon"), "rgba(17, 24, 39, 0.78)")}
+              {coverChip(t("games.card.viaAddon"), "rgba(17, 24, 39, 0.78)")}
+            </Box>
+          ) : null}
+
+          {showsBadges && (game.manualLink || game.included) ? (
+            // Between the wishlist heart (top left) and the owned check (top right): a link icon
+            // when linked by hand rather than by IGDB, a box when Included in the game. The
+            // invisible badge-sized ends keep them evenly spaced with the corner badges: one sits
+            // centred, two split the gap in thirds.
+            <Box
+              data-testid="link-badges"
+              sx={{
+                position: "absolute",
+                top: 7,
+                left: 7,
+                right: 7,
+                display: "flex",
+                justifyContent: "space-between",
+                zIndex: 1,
+                "& > div": { [SMALL_CARD]: { width: 24, height: 24 } },
+                "& svg": { [SMALL_CARD]: { fontSize: "15px !important" } },
+                [SMALL_CARD]: { top: 6, left: 6, right: 6 },
+              }}
+            >
+              <Box aria-hidden sx={{ width: BADGE_SIZE_PX, flexShrink: 0 }} />
+              {game.manualLink ? (
+                <InlineBadge title={t("games.card.linkedTooltip")}>
+                  <LinkIcon sx={{ fontSize: 18, color: "#c4b5fd" }} />
+                </InlineBadge>
+              ) : null}
+              {game.included ? (
+                <InlineBadge
+                  title={
+                    game.includedVia
+                      ? t("games.card.includedViaTooltip", { name: game.includedVia.name })
+                      : t("games.card.includedTooltip")
+                  }
+                >
+                  <Inventory2Icon sx={{ fontSize: 16, color: "#fcd34d" }} />
+                </InlineBadge>
+              ) : null}
+              <Box aria-hidden sx={{ width: BADGE_SIZE_PX, flexShrink: 0 }} />
             </Box>
           ) : null}
 

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import LinkIcon from "@mui/icons-material/Link";
 import SearchIcon from "@mui/icons-material/Search";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -12,11 +14,14 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import InputAdornment from "@mui/material/InputAdornment";
 import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
 import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -51,6 +56,10 @@ interface Row {
   coverUrl: string | null;
   firstReleaseDate: number | null;
   linked: boolean;
+  // Already linked as Included (shown on a linked row).
+  linkedIncluded: boolean;
+  // Starts as Included when ticked (IGDB lists it in this edition's bundle contents).
+  suggestedIncluded: boolean;
   willBeAdded: boolean;
 }
 
@@ -60,19 +69,31 @@ interface Group {
   rows: Row[];
 }
 
-const releaseYear = (timestamp: number | null) => (timestamp ? new Date(timestamp * 1000).getUTCFullYear() : null);
+const releaseYear = (timestamp: number | null) =>
+  timestamp ? new Date(timestamp * 1000).getUTCFullYear() : null;
 
-const toggled = (set: ReadonlySet<number>, id: number) => {
-  const next = new Set(set);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
+// Ticked rows by id, each with whether it's to be linked as Included.
+type Selection = ReadonlyMap<number, boolean>;
+
+const withToggled = (selection: Selection, row: Row): Selection => {
+  const next = new Map(selection);
+  if (next.has(row.id)) next.delete(row.id);
+  else next.set(row.id, row.suggestedIncluded);
   return next;
 };
+
+const withIncluded = (selection: Selection, id: number, included: boolean): Selection =>
+  new Map(selection).set(id, included);
+
+const includedIds = (selection: Selection) =>
+  [...selection].filter(([, included]) => included).map(([id]) => id);
 
 // The link picker. On a game: the base game's add-ons from IGDB first (when it's an edition),
 // then add-ons in VGT from the same Collection, then the same Series. On an add-on: games from
 // the same Collection, then Series. Everything ticked is linked with one button; already-linked
-// rows show ticked and disabled, so it's clear why they can't be picked.
+// rows show ticked and disabled, so it's clear why they can't be picked. A ticked row also offers
+// Works with | Included: Included means the add-on is part of that game (an edition that comes
+// with it), so owning the game counts as owning the add-on.
 const LinkAddonsDialog = ({
   open,
   gameId,
@@ -83,8 +104,8 @@ const LinkAddonsDialog = ({
 }: LinkAddonsDialogProps) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const [selectedLibrary, setSelectedLibrary] = useState<ReadonlySet<number>>(new Set());
-  const [selectedIgdb, setSelectedIgdb] = useState<ReadonlySet<number>>(new Set());
+  const [selectedLibrary, setSelectedLibrary] = useState<Selection>(new Map());
+  const [selectedIgdb, setSelectedIgdb] = useState<Selection>(new Map());
   const debouncedSearch = useDebouncedValue(search.trim(), 250);
   const candidates = useAddonLinkCandidates(gameId, debouncedSearch, open);
   const baseGame = useBaseGameAddons(gameId, open && offerBaseGameAddons && !isAddon);
@@ -95,15 +116,19 @@ const LinkAddonsDialog = ({
   useEffect(() => {
     if (open) {
       setSearch("");
-      setSelectedLibrary(new Set());
-      setSelectedIgdb(new Set());
+      setSelectedLibrary(new Map());
+      setSelectedIgdb(new Map());
     }
   }, [open]);
 
   const needle = debouncedSearch.toLowerCase();
-  const baseAddons = (baseGame.data?.addons ?? []).filter((addon) => addon.name.toLowerCase().includes(needle));
+  const baseAddons = (baseGame.data?.addons ?? []).filter((addon) =>
+    addon.name.toLowerCase().includes(needle)
+  );
   // A base-game add-on already in VGT is offered once, in the base-game group.
-  const inBaseGroup = new Set(baseAddons.map((addon) => addon.gameId).filter((id): id is number => id !== null));
+  const inBaseGroup = new Set(
+    baseAddons.map((addon) => addon.gameId).filter((id): id is number => id !== null)
+  );
   const libraryRows: Row[] = (candidates.data ?? [])
     .filter((candidate) => !inBaseGroup.has(candidate.id))
     .map(
@@ -115,10 +140,14 @@ const LinkAddonsDialog = ({
         coverUrl: candidate.coverUrl,
         firstReleaseDate: candidate.firstReleaseDate,
         linked: candidate.linked,
+        linkedIncluded: candidate.linkedIncluded,
+        suggestedIncluded: false,
         willBeAdded: false,
       })
     );
-  const sameCollection = new Set((candidates.data ?? []).filter((c) => c.sameCollection).map((c) => c.id));
+  const sameCollection = new Set(
+    (candidates.data ?? []).filter((c) => c.sameCollection).map((c) => c.id)
+  );
 
   const groups: Group[] = [
     {
@@ -132,6 +161,8 @@ const LinkAddonsDialog = ({
         coverUrl: addon.coverUrl,
         firstReleaseDate: addon.firstReleaseDate,
         linked: addon.linked,
+        linkedIncluded: addon.included,
+        suggestedIncluded: addon.suggestedIncluded,
         willBeAdded: addon.gameId === null,
       })),
     },
@@ -147,24 +178,33 @@ const LinkAddonsDialog = ({
     },
   ].filter((group) => group.rows.length > 0);
 
-  const isSelected = (row: Row) => (row.source === "igdb" ? selectedIgdb : selectedLibrary).has(row.id);
+  const selectionFor = (row: Row) => (row.source === "igdb" ? selectedIgdb : selectedLibrary);
+  const isSelected = (row: Row) => selectionFor(row).has(row.id);
   const toggle = (row: Row) => {
-    if (row.source === "igdb") setSelectedIgdb((previous) => toggled(previous, row.id));
-    else setSelectedLibrary((previous) => toggled(previous, row.id));
+    if (row.source === "igdb") setSelectedIgdb((previous) => withToggled(previous, row));
+    else setSelectedLibrary((previous) => withToggled(previous, row));
+  };
+  const setRowIncluded = (row: Row, included: boolean) => {
+    if (row.source === "igdb")
+      setSelectedIgdb((previous) => withIncluded(previous, row.id, included));
+    else setSelectedLibrary((previous) => withIncluded(previous, row.id, included));
   };
 
   const handleLink = async () => {
-    const libraryIds = [...selectedLibrary];
-    const igdbIds = [...selectedIgdb];
+    const libraryIds = [...selectedLibrary.keys()];
+    const igdbIds = [...selectedIgdb.keys()];
     let linked = 0;
     let failed = 0;
     try {
       if (libraryIds.length > 0) {
-        await addLinks.mutateAsync(libraryIds);
+        await addLinks.mutateAsync({ ids: libraryIds, includedIds: includedIds(selectedLibrary) });
         linked += libraryIds.length;
       }
       if (igdbIds.length > 0) {
-        const results = await linkBase.mutateAsync(igdbIds);
+        const results = await linkBase.mutateAsync({
+          igdbIds,
+          includedIgdbIds: includedIds(selectedIgdb),
+        });
         failed = results.filter((result) => result.status === "failed").length;
         linked += results.length - failed;
       }
@@ -195,11 +235,15 @@ const LinkAddonsDialog = ({
   const fetching = candidates.isFetching || baseGame.isFetching;
 
   return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t(isAddon ? "games.addonLinks.pickGamesTitle" : "games.addonLinks.pickAddonsTitle")}</DialogTitle>
+    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="md">
+      <DialogTitle>
+        {t(isAddon ? "games.addonLinks.pickGamesTitle" : "games.addonLinks.pickAddonsTitle")}
+      </DialogTitle>
       <DialogContent sx={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexShrink: 0 }}>
-          {t(isAddon ? "games.addonLinks.pickGamesHelp" : "games.addonLinks.pickAddonsHelp", { name: gameName })}
+          {t(isAddon ? "games.addonLinks.pickGamesHelp" : "games.addonLinks.pickAddonsHelp", {
+            name: gameName,
+          })}
         </Typography>
         <TextField
           size="small"
@@ -230,60 +274,107 @@ const LinkAddonsDialog = ({
             <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
               {debouncedSearch
                 ? t("games.addonLinks.noMatches")
-                : t(isAddon ? "games.addonLinks.noGameCandidates" : "games.addonLinks.noAddonCandidates")}
+                : t(
+                    isAddon
+                      ? "games.addonLinks.noGameCandidates"
+                      : "games.addonLinks.noAddonCandidates"
+                  )}
             </Typography>
           ) : (
             <List dense disablePadding>
               {groups.map((group) => (
                 <li key={group.key}>
                   <ul style={{ padding: 0 }}>
-                    <ListSubheader sx={{ lineHeight: "32px", bgcolor: "background.paper" }}>{group.title}</ListSubheader>
+                    <ListSubheader sx={{ lineHeight: "32px", bgcolor: "background.paper" }}>
+                      {group.title}
+                    </ListSubheader>
                     {group.rows.map((row) => {
                       const selected = isSelected(row);
                       const year = releaseYear(row.firstReleaseDate);
                       const importing = busy && selected && row.source === "igdb";
+                      const included = selectionFor(row).get(row.id) ?? false;
                       return (
-                        <ListItemButton
+                        <ListItem
                           key={row.key}
-                          disabled={row.linked || busy}
-                          onClick={() => toggle(row)}
-                          sx={{ borderRadius: 1 }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 36 }}>
-                            {importing ? (
-                              <CircularProgress size={18} sx={{ ml: 0.25 }} aria-label={t("common.working")} />
-                            ) : (
-                              <Checkbox
-                                edge="start"
+                          disablePadding
+                          secondaryAction={
+                            row.linked ? (
+                              <RelationLabel included={row.linkedIncluded} />
+                            ) : selected ? (
+                              <ToggleButtonGroup
+                                exclusive
                                 size="small"
-                                checked={row.linked || selected}
-                                disabled={row.linked || busy}
-                                tabIndex={-1}
-                                disableRipple
-                                slotProps={{ input: { "aria-label": row.name } }}
+                                value={included ? "included" : "works-with"}
+                                disabled={busy}
+                                onChange={(_event, value: string | null) => {
+                                  if (value) setRowIncluded(row, value === "included");
+                                }}
+                                aria-label={t("games.addonLinks.relationLabel", { name: row.name })}
+                              >
+                                <ToggleButton value="works-with" sx={{ gap: 0.5, px: 1, py: 0.25 }}>
+                                  <LinkIcon fontSize="small" />
+                                  {t("games.addonLinks.worksWithOption")}
+                                </ToggleButton>
+                                <ToggleButton value="included" sx={{ gap: 0.5, px: 1, py: 0.25 }}>
+                                  <Inventory2OutlinedIcon fontSize="small" />
+                                  {t("games.addonLinks.includedOption")}
+                                </ToggleButton>
+                              </ToggleButtonGroup>
+                            ) : row.willBeAdded ? (
+                              <Chip
+                                size="small"
+                                variant="outlined"
+                                label={t("games.addonLinks.willBeAdded")}
                               />
-                            )}
-                          </ListItemIcon>
-                          <Avatar
-                            variant="rounded"
-                            src={row.coverUrl ?? undefined}
-                            alt=""
-                            sx={{ width: 30, height: 40, mr: 1.5 }}
-                          />
-                          <ListItemText
-                            primary={row.name}
-                            secondary={
-                              row.linked
-                                ? t("games.addonLinks.alreadyLinked")
-                                : year !== null
-                                  ? String(year)
-                                  : undefined
-                            }
-                          />
-                          {row.willBeAdded && !row.linked ? (
-                            <Chip size="small" variant="outlined" label={t("games.addonLinks.willBeAdded")} sx={{ ml: 1 }} />
-                          ) : null}
-                        </ListItemButton>
+                            ) : null
+                          }
+                          sx={{ "& .MuiListItemSecondaryAction-root": { right: 8 } }}
+                        >
+                          <ListItemButton
+                            disabled={row.linked || busy}
+                            onClick={() => toggle(row)}
+                            sx={{ borderRadius: 1, pr: { xs: 18, sm: 30 } }}
+                          >
+                            <ListItemIcon sx={{ minWidth: 36 }}>
+                              {importing ? (
+                                <CircularProgress
+                                  size={18}
+                                  sx={{ ml: 0.25 }}
+                                  aria-label={t("common.working")}
+                                />
+                              ) : (
+                                <Checkbox
+                                  edge="start"
+                                  size="small"
+                                  checked={row.linked || selected}
+                                  disabled={row.linked || busy}
+                                  tabIndex={-1}
+                                  disableRipple
+                                  slotProps={{ input: { "aria-label": row.name } }}
+                                />
+                              )}
+                            </ListItemIcon>
+                            <Avatar
+                              variant="rounded"
+                              src={row.coverUrl ?? undefined}
+                              alt=""
+                              sx={{ width: 30, height: 40, mr: 1.5 }}
+                            />
+                            <ListItemText
+                              primary={row.name}
+                              secondary={
+                                [
+                                  year !== null ? String(year) : null,
+                                  selected && row.willBeAdded
+                                    ? t("games.addonLinks.willBeAdded")
+                                    : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ") || undefined
+                              }
+                            />
+                          </ListItemButton>
+                        </ListItem>
                       );
                     })}
                   </ul>
@@ -301,14 +392,33 @@ const LinkAddonsDialog = ({
           variant="contained"
           onClick={() => void handleLink()}
           disabled={count === 0 || busy}
-          startIcon={busy ? <CircularProgress size={16} color="inherit" aria-label={t("common.working")} /> : undefined}
+          startIcon={
+            busy ? (
+              <CircularProgress size={16} color="inherit" aria-label={t("common.working")} />
+            ) : undefined
+          }
         >
           {count === 0
             ? t("games.addonLinks.linkButtonEmpty")
-            : t(isAddon ? "games.addonLinks.linkGamesButton" : "games.addonLinks.linkAddonsButton", { count })}
+            : t(
+                isAddon ? "games.addonLinks.linkGamesButton" : "games.addonLinks.linkAddonsButton",
+                { count }
+              )}
         </Button>
       </DialogActions>
     </Dialog>
+  );
+};
+
+// A linked row's current relation, in place of the toggle.
+const RelationLabel = ({ included }: { included: boolean }) => {
+  const { t } = useTranslation();
+  return (
+    <Chip
+      size="small"
+      icon={included ? <Inventory2OutlinedIcon /> : <LinkIcon />}
+      label={t(included ? "games.addonLinks.alreadyIncluded" : "games.addonLinks.alreadyLinked")}
+    />
   );
 };
 

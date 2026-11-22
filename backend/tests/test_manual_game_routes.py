@@ -320,3 +320,32 @@ def test_replacing_a_cover_and_deleting_a_custom_game_remove_its_uploads(auth_cl
     assert auth_client.delete(f"/api/games/{created['id']}").status_code == 204
     assert not cover_file(new_cover).exists()
     assert not _media_file(shot).exists()
+
+
+def test_a_custom_add_on_store_url_goes_to_its_store(auth_client):
+    parent = auth_client.post("/api/games/manual", json={"name": "Base Game"}).json()
+    response = auth_client.post(
+        "/api/games/manual",
+        json={
+            "name": "Expansion Pass",
+            "category": "dlc_addon",
+            "parentGameId": parent["id"],
+            "storeUrl": "https://store.steampowered.com/app/123/Expansion_Pass/",
+        },
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["steamStoreUrl"] == "https://store.steampowered.com/app/123/Expansion_Pass/"
+
+    # A new store replaces the old one; an empty value clears it.
+    updated = auth_client.patch(
+        f"/api/games/{body['id']}/manual", json={"storeUrl": "https://www.gog.com/en/game/expansion_pass"}
+    ).json()
+    assert (updated["steamStoreUrl"], updated["gogStoreUrl"]) == (None, "https://www.gog.com/en/game/expansion_pass")
+    cleared = auth_client.patch(f"/api/games/{body['id']}/manual", json={"storeUrl": ""}).json()
+    assert cleared["gogStoreUrl"] is None
+
+
+def test_an_unknown_store_url_is_refused(auth_client):
+    response = auth_client.post("/api/games/manual", json={"name": "Pack", "storeUrl": "https://example.com/buy"})
+    assert response.status_code == 422

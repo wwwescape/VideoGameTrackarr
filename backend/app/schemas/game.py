@@ -25,6 +25,19 @@ from app.schemas.tag import TagResponse, tag_from_orm
 from app.services.game_card_service import GameCardExtras
 
 
+class GameRefResponse(CamelModel):
+    id: int
+    uuid: str
+    slug: str | None
+    name: str
+    # Tells a link whether it goes to /game/ or /addon/.
+    category: GameCategory | None = None
+
+
+def game_ref_from_orm(game: Game) -> GameRefResponse:
+    return GameRefResponse(id=game.id, uuid=game.uuid, slug=game.slug, name=game.name, category=game.category)
+
+
 class GameSummaryResponse(CamelModel):
     id: int
     uuid: str
@@ -60,6 +73,11 @@ class GameSummaryResponse(CamelModel):
     # A game's Add-ons / an add-on's Works with: there through a manual link rather than
     # IGDB's own (the "Linked" badge; only these can be unlinked). False everywhere else.
     manual_link: bool = False
+    # Same lists: the add-on is marked Included in that game (the box icon); with the game
+    # owned, the add-on counts as owned too.
+    included: bool = False
+    # A game's Add-ons: Included only through this pack, itself Included in the game.
+    included_via: GameRefResponse | None = None
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
@@ -106,6 +124,8 @@ class GameDetailResponse(GameSummaryResponse):
     igdb_critic_rating_count: int | None
     # Added by hand and later linked to IGDB: offers Change IGDB link and Unlink from IGDB.
     linked_from_custom: bool
+    # An add-on Included in games you own (Linked Add-ons lab): what makes it count as owned.
+    owned_via: list[GameRefResponse] = []
     progress: GameProgressResponse
     tags: list[TagResponse]
     genres: list[CatalogRefResponse]
@@ -139,6 +159,8 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "screensaver_excluded": game.screensaver_excluded,
         "matched_via_addon": status.matched_via_addon,
         "manual_link": status.manual_link,
+        "included": status.included,
+        "included_via": game_ref_from_orm(status.included_via) if status.included_via else None,
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,
@@ -169,6 +191,7 @@ def game_detail_from_orm(
     tags: list[Tag],
     steam_app_id: int | None = None,
     on_sale_game_ids: frozenset[int] = frozenset(),
+    owned_via: list[Game] | None = None,
 ) -> GameDetailResponse:
     game = status.game
     # parent_game_name comes from the `parent_game` relationship, not a plain column, so
@@ -196,6 +219,7 @@ def game_detail_from_orm(
         igdb_critic_rating=game.igdb_critic_rating,
         igdb_critic_rating_count=game.igdb_critic_rating_count,
         linked_from_custom=game.linked_from_custom,
+        owned_via=[game_ref_from_orm(other) for other in owned_via or []],
         progress=game_progress_from_orm(game.id, progress),
         tags=[tag_from_orm(tag) for tag in tags],
         genres=[genre_ref_from_orm(gg.genre) for gg in game.genres],
