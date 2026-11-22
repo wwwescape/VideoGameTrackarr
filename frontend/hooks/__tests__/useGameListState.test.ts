@@ -72,6 +72,22 @@ describe("useGameListState saved filters", () => {
     expect(result.current.fields.includeAddons).toBe(true);
   });
 
+  it("keeps Contents in a preset", () => {
+    const { result } = renderHook(() => useGameListState("games"));
+
+    act(() => result.current.fields.onContentsChange?.(["code_in_box"]));
+    act(() => result.current.fields.onContentsExcludeChange?.(true));
+    const saved = JSON.parse(JSON.stringify(result.current.snapshotFilters()));
+    expect(saved.contents).toEqual(["code_in_box"]);
+    expect(saved.contentsExclude).toBe(true);
+
+    act(() => result.current.fields.onContentsChange?.([]));
+    expect(result.current.matchesFilters(saved)).toBe(false);
+    act(() => result.current.applyFilters(saved));
+    expect(result.current.fields.contents).toEqual(["code_in_box"]);
+    expect(result.current.fields.contentsExclude).toBe(true);
+  });
+
   it("leaves the fields a page fixes alone: not saved, not compared, not put back", () => {
     // Like a Platform page: its own platform filter has no field or chip there.
     const { result } = renderHook(() => useGameListState("platform.ps5"));

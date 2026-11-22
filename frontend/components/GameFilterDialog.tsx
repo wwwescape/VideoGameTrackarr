@@ -810,7 +810,7 @@ const GameFilterDialog = ({
               </Stack>
             </Grid>
           ) : null}
-          {onContentsChange && onContentsExcludeChange ? (
+          {onContentsChange && onContentsExcludeChange && shown("contents") ? (
             <Grid size={{ xs: 12, sm: 6 }}>
               <Stack spacing={0.5}>
                 <AutocompleteMultiSelect<ContentsOption>

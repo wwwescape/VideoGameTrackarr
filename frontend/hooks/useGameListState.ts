@@ -435,6 +435,8 @@ export function useGameListState(
     playStatusExclude,
     matchAll,
     steelbookOnly: steelbookValue,
+    contents: contentsValues,
+    contentsExclude: contentsExcludeValue,
     sources: sourceValues,
     sourceExclude,
     platformScopes,
@@ -493,6 +495,8 @@ export function useGameListState(
     apply("playStatusExclude", setPlayStatusExclude);
     apply("matchAll", setMatchAll);
     apply("steelbookOnly", setSteelbookOnly);
+    apply("contents", setContents);
+    apply("contentsExclude", setContentsExclude);
     apply("sources", setSources);
     apply("sourceExclude", setSourceExclude);
     apply("platformScopes", setPlatformScopes);
