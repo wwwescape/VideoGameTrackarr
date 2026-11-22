@@ -56,6 +56,9 @@ class GameSummaryResponse(CamelModel):
     # Games list with Include add-ons: listed only because one of its add-ons matched the search
     # or filters (the card's "Via add-on" chip). False everywhere else.
     matched_via_addon: bool = False
+    # A game's Add-ons / an add-on's Works with: there through a manual link rather than
+    # IGDB's own (the "Linked" badge; only these can be unlinked). False everywhere else.
+    manual_link: bool = False
     steam_store_url: str | None
     xbox_store_url: str | None
     playstation_store_url: str | None
@@ -122,6 +125,7 @@ def _game_fields(game: Game, status: GameWithStatus) -> dict:
         "auto_discovered": game.auto_discovered,
         "screensaver_excluded": game.screensaver_excluded,
         "matched_via_addon": status.matched_via_addon,
+        "manual_link": status.manual_link,
         "steam_store_url": game.steam_store_url,
         "xbox_store_url": game.xbox_store_url,
         "playstation_store_url": game.playstation_store_url,

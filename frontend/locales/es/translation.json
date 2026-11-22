@@ -76,6 +76,7 @@
     "emulation": "Emulación",
     "gameCases": "Cajas de juegos",
     "screensaver": "Salvapantallas",
+    "linkedAddons": "Expansiones vinculadas",
     "overview": "Resumen",
     "settingsGeneral": "General",
     "primary": "Navegación principal",
@@ -506,6 +507,10 @@
         "screensaver": {
           "name": "Salvapantallas",
           "description": "Un botón flotante que muestra las portadas de tus juegos a pantalla completa, una tras otra. Desliza para explorar y toca una portada para abrir el juego. Añade Ajustes → Salvapantallas."
+        },
+        "linked_addons": {
+          "name": "Expansiones vinculadas",
+          "description": "Vincula expansiones a más juegos de los que indica IGDB, p. ej. un DLC que IGDB muestra en la edición estándar de un juego y que también funciona con su edición Premium. Añade una sección de vínculos a las páginas de juegos, Funciona con en las páginas de expansiones, expansiones del juego base de una edición y Ajustes → Expansiones vinculadas. Al desactivarlo, tus vínculos se conservan."
         }
       }
     },
@@ -544,6 +549,18 @@
       "keepOne": "El salvapantallas necesita algo que mostrar: activa primero el otro grupo.",
       "includeCustom": "Incluir juegos personalizados",
       "includeCustomDescription": "Juegos que añadiste a mano en lugar de desde IGDB."
+    },
+    "linkedAddons": {
+      "description": "Todas las expansiones que has vinculado a más juegos de los que indica IGDB. Vincula más desde la página de un juego o expansión, debajo de Notas.",
+      "heading": "Vínculos",
+      "lead_one": "{{count}} expansión",
+      "lead_other": "{{count}} expansiones",
+      "worksWith_one": "Funciona con {{count}} juego más",
+      "worksWith_other": "Funciona con {{count}} juegos más",
+      "empty": "Aún no hay vínculos. Abre un juego o expansión y usa Vincular, debajo de Notas.",
+      "unlinkLabel": "Desvincular {{addon}} de {{game}}",
+      "lastLinkError": "Es el último vínculo de {{name}}, que no tiene juego principal de IGDB en tu biblioteca. Abre la expansión para eliminarla.",
+      "loadFailed": "No se pudieron cargar tus vínculos."
     },
     "tagManager": {
       "description": "Elimina una etiqueta de forma permanente. Esto la quita de todos los juegos, dispositivos y accesorios que la tengan — no solo de uno. Para quitar una etiqueta de un solo elemento, usa el campo Etiquetas en la página de ese elemento.",
@@ -838,7 +855,8 @@
       "onSaleLabel": "En oferta",
       "missingLabel": "Falta",
       "customLabel": "Personalizado",
-      "viaAddon": "Por expansión"
+      "viaAddon": "Por expansión",
+      "linked": "Vinculada"
     },
     "add": {
       "addGameError": "Error al añadir el juego. Inténtalo de nuevo.",
@@ -984,6 +1002,55 @@
       "title": "Expansiones",
       "subheader": "DLC, expansiones y packs para este juego",
       "empty": "No se encontraron expansiones"
+    },
+    "addonLinks": {
+      "worksWithTitle": "Funciona con",
+      "worksWithEmpty": "Aún no está vinculada a ningún juego. Usa Vincular en Juegos vinculados para añadir uno.",
+      "linkedGamesTitle": "Juegos vinculados",
+      "linkedAddonsTitle": "Expansiones vinculadas",
+      "linkAction": "Vincular",
+      "emptyForAddon": "¿También funciona con otra edición o versión? Vincúlala aquí.",
+      "emptyForGame": "¿Tienes expansiones de otra edición que también funcionan con esta? Vincúlalas aquí.",
+      "unlink": "Desvincular",
+      "unlinkLabel": "Desvincular {{name}}",
+      "unlinkedToast": "{{name}} desvinculado",
+      "unlinkError": "No se pudo desvincular. Inténtalo de nuevo.",
+      "linkError": "No se pudo vincular. Inténtalo de nuevo.",
+      "linkedGamesToast_one": "Vinculada a {{count}} juego",
+      "linkedGamesToast_other": "Vinculada a {{count}} juegos",
+      "linkedAddonsToast_one": "{{count}} expansión vinculada a {{name}}",
+      "linkedAddonsToast_other": "{{count}} expansiones vinculadas a {{name}}",
+      "pickGamesTitle": "Vincular a juegos",
+      "pickAddonsTitle": "Vincular expansiones",
+      "pickGamesHelp": "Elige los juegos con los que también funciona {{name}}. Primero aparecen los de la misma colección.",
+      "pickAddonsHelp": "Elige las expansiones que también funcionan con {{name}}. Primero aparecen las de la misma colección.",
+      "searchPlaceholder": "Buscar",
+      "searchLabel": "Buscar",
+      "sameCollection": "Misma colección",
+      "sameSeries": "Misma serie",
+      "alreadyLinked": "Ya vinculado",
+      "noMatches": "Nada coincide con tu búsqueda.",
+      "noGameCandidates": "No hay juegos de la misma colección o serie en tu biblioteca.",
+      "noAddonCandidates": "No hay expansiones de la misma colección o serie en tu biblioteca.",
+      "linkButtonEmpty": "Vincular",
+      "linkGamesButton_one": "Vincular {{count}} juego",
+      "linkGamesButton_other": "Vincular {{count}} juegos",
+      "linkAddonsButton_one": "Vincular {{count}} expansión",
+      "linkAddonsButton_other": "Vincular {{count}} expansiones",
+      "lastLinkTitle": "¿Eliminar esta expansión?",
+      "lastLinkDescription": "\"{{name}}\" no está vinculada a ningún otro juego y su juego principal de IGDB no está en tu biblioteca, así que al desvincularla no aparecería en ningún sitio. ¿Eliminar la expansión en su lugar? También se eliminan sus copias, progreso y notas. Esto no se puede deshacer.",
+      "deleteAddon": "Eliminar expansión",
+      "addonDeletedToast": "{{name}} eliminada",
+      "removeKeepsAddons_one": "{{names}} está vinculada a otro juego, así que se conservará.",
+      "removeKeepsAddons_other": "Estas expansiones están vinculadas a otros juegos, así que se conservarán: {{names}}.",
+      "fromBaseGame": "De {{name}} (IGDB)",
+      "willBeAdded": "Se añadirá",
+      "someFailed_one": "No se pudo añadir {{count}} expansión. Inténtalo de nuevo.",
+      "someFailed_other": "No se pudieron añadir {{count}} expansiones. Inténtalo de nuevo.",
+      "hint_one": "{{name}} tiene {{count}} expansión que no está vinculada aquí. Vincúlala si funciona con esta edición.",
+      "hint_other": "{{name}} tiene {{count}} expansiones que no están vinculadas aquí. Vincula las que funcionan con esta edición.",
+      "hintAction": "Vincular expansiones",
+      "hintDismiss": "Descartar"
     },
     "coverCard": {
       "noImageAvailable": "Imagen no disponible"

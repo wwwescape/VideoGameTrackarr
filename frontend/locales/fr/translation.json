@@ -76,6 +76,7 @@
     "emulation": "Émulation",
     "gameCases": "Boîtiers de jeux",
     "screensaver": "Économiseur d'écran",
+    "linkedAddons": "Compléments liés",
     "overview": "Vue d'ensemble",
     "settingsGeneral": "Général",
     "primary": "Navigation principale",
@@ -506,6 +507,10 @@
         "screensaver": {
           "name": "Économiseur d'écran",
           "description": "Un bouton flottant qui affiche les jaquettes de vos jeux en plein écran, l'une après l'autre. Balayez pour parcourir, touchez une jaquette pour ouvrir le jeu. Ajoute Paramètres → Économiseur d'écran."
+        },
+        "linked_addons": {
+          "name": "Compléments liés",
+          "description": "Liez des compléments à plus de jeux qu'IGDB, p. ex. un DLC qu'IGDB range sous l'édition standard d'un jeu et qui fonctionne aussi avec son édition Premium. Ajoute une section de liens aux pages de jeux, Fonctionne avec sur les pages de compléments, les compléments du jeu de base d'une édition et Paramètres → Compléments liés. Le désactiver conserve vos liens."
         }
       }
     },
@@ -544,6 +549,18 @@
       "keepOne": "L'économiseur d'écran doit avoir quelque chose à afficher : activez d'abord l'autre groupe.",
       "includeCustom": "Inclure les jeux personnalisés",
       "includeCustomDescription": "Les jeux ajoutés à la main plutôt que depuis IGDB."
+    },
+    "linkedAddons": {
+      "description": "Tous les compléments que vous avez liés à plus de jeux qu'IGDB. Ajoutez-en depuis la page d'un jeu ou d'un complément, sous Notes.",
+      "heading": "Liens",
+      "lead_one": "{{count}} complément",
+      "lead_other": "{{count}} compléments",
+      "worksWith_one": "Fonctionne avec {{count}} jeu de plus",
+      "worksWith_other": "Fonctionne avec {{count}} jeux de plus",
+      "empty": "Aucun lien pour l'instant. Ouvrez un jeu ou un complément et utilisez Lier, sous Notes.",
+      "unlinkLabel": "Délier {{addon}} de {{game}}",
+      "lastLinkError": "C'est le dernier lien de {{name}}, qui n'a pas de jeu parent IGDB dans votre bibliothèque. Ouvrez le complément pour le supprimer.",
+      "loadFailed": "Impossible de charger vos liens."
     },
     "tagManager": {
       "description": "Supprime une étiquette de façon permanente. Cela la retire de tous les jeux, appareils et accessoires qui la portent — pas seulement d'un seul élément. Pour retirer une étiquette d'un seul élément, utilisez le champ Étiquettes sur la page de cet élément.",
@@ -838,7 +855,8 @@
       "onSaleLabel": "En promotion",
       "missingLabel": "Manquant",
       "customLabel": "Personnalisé",
-      "viaAddon": "Par complément"
+      "viaAddon": "Par complément",
+      "linked": "Lié"
     },
     "add": {
       "addGameError": "Erreur lors de l'ajout du jeu. Veuillez réessayer.",
@@ -984,6 +1002,55 @@
       "title": "Compléments",
       "subheader": "DLC, extensions et packs pour ce jeu",
       "empty": "Aucun complément trouvé"
+    },
+    "addonLinks": {
+      "worksWithTitle": "Fonctionne avec",
+      "worksWithEmpty": "Lié à aucun jeu pour l'instant. Utilisez Lier dans Jeux liés pour en ajouter un.",
+      "linkedGamesTitle": "Jeux liés",
+      "linkedAddonsTitle": "Compléments liés",
+      "linkAction": "Lier",
+      "emptyForAddon": "Fonctionne aussi avec une autre édition ou version ? Liez-la ici.",
+      "emptyForGame": "Des compléments d'une autre édition fonctionnent aussi avec celle-ci ? Liez-les ici.",
+      "unlink": "Délier",
+      "unlinkLabel": "Délier {{name}}",
+      "unlinkedToast": "{{name}} délié",
+      "unlinkError": "Impossible de délier. Veuillez réessayer.",
+      "linkError": "Impossible de lier. Veuillez réessayer.",
+      "linkedGamesToast_one": "Lié à {{count}} jeu",
+      "linkedGamesToast_other": "Lié à {{count}} jeux",
+      "linkedAddonsToast_one": "{{count}} complément lié à {{name}}",
+      "linkedAddonsToast_other": "{{count}} compléments liés à {{name}}",
+      "pickGamesTitle": "Lier à des jeux",
+      "pickAddonsTitle": "Lier des compléments",
+      "pickGamesHelp": "Choisissez les jeux avec lesquels {{name}} fonctionne aussi. Ceux de la même collection apparaissent en premier.",
+      "pickAddonsHelp": "Choisissez les compléments qui fonctionnent aussi avec {{name}}. Ceux de la même collection apparaissent en premier.",
+      "searchPlaceholder": "Rechercher",
+      "searchLabel": "Rechercher",
+      "sameCollection": "Même collection",
+      "sameSeries": "Même série",
+      "alreadyLinked": "Déjà lié",
+      "noMatches": "Aucun résultat pour cette recherche.",
+      "noGameCandidates": "Aucun jeu de la même collection ou série dans votre bibliothèque.",
+      "noAddonCandidates": "Aucun complément de la même collection ou série dans votre bibliothèque.",
+      "linkButtonEmpty": "Lier",
+      "linkGamesButton_one": "Lier {{count}} jeu",
+      "linkGamesButton_other": "Lier {{count}} jeux",
+      "linkAddonsButton_one": "Lier {{count}} complément",
+      "linkAddonsButton_other": "Lier {{count}} compléments",
+      "lastLinkTitle": "Supprimer ce complément ?",
+      "lastLinkDescription": "« {{name}} » n'est lié à aucun autre jeu et son jeu parent IGDB n'est pas dans votre bibliothèque : le délier le laisserait introuvable. Supprimer le complément à la place ? Ses exemplaires, sa progression et ses notes sont aussi supprimés. Cette action est irréversible.",
+      "deleteAddon": "Supprimer le complément",
+      "addonDeletedToast": "{{name}} supprimé",
+      "removeKeepsAddons_one": "{{names}} est lié à un autre jeu et sera donc conservé.",
+      "removeKeepsAddons_other": "Ces compléments sont liés à d'autres jeux et seront donc conservés : {{names}}.",
+      "fromBaseGame": "De {{name}} (IGDB)",
+      "willBeAdded": "Sera ajouté",
+      "someFailed_one": "Impossible d'ajouter {{count}} complément. Veuillez réessayer.",
+      "someFailed_other": "Impossible d'ajouter {{count}} compléments. Veuillez réessayer.",
+      "hint_one": "{{name}} a {{count}} complément qui n'est pas lié ici. Liez-le s'il fonctionne avec cette édition.",
+      "hint_other": "{{name}} a {{count}} compléments qui ne sont pas liés ici. Liez ceux qui fonctionnent avec cette édition.",
+      "hintAction": "Lier des compléments",
+      "hintDismiss": "Ignorer"
     },
     "coverCard": {
       "noImageAvailable": "Aucune image disponible"

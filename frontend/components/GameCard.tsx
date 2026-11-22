@@ -58,6 +58,8 @@ export interface GameCardGame {
   autoDiscovered?: boolean;
   // Games list with Include add-ons: listed only because one of its add-ons matched.
   matchedViaAddon?: boolean;
+  // A game's Add-ons / an add-on's Works with: there through a manual link, not IGDB's own.
+  manualLink?: boolean;
   playStatus?: PlayStatus | null;
   // Named to match GameSummary's own field so a GameSummary object can be passed straight
   // through as `game` everywhere (list, collections, series, addons, release calendar)
@@ -308,11 +310,12 @@ const GameCard = ({
             />
           </Box>
 
-          {game.matchedViaAddon ? (
+          {game.matchedViaAddon || game.manualLink ? (
             // Top centre, between the wishlist heart and the owned check: listed because one of
-            // its add-ons matched the search or filters (Include add-ons).
+            // its add-ons matched the search or filters (Include add-ons), or linked by hand
+            // rather than by IGDB (a game's Add-ons, an add-on's Works with).
             <Box
-              data-testid="via-addon-chip"
+              data-testid={game.manualLink ? "linked-chip" : "via-addon-chip"}
               sx={{
                 position: "absolute",
                 top: 7,
@@ -325,7 +328,7 @@ const GameCard = ({
                 [SMALL_CARD]: { top: 8, left: 31, right: 31 },
               }}
             >
-              {coverChip(t("games.card.viaAddon"), "rgba(17, 24, 39, 0.78)")}
+              {coverChip(t(game.manualLink ? "games.card.linked" : "games.card.viaAddon"), "rgba(17, 24, 39, 0.78)")}
             </Box>
           ) : null}
 

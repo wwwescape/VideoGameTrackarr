@@ -12,6 +12,7 @@ import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import type { GameCategory, LibraryItem } from "../api/types";
+import { useRemovalPreview } from "../hooks/useAddonLinks";
 import { useClaimDiscoveredGame, useDeleteGame, useResyncGame, useUnlinkGameFromIgdb } from "../hooks/useGames";
 import { editFromDetail } from "../utils/navState";
 import { hasPlayableRom } from "../utils/roms";
@@ -74,6 +75,8 @@ const GameActionButtons = ({
   const [removeGameDialogOpen, setRemoveGameDialogOpen] = useState(false);
   const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
   const [playDialogOpen, setPlayDialogOpen] = useState(false);
+  // Add-ons a manual link to another game keeps (detached) instead of deleting with this one.
+  const { data: keptAddons } = useRemovalPreview(gameId, removeGameDialogOpen);
 
   const handleRemoveGame = async () => {
     try {
@@ -246,7 +249,21 @@ const GameActionButtons = ({
           <ConfirmDialog
             open={removeGameDialogOpen}
             title={t("games.actions.removeConfirmTitle")}
-            description={t("games.actions.removeConfirmDescription", { name: gameName })}
+            description={
+              <>
+                {t("games.actions.removeConfirmDescription", { name: gameName })}
+                {keptAddons && keptAddons.length > 0 ? (
+                  <>
+                    <br />
+                    <br />
+                    {t("games.addonLinks.removeKeepsAddons", {
+                      count: keptAddons.length,
+                      names: keptAddons.map((addon) => addon.name).join(", "),
+                    })}
+                  </>
+                ) : null}
+              </>
+            }
             confirmLabel={t("common.delete")}
             confirmColor="error"
             onClose={() => setRemoveGameDialogOpen(false)}

@@ -17,6 +17,7 @@ IGDB_API_BASE = "https://api.igdb.com/v4"
 
 SEARCH_CACHE_TTL_SECONDS = 5 * 60
 COVER_CACHE_TTL_SECONDS = 24 * 60 * 60
+VERSION_PARENT_CACHE_TTL_SECONDS = 24 * 60 * 60
 
 # IGDB's games.category/game_type ordinal scheme (0-14) — see GameCategory in
 # app/models/catalog.py for the named enum this mirrors; kept as bare ints here rather than
@@ -269,6 +270,38 @@ class IGDBClient:
 
         await self._attach_covers(addons, headers)
         _normalize_nested_image_urls(addons)
+        return addons
+
+    async def get_version_parent(self, igdb_id: int) -> dict | None:
+        """The base game an edition is a version of (IGDB's version_parent), as {id, name,
+        slug, url}, or None. E.g. Forza Horizon 5: Premium Edition (171270) -> Forza Horizon 5.
+        Cached for a day: it rarely changes, and a game page asks on every view."""
+        cache_key = f"igdb:version-parent:{int(igdb_id)}"
+        cached = await self._cache.get(cache_key)
+        if cached is not None:
+            return json.loads(cached)
+        headers = await self._auth_headers()
+        body = (
+            "fields version_parent.name,version_parent.slug,version_parent.url;\n"
+            f"where id = {int(igdb_id)};\nlimit 1;"
+        )
+        response = await self._request("POST", f"{IGDB_API_BASE}/games", headers=headers, content=body)
+        rows = response.json()
+        parent = rows[0].get("version_parent") if rows else None
+        result = parent if isinstance(parent, dict) and parent.get("id") is not None else None
+        await self._cache.set(cache_key, json.dumps(result), ttl_seconds=VERSION_PARENT_CACHE_TTL_SECONDS)
+        return result
+
+    async def get_addons_by_parent_igdb_id_cached(self, parent_igdb_id: int) -> list[dict]:
+        """get_addons_by_parent_igdb_id, cached briefly — for the link picker, so reopening it
+        (and then linking from it) doesn't ask IGDB again. Import/resync keep using the
+        uncached call, which must always see IGDB's current list."""
+        cache_key = f"igdb:addons:{int(parent_igdb_id)}"
+        cached = await self._cache.get(cache_key)
+        if cached is not None:
+            return json.loads(cached)
+        addons = await self.get_addons_by_parent_igdb_id(parent_igdb_id)
+        await self._cache.set(cache_key, json.dumps(addons), ttl_seconds=SEARCH_CACHE_TTL_SECONDS)
         return addons
 
     async def get_igdb_id_for_steam_appid(self, steam_app_id: int) -> int | None:

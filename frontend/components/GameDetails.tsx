@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import type { GameSummary } from "../api/types";
+import { useWorksWith } from "../hooks/useAddonLinks";
 import { useAddons, useGame } from "../hooks/useGames";
 import { useEnabledLabs } from "../hooks/useLabs";
 import { useScreensaverShows } from "../hooks/useScreensaver";
@@ -17,12 +18,14 @@ import { useToysToLifeGameSection } from "../hooks/useToysToLife";
 import { gameIdentifier } from "../utils/identifiers";
 import { useCanonicalAddress, useDetailBack } from "../utils/navState";
 import { canBeInScreensaver } from "../utils/screensaver";
+import BaseGameAddonsHint from "./BaseGameAddonsHint";
 import { DetailColumns, Section } from "./Detail";
 import GameActionButtons from "./GameActionButtons";
 import GameCard from "./GameCard";
 import { ADDON_DISPLAY_CATEGORIES, GameAboutBlock, GameHero, GameMediaSections } from "./GameDetailParts";
 import GameLibrarySection from "./GameLibrarySection";
 import GameProgressSection from "./GameProgressSection";
+import LinkedAddonsSection from "./LinkedAddonsSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
@@ -33,6 +36,13 @@ import Page, { ToolbarButton, ToolbarDivider, useRouteCrumbs } from "./Page";
 
 
 
+// Wraps like the Screenshots and Videos grids: two columns on phones, then as many cards as fit.
+const ADDON_GRID_SX = {
+  display: "grid",
+  gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(auto-fill, minmax(150px, 1fr))" },
+  gap: "18px 14px",
+};
+
 const GameDetails = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -42,6 +52,13 @@ const GameDetails = () => {
   const { data: game, isError } = useGame(identifier);
   const gameId = game?.id ?? NaN;
   const { data: addons } = useAddons(gameId);
+  // Linked Add-ons lab: manual add-on links, the Works with section and the base-game hint.
+  const linkedAddonsLab = useEnabledLabs().has("linked_addons");
+  // An add-on's own games (IGDB parent, then manual links); a game's add-ons come from useAddons.
+  const isAddon = game ? ADDON_DISPLAY_CATEGORIES.has(game.category) : false;
+  const { data: worksWith } = useWorksWith(gameId, linkedAddonsLab && isAddon);
+  // The link picker below Notes; the Add-ons hint opens it too.
+  const [linkPickerOpen, setLinkPickerOpen] = useState(false);
   // Set only on a Toys-to-Life line's base game (LEGO Dimensions), which shows its packs instead of Addons.
   const { data: toysToLife } = useToysToLifeGameSection(gameId);
   const { data: libraryItems } = useLibraryItems(gameId);
@@ -104,6 +121,15 @@ const GameDetails = () => {
   const handleAddonClick = (addon: GameSummary) => {
     navigate(`/addon/${gameIdentifier(addon)}`);
   };
+  const handleWorksWithClick = (other: GameSummary) => {
+    navigate(`/game/${gameIdentifier(other)}`);
+  };
+  // Below Notes: the manual links only (IGDB's own aren't unlinkable).
+  const manualLinks = (isAddon ? worksWith : addons)?.filter((other) => other.manualLink);
+  // An IGDB game (not an add-on) can take add-ons from its base game, e.g. FH5 Premium.
+  const offerBaseGameAddons = linkedAddonsLab && !isAddon && game.igdbId !== null && !isAutoDiscovered;
+  // With the lab on, every add-on shows Works with instead of Add-ons; with it off, as before.
+  const showWorksWith = linkedAddonsLab && isAddon;
 
   // Short platform names of the user's own copies, for the hero's pills.
   const copyPlatforms = Array.from(
@@ -167,22 +193,41 @@ const GameDetails = () => {
             <GameAboutBlock game={game} />
             <GameMediaSections game={game} />
             {!hasParentGame && toysToLife ? <ToysToLifeSection section={toysToLife} /> : null}
-            {!hasParentGame && !toysToLife ? (
+            {showWorksWith ? (
+              // Where a game shows its Add-ons: the games this add-on belongs with.
+              <Section id="works-with" title={t("games.addonLinks.worksWithTitle")}>
+                {(worksWith ?? []).length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {t("games.addonLinks.worksWithEmpty")}
+                  </Typography>
+                ) : (
+                  <Box sx={ADDON_GRID_SX}>
+                    {(worksWith ?? []).map((other) => (
+                      <GameCard
+                        key={other.id}
+                        game={other}
+                        context="addon"
+                        contextFunction={() => handleWorksWithClick(other)}
+                      />
+                    ))}
+                  </Box>
+                )}
+              </Section>
+            ) : null}
+            {!showWorksWith && !hasParentGame && !toysToLife ? (
               <Section id="addons" title={t("games.addons.title")}>
+                <BaseGameAddonsHint
+                  key={gameId}
+                  gameId={gameId}
+                  enabled={offerBaseGameAddons && manualLinks !== undefined && manualLinks.length === 0}
+                  onOpenPicker={() => setLinkPickerOpen(true)}
+                />
                 {displayedAddons.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">
                     {t("games.addons.empty")}
                   </Typography>
                 ) : (
-                  // Wraps like the Screenshots and Videos grids: two columns on phones, then as
-                  // many cards as fit.
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(auto-fill, minmax(150px, 1fr))" },
-                      gap: "18px 14px",
-                    }}
-                  >
+                  <Box sx={ADDON_GRID_SX}>
                     {displayedAddons.map((addon) => (
                       <GameCard key={addon.id} game={addon} context="addon" contextFunction={() => handleAddonClick(addon)} />
                     ))}
@@ -223,6 +268,18 @@ const GameDetails = () => {
                 onUpdate={(noteId, body) => updateNote.mutateAsync({ noteId, body })}
                 onDelete={(noteId) => deleteNote.mutateAsync(noteId)}
               />
+              {linkedAddonsLab ? (
+              <LinkedAddonsSection
+                gameId={gameId}
+                gameName={game.name}
+                isAddon={isAddon}
+                links={manualLinks}
+                onCurrentGameDeleted={() => navigate("/games", { replace: true })}
+                offerBaseGameAddons={offerBaseGameAddons}
+                pickerOpen={linkPickerOpen}
+                onPickerOpenChange={setLinkPickerOpen}
+              />
+              ) : null}
             </>
           ) : null
         }

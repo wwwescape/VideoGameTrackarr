@@ -9,9 +9,9 @@ from app.schemas.base import CamelModel
 # kinds of files a .zip carries); 4 added a custom game's screenshots, artwork and videos;
 # 5 added Toys-to-Life ownership, ratings, notes and tags; 7 added a game's screensaver opt-out;
 # 8 added the screensaver's What to show settings; 9 added a copy's Steelbook flag, physical
-# contents (e.g. code in the box, number of discs) and custom Other format text.
-# Older files still restore — the new parts default to empty.
-BACKUP_FORMAT_VERSION = 9
+# contents (e.g. code in the box, number of discs) and custom Other format text; 10 added manual
+# add-on links. Older files still restore — the new parts default to empty.
+BACKUP_FORMAT_VERSION = 10
 
 
 class _BackupRow(BaseModel):
@@ -137,6 +137,13 @@ class BackupNote(_BackupRow):
 class BackupGameTag(_BackupRow):
     game_id: int
     tag_id: int
+
+
+class BackupAddonLink(_BackupRow):
+    """A manual "works with" link between an add-on and another game (version 10+)."""
+
+    addon_game_id: int
+    game_id: int
 
 
 class BackupToysToLifeCopy(_BackupRow):
@@ -331,6 +338,8 @@ class BackupPayload(_BackupRow):
     play_sessions: list[BackupPlaySession] = []
     notes: list[BackupNote] = []
     game_tags: list[BackupGameTag] = []
+    # Version 10+.
+    addon_links: list[BackupAddonLink] = []
     manufacturers: list[BackupManufacturer] = []
     hardware_platforms: list[BackupHardwarePlatform] = []
     hardware_types: list[BackupHardwareType] = []

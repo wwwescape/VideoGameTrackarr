@@ -313,6 +313,11 @@ export const screensaverSettingsCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.screensaver") },
 ];
 
+export const linkedAddonsSettingsCrumbs: CrumbsFn = (_params, t) => [
+  { label: t("nav.settings"), to: "/settings" },
+  { label: t("nav.linkedAddons") },
+];
+
 export const steamSyncCrumbs: CrumbsFn = (_params, t) => [
   { label: t("nav.settings"), to: "/settings" },
   { label: t("nav.steamSync") },

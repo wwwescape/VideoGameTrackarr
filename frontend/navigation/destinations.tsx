@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { LabId } from "../api/labs";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import AddLinkIcon from "@mui/icons-material/AddLink";
 import BlockIcon from "@mui/icons-material/Block";
 import CableIcon from "@mui/icons-material/Cable";
 import CollectionsBookmarkIcon from "@mui/icons-material/CollectionsBookmark";
@@ -179,6 +180,12 @@ export function settingsPages(): NavSubDestination[] {
       labelKey: "nav.screensaver",
       icon: <SlideshowIcon />,
       lab: "screensaver",
+    },
+    {
+      to: "/settings/linked-addons",
+      labelKey: "nav.linkedAddons",
+      icon: <AddLinkIcon />,
+      lab: "linked_addons",
     },
     {
       to: "/settings/igdb-import",
