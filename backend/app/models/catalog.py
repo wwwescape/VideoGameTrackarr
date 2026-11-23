@@ -169,6 +169,14 @@ class Game(TimestampMixin, Base):
     # broke Miles Morales the first time around). See _upsert_from_igdb_payload's
     # HIERARCHICAL_ADDON_CATEGORIES for which categories use which column.
     display_parent_game_id: Mapped[int | None] = mapped_column(ForeignKey("games.id"), index=True)
+    # IGDB's version_parent: the base game an edition is a version of (FH5 Premium -> FH5), so the
+    # add-on pickers can offer the other editions of the same game. version_parent_checked says
+    # it was read from IGDB at all (rows from before it existed are filled in lazily, see
+    # edition_service); a custom game never has one.
+    version_parent_igdb_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    version_parent_checked: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
     # IGDB's parent_game backlink resolves to one of the two columns above when that parent
     # happens to be imported locally too — these two only get populated as a fallback, when
     # this game's conceptual parent (e.g. "Age of Empires" for the "Definitive Edition"
@@ -354,8 +362,9 @@ class GameAddonLink(Base):
     that IGDB lists under the Standard edition only, linked to the Premium edition too.
 
     `included` marks the add-on as part of that game (Car Pass included in FH5 Premium):
-    owning the game then counts as owning the add-on. A row for the add-on's own IGDB parent
-    only ever carries that mark; it's never a manual link (see addon_link_service).
+    owning the game then counts as owning the add-on. `preorder_bonus` marks it a pre-order bonus
+    for that game instead (a label only). A row for the add-on's own IGDB parent only ever carries
+    one of those marks; it's never a manual link (see addon_link_service).
 
     Kept apart from Game.parent_game_id on purpose: that column is IGDB's own link and drives
     list visibility, deletes and resyncs, and every resync rewrites it. Nothing IGDB-driven
@@ -368,6 +377,8 @@ class GameAddonLink(Base):
     addon_game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), index=True)
     included: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    # A pre-order bonus for that game: a label only, never counts as owned, never with included.
+    preorder_bonus: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), server_default=func.now(), nullable=False)
 
 

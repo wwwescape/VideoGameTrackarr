@@ -1,18 +1,33 @@
 import { apiClient } from "./client";
-import type { GameCategory, GameSummary } from "./types";
+import type { GameCategory, GameRef, GameSummary } from "./types";
 
 // Manual add-on links: an add-on linked by hand to more games than its IGDB parent (e.g. an
 // FH5 car pack IGDB lists under the Standard edition only, linked to the Premium edition).
 // IGDB's own link is never changed. Every call works from either side: from an add-on, the
 // other ids are games; from a game, they're add-ons.
 
+// How an add-on goes with a game: works with it, Included in it (owning the game owns the
+// add-on), or a pre-order bonus for it (a label only).
+export type AddonRelation = "works_with" | "included" | "preorder_bonus";
+
+// A list row's relation to the list's own game.
+export const relationOf = (game: { included?: boolean; preorderBonus?: boolean }): AddonRelation =>
+  game.included ? "included" : game.preorderBonus ? "preorder_bonus" : "works_with";
+
+// Which ids to give which relation when linking (the rest are works-with).
+export interface RelationIds {
+  includedIds?: number[];
+  preorderBonusIds?: number[];
+}
+
 export interface AddonLinkCandidate extends GameSummary {
-  // Shares a Collection with the game; otherwise only a Series (IGDB franchise).
-  sameCollection: boolean;
+  // The edition of the same game an add-on candidate is for (the picker groups by it); null for
+  // a game candidate.
+  edition: GameRef | null;
   // Already linked: shown checked and disabled in the picker.
   linked: boolean;
-  // Already linked as Included.
-  linkedIncluded: boolean;
+  // How an already-linked one goes with it.
+  linkedRelation: AddonRelation;
 }
 
 export interface AddonRef {
@@ -38,16 +53,27 @@ export async function listAddonLinkCandidates(gameId: number, q?: string): Promi
   return response.data;
 }
 
-// includedIds: the ones among ids to mark Included (the add-on is part of that game).
-export async function addAddonLinks(gameId: number, ids: number[], includedIds: number[] = []): Promise<number> {
-  const response = await apiClient.post<{ added: number }>(`/api/games/${gameId}/addon-links`, { ids, includedIds });
+export async function addAddonLinks(gameId: number, ids: number[], relations: RelationIds = {}): Promise<number> {
+  const response = await apiClient.post<{ added: number }>(`/api/games/${gameId}/addon-links`, {
+    ids,
+    includedIds: relations.includedIds ?? [],
+    preorderBonusIds: relations.preorderBonusIds ?? [],
+  });
   return response.data.added;
 }
 
-// Marks the add-on (either id) Included in the other game, or clears it. Works for an add-on's
-// own IGDB parent too.
-export async function setAddonIncluded(gameId: number, otherId: number, included: boolean): Promise<void> {
-  await apiClient.put(`/api/games/${gameId}/addon-links/${otherId}/included`, { included });
+// Sets how the add-on (either id) goes with the other game. Works for an add-on's own IGDB
+// parent too.
+export async function setAddonRelation(gameId: number, otherId: number, relation: AddonRelation): Promise<void> {
+  await apiClient.put(`/api/games/${gameId}/addon-links/${otherId}/relation`, { relation });
+}
+
+// "I got it": an owned copy of a pre-order bonus, like your one copy of the game it came with.
+// 409 CHOOSE_COPY when there's no copy of that game or several.
+export const CHOOSE_COPY = "choose_copy";
+
+export async function claimPreorderBonus(addonId: number, gameId: number): Promise<void> {
+  await apiClient.post(`/api/games/${addonId}/preorder-bonus/${gameId}/claim`);
 }
 
 export async function removeAddonLink(gameId: number, otherId: number): Promise<void> {
@@ -79,8 +105,8 @@ export interface BaseGameAddon {
   // Null when it isn't in VGT yet ("Will be added").
   gameId: number | null;
   linked: boolean;
-  // Already marked Included in this game.
-  included: boolean;
+  // How it already goes with this game.
+  relation: AddonRelation;
   // IGDB lists it in this game's bundle contents: the picker starts it as Included.
   suggestedIncluded: boolean;
 }
@@ -105,11 +131,12 @@ export async function getBaseGameAddons(gameId: number): Promise<BaseGameAddons>
 export async function linkBaseGameAddons(
   gameId: number,
   igdbIds: number[],
-  includedIgdbIds: number[] = []
+  relations: RelationIds = {}
 ): Promise<BaseGameAddonResult[]> {
   const response = await apiClient.post<{ results: BaseGameAddonResult[] }>(`/api/games/${gameId}/base-game-addons`, {
     igdbIds,
-    includedIgdbIds,
+    includedIgdbIds: relations.includedIds ?? [],
+    preorderBonusIgdbIds: relations.preorderBonusIds ?? [],
   });
   return response.data.results;
 }
@@ -117,11 +144,9 @@ export async function linkBaseGameAddons(
 // --- Packs: a Season Pass or Ultimate Pack (a custom add-on with the Pack category) holding
 // other add-ons. Owning the pack, or a game it's Included in, owns what's inside.
 
-export type PackCandidateGroup = "same_game" | "collection" | "series" | "other";
-
 export interface PackCandidate extends GameSummary {
-  // For the same games, the same Collection, the same Series, or (only while searching) none.
-  group: PackCandidateGroup;
+  // The edition of the same game it's for; the picker groups by it.
+  edition: GameRef | null;
   // Already inside (or already holding) it: shown checked and disabled.
   linked: boolean;
 }
@@ -159,7 +184,7 @@ export async function removeFromPack(packId: number, addonId: number): Promise<v
 export interface AddonLinkPair {
   addon: AddonRef;
   game: AddonRef;
-  included: boolean;
+  relation: AddonRelation;
   // False for the add-on's own IGDB parent: only an Included mark, nothing to unlink.
   manual: boolean;
   // The "game" is a pack the add-on is inside (always Included).

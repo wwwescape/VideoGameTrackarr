@@ -74,6 +74,7 @@ const PackLinksSection = ({
       showUndoToast(
         t("games.packs.removedToast", { addon: addon.name, pack: pack.name }),
         () => {
+          setHidden(other.id, false);
           addLinks.mutateAsync([other.id]).catch((error) => {
             console.error("Error restoring pack contents:", error);
             toast.error(t("games.packs.addError"), TOAST_OPTIONS);
@@ -82,6 +83,8 @@ const PackLinksSection = ({
         5000
       );
     } catch (error) {
+      // Saved: it stays hidden until the refreshed list drops it. Not saved: back it comes.
+      setHidden(other.id, false);
       if (
         isAxiosError(error) &&
         error.response?.status === 409 &&
@@ -92,8 +95,6 @@ const PackLinksSection = ({
         console.error("Error removing from pack:", error);
         toast.error(t("games.packs.removeError"), TOAST_OPTIONS);
       }
-    } finally {
-      setHidden(other.id, false);
     }
   };
 

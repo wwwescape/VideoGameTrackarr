@@ -229,7 +229,13 @@ const GameDetails = () => {
                 ) : (
                   <Box sx={ADDON_GRID_SX}>
                     {(packContents ?? []).map((addon) => (
-                      <GameCard key={addon.id} game={addon} context="addon" contextFunction={() => handleAddonClick(addon)} />
+                      <GameCard
+                        key={addon.id}
+                        game={addon}
+                        context="addon"
+                        contextFunction={() => handleAddonClick(addon)}
+                        includedTooltip={t("games.card.includedInPackTooltip")}
+                      />
                     ))}
                   </Box>
                 )}
@@ -284,6 +290,9 @@ const GameDetails = () => {
                 regions={regions}
                 gameCategory={game.category}
                 ownedVia={game.ownedVia}
+                wishlistedVia={game.wishlistedVia}
+                preorderBonusFor={game.preorderBonusFor}
+                owned={game.owned}
               />
               {!hasParentGame ? (
                 <GameProgressSection

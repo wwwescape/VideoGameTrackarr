@@ -10,9 +10,9 @@ from app.schemas.base import CamelModel
 # 5 added Toys-to-Life ownership, ratings, notes and tags; 7 added a game's screensaver opt-out;
 # 8 added the screensaver's What to show settings; 9 added a copy's Steelbook flag, physical
 # contents (e.g. code in the box, number of discs) and custom Other format text; 10 added manual
-# add-on links; 11 added a link's Included mark. Older files still restore — the new parts
-# default to empty.
-BACKUP_FORMAT_VERSION = 11
+# add-on links; 11 added a link's Included mark; 12 its pre-order bonus mark. Older files still
+# restore — the new parts default to empty.
+BACKUP_FORMAT_VERSION = 12
 
 
 class _BackupRow(BaseModel):
@@ -147,6 +147,8 @@ class BackupAddonLink(_BackupRow):
     game_id: int
     # Included in that game (version 11+); older backups restore every link as works-with.
     included: bool = False
+    # A pre-order bonus for that game (version 12+).
+    preorder_bonus: bool = False
 
 
 class BackupToysToLifeCopy(_BackupRow):

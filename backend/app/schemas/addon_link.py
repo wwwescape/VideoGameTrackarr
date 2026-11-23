@@ -3,43 +3,48 @@ from typing import Literal
 from pydantic import Field
 
 from app.models.catalog import Game, GameCategory
+from app.repositories.game_repository import AddonRelation
 from app.schemas.base import CamelModel
-from app.schemas.game import GameSummaryResponse, game_summary_from_orm
+from app.schemas.game import GameRefResponse, GameSummaryResponse, game_ref_from_orm, game_summary_from_orm
 from app.services import game_service
 from app.services.addon_link_service import BaseGameAddonResult, BaseGameAddons, LinkCandidate, PackCandidate
 
 
 class AddonLinkCandidateResponse(GameSummaryResponse):
-    # Shares a Collection with the game; otherwise only a Franchise (UI "Series"). The picker
-    # groups by it.
-    same_collection: bool
+    # The edition of the same game an add-on candidate is for (the picker groups by it); null
+    # for a game candidate.
+    edition: GameRefResponse | None
     # Already linked: shown checked and disabled.
     linked: bool
-    # Already linked as Included (summary's `included` is about a list's own game, not this).
-    linked_included: bool
+    # How an already-linked one goes with it (summary's `included`/`preorderBonus` are about a
+    # list's own game, not this).
+    linked_relation: AddonRelation
 
 
 def addon_link_candidate_from(candidate: LinkCandidate) -> AddonLinkCandidateResponse:
     summary = game_summary_from_orm(candidate.status)
     return AddonLinkCandidateResponse(
         **summary.model_dump(),
-        same_collection=candidate.same_collection,
+        edition=game_ref_from_orm(candidate.edition) if candidate.edition else None,
         linked=candidate.linked,
-        linked_included=candidate.included,
+        linked_relation=candidate.relation,
     )
 
 
 class PackCandidateResponse(GameSummaryResponse):
-    # How close it is: for the same games, the same Collection, the same Series, or (only while
-    # searching) none of those. The picker groups by it.
-    group: Literal["same_game", "collection", "series", "other"]
+    # The edition of the same game it's for; the picker groups by it.
+    edition: GameRefResponse | None
     # Already inside (or already holding) it: shown checked and disabled.
     linked: bool
 
 
 def pack_candidate_from(candidate: PackCandidate) -> PackCandidateResponse:
     summary = game_summary_from_orm(candidate.status)
-    return PackCandidateResponse(**summary.model_dump(), group=candidate.group, linked=candidate.linked)
+    return PackCandidateResponse(
+        **summary.model_dump(),
+        edition=game_ref_from_orm(candidate.edition) if candidate.edition else None,
+        linked=candidate.linked,
+    )
 
 
 class PackLinkRequest(CamelModel):
@@ -52,10 +57,12 @@ class AddonLinkRequest(CamelModel):
     ids: list[int] = Field(min_length=1, max_length=100)
     # The ones among ids to mark Included (the add-on is part of that game).
     included_ids: list[int] = Field(default_factory=list, max_length=100)
+    # The ones among ids to mark a pre-order bonus for that game.
+    preorder_bonus_ids: list[int] = Field(default_factory=list, max_length=100)
 
 
-class AddonIncludedRequest(CamelModel):
-    included: bool
+class AddonRelationRequest(CamelModel):
+    relation: AddonRelation
 
 
 class AddonLinkResponse(CamelModel):
@@ -76,8 +83,8 @@ def addon_ref_from_orm(game: Game) -> AddonRefResponse:
 class AddonLinkPairResponse(CamelModel):
     addon: AddonRefResponse
     game: AddonRefResponse
-    included: bool
-    # False for the add-on's own IGDB parent: only an Included mark, nothing to unlink.
+    relation: AddonRelation
+    # False for the add-on's own IGDB parent: only a mark, nothing to unlink.
     manual: bool
     # The "game" is a pack the add-on is inside (always Included).
     pack: bool = False
@@ -105,8 +112,8 @@ class BaseGameAddonResponse(CamelModel):
     game_id: int | None
     # Already linked to this game (by hand, or as its IGDB add-on): shown ticked and disabled.
     linked: bool
-    # Already marked Included in this game.
-    included: bool
+    # How it already goes with this game.
+    relation: AddonRelation
     # IGDB lists it in this game's bundle contents: the picker starts it as Included.
     suggested_included: bool
 
@@ -138,7 +145,7 @@ def base_game_addons_from(result: BaseGameAddons) -> BaseGameAddonsResponse:
                 first_release_date=addon.payload.get("first_release_date"),
                 game_id=addon.local.id if addon.local else None,
                 linked=addon.linked,
-                included=addon.included,
+                relation=addon.relation,
                 suggested_included=addon.suggested_included,
             )
             for addon in result.addons
@@ -150,6 +157,8 @@ class BaseGameAddonsLinkRequest(CamelModel):
     igdb_ids: list[int] = Field(min_length=1, max_length=100)
     # The ones among igdb_ids to mark Included in this game.
     included_igdb_ids: list[int] = Field(default_factory=list, max_length=100)
+    # The ones among igdb_ids to mark a pre-order bonus for this game.
+    preorder_bonus_igdb_ids: list[int] = Field(default_factory=list, max_length=100)
 
 
 class BaseGameAddonResultResponse(CamelModel):

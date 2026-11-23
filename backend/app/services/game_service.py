@@ -581,11 +581,21 @@ def _upsert_from_igdb_payload(
         igdb_rating_count=igdb_game.get("rating_count"),
         igdb_critic_rating=igdb_game.get("aggregated_rating"),
         igdb_critic_rating_count=igdb_game.get("aggregated_rating_count"),
+        version_parent_igdb_id=version_parent_igdb_id(igdb_game),
+        version_parent_checked=True,
         **extract_store_urls(igdb_game),
     )
 
     _sync_catalog_richness(db, game, igdb_game, scope=scope)
     return game
+
+
+def version_parent_igdb_id(igdb_game: dict[str, Any]) -> int | None:
+    """IGDB's version_parent as an id, whether the payload carries it bare or expanded."""
+    parent = igdb_game.get("version_parent")
+    if isinstance(parent, dict):
+        parent = parent.get("id")
+    return int(parent) if isinstance(parent, int) else None
 
 
 def _sync_catalog_richness(

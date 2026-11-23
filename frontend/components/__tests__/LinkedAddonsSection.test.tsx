@@ -9,11 +9,11 @@ import LinkedAddonsSection from "../LinkedAddonsSection";
 const removeLink = { mutateAsync: vi.fn(), isPending: false };
 const addLinks = { mutateAsync: vi.fn(async () => 1), isPending: false };
 const deleteGame = { mutateAsync: vi.fn(async () => undefined), isPending: false };
-const setIncluded = { mutateAsync: vi.fn(async () => undefined), isPending: false };
+const setRelation = { mutateAsync: vi.fn(async () => undefined), isPending: false };
 vi.mock("../../hooks/useAddonLinks", () => ({
   useRemoveAddonLink: () => removeLink,
   useAddAddonLinks: () => addLinks,
-  useSetAddonIncluded: () => setIncluded,
+  useSetAddonRelation: () => setRelation,
 }));
 vi.mock("../../hooks/useGames", () => ({ useDeleteGame: () => deleteGame }));
 // The picker has its own tests.
@@ -71,7 +71,7 @@ describe("LinkedAddonsSection", () => {
     addLinks.mutateAsync.mockClear();
     deleteGame.mutateAsync.mockClear();
     showUndoToast.mockClear();
-    setIncluded.mutateAsync.mockClear();
+    setRelation.mutateAsync.mockClear();
   });
 
   it("invites a link when there are none", () => {
@@ -108,7 +108,11 @@ describe("LinkedAddonsSection", () => {
     );
     const undo = showUndoToast.mock.calls[0][1] as () => void;
     undo();
-    expect(addLinks.mutateAsync).toHaveBeenCalledWith({ ids: [2], includedIds: [] });
+    expect(addLinks.mutateAsync).toHaveBeenCalledWith({
+      ids: [2],
+      includedIds: [],
+      preorderBonusIds: [],
+    });
   });
 
   it("offers to delete an add-on whose last link can't be removed", async () => {
@@ -126,24 +130,36 @@ describe("LinkedAddonsSection", () => {
     expect(showUndoToast).not.toHaveBeenCalled();
   });
 
-  it("marks a linked game as Included in one click", async () => {
+  it("switches a linked game's relation from its menu", async () => {
     const { user } = renderSection();
 
-    const toggle = screen.getByRole("button", {
-      name: "Car Collection included in Forza Horizon 5: Premium Edition",
-    });
-    expect(toggle).toHaveAttribute("aria-pressed", "false");
-    await user.click(toggle);
+    await user.click(
+      screen.getByRole("button", {
+        name: "How Car Collection goes with Forza Horizon 5: Premium Edition: Works with",
+      })
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Pre-order bonus" }));
 
-    expect(setIncluded.mutateAsync).toHaveBeenCalledWith({ otherId: 2, included: true });
+    expect(setRelation.mutateAsync).toHaveBeenCalledWith({
+      otherId: 2,
+      relation: "preorder_bonus",
+    });
+    // Shown at once, before the refreshed list arrives.
+    expect(
+      screen.getByRole("button", {
+        name: "How Car Collection goes with Forza Horizon 5: Premium Edition: Pre-order bonus",
+      })
+    ).toBeInTheDocument();
   });
 
-  it("lists the IGDB parent with an Included toggle but no unlink", () => {
+  it("lists the IGDB parent with a relation button but no unlink", () => {
     renderSection([STANDARD, PREMIUM]);
 
     expect(screen.getByText("From IGDB")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Car Collection included in Forza Horizon 5" })
+      screen.getByRole("button", {
+        name: "How Car Collection goes with Forza Horizon 5: Works with",
+      })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Unlink Forza Horizon 5" })

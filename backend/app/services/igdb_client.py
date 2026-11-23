@@ -20,6 +20,8 @@ SEARCH_CACHE_TTL_SECONDS = 5 * 60
 ALTERNATIVE_NAMES_BATCH_SIZE = 500
 COVER_CACHE_TTL_SECONDS = 24 * 60 * 60
 VERSION_PARENT_CACHE_TTL_SECONDS = 24 * 60 * 60
+# The link picker's list of a base game's add-ons: new DLC is rare, and import/resync never use it.
+ADDON_LIST_CACHE_TTL_SECONDS = 6 * 60 * 60
 
 # IGDB's games.category/game_type ordinal scheme (0-14) — see GameCategory in
 # app/models/catalog.py for the named enum this mirrors; kept as bare ints here rather than
@@ -320,8 +322,24 @@ class IGDBClient:
         await self._cache.set(cache_key, json.dumps(result), ttl_seconds=VERSION_PARENT_CACHE_TTL_SECONDS)
         return result
 
+    async def get_version_parent_ids(self, ids: list[int]) -> dict[int, int | None]:
+        """Each game's version_parent id (None for a base game), 500 per request: backfills
+        games imported before VGT stored it."""
+        headers = await self._auth_headers()
+        result: dict[int, int | None] = {}
+        for start in range(0, len(ids), 500):
+            chunk = ids[start : start + 500]
+            id_list = ",".join(str(int(i)) for i in chunk)
+            body = f"fields version_parent;\nwhere id = ({id_list});\nlimit 500;"
+            response = await self._request("POST", f"{IGDB_API_BASE}/games", headers=headers, content=body)
+            found = {row["id"]: row.get("version_parent") for row in response.json() if "id" in row}
+            for igdb_id in chunk:
+                parent = found.get(igdb_id)
+                result[igdb_id] = parent if isinstance(parent, int) else None
+        return result
+
     async def get_addons_by_parent_igdb_id_cached(self, parent_igdb_id: int) -> list[dict]:
-        """get_addons_by_parent_igdb_id, cached briefly — for the link picker, so reopening it
+        """get_addons_by_parent_igdb_id, cached for a few hours — for the link picker, so reopening it
         (and then linking from it) doesn't ask IGDB again. Import/resync keep using the
         uncached call, which must always see IGDB's current list."""
         cache_key = f"igdb:addons:{int(parent_igdb_id)}"
@@ -329,7 +347,7 @@ class IGDBClient:
         if cached is not None:
             return json.loads(cached)
         addons = await self.get_addons_by_parent_igdb_id(parent_igdb_id)
-        await self._cache.set(cache_key, json.dumps(addons), ttl_seconds=SEARCH_CACHE_TTL_SECONDS)
+        await self._cache.set(cache_key, json.dumps(addons), ttl_seconds=ADDON_LIST_CACHE_TTL_SECONDS)
         return addons
 
     async def get_igdb_id_for_steam_appid(self, steam_app_id: int) -> int | None:

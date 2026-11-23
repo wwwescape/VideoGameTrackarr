@@ -13,9 +13,10 @@ from typing import Any, Literal
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Game, GameCategory
+from app.models.library import LibraryItem, LibraryStatus
 from app.repositories import game_repository, toys_to_life_repository
-from app.repositories.game_repository import GameWithStatus
-from app.services import game_service
+from app.repositories.game_repository import AddonRelation, GameWithStatus
+from app.services import game_service, library_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.game_service import HIERARCHICAL_ADDON_CATEGORIES
 from app.services.igdb_client import IGDBClient
@@ -32,11 +33,11 @@ LAST_LINK_ORPHAN = "last_link_orphan"
 @dataclass
 class LinkCandidate:
     status: GameWithStatus
-    # Shares a Collection with the game; otherwise only a Franchise (UI "Series").
-    same_collection: bool
+    # The edition of the same game it's for (an add-on candidate); None for a game candidate.
+    edition: Game | None
     linked: bool
-    # Already linked and marked Included in this game.
-    included: bool = False
+    # How an already-linked one goes with this game.
+    relation: AddonRelation = "works_with"
 
 
 def is_addon(game: Game) -> bool:
@@ -58,19 +59,20 @@ def list_works_with(db: Session, game_id: int) -> list[GameWithStatus]:
 
 
 def list_candidates(db: Session, game_id: int, search: str | None = None) -> list[LinkCandidate]:
+    """What the link picker offers, from the other editions of the same game (see
+    game_repository.list_link_candidates); already-linked ones are flagged."""
     game = _game(db, game_id)
-    linked = game_repository.linked_ids(db, game.id, addon_side=is_addon(game))
-    included = game_repository.included_map(db, game.id, addon_side=is_addon(game))
+    addon_side = is_addon(game)
+    linked = game_repository.linked_ids(db, game.id, addon_side=addon_side)
+    relations = game_repository.relation_map(db, game.id, addon_side=addon_side)
     return [
         LinkCandidate(
             status=status,
-            same_collection=same_collection,
+            edition=edition,
             linked=status.game.id in linked,
-            included=status.game.id in linked and included.get(status.game.id, False),
+            relation=relations.get(status.game.id, "works_with") if status.game.id in linked else "works_with",
         )
-        for status, same_collection in game_repository.list_link_candidates(
-            db, game, addon_categories=ADDON_CATEGORIES, search=search
-        )
+        for status, edition in game_repository.list_link_candidates(db, game, is_addon=addon_side, search=search)
     ]
 
 
@@ -87,45 +89,93 @@ def _pair(addon: Game, game: Game) -> tuple[int, int]:
     return addon.id, game.id
 
 
-def link(db: Session, game_id: int, other_ids: list[int], included_ids: list[int] | None = None) -> int:
+def link(
+    db: Session,
+    game_id: int,
+    other_ids: list[int],
+    included_ids: list[int] | None = None,
+    preorder_bonus_ids: list[int] | None = None,
+) -> int:
     """Links game_id to each of other_ids: games when game_id is an add-on, add-ons when it's
-    a game. The ones also in included_ids are marked Included (the add-on is part of that game).
+    a game. The ones in included_ids are marked Included (the add-on is part of that game), the
+    ones in preorder_bonus_ids a pre-order bonus for it (Included wins if in both).
     Already-linked pairs are kept, gaining the mark if asked. All or nothing: one invalid id
     links none. Returns how many links are new."""
     game = _game(db, game_id)
-    wanted_included = set(included_ids or [])
     pairs = []
-    included = set()
+    relations: dict[tuple[int, int], AddonRelation] = {}
     for other_id in dict.fromkeys(other_ids):
         other = _game(db, other_id)
         pair = _pair(game, other) if is_addon(game) else _pair(other, game)
         pairs.append(pair)
-        if other_id in wanted_included:
-            included.add(pair)
-    added = game_repository.add_addon_links(db, pairs, included)
+        relations[pair] = _wanted_relation(other_id, included_ids, preorder_bonus_ids)
+    added = game_repository.add_addon_links(db, pairs, relations)
     db.commit()
     return added
 
 
-def set_included(db: Session, game_id: int, other_id: int, included: bool) -> None:
-    """Marks the add-on (whichever of the two it is) as Included in the other game, or clears
-    the mark. Works on a manual link and on the add-on's own IGDB parent (Included is then the
-    only thing stored for the pair); any other pair isn't linked, so 404."""
+def _wanted_relation(key: int, included: list[int] | None, preorder_bonus: list[int] | None) -> AddonRelation:
+    if key in (included or ()):
+        return "included"
+    return "preorder_bonus" if key in (preorder_bonus or ()) else "works_with"
+
+
+def set_relation(db: Session, game_id: int, other_id: int, relation: AddonRelation) -> None:
+    """Sets how the add-on (whichever of the two it is) goes with the other game: works with
+    it, Included in it, or a pre-order bonus for it. Works on a manual link and on the add-on's
+    own IGDB parent (whose row then only holds the mark); any other pair isn't linked, so 404."""
     game = _game(db, game_id)
     other = _game(db, other_id)
     addon, target = (game, other) if is_addon(game) else (other, game)
     if not is_addon(addon) or is_addon(target):
-        raise ConflictError("Only an add-on can be marked as included in a game")
+        raise ConflictError("Only an add-on's relation to a game can be set")
     is_parent = addon.parent_game_id == target.id
     if not is_parent and target.id not in game_repository.linked_ids(db, addon.id, addon_side=True):
         raise NotFoundError(f"{addon.name} isn't linked to {target.name}")
-    game_repository.set_addon_included(db, addon.id, target.id, included, keep_row=not is_parent)
+    game_repository.set_addon_relation(db, addon.id, target.id, relation, keep_row=not is_parent)
     db.commit()
 
 
+def preorder_bonus_for(db: Session, game_id: int) -> list[Game]:
+    """The games this add-on is a pre-order bonus for (empty with the lab off)."""
+    return game_repository.preorder_bonus_for(db, game_id)
+
+
+# The 409 detail when "I got it" can't tell which copy of the game the bonus came with.
+CHOOSE_COPY = "choose_copy"
+
+
+def claim_preorder_bonus(db: Session, addon_id: int, game_id: int) -> LibraryItem:
+    """I got it: adds an owned copy of a pre-order bonus, on the platform, region and format of
+    your one owned copy of the game it's a bonus for. With no copy or several, CHOOSE_COPY: the
+    page opens the usual add-copy dialog instead."""
+    addon = _game(db, addon_id)
+    game = _game(db, game_id)
+    if game_repository.relation_map(db, addon.id, addon_side=True).get(game.id) != "preorder_bonus":
+        raise NotFoundError(f"{addon.name} isn't a pre-order bonus for {game.name}")
+    copies = library_service.list_library_items(db, game.id, LibraryStatus.OWNED)
+    if len(copies) != 1:
+        raise ConflictError(CHOOSE_COPY)
+    [copy] = copies
+    return library_service.add_library_item(
+        db,
+        addon.id,
+        status=LibraryStatus.OWNED,
+        platform_id=copy.platform_id,
+        region_id=copy.region_id,
+        format=copy.format,
+        digital_storefront=copy.digital_storefront,
+    )
+
+
 def owned_via(db: Session, game_id: int) -> list[Game]:
-    """The owned games this add-on is Included in (empty for anything else, or with the lab off)."""
+    """What this add-on is Included in that counts as owned (empty with the lab off)."""
     return game_repository.owned_via(db, game_id)
+
+
+def wishlisted_via(db: Session, game_id: int) -> list[Game]:
+    """The wishlisted packs this add-on is inside (empty when owned, or with the lab off)."""
+    return game_repository.wishlisted_via(db, game_id)
 
 
 def unlink(db: Session, game_id: int, other_id: int) -> None:
@@ -167,7 +217,8 @@ def kept_addons_on_delete(db: Session, game_id: int) -> list[Game]:
 @dataclass
 class PackCandidate:
     status: GameWithStatus
-    group: game_repository.PackCandidateGroup
+    # The edition of the same game it's for.
+    edition: Game | None
     linked: bool
 
 
@@ -195,14 +246,14 @@ def list_pack_candidates(db: Session, game_id: int, search: str | None = None) -
         return []
     on_pack = is_pack(game)
     if on_pack:
-        current = {row.game.id for row in game_repository.list_pack_contents(db, game.id)}
+        current = game_repository.pack_content_ids(db, game.id)
         excluded = game_repository.pack_ancestors(db, game.id)
     else:
-        current = {row.game.id for row in game_repository.list_packs_of(db, game.id)}
+        current = game_repository.pack_ids_of(db, game.id)
         excluded = game_repository.pack_descendants(db, game.id)
     return [
-        PackCandidate(status=status, group=group, linked=status.game.id in current)
-        for status, group in game_repository.list_pack_candidates(db, game, packs=not on_pack, search=search)
+        PackCandidate(status=status, edition=edition, linked=status.game.id in current)
+        for status, edition in game_repository.list_pack_candidates(db, game, packs=not on_pack, search=search)
         if status.game.id not in excluded
     ]
 
@@ -230,7 +281,7 @@ def add_pack_links(db: Session, game_id: int, other_ids: list[int]) -> int:
     for other_id in dict.fromkeys(other_ids):
         other = _game(db, other_id)
         pairs.append(_pack_pair(db, game, other) if is_pack(game) else _pack_pair(db, other, game))
-    added = game_repository.add_addon_links(db, pairs, set(pairs))
+    added = game_repository.add_addon_links(db, pairs, dict.fromkeys(pairs, "included"))
     db.commit()
     return added
 
@@ -240,7 +291,7 @@ def remove_from_pack(db: Session, pack_id: int, addon_id: int) -> None:
     add-on with no IGDB parent here, which would then show up nowhere."""
     pack = _game(db, pack_id)
     addon = _game(db, addon_id)
-    if pack.id not in {row.game.id for row in game_repository.list_packs_of(db, addon.id)}:
+    if pack.id not in game_repository.pack_ids_of(db, addon.id):
         raise NotFoundError(f"{addon.name} isn't inside {pack.name}")
     if addon.parent_game_id is None and game_repository.linked_ids(db, addon.id, addon_side=True) == {pack.id}:
         raise ConflictError(LAST_LINK_ORPHAN)
@@ -260,8 +311,8 @@ class BaseGameAddon:
     payload: dict[str, Any]
     local: Game | None
     linked: bool
-    # Already marked Included in this edition.
-    included: bool
+    # How it already goes with this edition.
+    relation: AddonRelation
     # IGDB lists it in this edition's bundle contents, so the picker starts it as Included.
     suggested_included: bool
 
@@ -287,11 +338,23 @@ def _edition(db: Session, game_id: int) -> Game | None:
     return game if game.igdb_id is not None and not is_addon(game) else None
 
 
+async def _base_game(db: Session, igdb_client: IGDBClient, game: Game) -> dict[str, Any] | None:
+    """The edition's base game as IGDB's {id, name, slug, url}: from the library when VGT
+    already knows it (version_parent stored, base game imported), else asked of IGDB (cached)."""
+    if game.version_parent_checked:
+        if game.version_parent_igdb_id is None:
+            return None
+        local = game_repository.get_game_by_igdb_id(db, game.version_parent_igdb_id)
+        if local is not None:
+            return {"id": local.igdb_id, "name": local.name, "slug": local.slug, "url": local.igdb_url}
+    assert game.igdb_id is not None
+    return await igdb_client.get_version_parent(game.igdb_id)
+
+
 async def _base_game_payloads(
     db: Session, igdb_client: IGDBClient, game: Game
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-    assert game.igdb_id is not None
-    base = await igdb_client.get_version_parent(game.igdb_id)
+    base = await _base_game(db, igdb_client, game)
     if base is None:
         return None, []
     addons = await igdb_client.get_addons_by_parent_igdb_id_cached(base["id"])
@@ -308,10 +371,11 @@ async def list_base_game_addons(db: Session, igdb_client: IGDBClient, game_id: i
     if base is None:
         return BaseGameAddons(base_game=None, base_game_local=None, addons=[])
     linked = game_repository.linked_ids(db, game.id, addon_side=False)
-    included = game_repository.included_map(db, game.id, addon_side=False)
+    relations = game_repository.relation_map(db, game.id, addon_side=False)
+    local_by_igdb = game_repository.games_by_igdb_ids(db, [payload["id"] for payload in payloads])
     addons = []
     for payload in sorted(payloads, key=lambda addon: (addon.get("name") or "").lower()):
-        local = game_repository.get_game_by_igdb_id(db, payload["id"])
+        local = local_by_igdb.get(payload["id"])
         is_linked = local is not None and (local.id in linked or local.parent_game_id == game.id)
         # `fields *` returns an add-on's bundles as bare ids: the bundles (editions) it's part of.
         in_bundle = game.igdb_id in (payload.get("bundles") or [])
@@ -320,7 +384,7 @@ async def list_base_game_addons(db: Session, igdb_client: IGDBClient, game_id: i
                 payload=payload,
                 local=local,
                 linked=is_linked,
-                included=local is not None and included.get(local.id, False),
+                relation=relations.get(local.id, "works_with") if local is not None else "works_with",
                 suggested_included=in_bundle,
             )
         )
@@ -330,7 +394,12 @@ async def list_base_game_addons(db: Session, igdb_client: IGDBClient, game_id: i
 
 
 async def link_base_game_addons(
-    db: Session, igdb_client: IGDBClient, game_id: int, igdb_ids: list[int], included_igdb_ids: list[int] | None = None
+    db: Session,
+    igdb_client: IGDBClient,
+    game_id: int,
+    igdb_ids: list[int],
+    included_igdb_ids: list[int] | None = None,
+    preorder_bonus_igdb_ids: list[int] | None = None,
 ) -> list[BaseGameAddonResult]:
     """Links each picked base-game add-on to this edition: one already in the library is just
     linked; any other is imported first (its IGDB parent resolves as usual, so with the base
@@ -341,7 +410,6 @@ async def link_base_game_addons(
         raise ConflictError("Only a game imported from IGDB can take add-ons from its base game")
     _base, payloads = await _base_game_payloads(db, igdb_client, game)
     by_id = {payload["id"]: payload for payload in payloads}
-    wanted_included = set(included_igdb_ids or [])
     results = []
     for igdb_id in dict.fromkeys(igdb_ids):
         payload = by_id.get(igdb_id)
@@ -355,14 +423,15 @@ async def link_base_game_addons(
             # Picked on purpose, so it's in the library now even if a Collection resync had
             # only discovered it as Missing.
             addon.auto_discovered = False
+            relation = _wanted_relation(igdb_id, included_igdb_ids, preorder_bonus_igdb_ids)
             if addon.parent_game_id == game.id:
-                if igdb_id in wanted_included:
-                    game_repository.set_addon_included(db, addon.id, game.id, True, keep_row=False)
+                if relation != "works_with":
+                    game_repository.set_addon_relation(db, addon.id, game.id, relation, keep_row=False)
                 results.append(BaseGameAddonResult(igdb_id=igdb_id, status="already_linked", game_id=addon.id))
                 db.commit()
                 continue
             pair = _pair(addon, game)
-            added = game_repository.add_addon_links(db, [pair], {pair} if igdb_id in wanted_included else set())
+            added = game_repository.add_addon_links(db, [pair], {pair: relation})
             db.commit()
             status: Literal["linked", "already_linked"] = "linked" if added else "already_linked"
             results.append(BaseGameAddonResult(igdb_id=igdb_id, status=status, game_id=addon.id))

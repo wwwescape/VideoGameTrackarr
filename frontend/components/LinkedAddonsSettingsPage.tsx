@@ -1,7 +1,6 @@
 import { Link as RouterLink } from "react-router-dom";
 import { isAxiosError } from "axios";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -11,14 +10,15 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { LAST_LINK_ORPHAN, type AddonLinkPair } from "../api/addonLinks";
+import { LAST_LINK_ORPHAN, type AddonLinkPair, type AddonRelation } from "../api/addonLinks";
 import {
   useAllAddonLinks,
   useRemoveAddonLinkPair,
-  useSetAddonIncludedPair,
+  useSetAddonRelationPair,
 } from "../hooks/useAddonLinks";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { RelationButton, relationLabelKey } from "./AddonRelationControls";
 import { withLab } from "./LabGate";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -29,7 +29,7 @@ const LinkedAddonsSettingsPage = () => {
   const { t } = useTranslation();
   const { data: links, isError } = useAllAddonLinks();
   const removeLink = useRemoveAddonLinkPair();
-  const setIncluded = useSetAddonIncludedPair();
+  const setRelation = useSetAddonRelationPair();
 
   // One row per add-on, its games in the order the server sorted them (by name).
   const byAddon = new Map<number, { addon: AddonLinkPair["addon"]; games: AddonLinkPair[] }>();
@@ -39,16 +39,12 @@ const LinkedAddonsSettingsPage = () => {
     byAddon.set(link.addon.id, entry);
   }
 
-  const handleToggleIncluded = async (link: AddonLinkPair) => {
+  const handleRelation = async (link: AddonLinkPair, relation: AddonRelation) => {
     try {
-      await setIncluded.mutateAsync({
-        addonId: link.addon.id,
-        gameId: link.game.id,
-        included: !link.included,
-      });
+      await setRelation.mutateAsync({ addonId: link.addon.id, gameId: link.game.id, relation });
     } catch (error) {
-      console.error("Error changing Included:", error);
-      toast.error(t("games.addonLinks.includedError"), TOAST_OPTIONS);
+      console.error("Error changing the relation:", error);
+      toast.error(t("games.addonLinks.relationError"), TOAST_OPTIONS);
     }
   };
 
@@ -141,11 +137,9 @@ const LinkedAddonsSettingsPage = () => {
                             {[
                               link.pack ? t("games.packs.inPackCaption") : null,
                               link.manual ? null : t("games.addonLinks.fromIgdb"),
-                              link.included
-                                ? t("games.addonLinks.includedOption")
-                                : link.manual
-                                  ? t("games.addonLinks.worksWithOption")
-                                  : null,
+                              link.manual || link.relation !== "works_with"
+                                ? t(relationLabelKey(link.relation))
+                                : null,
                             ]
                               .filter(Boolean)
                               .join(" · ")}
@@ -164,29 +158,13 @@ const LinkedAddonsSettingsPage = () => {
                             <Inventory2Icon fontSize="small" color="primary" />
                           </Box>
                         ) : (
-                          <Tooltip
-                            title={t(
-                              link.included
-                                ? "games.addonLinks.unmarkIncluded"
-                                : "games.addonLinks.markIncluded",
-                              names
-                            )}
-                          >
-                            <IconButton
-                              size="small"
-                              color={link.included ? "primary" : "default"}
-                              aria-pressed={link.included}
-                              disabled={setIncluded.isPending}
-                              aria-label={t("games.addonLinks.includedToggleLabel", names)}
-                              onClick={() => void handleToggleIncluded(link)}
-                            >
-                              {link.included ? (
-                                <Inventory2Icon fontSize="small" />
-                              ) : (
-                                <Inventory2OutlinedIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
+                          <RelationButton
+                            value={link.relation}
+                            addon={names.addon}
+                            game={names.game}
+                            disabled={setRelation.isPending}
+                            onChange={(next) => void handleRelation(link, next)}
+                          />
                         )}
                         {link.manual ? (
                           <Tooltip title={t("games.addonLinks.unlink")}>

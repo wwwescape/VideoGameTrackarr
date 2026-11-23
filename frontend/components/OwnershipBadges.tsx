@@ -31,7 +31,7 @@ const badgeSx = {
 } as const;
 
 // The same round glass badge, laid out by its parent instead of pinned to a corner: GameCard's
-// Linked and Included icons sit between the wishlist heart and the owned check.
+// link / Included / pre-order bonus icon sits between the wishlist heart and the owned check.
 export const InlineBadge = ({ title, children }: { title: string; children: ReactNode }) => (
   <Box sx={{ ...badgeSx, position: "static" }}>
     <Tooltip title={title}>
@@ -41,8 +41,6 @@ export const InlineBadge = ({ title, children }: { title: string; children: Reac
     </Tooltip>
   </Box>
 );
-
-export const BADGE_SIZE_PX = BADGE_SIZE;
 
 // Floating badges shared by GameCard and HardwareCard: a heart (wishlisted, top-left)
 // and a check (owned, top-right). They sit on cover art and product shots, so both use the

@@ -65,6 +65,8 @@ class GameWithStatus:
     manual_link: bool = False
     # Same lists: the add-on is marked Included in that game (game_addon_links.included).
     included: bool = False
+    # Same lists: the add-on is a pre-order bonus for that game (a label only).
+    preorder_bonus: bool = False
     # A game's Add-ons: Included only through a pack Included in the game (Hot Wheels inside the
     # Expansions Bundle that comes with FH5 Premium); the pack it came through.
     included_via: "Game | None" = None
@@ -163,31 +165,48 @@ def _addon_game_ids() -> Select[tuple[int]]:
     return select(Game.id).where(Game.category.in_(_ADDON_CATEGORIES))
 
 
-def _owned_closure_cte() -> Any:
-    """Everything that counts as owned: games and add-ons with an owned copy, plus (Linked
-    Add-ons lab on) every add-on Included in one of those, at any depth: FH5 Premium owned ->
-    its Expansions Bundle -> the Hot Wheels expansion inside it. UNION (not UNION ALL) stops a
-    loop of marks from recursing forever."""
+def _inherited_closure(name: str, status: LibraryStatus, *, packs_only: bool) -> Any:
+    """The add-ons that take a status from something holding them (Linked Add-ons lab on): each
+    add-on Included in something with that status, then everything Included in those, at any
+    depth (FH5 Premium owned -> its Expansions Bundle -> the Hot Wheels expansion inside it).
+    Only the inherited ones, so it stays small whatever the library's size; UNION (not UNION
+    ALL) stops a loop of marks from recursing forever. packs_only: pass it on through packs
+    only, not games."""
+    holder_ok = GameAddonLink.game_id.in_(_addon_game_ids()) if packs_only else true()
     closure = (
-        select(LibraryItem.game_id.label("game_id"))
-        .where(LibraryItem.status == LibraryStatus.OWNED)
-        .cte("owned_closure", recursive=True)
+        select(GameAddonLink.addon_game_id.label("game_id"))
+        .join(LibraryItem, LibraryItem.game_id == GameAddonLink.game_id)
+        .where(LibraryItem.status == status, GameAddonLink.included.is_(True), holder_ok, _linked_addons_lab_on())
+        .cte(name, recursive=True)
     )
     return closure.union(
         select(GameAddonLink.addon_game_id)
         .join(closure, GameAddonLink.game_id == closure.c.game_id)
-        .where(GameAddonLink.included.is_(True), _linked_addons_lab_on())
+        .where(GameAddonLink.included.is_(True), holder_ok, _linked_addons_lab_on())
     )
 
 
-# One shared CTE object: two separate ones with the same name in one statement would clash.
-_OWNED_CLOSURE = _owned_closure_cte()
+# One shared CTE object each: two separate ones with the same name in a statement would clash.
+_INHERITED_OWNED = _inherited_closure("inherited_owned", LibraryStatus.OWNED, packs_only=False)
+# A wishlisted pack wishlists what's inside it; a wishlisted game doesn't.
+_INHERITED_WISHLISTED = _inherited_closure("inherited_wishlisted", LibraryStatus.WISHLIST, packs_only=True)
 
 
 def effective_owned(game_id_column: ColumnElement[int]) -> ColumnElement[bool]:
     """Owned: a copy of its own, or (an add-on) Included in something owned, through any number
     of packs."""
-    return or_(_owned_exists(game_id_column), game_id_column.in_(select(_OWNED_CLOSURE.c.game_id)))
+    return or_(_owned_exists(game_id_column), game_id_column.in_(select(_INHERITED_OWNED.c.game_id)))
+
+
+def effective_wishlisted(game_id_column: ColumnElement[int]) -> ColumnElement[bool]:
+    """Wishlisted: on the wishlist itself, or (not owned) inside a wishlisted pack."""
+    return or_(
+        _wishlisted_exists(game_id_column),
+        and_(
+            game_id_column.in_(select(_INHERITED_WISHLISTED.c.game_id)),
+            ~effective_owned(game_id_column),
+        ),
+    )
 
 
 def owned_via(db: Session, addon_id: int) -> list[Game]:
@@ -207,14 +226,60 @@ def owned_via(db: Session, addon_id: int) -> list[Game]:
     return list(db.scalars(stmt))
 
 
-def _included_map(db: Session, *, addon_id: int | None = None, game_id: int | None = None) -> dict[int, bool]:
-    """The Included marks on one side of the links: game id -> included for an add-on, or add-on
-    id -> included for a game. Empty while the Linked Add-ons lab is off."""
+def wishlisted_via(db: Session, addon_id: int) -> list[Game]:
+    """The wishlisted packs an add-on is inside (itself not owned) — its page's "Wishlisted
+    via"."""
+    stmt = (
+        select(Game)
+        .join(GameAddonLink, GameAddonLink.game_id == Game.id)
+        .where(
+            GameAddonLink.addon_game_id == addon_id,
+            GameAddonLink.included.is_(True),
+            Game.category.in_(_ADDON_CATEGORIES),
+            effective_wishlisted(Game.id),
+            ~effective_owned(GameAddonLink.addon_game_id),
+            _linked_addons_lab_on(),
+        )
+        .order_by(Game.name)
+    )
+    return list(db.scalars(stmt))
+
+
+# How an add-on goes with a game: works with it, Included in it, or a pre-order bonus for it.
+AddonRelation = Literal["works_with", "included", "preorder_bonus"]
+
+
+def relation_of(included: bool, preorder_bonus: bool) -> AddonRelation:
+    return "included" if included else "preorder_bonus" if preorder_bonus else "works_with"
+
+
+def _relation_select(*, addon_id: int | None = None, game_id: int | None = None) -> Select[Any]:
+    links = GameAddonLink
     if addon_id is not None:
-        stmt = select(GameAddonLink.game_id, GameAddonLink.included).where(GameAddonLink.addon_game_id == addon_id)
-    else:
-        stmt = select(GameAddonLink.addon_game_id, GameAddonLink.included).where(GameAddonLink.game_id == game_id)
-    return {row[0]: bool(row[1]) for row in db.execute(stmt.where(_linked_addons_lab_on()))}
+        return select(links.game_id, links.included, links.preorder_bonus).where(links.addon_game_id == addon_id)
+    return select(links.addon_game_id, links.included, links.preorder_bonus).where(links.game_id == game_id)
+
+
+def _relation_map(db: Session, *, addon_id: int | None = None, game_id: int | None = None) -> dict[int, AddonRelation]:
+    """The relations on one side of the links: game id -> relation for an add-on, or add-on id ->
+    relation for a game. Empty while the Linked Add-ons lab is off."""
+    stmt = _relation_select(addon_id=addon_id, game_id=game_id).where(_linked_addons_lab_on())
+    return {row[0]: relation_of(row[1], row[2]) for row in db.execute(stmt)}
+
+
+def preorder_bonus_for(db: Session, addon_id: int) -> list[Game]:
+    """The games an add-on is a pre-order bonus for, by name — its page's "Pre-order bonus for"."""
+    stmt = (
+        select(Game)
+        .join(GameAddonLink, GameAddonLink.game_id == Game.id)
+        .where(
+            GameAddonLink.addon_game_id == addon_id,
+            GameAddonLink.preorder_bonus.is_(True),
+            _linked_addons_lab_on(),
+        )
+        .order_by(Game.name)
+    )
+    return list(db.scalars(stmt))
 
 
 def _row_to_game_with_status(row: Any) -> GameWithStatus:
@@ -924,17 +989,7 @@ def _get_game_options() -> tuple[Any, ...]:
 
 
 def get_game(db: Session, game_id: int) -> GameWithStatus | None:
-    stmt = (
-        select(
-            Game,
-            effective_owned(Game.id),
-            _wishlisted_exists(Game.id),
-            _play_status_subquery(Game.id),
-            Game.user_rating,
-        )
-        .options(*_get_game_options())
-        .where(Game.id == game_id)
-    )
+    stmt = _status_select().options(*_get_game_options()).where(Game.id == game_id)
     row = db.execute(stmt).first()
     if row is None:
         return None
@@ -942,39 +997,25 @@ def get_game(db: Session, game_id: int) -> GameWithStatus | None:
 
 
 def get_game_by_uuid(db: Session, game_uuid: str) -> GameWithStatus | None:
-    stmt = (
-        select(
-            Game,
-            effective_owned(Game.id),
-            _wishlisted_exists(Game.id),
-            _play_status_subquery(Game.id),
-            Game.user_rating,
-        )
-        .options(*_get_game_options())
-        .where(Game.uuid == game_uuid)
-    )
+    stmt = _status_select().options(*_get_game_options()).where(Game.uuid == game_uuid)
     row = db.execute(stmt).first()
     return _row_to_game_with_status(row) if row else None
 
 
 def get_game_by_slug(db: Session, slug: str) -> GameWithStatus | None:
-    stmt = (
-        select(
-            Game,
-            effective_owned(Game.id),
-            _wishlisted_exists(Game.id),
-            _play_status_subquery(Game.id),
-            Game.user_rating,
-        )
-        .options(*_get_game_options())
-        .where(Game.slug == slug)
-    )
+    stmt = _status_select().options(*_get_game_options()).where(Game.slug == slug)
     row = db.execute(stmt).first()
     return _row_to_game_with_status(row) if row else None
 
 
 def get_game_by_igdb_id(db: Session, igdb_id: int) -> Game | None:
     return db.scalars(select(Game).where(Game.igdb_id == igdb_id)).first()
+
+
+def games_by_igdb_ids(db: Session, igdb_ids: list[int]) -> dict[int, Game]:
+    if not igdb_ids:
+        return {}
+    return {game.igdb_id: game for game in db.scalars(select(Game).where(Game.igdb_id.in_(igdb_ids)))}
 
 
 def list_igdb_linked_games(db: Session) -> list[tuple[int, str]]:
@@ -989,7 +1030,7 @@ def _status_select() -> Select[Any]:
     return select(
         Game,
         effective_owned(Game.id),
-        _wishlisted_exists(Game.id),
+        effective_wishlisted(Game.id),
         _play_status_subquery(Game.id),
         Game.user_rating,
     )
@@ -1008,23 +1049,24 @@ def list_addons(db: Session, parent_game_id: int) -> list[GameWithStatus]:
         )
     )
     addons = {status.game.id: status for status in map(_row_to_game_with_status, db.execute(stmt))}
-    included = _included_map(db, game_id=parent_game_id)
+    relations = _relation_map(db, game_id=parent_game_id)
     for addon in addons.values():
         addon.manual_link = addon.game.parent_game_id != parent_game_id
-        addon.included = included.get(addon.game.id, False)
-    via = _included_through_packs(db, [addon_id for addon_id, mark in included.items() if mark])
+        _apply_relation(addon, relations.get(addon.game.id))
+    via = _included_through_packs(db, [addon_id for addon_id, rel in relations.items() if rel == "included"])
     via.pop(parent_game_id, None)
     missing = [addon_id for addon_id in via if addon_id not in addons]
     if missing:
         stmt = _status_select().where(Game.id.in_(missing), ~toys_to_life_repository.is_toy_pack(Game.igdb_id))
         for status in map(_row_to_game_with_status, db.execute(stmt)):
             addons[status.game.id] = status
-    packs = {game.id: game for game in db.scalars(select(Game).where(Game.id.in_(set(via.values()))))}
+    # Every pack on the way is listed too (directly Included, or reached above).
     for addon_id, pack_id in via.items():
         addon = addons.get(addon_id)
         if addon is not None and not addon.included:
             addon.included = True
-            addon.included_via = packs.get(pack_id)
+            pack = addons.get(pack_id)
+            addon.included_via = pack.game if pack else None
     return sorted(addons.values(), key=lambda addon: addon.game.name)
 
 
@@ -1077,10 +1119,15 @@ def list_works_with(db: Session, addon: Game) -> list[GameWithStatus]:
         parent = db.execute(_status_select().where(Game.id == addon.parent_game_id)).first()
         if parent is not None:
             rows.insert(0, _row_to_game_with_status(parent))
-    included = _included_map(db, addon_id=addon.id)
+    relations = _relation_map(db, addon_id=addon.id)
     for row in rows:
-        row.included = included.get(row.game.id, False)
+        _apply_relation(row, relations.get(row.game.id))
     return rows
+
+
+def _apply_relation(status: GameWithStatus, relation: AddonRelation | None) -> None:
+    status.included = relation == "included"
+    status.preorder_bonus = relation == "preorder_bonus"
 
 
 # --- Packs ----------------------------------------------------------------------------------
@@ -1140,139 +1187,125 @@ def pack_ancestors(db: Session, addon_id: int) -> set[int]:
     return found
 
 
-PackCandidateGroup = Literal["same_game", "collection", "series", "other"]
+# --- Link and pack candidates: editions of the same game ------------------------------------
+# A base game and the editions IGDB records as versions of it (Game.version_parent_igdb_id),
+# e.g. Forza Horizon 5 and its Deluxe and Premium editions. The pickers offer only these.
 
 
-def list_pack_candidates(
-    db: Session,
-    game: Game,
-    *,
-    packs: bool,
-    search: str | None = None,
-    limit: int = 100,
-) -> list[tuple[GameWithStatus, PackCandidateGroup]]:
-    """What a pack's picker offers. packs=False (on a pack): add-ons to put inside it; packs=True
-    (on an add-on): packs to put it in. Closest first: ones for the same games (the IGDB parent
-    or a linked game of either side), then the same Collection, then the same Series. With a
-    search, any match (custom games often have no Collection or Series), as "other". Never
-    Missing games or Toys-to-Life packs."""
-    own_games = {game.parent_game_id} if game.parent_game_id is not None else set()
-    own_games |= set(
-        db.scalars(
-            select(GameAddonLink.game_id).where(
-                GameAddonLink.addon_game_id == game.id, GameAddonLink.game_id.not_in(_addon_game_ids())
-            )
+def _is_top_level_game() -> ColumnElement[bool]:
+    return and_(
+        Game.parent_game_id.is_(None),
+        or_(Game.category.is_(None), Game.category.not_in(_ADDON_CATEGORIES)),
+    )
+
+
+def edition_family(db: Session, game_ids: set[int]) -> set[int]:
+    """game_ids plus every other edition of the same games in the library: those sharing a base
+    game (version_parent, or the game itself when it is the base)."""
+    if not game_ids:
+        return set()
+    root = func.coalesce(Game.version_parent_igdb_id, Game.igdb_id)
+    roots = select(root).where(Game.id.in_(game_ids), Game.igdb_id.is_not(None))
+    return set(game_ids) | set(db.scalars(select(Game.id).where(root.in_(roots), _is_top_level_game())))
+
+
+def _own_games(db: Session, addon: Game) -> set[int]:
+    """The games an add-on is for: its IGDB parent and the games it's manually linked to."""
+    linked = db.scalars(
+        select(GameAddonLink.game_id).where(
+            GameAddonLink.addon_game_id == addon.id, GameAddonLink.game_id.not_in(_addon_game_ids())
         )
     )
-    same_game = or_(
-        Game.parent_game_id.in_(own_games),
-        Game.id.in_(select(GameAddonLink.addon_game_id).where(GameAddonLink.game_id.in_(own_games))),
-    )
-    family = link_family(db, game)
-    family_ids: list[Any] = [Game.id, Game.parent_game_id]
-    group = case(
-        (same_game, 0),
-        (_in_family(family_ids, family, collections_only=True), 1),
-        (_in_family(family_ids, family, collections_only=False), 2),
-        else_=3,
-    ).label("pack_group")
-    scope = [Game.category == PACK_CATEGORY] if packs else [Game.category.in_(_ADDON_CATEGORIES)]
-    stmt = (
-        _status_select()
-        .add_columns(group)
-        .where(Game.id != game.id, _not_missing(), ~toys_to_life_repository.is_toy_pack(Game.igdb_id), *scope)
-        .order_by(group, Game.name)
-        .limit(limit)
-    )
+    return {*linked, *([addon.parent_game_id] if addon.parent_game_id is not None else [])}
+
+
+def _addons_of(db: Session, game_ids: set[int]) -> dict[int, int]:
+    """Add-ons of any of game_ids, through IGDB's parent or a manual link: add-on id -> the game
+    it's for (its parent when that's one of them)."""
+    if not game_ids:
+        return {}
+    found: dict[int, int] = {}
+    for addon_id, game_id in db.execute(
+        select(GameAddonLink.addon_game_id, GameAddonLink.game_id).where(GameAddonLink.game_id.in_(game_ids))
+    ):
+        found.setdefault(addon_id, game_id)
+    for addon_id, parent_id in db.execute(
+        select(Game.id, Game.parent_game_id).where(
+            Game.parent_game_id.in_(game_ids), Game.category.in_(_ADDON_CATEGORIES)
+        )
+    ):
+        found[addon_id] = parent_id
+    return found
+
+
+def _candidate_statuses(
+    db: Session, ids: Any, *conditions: ColumnElement[bool], search: str | None
+) -> list[GameWithStatus]:
+    stmt = _status_select().where(Game.id.in_(ids), _not_missing(), *conditions).order_by(Game.name)
     if search and search.strip():
         stmt = stmt.where(name_matches(Game, search))
-    else:
-        stmt = stmt.where(group < 3)
-    names: dict[int, PackCandidateGroup] = {0: "same_game", 1: "collection", 2: "series", 3: "other"}
-    return [(_row_to_game_with_status(row[:5]), names[row[5]]) for row in db.execute(stmt)]
+    return [_row_to_game_with_status(row) for row in db.execute(stmt)]
 
 
-@dataclass
-class LinkFamily:
-    """The Collections and Franchises (UI "Series") a game
-    belongs to, for offering manual add-on link candidates from the same family."""
-
-    collection_ids: set[int]
-    franchise_ids: set[int]
-
-    def __bool__(self) -> bool:
-        return bool(self.collection_ids or self.franchise_ids)
-
-
-def link_family(db: Session, game: Game) -> LinkFamily:
-    """A game's own Collections and Franchises, plus its IGDB parent's for an add-on (DLC
-    rarely carries its own on IGDB)."""
-    ids = [game.id] if game.parent_game_id is None else [game.id, game.parent_game_id]
-    return LinkFamily(
-        collection_ids=set(db.scalars(select(GameCollection.collection_id).where(GameCollection.game_id.in_(ids)))),
-        franchise_ids=set(db.scalars(select(GameFranchise.franchise_id).where(GameFranchise.game_id.in_(ids)))),
-    )
-
-
-def _in_family(game_ids: list[Any], family: LinkFamily, *, collections_only: bool) -> ColumnElement[bool]:
-    """Whether any of game_ids (columns) is in one of family's Collections (collections_only) or
-    Collections/Franchises."""
-    conditions = []
-    if family.collection_ids:
-        conditions.append(
-            exists().where(
-                GameCollection.game_id.in_(game_ids), GameCollection.collection_id.in_(family.collection_ids)
-            )
-        )
-    if family.franchise_ids and not collections_only:
-        conditions.append(
-            exists().where(GameFranchise.game_id.in_(game_ids), GameFranchise.franchise_id.in_(family.franchise_ids))
-        )
-    return or_(*conditions) if conditions else false()
+def _with_editions(
+    db: Session, statuses: list[GameWithStatus], edition_of: dict[int, int]
+) -> list[tuple[GameWithStatus, Game | None]]:
+    """Each add-on with the edition it's for, by edition name then name."""
+    games = {game.id: game for game in db.scalars(select(Game).where(Game.id.in_(set(edition_of.values()))))}
+    pairs = [(status, games.get(edition_of.get(status.game.id, -1))) for status in statuses]
+    return sorted(pairs, key=lambda pair: (pair[1].name if pair[1] else "", pair[0].game.name))
 
 
 def list_link_candidates(
-    db: Session,
-    game: Game,
-    *,
-    addon_categories: set[GameCategory],
-    search: str | None = None,
-    limit: int = 100,
-) -> list[tuple[GameWithStatus, bool]]:
-    """Manual add-on link candidates from the same family (link_family), each with whether it
-    shares a Collection (True) or only a Franchise (False). For an add-on: games on
-    the Games list, minus its own IGDB parent. For a game: add-ons (their own or their IGDB
-    parent's family counts), minus the game's own IGDB add-ons and Toys-to-Life packs. Never
-    Missing games. Collection matches come first, then by name."""
-    family = link_family(db, game)
-    if not family:
-        return []
-    is_addon = game.category in addon_categories
+    db: Session, game: Game, *, is_addon: bool, search: str | None = None
+) -> list[tuple[GameWithStatus, Game | None]]:
+    """What the link picker offers, from the other editions of the same game. For an add-on:
+    those editions (not its own IGDB parent). For a game: the other editions' add-ons, each with
+    the edition it's for, minus the game's own IGDB add-ons and Toys-to-Life packs. Never
+    Missing games."""
     if is_addon:
-        candidate_ids: list[Any] = [Game.id]
-        scope = [Game.parent_game_id.is_(None), _is_browsable_game(Game.category)]
-        if game.parent_game_id is not None:
-            scope.append(Game.id != game.parent_game_id)
-    else:
-        candidate_ids = [Game.id, Game.parent_game_id]
-        scope = [
-            Game.category.in_(addon_categories),
-            or_(Game.parent_game_id.is_(None), Game.parent_game_id != game.id),
-            ~toys_to_life_repository.is_toy_pack(Game.igdb_id),
-        ]
-    # A CASE rather than the bare clause: with no Collections it's a constant false, and SQLite
-    # reads a bare constant in ORDER BY as a column position.
-    in_collection = case((_in_family(candidate_ids, family, collections_only=True), 1), else_=0).label("in_collection")
-    stmt = (
-        _status_select()
-        .add_columns(in_collection)
-        .where(Game.id != game.id, _not_missing(), _in_family(candidate_ids, family, collections_only=False), *scope)
-        .order_by(in_collection.desc(), Game.name)
-        .limit(limit)
+        family = edition_family(db, _own_games(db, game)) - {game.parent_game_id}
+        statuses = _candidate_statuses(db, family, _is_top_level_game(), search=search)
+        return [(status, None) for status in statuses]
+    edition_of = _addons_of(db, edition_family(db, {game.id}) - {game.id})
+    statuses = _candidate_statuses(
+        db,
+        set(edition_of),
+        Game.category.in_(_ADDON_CATEGORIES),
+        Game.parent_game_id.is_distinct_from(game.id),
+        ~toys_to_life_repository.is_toy_pack(Game.igdb_id),
+        search=search,
     )
-    if search and search.strip():
-        stmt = stmt.where(name_matches(Game, search))
-    return [(_row_to_game_with_status(row[:5]), bool(row[5])) for row in db.execute(stmt)]
+    return _with_editions(db, statuses, edition_of)
+
+
+def list_pack_candidates(
+    db: Session, game: Game, *, packs: bool, search: str | None = None
+) -> list[tuple[GameWithStatus, Game | None]]:
+    """What a pack's picker offers, for the editions of the same games. packs=False (on a pack):
+    add-ons to put inside it; packs=True (on an add-on): packs to put it in. Each with the
+    edition it's for. Never Missing games or Toys-to-Life packs."""
+    edition_of = _addons_of(db, edition_family(db, _own_games(db, game)))
+    edition_of.pop(game.id, None)
+    scope = Game.category == PACK_CATEGORY if packs else Game.category.in_(_ADDON_CATEGORIES)
+    statuses = _candidate_statuses(
+        db, set(edition_of), scope, ~toys_to_life_repository.is_toy_pack(Game.igdb_id), search=search
+    )
+    return _with_editions(db, statuses, edition_of)
+
+
+def pack_content_ids(db: Session, pack_id: int) -> set[int]:
+    return set(db.scalars(select(GameAddonLink.addon_game_id).where(GameAddonLink.game_id == pack_id)))
+
+
+def pack_ids_of(db: Session, addon_id: int) -> set[int]:
+    return set(
+        db.scalars(
+            select(GameAddonLink.game_id).where(
+                GameAddonLink.addon_game_id == addon_id, GameAddonLink.game_id.in_(_addon_game_ids())
+            )
+        )
+    )
 
 
 def linked_ids(db: Session, game_id: int, *, addon_side: bool) -> set[int]:
@@ -1289,44 +1322,59 @@ def linked_ids(db: Session, game_id: int, *, addon_side: bool) -> set[int]:
     return set(db.scalars(_stored_linked_addon_ids(game_id).where(GameAddonLink.addon_game_id.not_in(own_addons))))
 
 
-def included_map(db: Session, game_id: int, *, addon_side: bool) -> dict[int, bool]:
-    """Every stored Included mark on one side, lab on or off (the link endpoints go by it)."""
-    if addon_side:
-        stmt = select(GameAddonLink.game_id, GameAddonLink.included).where(GameAddonLink.addon_game_id == game_id)
-    else:
-        stmt = select(GameAddonLink.addon_game_id, GameAddonLink.included).where(GameAddonLink.game_id == game_id)
-    return {row[0]: bool(row[1]) for row in db.execute(stmt)}
+def relation_map(db: Session, game_id: int, *, addon_side: bool) -> dict[int, AddonRelation]:
+    """Every stored relation on one side, lab on or off (the link endpoints go by it)."""
+    stmt = _relation_select(addon_id=game_id) if addon_side else _relation_select(game_id=game_id)
+    return {row[0]: relation_of(row[1], row[2]) for row in db.execute(stmt)}
 
 
-def add_addon_links(db: Session, pairs: list[tuple[int, int]], included: set[tuple[int, int]] = frozenset()) -> int:
-    """Adds (addon_game_id, game_id) links that don't exist yet, marking the ones in `included`
-    as Included (an existing link in it gets the mark too); returns how many links were new."""
+def _set_relation(link: GameAddonLink, relation: AddonRelation) -> None:
+    link.included = relation == "included"
+    link.preorder_bonus = relation == "preorder_bonus"
+
+
+def add_addon_links(
+    db: Session, pairs: list[tuple[int, int]], relations: dict[tuple[int, int], AddonRelation] | None = None
+) -> int:
+    """Adds (addon_game_id, game_id) links that don't exist yet, each with its relation from
+    `relations` (works with when not given); an existing link takes a given Included or bonus
+    relation too. Returns how many links were new."""
+    if not pairs:
+        return 0
+    relations = relations or {}
+    addon_ids = {addon_id for addon_id, _ in pairs}
+    existing = {
+        (link.addon_game_id, link.game_id): link
+        for link in db.scalars(select(GameAddonLink).where(GameAddonLink.addon_game_id.in_(addon_ids)))
+    }
     added = 0
-    for addon_id, game_id in pairs:
-        link = db.scalars(
-            select(GameAddonLink).where(GameAddonLink.addon_game_id == addon_id, GameAddonLink.game_id == game_id)
-        ).first()
-        is_included = (addon_id, game_id) in included
+    for pair in dict.fromkeys(pairs):
+        relation = relations.get(pair, "works_with")
+        link = existing.get(pair)
         if link is None:
-            db.add(GameAddonLink(addon_game_id=addon_id, game_id=game_id, included=is_included))
+            link = GameAddonLink(addon_game_id=pair[0], game_id=pair[1])
+            _set_relation(link, relation)
+            db.add(link)
             added += 1
-        elif is_included:
-            link.included = True
+        elif relation != "works_with":
+            _set_relation(link, relation)
     db.flush()
     return added
 
 
-def set_addon_included(db: Session, addon_id: int, game_id: int, included: bool, *, keep_row: bool) -> None:
-    """Sets the Included mark on a pair. keep_row: the pair is a manual link, whose row stays
-    either way; otherwise (the add-on's own IGDB parent) the row exists only while included."""
+def set_addon_relation(db: Session, addon_id: int, game_id: int, relation: AddonRelation, *, keep_row: bool) -> None:
+    """Sets how a pair goes together. keep_row: the pair is a manual link, whose row stays either
+    way; otherwise (the add-on's own IGDB parent) the row exists only while it carries a mark."""
     link = db.scalars(
         select(GameAddonLink).where(GameAddonLink.addon_game_id == addon_id, GameAddonLink.game_id == game_id)
     ).first()
     if link is None:
-        if included:
-            db.add(GameAddonLink(addon_game_id=addon_id, game_id=game_id, included=True))
-    elif included or keep_row:
-        link.included = included
+        if relation != "works_with":
+            link = GameAddonLink(addon_game_id=addon_id, game_id=game_id)
+            _set_relation(link, relation)
+            db.add(link)
+    elif relation != "works_with" or keep_row:
+        _set_relation(link, relation)
     else:
         db.delete(link)
     db.flush()
@@ -1336,7 +1384,7 @@ def set_addon_included(db: Session, addon_id: int, game_id: int, included: bool,
 class AddonLinkRow:
     addon: Game
     game: Game
-    included: bool
+    relation: AddonRelation
     # False for the add-on's own IGDB parent: only an Included mark, not a link to unlink.
     manual: bool
     # The "game" is a pack the add-on sits inside (always Included).
@@ -1349,7 +1397,7 @@ def list_all_addon_links(db: Session) -> list[AddonLinkRow]:
     addon = aliased(Game)
     game = aliased(Game)
     stmt = (
-        select(addon, game, GameAddonLink.included)
+        select(addon, game, GameAddonLink.included, GameAddonLink.preorder_bonus)
         .join(GameAddonLink, GameAddonLink.addon_game_id == addon.id)
         .join(game, game.id == GameAddonLink.game_id)
         .order_by(addon.name, game.name)
@@ -1358,7 +1406,7 @@ def list_all_addon_links(db: Session) -> list[AddonLinkRow]:
         AddonLinkRow(
             addon=row[0],
             game=row[1],
-            included=bool(row[2]),
+            relation=relation_of(row[2], row[3]),
             manual=row[0].parent_game_id != row[1].id,
             pack=row[1].category in _ADDON_CATEGORIES,
         )
@@ -1477,19 +1525,23 @@ def _merge_addon_links(db: Session, source_id: int, target_id: int) -> None:
     db.execute(update(links).where(links.addon_game_id == source_id).values(addon_game_id=target_id))
     db.execute(update(links).where(links.game_id == source_id).values(game_id=target_id))
     db.execute(delete(links).where(links.addon_game_id == links.game_id))
-    # A row for an add-on's own IGDB parent is only kept as an Included mark.
+    # A row for an add-on's own IGDB parent is only kept while it carries a mark.
     db.execute(
         delete(links).where(
             links.game_id == target_id,
             links.addon_game_id.in_(select(Game.id).where(Game.parent_game_id == target_id)),
             links.included.is_(False),
+            links.preorder_bonus.is_(False),
         )
     )
     target_parent_id = db.scalar(select(Game.parent_game_id).where(Game.id == target_id))
     if target_parent_id is not None:
         db.execute(
             delete(links).where(
-                links.addon_game_id == target_id, links.game_id == target_parent_id, links.included.is_(False)
+                links.addon_game_id == target_id,
+                links.game_id == target_parent_id,
+                links.included.is_(False),
+                links.preorder_bonus.is_(False),
             )
         )
 

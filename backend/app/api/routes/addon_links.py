@@ -21,7 +21,7 @@ def list_addon_links(db: Session = Depends(get_db)) -> list[AddonLinkPairRespons
         AddonLinkPairResponse(
             addon=addon_ref_from_orm(row.addon),
             game=addon_ref_from_orm(row.game),
-            included=row.included,
+            relation=row.relation,
             manual=row.manual,
             pack=row.pack,
         )

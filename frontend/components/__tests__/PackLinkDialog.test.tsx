@@ -1,10 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PackCandidate, PackCandidateGroup } from "../../api/addonLinks";
+import type { PackCandidate } from "../../api/addonLinks";
 import PackLinkDialog from "../PackLinkDialog";
 
-const candidate = (id: number, name: string, group: PackCandidateGroup, linked = false) =>
+const STANDARD = { id: 10, uuid: "u10", slug: null, name: "Forza Horizon 5" };
+const PREMIUM = { id: 11, uuid: "u11", slug: null, name: "Forza Horizon 5: Premium Edition" };
+
+const candidate = (id: number, name: string, edition: typeof STANDARD, linked = false) =>
   ({
     id,
     uuid: `u${id}`,
@@ -12,14 +15,14 @@ const candidate = (id: number, name: string, group: PackCandidateGroup, linked =
     name,
     coverUrl: null,
     firstReleaseDate: 1636070400,
-    group,
+    edition,
     linked,
   }) as unknown as PackCandidate;
 
 const CANDIDATES = [
-  candidate(2, "Hot Wheels", "same_game", true),
-  candidate(3, "Rally Adventure", "same_game"),
-  candidate(4, "Car Pass", "collection"),
+  candidate(2, "Hot Wheels", STANDARD, true),
+  candidate(3, "Rally Adventure", STANDARD),
+  candidate(4, "Car Pass", PREMIUM),
 ];
 
 const addLinks = { mutateAsync: vi.fn(async () => 2), isPending: false };
@@ -44,12 +47,12 @@ function renderDialog(isPack = true, onClose = vi.fn()) {
 describe("PackLinkDialog", () => {
   beforeEach(() => addLinks.mutateAsync.mockClear());
 
-  it("groups closest first, with what's already inside ticked and disabled", () => {
+  it("groups by edition, with what's already inside ticked and disabled", () => {
     renderDialog();
 
     expect(screen.getByText("Add to this pack")).toBeInTheDocument();
-    const sameGame = screen.getByText("For the same games");
-    const collection = screen.getByText("Same collection");
+    const sameGame = screen.getByText("Forza Horizon 5");
+    const collection = screen.getByText("Forza Horizon 5: Premium Edition");
     expect(
       sameGame.compareDocumentPosition(collection) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();

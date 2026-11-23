@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import LinkIcon from "@mui/icons-material/Link";
-import SearchIcon from "@mui/icons-material/Search";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -12,16 +9,12 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import InputAdornment from "@mui/material/InputAdornment";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
-import TextField from "@mui/material/TextField";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -31,8 +24,12 @@ import {
   useBaseGameAddons,
   useLinkBaseGameAddons,
 } from "../hooks/useAddonLinks";
+import type { AddonRelation } from "../api/addonLinks";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { RelationChip, RelationToggle } from "./AddonRelationControls";
+import PickerSearchField from "./PickerSearchField";
 
 interface LinkAddonsDialogProps {
   open: boolean;
@@ -56,10 +53,10 @@ interface Row {
   coverUrl: string | null;
   firstReleaseDate: number | null;
   linked: boolean;
-  // Already linked as Included (shown on a linked row).
-  linkedIncluded: boolean;
-  // Starts as Included when ticked (IGDB lists it in this edition's bundle contents).
-  suggestedIncluded: boolean;
+  // How an already-linked row goes with this game (shown on it).
+  linkedRelation: AddonRelation;
+  // What a ticked row starts as: Included when IGDB lists it in this edition's bundle contents.
+  suggestedRelation: AddonRelation;
   willBeAdded: boolean;
 }
 
@@ -72,28 +69,34 @@ interface Group {
 const releaseYear = (timestamp: number | null) =>
   timestamp ? new Date(timestamp * 1000).getUTCFullYear() : null;
 
-// Ticked rows by id, each with whether it's to be linked as Included.
-type Selection = ReadonlyMap<number, boolean>;
+// Ticked rows by id, each with how it's to be linked.
+type Selection = ReadonlyMap<number, AddonRelation>;
 
 const withToggled = (selection: Selection, row: Row): Selection => {
   const next = new Map(selection);
   if (next.has(row.id)) next.delete(row.id);
-  else next.set(row.id, row.suggestedIncluded);
+  else next.set(row.id, row.suggestedRelation);
   return next;
 };
 
-const withIncluded = (selection: Selection, id: number, included: boolean): Selection =>
-  new Map(selection).set(id, included);
+const withRelation = (selection: Selection, id: number, relation: AddonRelation): Selection =>
+  new Map(selection).set(id, relation);
 
-const includedIds = (selection: Selection) =>
-  [...selection].filter(([, included]) => included).map(([id]) => id);
+const idsWith = (selection: Selection, relation: AddonRelation) =>
+  [...selection].filter(([, chosen]) => chosen === relation).map(([id]) => id);
 
-// The link picker. On a game: the base game's add-ons from IGDB first (when it's an edition),
-// then add-ons in VGT from the same Collection, then the same Series. On an add-on: games from
-// the same Collection, then Series. Everything ticked is linked with one button; already-linked
-// rows show ticked and disabled, so it's clear why they can't be picked. A ticked row also offers
-// Works with | Included: Included means the add-on is part of that game (an edition that comes
-// with it), so owning the game counts as owning the add-on.
+const relationIds = (selection: Selection) => ({
+  includedIds: idsWith(selection, "included"),
+  preorderBonusIds: idsWith(selection, "preorder_bonus"),
+});
+
+// The link picker, kept to editions of the same game (FH5, its Deluxe and Premium editions). On
+// a game: the base game's add-ons from IGDB first (when it's an edition), then the other
+// editions' add-ons in VGT, grouped by edition. On an add-on: the other editions of its game.
+// Everything ticked is linked with one button; already-linked rows show ticked and disabled, so
+// it's clear why they can't be picked. A ticked row also offers Works with | Included | Pre-order
+// bonus: Included means the add-on is part of that game (owning the game owns the add-on); a
+// pre-order bonus is only a label.
 const LinkAddonsDialog = ({
   open,
   gameId,
@@ -129,6 +132,9 @@ const LinkAddonsDialog = ({
   const inBaseGroup = new Set(
     baseAddons.map((addon) => addon.gameId).filter((id): id is number => id !== null)
   );
+  const editionOf = new Map(
+    (candidates.data ?? []).map((candidate) => [candidate.id, candidate.edition])
+  );
   const libraryRows: Row[] = (candidates.data ?? [])
     .filter((candidate) => !inBaseGroup.has(candidate.id))
     .map(
@@ -140,14 +146,29 @@ const LinkAddonsDialog = ({
         coverUrl: candidate.coverUrl,
         firstReleaseDate: candidate.firstReleaseDate,
         linked: candidate.linked,
-        linkedIncluded: candidate.linkedIncluded,
-        suggestedIncluded: false,
+        linkedRelation: candidate.linkedRelation,
+        suggestedRelation: "works_with",
         willBeAdded: false,
       })
     );
-  const sameCollection = new Set(
-    (candidates.data ?? []).filter((c) => c.sameCollection).map((c) => c.id)
-  );
+
+  // On a game: the base game's add-ons from IGDB first, then add-ons in VGT by the edition
+  // they're for. On an add-on: the other editions of its game.
+  const editionGroups: Group[] = [];
+  for (const row of libraryRows) {
+    const edition = editionOf.get(row.id) ?? null;
+    const key = edition ? `edition-${edition.id}` : "editions";
+    let group = editionGroups.find((candidate) => candidate.key === key);
+    if (!group) {
+      group = {
+        key,
+        title: edition ? edition.name : t("games.addonLinks.otherEditions"),
+        rows: [],
+      };
+      editionGroups.push(group);
+    }
+    group.rows.push(row);
+  }
 
   const groups: Group[] = [
     {
@@ -161,21 +182,12 @@ const LinkAddonsDialog = ({
         coverUrl: addon.coverUrl,
         firstReleaseDate: addon.firstReleaseDate,
         linked: addon.linked,
-        linkedIncluded: addon.included,
-        suggestedIncluded: addon.suggestedIncluded,
+        linkedRelation: addon.relation,
+        suggestedRelation: (addon.suggestedIncluded ? "included" : "works_with") as AddonRelation,
         willBeAdded: addon.gameId === null,
       })),
     },
-    {
-      key: "collection",
-      title: t("games.addonLinks.sameCollection"),
-      rows: libraryRows.filter((row) => sameCollection.has(row.id)),
-    },
-    {
-      key: "series",
-      title: t("games.addonLinks.sameSeries"),
-      rows: libraryRows.filter((row) => !sameCollection.has(row.id)),
-    },
+    ...editionGroups,
   ].filter((group) => group.rows.length > 0);
 
   const selectionFor = (row: Row) => (row.source === "igdb" ? selectedIgdb : selectedLibrary);
@@ -184,10 +196,10 @@ const LinkAddonsDialog = ({
     if (row.source === "igdb") setSelectedIgdb((previous) => withToggled(previous, row));
     else setSelectedLibrary((previous) => withToggled(previous, row));
   };
-  const setRowIncluded = (row: Row, included: boolean) => {
+  const setRowRelation = (row: Row, relation: AddonRelation) => {
     if (row.source === "igdb")
-      setSelectedIgdb((previous) => withIncluded(previous, row.id, included));
-    else setSelectedLibrary((previous) => withIncluded(previous, row.id, included));
+      setSelectedIgdb((previous) => withRelation(previous, row.id, relation));
+    else setSelectedLibrary((previous) => withRelation(previous, row.id, relation));
   };
 
   const handleLink = async () => {
@@ -197,14 +209,11 @@ const LinkAddonsDialog = ({
     let failed = 0;
     try {
       if (libraryIds.length > 0) {
-        await addLinks.mutateAsync({ ids: libraryIds, includedIds: includedIds(selectedLibrary) });
+        await addLinks.mutateAsync({ ids: libraryIds, ...relationIds(selectedLibrary) });
         linked += libraryIds.length;
       }
       if (igdbIds.length > 0) {
-        const results = await linkBase.mutateAsync({
-          igdbIds,
-          includedIgdbIds: includedIds(selectedIgdb),
-        });
+        const results = await linkBase.mutateAsync({ igdbIds, ...relationIds(selectedIgdb) });
         failed = results.filter((result) => result.status === "failed").length;
         linked += results.length - failed;
       }
@@ -245,25 +254,7 @@ const LinkAddonsDialog = ({
             name: gameName,
           })}
         </Typography>
-        <TextField
-          size="small"
-          fullWidth
-          autoFocus
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("games.addonLinks.searchPlaceholder")}
-          slotProps={{
-            htmlInput: { "aria-label": t("games.addonLinks.searchLabel") },
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  {fetching ? <CircularProgress size={16} /> : <SearchIcon fontSize="small" />}
-                </InputAdornment>
-              ),
-            },
-          }}
-          sx={{ flexShrink: 0 }}
-        />
+        <PickerSearchField value={search} onChange={setSearch} fetching={fetching} />
         {/* Only the list scrolls; minHeight: 0 lets it shrink inside the flex column. */}
         <Box sx={{ flexGrow: 1, minHeight: 0, maxHeight: 440, overflowY: "auto", mt: 1.5 }}>
           {loading && groups.length === 0 ? (
@@ -292,34 +283,21 @@ const LinkAddonsDialog = ({
                       const selected = isSelected(row);
                       const year = releaseYear(row.firstReleaseDate);
                       const importing = busy && selected && row.source === "igdb";
-                      const included = selectionFor(row).get(row.id) ?? false;
+                      const relation = selectionFor(row).get(row.id) ?? "works_with";
                       return (
                         <ListItem
                           key={row.key}
                           disablePadding
                           secondaryAction={
                             row.linked ? (
-                              <RelationLabel included={row.linkedIncluded} />
+                              <RelationChip relation={row.linkedRelation} />
                             ) : selected ? (
-                              <ToggleButtonGroup
-                                exclusive
-                                size="small"
-                                value={included ? "included" : "works-with"}
+                              <RelationToggle
+                                value={relation}
                                 disabled={busy}
-                                onChange={(_event, value: string | null) => {
-                                  if (value) setRowIncluded(row, value === "included");
-                                }}
-                                aria-label={t("games.addonLinks.relationLabel", { name: row.name })}
-                              >
-                                <ToggleButton value="works-with" sx={{ gap: 0.5, px: 1, py: 0.25 }}>
-                                  <LinkIcon fontSize="small" />
-                                  {t("games.addonLinks.worksWithOption")}
-                                </ToggleButton>
-                                <ToggleButton value="included" sx={{ gap: 0.5, px: 1, py: 0.25 }}>
-                                  <Inventory2OutlinedIcon fontSize="small" />
-                                  {t("games.addonLinks.includedOption")}
-                                </ToggleButton>
-                              </ToggleButtonGroup>
+                                onChange={(next) => setRowRelation(row, next)}
+                                label={t("games.addonLinks.relationLabel", { name: row.name })}
+                              />
                             ) : row.willBeAdded ? (
                               <Chip
                                 size="small"
@@ -333,7 +311,7 @@ const LinkAddonsDialog = ({
                           <ListItemButton
                             disabled={row.linked || busy}
                             onClick={() => toggle(row)}
-                            sx={{ borderRadius: 1, pr: { xs: 18, sm: 30 } }}
+                            sx={{ borderRadius: 1, pr: { xs: 18, sm: 46 } }}
                           >
                             <ListItemIcon sx={{ minWidth: 36 }}>
                               {importing ? (
@@ -407,18 +385,6 @@ const LinkAddonsDialog = ({
         </Button>
       </DialogActions>
     </Dialog>
-  );
-};
-
-// A linked row's current relation, in place of the toggle.
-const RelationLabel = ({ included }: { included: boolean }) => {
-  const { t } = useTranslation();
-  return (
-    <Chip
-      size="small"
-      icon={included ? <Inventory2OutlinedIcon /> : <LinkIcon />}
-      label={t(included ? "games.addonLinks.alreadyIncluded" : "games.addonLinks.alreadyLinked")}
-    />
   );
 };
 

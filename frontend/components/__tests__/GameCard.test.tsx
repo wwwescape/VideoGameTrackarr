@@ -307,7 +307,7 @@ describe("GameCard", () => {
     expect(screen.queryByTestId("via-addon-chip")).not.toBeInTheDocument();
   });
 
-  it("shows the link and box icons between the corner badges for linked and included add-ons", () => {
+  it("shows one centre icon: box when Included, even when linked by hand", () => {
     const { unmount } = renderWithTheme(
       <GameCard
         game={{ ...baseGame, manualLink: true, included: true, owned: true, wishlisted: true }}
@@ -316,13 +316,12 @@ describe("GameCard", () => {
       />
     );
     const badges = screen.getByTestId("link-badges");
-    expect(badges).toContainElement(screen.getByRole("img", { name: "Linked by you" }));
     expect(badges).toContainElement(screen.getByRole("img", { name: "Included in this game" }));
+    expect(screen.queryByRole("img", { name: "Linked by you" })).not.toBeInTheDocument();
     unmount();
 
-    renderWithTheme(<GameCard game={{ ...baseGame, included: true }} context="addon" contextFunction={vi.fn()} />);
-    expect(screen.queryByRole("img", { name: "Linked by you" })).not.toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Included in this game" })).toBeInTheDocument();
+    renderWithTheme(<GameCard game={{ ...baseGame, manualLink: true }} context="addon" contextFunction={vi.fn()} />);
+    expect(screen.getByRole("img", { name: "Linked by you" })).toBeInTheDocument();
   });
 
   it("names the pack an add-on is Included through", () => {
@@ -334,6 +333,19 @@ describe("GameCard", () => {
       />
     );
     expect(screen.getByRole("img", { name: "Included via Expansions Bundle" })).toBeInTheDocument();
+  });
+
+  it("shows a gift for a pre-order bonus instead of the link icon", () => {
+    renderWithTheme(
+      <GameCard
+        game={{ ...baseGame, manualLink: true, preorderBonus: true }}
+        context="addon"
+        contextFunction={vi.fn()}
+      />
+    );
+    const badges = screen.getByTestId("link-badges");
+    expect(badges).toContainElement(screen.getByRole("img", { name: "Pre-order bonus for this game" }));
+    expect(screen.queryByRole("img", { name: "Linked by you" })).not.toBeInTheDocument();
   });
 
   it("shows no link icons on a plain IGDB add-on", () => {

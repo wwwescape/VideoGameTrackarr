@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { isAxiosError } from "axios";
 import AddLinkIcon from "@mui/icons-material/AddLink";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -13,12 +11,14 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { LAST_LINK_ORPHAN } from "../api/addonLinks";
+import { LAST_LINK_ORPHAN, relationOf } from "../api/addonLinks";
+import type { AddonRelation } from "../api/addonLinks";
 import type { GameSummary } from "../api/types";
-import { useAddAddonLinks, useRemoveAddonLink, useSetAddonIncluded } from "../hooks/useAddonLinks";
+import { useAddAddonLinks, useRemoveAddonLink, useSetAddonRelation } from "../hooks/useAddonLinks";
 import { useDeleteGame } from "../hooks/useGames";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import { RelationButton, relationLabelKey } from "./AddonRelationControls";
 import ConfirmDialog from "./ConfirmDialog";
 import { Section, SectionAction } from "./Detail";
 import LinkAddonsDialog from "./LinkAddonsDialog";
@@ -42,9 +42,16 @@ interface LinkedAddonsSectionProps {
   onPickerOpenChange?: (open: boolean) => void;
 }
 
+// The relation ids for re-linking one row as it was (Undo).
+const relationIdsFor = (id: number, relation: AddonRelation) => ({
+  includedIds: relation === "included" ? [id] : [],
+  preorderBonusIds: relation === "preorder_bonus" ? [id] : [],
+});
+
 // Below Notes on every game and add-on page: the manual "works with" links on this side, with
-// Link opening the picker and × unlinking straight away (Undo puts it back). The box button on
-// each row marks the add-on Included in that game (or clears it) in one click. Removing an
+// Link opening the picker and × unlinking straight away (Undo puts it back). The relation button
+// on each row shows how the add-on goes with that game and switches it between Works with,
+// Included and Pre-order bonus. Removing an
 // add-on's last link when it has no IGDB parent here is refused by the server, since it would
 // then show up nowhere; that offers to delete the add-on instead.
 const LinkedAddonsSection = ({
@@ -66,13 +73,13 @@ const LinkedAddonsSection = ({
   };
   const [hiddenIds, setHiddenIds] = useState<ReadonlySet<number>>(new Set());
   const [orphan, setOrphan] = useState<GameSummary | null>(null);
-  // Included marks just changed here, shown at once until the refetched list agrees.
-  const [includedOverrides, setIncludedOverrides] = useState<ReadonlyMap<number, boolean>>(
+  // Relations just changed here, shown at once until the refetched list agrees.
+  const [relationOverrides, setRelationOverrides] = useState<ReadonlyMap<number, AddonRelation>>(
     new Map()
   );
   const removeLink = useRemoveAddonLink(gameId);
   const addLinks = useAddAddonLinks(gameId);
-  const setIncluded = useSetAddonIncluded(gameId);
+  const setRelation = useSetAddonRelation(gameId);
   const deleteGame = useDeleteGame();
 
   const setHidden = (id: number, hidden: boolean) =>
@@ -90,8 +97,9 @@ const LinkedAddonsSection = ({
       showUndoToast(
         t("games.addonLinks.unlinkedToast", { name: other.name }),
         () => {
+          setHidden(other.id, false);
           addLinks
-            .mutateAsync({ ids: [other.id], includedIds: isIncluded(other) ? [other.id] : [] })
+            .mutateAsync({ ids: [other.id], ...relationIdsFor(other.id, relationFor(other)) })
             .catch((error) => {
               console.error("Error restoring link:", error);
               toast.error(t("games.addonLinks.linkError"), TOAST_OPTIONS);
@@ -100,6 +108,8 @@ const LinkedAddonsSection = ({
         5000
       );
     } catch (error) {
+      // Saved: it stays hidden until the refreshed list drops it. Not saved: back it comes.
+      setHidden(other.id, false);
       if (
         isAxiosError(error) &&
         error.response?.status === 409 &&
@@ -110,28 +120,24 @@ const LinkedAddonsSection = ({
         console.error("Error unlinking:", error);
         toast.error(t("games.addonLinks.unlinkError"), TOAST_OPTIONS);
       }
-    } finally {
-      setHidden(other.id, false);
     }
   };
 
-  const isIncluded = (other: GameSummary) =>
-    includedOverrides.get(other.id) ?? Boolean(other.included);
+  const relationFor = (other: GameSummary) => relationOverrides.get(other.id) ?? relationOf(other);
 
-  const handleToggleIncluded = async (other: GameSummary) => {
-    const included = !isIncluded(other);
-    setIncludedOverrides((previous) => new Map(previous).set(other.id, included));
+  const handleRelation = async (other: GameSummary, relation: AddonRelation) => {
+    setRelationOverrides((previous) => new Map(previous).set(other.id, relation));
     try {
-      await setIncluded.mutateAsync({ otherId: other.id, included });
+      await setRelation.mutateAsync({ otherId: other.id, relation });
     } catch (error) {
-      console.error("Error changing Included:", error);
-      toast.error(t("games.addonLinks.includedError"), TOAST_OPTIONS);
-    } finally {
-      setIncludedOverrides((previous) => {
+      // Kept on success until the refreshed list agrees; dropped when it wasn't saved.
+      setRelationOverrides((previous) => {
         const next = new Map(previous);
         next.delete(other.id);
         return next;
       });
+      console.error("Error changing the relation:", error);
+      toast.error(t("games.addonLinks.relationError"), TOAST_OPTIONS);
     }
   };
 
@@ -184,9 +190,9 @@ const LinkedAddonsSection = ({
           sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexDirection: "column", gap: 1 }}
         >
           {visible.map((link) => {
-            const included = isIncluded(link);
+            const relation = relationFor(link);
             const fromIgdb = !link.manualLink;
-            // The add-on and the game it's (not) included in, whichever side this page is.
+            // The add-on and the game it goes with, whichever side this page is.
             const names = isAddon
               ? { addon: gameName, game: link.name }
               : { addon: link.name, game: gameName };
@@ -221,39 +227,22 @@ const LinkedAddonsSection = ({
                   <Typography variant="caption" color="text.secondary" component="div">
                     {[
                       fromIgdb ? t("games.addonLinks.fromIgdb") : null,
-                      included
-                        ? t("games.addonLinks.includedOption")
-                        : fromIgdb
-                          ? null
-                          : t("games.addonLinks.worksWithOption"),
+                      // IGDB's own add-on plainly works with its game; say so only when marked.
+                      fromIgdb && relation === "works_with" ? null : t(relationLabelKey(relation)),
                     ]
                       .filter(Boolean)
                       .join(" · ")}
                   </Typography>
                 </Box>
-                <Tooltip
-                  title={t(
-                    included ? "games.addonLinks.unmarkIncluded" : "games.addonLinks.markIncluded",
-                    names
-                  )}
-                >
-                  <IconButton
-                    size="small"
-                    color={included ? "primary" : "default"}
-                    aria-pressed={included}
-                    aria-label={t("games.addonLinks.includedToggleLabel", names)}
-                    disabled={setIncluded.isPending && includedOverrides.has(link.id)}
-                    onClick={() => void handleToggleIncluded(link)}
-                  >
-                    {included ? (
-                      <Inventory2Icon fontSize="small" />
-                    ) : (
-                      <Inventory2OutlinedIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </Tooltip>
+                <RelationButton
+                  value={relation}
+                  addon={names.addon}
+                  game={names.game}
+                  disabled={setRelation.isPending && relationOverrides.has(link.id)}
+                  onChange={(next) => void handleRelation(link, next)}
+                />
                 {fromIgdb ? (
-                  // Keeps the box buttons lined up: IGDB's own link can't be unlinked.
+                  // Keeps the relation buttons lined up: IGDB's own link can't be unlinked.
                   <Box sx={{ width: 34, flexShrink: 0 }} />
                 ) : (
                   <Tooltip title={t("games.addonLinks.unlink")}>

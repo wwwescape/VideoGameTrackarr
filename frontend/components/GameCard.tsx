@@ -11,11 +11,12 @@ import AddIcon from "@mui/icons-material/Add";
 import DoneIcon from "@mui/icons-material/Done";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import LinkIcon from "@mui/icons-material/Link";
+import RedeemIcon from "@mui/icons-material/Redeem";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
 import type { GameCategory, PlayStatus } from "../api/types";
 import { formatReleaseDate, getAddonType, getReleaseYear, isAddon } from "../utils/utils";
-import OwnershipBadges, { BADGE_SIZE_PX, InlineBadge } from "./OwnershipBadges";
+import OwnershipBadges, { InlineBadge } from "./OwnershipBadges";
 
 const PLAY_STATUS_LABEL_KEYS: Record<PlayStatus, string> = {
   none: "",
@@ -64,6 +65,8 @@ export interface GameCardGame {
   manualLink?: boolean;
   // Same lists: the add-on is Included in that game.
   included?: boolean;
+  // Same lists: a pre-order bonus for that game.
+  preorderBonus?: boolean;
   // Included only through this pack (itself Included in the game), for the box's tooltip.
   includedVia?: { name: string } | null;
   playStatus?: PlayStatus | null;
@@ -97,6 +100,8 @@ interface GameCardProps {
   // Shortcut buttons shown over the cover on hover (the Games list's Edit/Play), hidden while
   // selecting. See GameCardHoverAction.
   hoverActions?: ReactNode;
+  // The box icon's tooltip in place of "Included in this game" (a pack's contents).
+  includedTooltip?: string;
   // "full" shows the whole release date (day, month, year) instead of just the year — the
   // release calendar, where the day is the point.
   dateFormat?: "year" | "full";
@@ -119,6 +124,7 @@ const GameCard = ({
   actionIcon,
   onOpen,
   hoverActions,
+  includedTooltip,
   dateFormat = "year",
   reservePlayStatus = true,
 }: GameCardProps) => {
@@ -337,44 +343,45 @@ const GameCard = ({
             </Box>
           ) : null}
 
-          {showsBadges && (game.manualLink || game.included) ? (
-            // Between the wishlist heart (top left) and the owned check (top right): a link icon
-            // when linked by hand rather than by IGDB, a box when Included in the game. The
-            // invisible badge-sized ends keep them evenly spaced with the corner badges: one sits
-            // centred, two split the gap in thirds.
+          {showsBadges && (game.manualLink || game.included || game.preorderBonus) ? (
+            // Top centre, between the wishlist heart and the owned check: one icon for how the
+            // add-on goes with this game, the most specific that applies. A box when Included,
+            // else a gift when it's a pre-order bonus, else a link when linked by hand rather
+            // than by IGDB.
             <Box
               data-testid="link-badges"
               sx={{
                 position: "absolute",
                 top: 7,
-                left: 7,
-                right: 7,
+                left: 0,
+                right: 0,
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent: "center",
                 zIndex: 1,
                 "& > div": { [SMALL_CARD]: { width: 24, height: 24 } },
                 "& svg": { [SMALL_CARD]: { fontSize: "15px !important" } },
-                [SMALL_CARD]: { top: 6, left: 6, right: 6 },
+                [SMALL_CARD]: { top: 6 },
               }}
             >
-              <Box aria-hidden sx={{ width: BADGE_SIZE_PX, flexShrink: 0 }} />
-              {game.manualLink ? (
-                <InlineBadge title={t("games.card.linkedTooltip")}>
-                  <LinkIcon sx={{ fontSize: 18, color: "#c4b5fd" }} />
-                </InlineBadge>
-              ) : null}
               {game.included ? (
                 <InlineBadge
                   title={
                     game.includedVia
                       ? t("games.card.includedViaTooltip", { name: game.includedVia.name })
-                      : t("games.card.includedTooltip")
+                      : (includedTooltip ?? t("games.card.includedTooltip"))
                   }
                 >
                   <Inventory2Icon sx={{ fontSize: 16, color: "#fcd34d" }} />
                 </InlineBadge>
-              ) : null}
-              <Box aria-hidden sx={{ width: BADGE_SIZE_PX, flexShrink: 0 }} />
+              ) : game.preorderBonus ? (
+                <InlineBadge title={t("games.card.preorderBonusTooltip")}>
+                  <RedeemIcon sx={{ fontSize: 16, color: "#f9a8d4" }} />
+                </InlineBadge>
+              ) : (
+                <InlineBadge title={t("games.card.linkedTooltip")}>
+                  <LinkIcon sx={{ fontSize: 18, color: "#c4b5fd" }} />
+                </InlineBadge>
+              )}
             </Box>
           ) : null}
 

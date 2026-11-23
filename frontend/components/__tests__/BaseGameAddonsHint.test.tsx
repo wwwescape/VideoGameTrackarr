@@ -12,7 +12,7 @@ const addon = (igdbId: number, linked: boolean) => ({
   firstReleaseDate: null,
   gameId: null,
   linked,
-  included: false,
+  relation: "works_with" as const,
   suggestedIncluded: false,
 });
 

@@ -146,6 +146,8 @@ export interface GameSummary {
   // Same lists: the add-on is Included in that game (the box icon). With the game owned, the
   // add-on counts as owned too. Optional: false or absent elsewhere.
   included?: boolean;
+  // Same lists: the add-on is a pre-order bonus for that game (the redeem icon); a label only.
+  preorderBonus?: boolean;
   // A game's Add-ons: Included only through this pack, itself Included in the game.
   includedVia?: GameRef | null;
   // Only on a GET /api/games search: the alternative name that matched when the game's own
@@ -369,6 +371,10 @@ export interface GameDetail extends GameSummary {
   linkedFromCustom: boolean;
   // An add-on Included in games you own (Linked Add-ons lab): why it counts as owned.
   ownedVia?: GameRef[];
+  // An add-on inside wishlisted packs (and not owned): wishlisted through them.
+  wishlistedVia?: GameRef[];
+  // The games this add-on is a pre-order bonus for.
+  preorderBonusFor?: GameRef[];
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];

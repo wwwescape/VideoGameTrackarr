@@ -10,10 +10,10 @@ from app.models.system import User
 from app.repositories import steam_repository
 from app.repositories.game_repository import GameWithStatus
 from app.schemas.addon_link import (
-    AddonIncludedRequest,
     AddonLinkCandidateResponse,
     AddonLinkRequest,
     AddonLinkResponse,
+    AddonRelationRequest,
     BaseGameAddonsLinkRequest,
     BaseGameAddonsLinkResponse,
     BaseGameAddonsResponse,
@@ -36,6 +36,7 @@ from app.schemas.game import (
     game_detail_from_orm,
     game_summary_from_orm,
 )
+from app.schemas.library import LibraryItemResponse, library_item_from_orm
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
 from app.schemas.screensaver import (
     ScreensaverBulkRequest,
@@ -49,6 +50,7 @@ from app.schemas.shelf import GameShelfResponse, game_shelf_response
 from app.services import (
     addon_link_service,
     bulk_import_job,
+    edition_service,
     game_card_service,
     game_service,
     game_shelf_service,
@@ -76,6 +78,8 @@ def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailRespon
         steam_app_id=steam_entry.steam_app_id if steam_entry else None,
         on_sale_game_ids=on_sale_game_ids,
         owned_via=addon_link_service.owned_via(db, game.game.id),
+        wishlisted_via=addon_link_service.wishlisted_via(db, game.game.id),
+        preorder_bonus_for=addon_link_service.preorder_bonus_for(db, game.game.id),
     )
 
 
@@ -244,17 +248,23 @@ def list_works_with(game_id: int, db: Session = Depends(get_db)) -> list[GameSum
     response_model=list[AddonLinkCandidateResponse],
     dependencies=_linked_addons_lab,
 )
-def list_addon_link_candidates(
-    game_id: int, q: str | None = Query(default=None, max_length=200), db: Session = Depends(get_db)
+async def list_addon_link_candidates(
+    game_id: int,
+    q: str | None = Query(default=None, max_length=200),
+    db: Session = Depends(get_db),
+    igdb_client: IGDBClient = Depends(get_igdb_client),
 ) -> list[AddonLinkCandidateResponse]:
-    """What the link picker offers: games for an add-on, add-ons for a game, from the same
-    Collection/Franchise; already-linked ones are flagged."""
+    """What the link picker offers, from the other editions of the same game: games for an
+    add-on, add-ons for a game; already-linked ones are flagged."""
+    await edition_service.ensure_version_parents(db, igdb_client)
     return [addon_link_candidate_from(c) for c in addon_link_service.list_candidates(db, game_id, q)]
 
 
 @router.post("/{game_id}/addon-links", response_model=AddonLinkResponse, dependencies=_linked_addons_lab)
 def add_addon_links(game_id: int, body: AddonLinkRequest, db: Session = Depends(get_db)) -> AddonLinkResponse:
-    return AddonLinkResponse(added=addon_link_service.link(db, game_id, body.ids, body.included_ids))
+    return AddonLinkResponse(
+        added=addon_link_service.link(db, game_id, body.ids, body.included_ids, body.preorder_bonus_ids)
+    )
 
 
 @router.delete(
@@ -266,16 +276,27 @@ def remove_addon_link(game_id: int, other_id: int, db: Session = Depends(get_db)
 
 
 @router.put(
-    "/{game_id}/addon-links/{other_id}/included",
+    "/{game_id}/addon-links/{other_id}/relation",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=_linked_addons_lab,
 )
-def set_addon_included(
-    game_id: int, other_id: int, body: AddonIncludedRequest, db: Session = Depends(get_db)
-) -> None:
-    """Marks the add-on (either id) Included in the other game, or clears it. Also works for an
-    add-on's own IGDB parent; 404 when the two aren't linked."""
-    addon_link_service.set_included(db, game_id, other_id, body.included)
+def set_addon_relation(game_id: int, other_id: int, body: AddonRelationRequest, db: Session = Depends(get_db)) -> None:
+    """Sets how the add-on (either id) goes with the other game: works with it, Included in it,
+    or a pre-order bonus for it. Also works for an add-on's own IGDB parent; 404 when the two
+    aren't linked."""
+    addon_link_service.set_relation(db, game_id, other_id, body.relation)
+
+
+@router.post(
+    "/{game_id}/preorder-bonus/{bonus_game_id}/claim",
+    response_model=LibraryItemResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=_linked_addons_lab,
+)
+def claim_preorder_bonus(game_id: int, bonus_game_id: int, db: Session = Depends(get_db)) -> LibraryItemResponse:
+    """I got it: an owned copy of this pre-order bonus, on the platform and format of your one
+    copy of the game bonus_game_id. 409 choose_copy when there's no copy or several."""
+    return library_item_from_orm(addon_link_service.claim_preorder_bonus(db, game_id, bonus_game_id))
 
 
 @router.get("/{game_id}/pack-contents", response_model=list[GameSummaryResponse], dependencies=_linked_addons_lab)
@@ -297,10 +318,15 @@ def list_packs(game_id: int, db: Session = Depends(get_db)) -> list[GameSummaryR
 @router.get(
     "/{game_id}/pack-links/candidates", response_model=list[PackCandidateResponse], dependencies=_linked_addons_lab
 )
-def list_pack_candidates(
-    game_id: int, q: str | None = Query(default=None, max_length=200), db: Session = Depends(get_db)
+async def list_pack_candidates(
+    game_id: int,
+    q: str | None = Query(default=None, max_length=200),
+    db: Session = Depends(get_db),
+    igdb_client: IGDBClient = Depends(get_igdb_client),
 ) -> list[PackCandidateResponse]:
-    """What the pack picker offers: add-ons for a pack, packs for any other add-on."""
+    """What the pack picker offers, for the editions of the same games: add-ons for a pack,
+    packs for any other add-on."""
+    await edition_service.ensure_version_parents(db, igdb_client)
     return [pack_candidate_from(c) for c in addon_link_service.list_pack_candidates(db, game_id, q)]
 
 
@@ -340,7 +366,7 @@ async def link_base_game_addons(
     """Imports the picked base-game add-ons that aren't in the library (with no parent) and
     links them all to this game; a result per add-on."""
     results = await addon_link_service.link_base_game_addons(
-        db, igdb_client, game_id, body.igdb_ids, body.included_igdb_ids
+        db, igdb_client, game_id, body.igdb_ids, body.included_igdb_ids, body.preorder_bonus_igdb_ids
     )
     return base_game_link_results_from(results)
 

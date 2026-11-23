@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import SearchIcon from "@mui/icons-material/Search";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -10,21 +9,20 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import InputAdornment from "@mui/material/InputAdornment";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import type { PackCandidate, PackCandidateGroup } from "../api/addonLinks";
+import type { PackCandidate } from "../api/addonLinks";
 import { useAddPackLinks, usePackCandidates } from "../hooks/useAddonLinks";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
+import PickerSearchField from "./PickerSearchField";
 
 interface PackLinkDialogProps {
   open: boolean;
@@ -35,21 +33,12 @@ interface PackLinkDialogProps {
   onClose: () => void;
 }
 
-const GROUP_ORDER: PackCandidateGroup[] = ["same_game", "collection", "series", "other"];
-
-const GROUP_TITLES: Record<PackCandidateGroup, string> = {
-  same_game: "games.packs.groupSameGame",
-  collection: "games.packs.groupCollection",
-  series: "games.packs.groupSeries",
-  other: "games.packs.groupOther",
-};
-
 const releaseYear = (timestamp: number | null) =>
   timestamp ? new Date(timestamp * 1000).getUTCFullYear() : null;
 
-// The pack picker: closest first (add-ons for the same games, then the same Collection, then
-// Series; a search reaches any add-on). Everything ticked is added with one button, always as
-// Included: a pack's contents come with it. Rows already in place show ticked and disabled.
+// The pack picker: add-ons (or packs) for the editions of the same game, grouped by edition.
+// Everything ticked is added with one button, always as Included: a pack's contents come with
+// it. Rows already in place show ticked and disabled.
 const PackLinkDialog = ({ open, gameId, gameName, isPack, onClose }: PackLinkDialogProps) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
@@ -74,10 +63,14 @@ const PackLinkDialog = ({ open, gameId, gameName, isPack, onClose }: PackLinkDia
       return next;
     });
 
-  const groups = GROUP_ORDER.map((group) => ({
-    group,
-    rows: (candidates.data ?? []).filter((candidate) => candidate.group === group),
-  })).filter(({ rows }) => rows.length > 0);
+  // Grouped by the edition each is for; the server sends them in that order.
+  const groups: { key: string; title: string; rows: PackCandidate[] }[] = [];
+  for (const candidate of candidates.data ?? []) {
+    const key = candidate.edition ? String(candidate.edition.id) : "none";
+    const last = groups[groups.length - 1];
+    if (last?.key === key) last.rows.push(candidate);
+    else groups.push({ key, title: candidate.edition?.name ?? "", rows: [candidate] });
+  }
 
   const handleAdd = async () => {
     const ids = [...selected];
@@ -112,29 +105,7 @@ const PackLinkDialog = ({ open, gameId, gameName, isPack, onClose }: PackLinkDia
             name: gameName,
           })}
         </Typography>
-        <TextField
-          size="small"
-          fullWidth
-          autoFocus
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("games.addonLinks.searchPlaceholder")}
-          slotProps={{
-            htmlInput: { "aria-label": t("games.addonLinks.searchLabel") },
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  {candidates.isFetching ? (
-                    <CircularProgress size={16} />
-                  ) : (
-                    <SearchIcon fontSize="small" />
-                  )}
-                </InputAdornment>
-              ),
-            },
-          }}
-          sx={{ flexShrink: 0 }}
-        />
+        <PickerSearchField value={search} onChange={setSearch} fetching={candidates.isFetching} />
         {/* Only the list scrolls; minHeight: 0 lets it shrink inside the flex column. */}
         <Box sx={{ flexGrow: 1, minHeight: 0, maxHeight: 440, overflowY: "auto", mt: 1.5 }}>
           {candidates.isLoading ? (
@@ -149,12 +120,14 @@ const PackLinkDialog = ({ open, gameId, gameName, isPack, onClose }: PackLinkDia
             </Typography>
           ) : (
             <List dense disablePadding>
-              {groups.map(({ group, rows }) => (
-                <li key={group}>
+              {groups.map(({ key, title, rows }) => (
+                <li key={key}>
                   <ul style={{ padding: 0 }}>
-                    <ListSubheader sx={{ lineHeight: "32px", bgcolor: "background.paper" }}>
-                      {t(GROUP_TITLES[group])}
-                    </ListSubheader>
+                    {title ? (
+                      <ListSubheader sx={{ lineHeight: "32px", bgcolor: "background.paper" }}>
+                        {title}
+                      </ListSubheader>
+                    ) : null}
                     {rows.map((row) => {
                       const year = releaseYear(row.firstReleaseDate);
                       return (

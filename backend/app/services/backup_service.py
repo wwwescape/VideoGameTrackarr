@@ -226,7 +226,12 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
         notes=[BackupNote(id=n.id, game_id=n.game_id, body=n.body) for n in db.scalars(select(Note))],
         game_tags=[BackupGameTag(game_id=gt.game_id, tag_id=gt.tag_id) for gt in db.scalars(select(GameTag))],
         addon_links=[
-            BackupAddonLink(addon_game_id=link.addon_game_id, game_id=link.game_id, included=link.included)
+            BackupAddonLink(
+                addon_game_id=link.addon_game_id,
+                game_id=link.game_id,
+                included=link.included,
+                preorder_bonus=link.preorder_bonus,
+            )
             for link in db.scalars(select(GameAddonLink).order_by(GameAddonLink.id))
         ],
         manufacturers=[BackupManufacturer(id=m.id, name=m.name) for m in db.scalars(select(Manufacturer))],
@@ -782,7 +787,15 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         if pair in seen_links or not {link.addon_game_id, link.game_id} <= restored_ids:
             continue
         seen_links.add(pair)
-        db.add(GameAddonLink(addon_game_id=link.addon_game_id, game_id=link.game_id, included=link.included))
+        db.add(
+            GameAddonLink(
+                addon_game_id=link.addon_game_id,
+                game_id=link.game_id,
+                included=link.included,
+                # Never both: Included wins, as on every other write.
+                preorder_bonus=link.preorder_bonus and not link.included,
+            )
+        )
     db.flush()
     _restore_toys_to_life(db, payload.toys_to_life)
     _restore_labs_and_game_cases(db, payload)

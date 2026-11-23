@@ -2,10 +2,11 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   addAddonLinks,
   addPackLinks,
+  claimPreorderBonus,
   getBaseGameAddons,
   getRemovalPreview,
   linkBaseGameAddons,
-  setAddonIncluded,
+  setAddonRelation,
   listAddonLinkCandidates,
   listAllAddonLinks,
   listPackCandidates,
@@ -15,6 +16,7 @@ import {
   removeAddonLink,
   removeFromPack,
 } from "../api/addonLinks";
+import type { AddonRelation, RelationIds } from "../api/addonLinks";
 
 // Under ["games", id, ...] like useAddons, so anything that refreshes a game refreshes these.
 export function useWorksWith(gameId: number, enabled = true) {
@@ -56,15 +58,26 @@ export function useRemovalPreview(gameId: number, enabled: boolean) {
   });
 }
 
-// A link shows on both sides (the add-on's Works with, the game's Add-ons), in the Games list's
-// Include add-ons matches and on Settings → Linked Add-ons, so all of those refresh.
+// The pickers' lists: marked stale after a change, so they're fresh the next time a picker
+// opens, but not refetched right away (the base-game one asks IGDB).
+const PICKER_QUERIES = new Set(["addon-link-candidates", "pack-candidates", "base-game-addons"]);
+
+// A link shows on both sides (the add-on's Works with, the game's Add-ons), in owned/wishlist
+// status, the Games list's Include add-ons matches and on Settings → Linked Add-ons, so all of
+// those refresh. Fire and forget: a mutation resolves as soon as the server has saved it, so
+// dialogs close at once instead of waiting for every refetch.
 function useInvalidateGames() {
   const queryClient = useQueryClient();
-  return () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["games"] }),
-      queryClient.invalidateQueries({ queryKey: ["addon-links"] }),
-    ]);
+  return () => {
+    const isPicker = (key: readonly unknown[]) => PICKER_QUERIES.has(String(key[2]));
+    void queryClient.invalidateQueries({ queryKey: ["games"], predicate: (query) => !isPicker(query.queryKey) });
+    void queryClient.invalidateQueries({
+      queryKey: ["games"],
+      predicate: (query) => isPicker(query.queryKey),
+      refetchType: "none",
+    });
+    void queryClient.invalidateQueries({ queryKey: ["addon-links"] });
+  };
 }
 
 // Settings → Linked Add-ons.
@@ -84,8 +97,7 @@ export function useRemoveAddonLinkPair() {
 export function useAddAddonLinks(gameId: number) {
   const invalidate = useInvalidateGames();
   return useMutation({
-    mutationFn: ({ ids, includedIds = [] }: { ids: number[]; includedIds?: number[] }) =>
-      addAddonLinks(gameId, ids, includedIds),
+    mutationFn: ({ ids, ...relations }: { ids: number[] } & RelationIds) => addAddonLinks(gameId, ids, relations),
     onSuccess: invalidate,
   });
 }
@@ -102,29 +114,45 @@ export function useRemoveAddonLink(gameId: number) {
 export function useLinkBaseGameAddons(gameId: number) {
   const invalidate = useInvalidateGames();
   return useMutation({
-    mutationFn: ({ igdbIds, includedIgdbIds = [] }: { igdbIds: number[]; includedIgdbIds?: number[] }) =>
-      linkBaseGameAddons(gameId, igdbIds, includedIgdbIds),
+    mutationFn: ({ igdbIds, ...relations }: { igdbIds: number[] } & RelationIds) =>
+      linkBaseGameAddons(gameId, igdbIds, relations),
     onSuccess: invalidate,
   });
 }
 
-// Marks an add-on Included in a game, or clears it; gameId and otherId can be either side.
-export function useSetAddonIncluded(gameId: number) {
+// Sets how an add-on goes with a game; gameId and otherId can be either side.
+export function useSetAddonRelation(gameId: number) {
   const invalidate = useInvalidateGames();
   return useMutation({
-    mutationFn: ({ otherId, included }: { otherId: number; included: boolean }) =>
-      setAddonIncluded(gameId, otherId, included),
+    mutationFn: ({ otherId, relation }: { otherId: number; relation: AddonRelation }) =>
+      setAddonRelation(gameId, otherId, relation),
     onSuccess: invalidate,
   });
 }
 
 // The same from Settings, where each row names both sides.
-export function useSetAddonIncludedPair() {
+export function useSetAddonRelationPair() {
   const invalidate = useInvalidateGames();
   return useMutation({
-    mutationFn: ({ addonId, gameId, included }: { addonId: number; gameId: number; included: boolean }) =>
-      setAddonIncluded(addonId, gameId, included),
+    mutationFn: ({ addonId, gameId, relation }: { addonId: number; gameId: number; relation: AddonRelation }) =>
+      setAddonRelation(addonId, gameId, relation),
     onSuccess: invalidate,
+  });
+}
+
+// "I got it" on a pre-order bonus: adds an owned copy of the add-on.
+export function useClaimPreorderBonus(addonId: number) {
+  const invalidate = useInvalidateGames();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (gameId: number) => claimPreorderBonus(addonId, gameId),
+    onSuccess: () => {
+      invalidate();
+      // The add-on's own copies, like any added copy.
+      void queryClient.invalidateQueries({ queryKey: ["library", addonId] });
+      void queryClient.invalidateQueries({ queryKey: ["insights"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 
