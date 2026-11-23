@@ -609,9 +609,12 @@ def test_base_game_add_ons_in_the_editions_bundle_are_suggested_as_included(auth
 
 @pytest.fixture()
 def season_pass(db_session, fh5):
-    """A custom Season Pass for FH5 Standard and the Hot Wheels expansion IGDB lists there."""
+    """Two custom packs for FH5 Standard (a Season Pass and an Ultimate Pack) and the Hot Wheels
+    expansion IGDB lists there. The fixture's IGDB Car Collection is a Pack too, but holds
+    nothing: IGDB files single add-ons as Packs."""
     standard = fh5["standard"]
     pass_ = Game(name="Forza Horizon 5: Expansions Bundle", category=GameCategory.PACK, parent_game_id=standard.id)
+    ultimate = Game(name="Forza Horizon 5: Ultimate Pack", category=GameCategory.PACK, parent_game_id=standard.id)
     hot_wheels = Game(
         name="Forza Horizon 5: Hot Wheels",
         category=GameCategory.EXPANSION,
@@ -619,9 +622,9 @@ def season_pass(db_session, fh5):
         parent_game_id=standard.id,
         version_parent_checked=True,
     )
-    db_session.add_all([pass_, hot_wheels])
+    db_session.add_all([pass_, ultimate, hot_wheels])
     db_session.commit()
-    return {**fh5, "pass": pass_, "hot_wheels": hot_wheels}
+    return {**fh5, "pass": pass_, "ultimate": ultimate, "hot_wheels": hot_wheels}
 
 
 def _pack(client, game_id: int, ids: list[int]):
@@ -645,13 +648,13 @@ def test_contents_are_added_from_the_pack_or_from_the_add_on(auth_client, season
 
 
 def test_only_a_pack_holds_add_ons_and_never_in_a_loop(auth_client, season_pass):
-    pass_, hot_wheels, car_pack = season_pass["pass"], season_pass["hot_wheels"], season_pass["car_pack"]
+    pass_, hot_wheels, ultimate = season_pass["pass"], season_pass["hot_wheels"], season_pass["ultimate"]
     assert _pack(auth_client, hot_wheels.id, [season_pass["zelda_dlc"].id]).status_code == 409
     assert _pack(auth_client, pass_.id, [season_pass["premium"].id]).status_code == 409
     assert _pack(auth_client, pass_.id, [pass_.id]).status_code == 409
     # Packs nest (an Ultimate Pack holding a Season Pass), but not in a loop.
-    assert _pack(auth_client, car_pack.id, [pass_.id]).status_code == 200
-    assert _pack(auth_client, pass_.id, [car_pack.id]).status_code == 409
+    assert _pack(auth_client, ultimate.id, [pass_.id]).status_code == 200
+    assert _pack(auth_client, pass_.id, [ultimate.id]).status_code == 409
 
 
 def test_a_pack_included_in_an_owned_game_owns_its_contents(auth_client, season_pass):
@@ -673,13 +676,13 @@ def test_a_pack_included_in_an_owned_game_owns_its_contents(auth_client, season_
 
 
 def test_owning_a_pack_owns_its_nested_contents(auth_client, db_session, seed_platform, season_pass):
-    pass_, hot_wheels, car_pack = season_pass["pass"], season_pass["hot_wheels"], season_pass["car_pack"]
-    _pack(auth_client, car_pack.id, [pass_.id])
+    pass_, hot_wheels, ultimate = season_pass["pass"], season_pass["hot_wheels"], season_pass["ultimate"]
+    _pack(auth_client, ultimate.id, [pass_.id])
     _pack(auth_client, pass_.id, [hot_wheels.id])
     assert auth_client.get(f"/api/games/{hot_wheels.uuid}").json()["owned"] is False
     db_session.add(
         LibraryItem(
-            game_id=car_pack.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED, format=MediaFormat.DIGITAL
+            game_id=ultimate.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED, format=MediaFormat.DIGITAL
         )
     )
     db_session.commit()
@@ -689,7 +692,7 @@ def test_owning_a_pack_owns_its_nested_contents(auth_client, db_session, seed_pl
 
 
 def test_pack_candidates_are_for_the_same_game_without_loops(auth_client, season_pass):
-    pass_, hot_wheels, car_pack = season_pass["pass"], season_pass["hot_wheels"], season_pass["car_pack"]
+    pass_, hot_wheels, ultimate = season_pass["pass"], season_pass["hot_wheels"], season_pass["ultimate"]
 
     def candidates(game_id: int, q: str | None = None) -> list[tuple[str, str, bool]]:
         params = {"q": q} if q else None
@@ -701,16 +704,17 @@ def test_pack_candidates_are_for_the_same_game_without_loops(auth_client, season
     assert candidates(pass_.id) == [
         ("Forza Horizon 5: Car Collection", "Forza Horizon 5", False),
         ("Forza Horizon 5: Hot Wheels", "Forza Horizon 5", True),
+        ("Forza Horizon 5: Ultimate Pack", "Forza Horizon 5", False),
     ]
     assert candidates(pass_.id, "Zelda") == []
-    # From an add-on: only packs.
+    # From an add-on: only packs that can hold it (not IGDB's Car Collection).
     assert candidates(hot_wheels.id) == [
-        ("Forza Horizon 5: Car Collection", "Forza Horizon 5", False),
         ("Forza Horizon 5: Expansions Bundle", "Forza Horizon 5", True),
+        ("Forza Horizon 5: Ultimate Pack", "Forza Horizon 5", False),
     ]
-    # The Car Collection holding the pass can't go inside it.
-    _pack(auth_client, car_pack.id, [pass_.id])
-    assert "Forza Horizon 5: Car Collection" not in [name for name, _, _ in candidates(pass_.id)]
+    # The Ultimate Pack holding the pass can't go inside it.
+    _pack(auth_client, ultimate.id, [pass_.id])
+    assert "Forza Horizon 5: Ultimate Pack" not in [name for name, _, _ in candidates(pass_.id)]
 
 
 def test_a_wishlisted_pack_wishlists_its_contents_unless_owned(auth_client, db_session, seed_platform, season_pass):
@@ -759,19 +763,19 @@ def test_deleting_a_game_takes_its_pack_and_the_contents_with_it(auth_client, db
 
 
 def test_deleting_a_game_keeps_contents_of_a_pack_that_stays(auth_client, db_session, season_pass):
-    standard, car_pack, hot_wheels, premium = (
+    standard, ultimate, hot_wheels, premium = (
         season_pass["standard"],
-        season_pass["car_pack"],
+        season_pass["ultimate"],
         season_pass["hot_wheels"],
         season_pass["premium"],
     )
-    # The Car Collection stays (linked to Premium), so Hot Wheels inside it stays too.
-    _link(auth_client, car_pack.id, [premium.id])
-    _pack(auth_client, car_pack.id, [hot_wheels.id])
+    # The Ultimate Pack stays (linked to Premium), so Hot Wheels inside it stays too.
+    _link(auth_client, ultimate.id, [premium.id])
+    _pack(auth_client, ultimate.id, [hot_wheels.id])
     preview = auth_client.get(f"/api/games/{standard.id}/removal-preview").json()
     assert sorted(a["name"] for a in preview["keptAddons"]) == [
-        "Forza Horizon 5: Car Collection",
         "Forza Horizon 5: Hot Wheels",
+        "Forza Horizon 5: Ultimate Pack",
     ]
 
 
@@ -793,6 +797,16 @@ def test_settings_marks_pack_rows(auth_client, season_pass):
 def test_pack_routes_are_404_while_the_lab_is_off(auth_client, db_session, season_pass, method, path):
     _lab_off(db_session)
     assert getattr(auth_client, method)(f"/api/games/{season_pass['pass'].id}/{path}").status_code == 404
+
+
+def test_an_igdb_pack_holds_nothing(auth_client, season_pass):
+    car_pack, hot_wheels = season_pass["car_pack"], season_pass["hot_wheels"]
+    # IGDB files single add-ons as Packs, so its Car Collection can't take contents.
+    assert _pack(auth_client, car_pack.id, [hot_wheels.id]).status_code == 409
+    # From its own page it's an ordinary add-on: the picker offers packs to put it in.
+    body = auth_client.get(f"/api/games/{car_pack.id}/pack-links/candidates").json()
+    assert [c["name"] for c in body] == ["Forza Horizon 5: Expansions Bundle", "Forza Horizon 5: Ultimate Pack"]
+    assert _pack(auth_client, car_pack.id, [season_pass["pass"].id]).json() == {"added": 1}
 
 
 # --- Pre-order bonuses ----------------------------------------------------------------------

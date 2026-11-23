@@ -59,8 +59,12 @@ const GameDetails = () => {
   const isAddon = game ? ADDON_DISPLAY_CATEGORIES.has(game.category) : false;
   const { data: worksWith } = useWorksWith(gameId, linkedAddonsLab && isAddon);
   // Packs (Season Pass, Ultimate Pack): what's inside one, and the packs an add-on is in.
-  const isPack = game?.category === "pack";
   const { data: packContents } = usePackContents(gameId, linkedAddonsLab && isAddon);
+  // A Pack that can hold add-ons: a custom one, or one already holding some. IGDB files many
+  // single add-ons as Packs (every The Sims 4 stuff pack); those are ordinary add-ons here, like
+  // addon_link_service.is_pack on the server.
+  const isPack =
+    game?.category === "pack" && (game.igdbId === null || (packContents ?? []).length > 0);
   const { data: packs } = usePacks(gameId, linkedAddonsLab && isAddon);
   // The link picker below Notes; the Add-ons hint opens it too.
   const [linkPickerOpen, setLinkPickerOpen] = useState(false);
@@ -224,7 +228,7 @@ const GameDetails = () => {
                 )}
               </Section>
             ) : null}
-            {showWorksWith && (isPack || (packContents ?? []).length > 0) ? (
+            {showWorksWith && isPack ? (
               // A pack's contents: Included, so owning the pack owns them.
               <Section id="pack-contents" title={t("games.packs.contentsTitle")}>
                 {(packContents ?? []).length === 0 ? (

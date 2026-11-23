@@ -1272,7 +1272,13 @@ def list_pack_candidates(
     edition it's for. Never Missing games or Toys-to-Life packs."""
     edition_of = _addons_of(db, edition_family(db, _own_games(db, game)))
     edition_of.pop(game.id, None)
-    scope = Game.category == PACK_CATEGORY if packs else Game.category.in_(_ADDON_CATEGORIES)
+    # Packs that can hold add-ons: custom ones, or any already holding some (see
+    # addon_link_service.is_pack).
+    holder = and_(
+        Game.category == PACK_CATEGORY,
+        or_(Game.igdb_id.is_(None), Game.id.in_(select(GameAddonLink.game_id))),
+    )
+    scope = holder if packs else Game.category.in_(_ADDON_CATEGORIES)
     statuses = _candidate_statuses(
         db, set(edition_of), scope, ~toys_to_life_repository.is_toy_pack(Game.igdb_id), search=search
     )

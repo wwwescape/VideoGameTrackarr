@@ -1,11 +1,10 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CloudDownloadIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
@@ -66,8 +65,19 @@ interface GameLibrarySectionProps {
   wishlistedVia?: GameRef[];
 }
 
-// "Owned via …" / "Wishlisted via …": the games or packs an add-on takes its status from.
-const ViaLine = ({ label, games, spaced }: { label: string; games: GameRef[]; spaced: boolean }) =>
+// "Owned via …" (tick) / "Wishlisted via …" (heart): the games or packs an add-on takes its
+// status from, with the same icon as that status's badge.
+const ViaLine = ({
+  label,
+  games,
+  spaced,
+  icon,
+}: {
+  label: string;
+  games: GameRef[];
+  spaced: boolean;
+  icon: ReactNode;
+}) =>
   games.length === 0 ? null : (
     <Typography
       variant="body2"
@@ -75,7 +85,7 @@ const ViaLine = ({ label, games, spaced }: { label: string; games: GameRef[]; sp
       component="div"
       sx={{ display: "flex", alignItems: "center", gap: 1, mb: spaced ? 1.5 : 0 }}
     >
-      <Inventory2Icon fontSize="small" color="primary" />
+      {icon}
       <Box component="span" sx={{ flexGrow: 1, minWidth: 0 }}>
         {label}{" "}
         {games.map((other, index) => (
@@ -383,8 +393,18 @@ const GameLibrarySection = ({
             {t("games.library.addToWishlist")}
           </MenuItem>
         </Menu>
-        <ViaLine label={t("games.addonLinks.ownedVia")} games={ownedVia} spaced={visibleItems.length > 0} />
-        <ViaLine label={t("games.addonLinks.wishlistedVia")} games={wishlistedVia} spaced={visibleItems.length > 0} />
+        <ViaLine
+          label={t("games.addonLinks.ownedVia")}
+          games={ownedVia}
+          spaced={visibleItems.length > 0}
+          icon={<CheckIcon fontSize="small" color="success" />}
+        />
+        <ViaLine
+          label={t("games.addonLinks.wishlistedVia")}
+          games={wishlistedVia}
+          spaced={visibleItems.length > 0}
+          icon={<FavoriteIcon fontSize="small" sx={{ color: "vgt.wishlist" }} />}
+        />
         {visibleItems.length === 0 ? (
           ownedVia.length > 0 || wishlistedVia.length > 0 ? null : (
             <EmptyLine>{t("games.library.empty")}</EmptyLine>

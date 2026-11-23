@@ -189,8 +189,13 @@ class PackCandidate:
     linked: bool
 
 
-def is_pack(game: Game) -> bool:
-    return game.category == GameCategory.PACK
+def is_pack(db: Session, game: Game) -> bool:
+    """Whether the game can hold other add-ons: a custom Pack (a Season Pass, an Ultimate Pack),
+    or any Pack already holding some. IGDB files many single add-ons as Packs (every The Sims 4
+    stuff pack), which hold nothing."""
+    return game.category == GameCategory.PACK and (
+        game.igdb_id is None or bool(game_repository.pack_content_ids(db, game.id))
+    )
 
 
 def list_pack_contents(db: Session, game_id: int) -> list[GameWithStatus]:
@@ -211,7 +216,7 @@ def list_pack_candidates(db: Session, game_id: int, search: str | None = None) -
     game = _game(db, game_id)
     if not is_addon(game):
         return []
-    on_pack = is_pack(game)
+    on_pack = is_pack(db, game)
     if on_pack:
         current = game_repository.pack_content_ids(db, game.id)
         excluded = game_repository.pack_ancestors(db, game.id)
@@ -227,7 +232,7 @@ def list_pack_candidates(db: Session, game_id: int, search: str | None = None) -
 
 def _pack_pair(db: Session, pack: Game, addon: Game) -> tuple[int, int]:
     """Validates putting addon inside pack; returns it as (addon_game_id, pack id)."""
-    if not is_pack(pack):
+    if not is_pack(db, pack):
         raise ConflictError(f"{pack.name} isn't a pack, so nothing can be put inside it")
     if not is_addon(addon):
         raise ConflictError(f"{addon.name} isn't an add-on, so it can't be put inside a pack")
@@ -247,7 +252,7 @@ def add_pack_links(db: Session, game_id: int, other_ids: list[int]) -> int:
     pairs = []
     for other_id in dict.fromkeys(other_ids):
         other = _game(db, other_id)
-        pairs.append(_pack_pair(db, game, other) if is_pack(game) else _pack_pair(db, other, game))
+        pairs.append(_pack_pair(db, game, other) if is_pack(db, game) else _pack_pair(db, other, game))
     added = game_repository.add_addon_links(db, pairs, dict.fromkeys(pairs, "included"))
     db.commit()
     return added
