@@ -808,9 +808,9 @@ def test_a_pre_order_bonus_is_a_label_and_never_owned(auth_client, db_session, f
     [addon] = auth_client.get(f"/api/games/{premium.id}/addons").json()
     # Premium is owned, but a bonus only counts once you own it yourself.
     assert (addon["preorderBonus"], addon["included"], addon["owned"]) == (True, False, False)
+    # Never owned through the game: a copy of the bonus is added by hand, like any copy.
     detail = auth_client.get(f"/api/games/{car_pack.uuid}").json()
-    assert [g["name"] for g in detail["preorderBonusFor"]] == ["Forza Horizon 5: Premium Edition"]
-    assert detail["ownedVia"] == []
+    assert (detail["owned"], detail["ownedVia"]) == (False, [])
 
     # The IGDB parent can carry the mark too.
     url = f"/api/games/{car_pack.id}/addon-links/{standard.id}/relation"
@@ -845,30 +845,6 @@ def test_relations_are_exclusive(auth_client, db_session, fh5):
     assert (link.included, link.preorder_bonus) == (True, False)
     candidates = auth_client.get(f"/api/games/{car_pack.id}/addon-links/candidates").json()
     assert [(c["name"], c["linkedRelation"]) for c in candidates] == [("Forza Horizon 5: Premium Edition", "included")]
-
-
-def test_i_got_it_copies_the_games_one_copy(auth_client, db_session, seed_platform, fh5):
-    car_pack, premium, standard = fh5["car_pack"], fh5["premium"], fh5["standard"]
-    auth_client.post(
-        f"/api/games/{premium.id}/addon-links", json={"ids": [car_pack.id], "preorderBonusIds": [car_pack.id]}
-    )
-    # Not a bonus for Standard: 404.
-    assert auth_client.post(f"/api/games/{car_pack.id}/preorder-bonus/{standard.id}/claim").status_code == 404
-
-    response = auth_client.post(f"/api/games/{car_pack.id}/preorder-bonus/{premium.id}/claim")
-    assert response.status_code == 201, response.text
-    assert (response.json()["platformId"], response.json()["status"]) == (seed_platform.id, "owned")
-    assert auth_client.get(f"/api/games/{car_pack.uuid}").json()["owned"] is True
-
-    # With two copies of the game it can't tell which one: the page asks instead.
-    db_session.add(
-        LibraryItem(
-            game_id=premium.id, platform_id=seed_platform.id, status=LibraryStatus.OWNED, format=MediaFormat.PHYSICAL
-        )
-    )
-    db_session.commit()
-    response = auth_client.post(f"/api/games/{car_pack.id}/preorder-bonus/{premium.id}/claim")
-    assert (response.status_code, response.json()["detail"]) == (409, "choose_copy")
 
 
 def test_backup_round_trips_the_pre_order_bonus(auth_client, fh5):

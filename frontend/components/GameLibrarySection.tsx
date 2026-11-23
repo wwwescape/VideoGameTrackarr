@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CloudDownloadIcon from "@mui/icons-material/CloudDownloadOutlined";
@@ -6,12 +6,10 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
-import RedeemIcon from "@mui/icons-material/Redeem";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Link from "@mui/material/Link";
@@ -42,8 +40,6 @@ import {
   useUpdateLibraryItem,
   useUpdateRomLabel,
 } from "../hooks/useLibrary";
-import { CHOOSE_COPY } from "../api/addonLinks";
-import { useClaimPreorderBonus } from "../hooks/useAddonLinks";
 import { useIntegrationsStatus } from "../hooks/useIntegrations";
 import { useUndoableAction } from "../hooks/useUndoableAction";
 import { formatCurrency } from "../utils/currency";
@@ -68,26 +64,10 @@ interface GameLibrarySectionProps {
   ownedVia?: GameRef[];
   // An add-on inside wishlisted packs: wishlisted through them.
   wishlistedVia?: GameRef[];
-  // The games this add-on is a pre-order bonus for; with `owned` false it offers "I got it".
-  preorderBonusFor?: GameRef[];
-  owned?: boolean;
 }
 
-// "Owned via …" / "Wishlisted via …" / "Pre-order bonus for …": the games or packs an add-on
-// takes its status (or label) from, with an optional action at the end.
-const ViaLine = ({
-  label,
-  games,
-  spaced,
-  icon = <Inventory2Icon fontSize="small" color="primary" />,
-  action,
-}: {
-  label: string;
-  games: GameRef[];
-  spaced: boolean;
-  icon?: ReactNode;
-  action?: ReactNode;
-}) =>
+// "Owned via …" / "Wishlisted via …": the games or packs an add-on takes its status from.
+const ViaLine = ({ label, games, spaced }: { label: string; games: GameRef[]; spaced: boolean }) =>
   games.length === 0 ? null : (
     <Typography
       variant="body2"
@@ -95,7 +75,7 @@ const ViaLine = ({
       component="div"
       sx={{ display: "flex", alignItems: "center", gap: 1, mb: spaced ? 1.5 : 0 }}
     >
-      {icon}
+      <Inventory2Icon fontSize="small" color="primary" />
       <Box component="span" sx={{ flexGrow: 1, minWidth: 0 }}>
         {label}{" "}
         {games.map((other, index) => (
@@ -112,66 +92,8 @@ const ViaLine = ({
           </Fragment>
         ))}
       </Box>
-      {action}
     </Typography>
   );
-
-// "I got it" on a pre-order bonus you don't own yet: adds an owned copy like your one copy of the
-// game it came with. Several bonus games: pick which. When the game has no copy or several, the
-// usual add-copy dialog opens instead (onChooseCopy).
-const ClaimBonusButton = ({
-  addonId,
-  addonName,
-  games,
-  onChooseCopy,
-}: {
-  addonId: number;
-  addonName: string;
-  games: GameRef[];
-  onChooseCopy: () => void;
-}) => {
-  const { t } = useTranslation();
-  const claim = useClaimPreorderBonus(addonId);
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-
-  const handleClaim = async (gameId: number) => {
-    setAnchor(null);
-    try {
-      await claim.mutateAsync(gameId);
-      toast.success(t("games.addonLinks.claimedToast", { name: addonName }), TOAST_OPTIONS);
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409 && error.response.data?.detail === CHOOSE_COPY) {
-        onChooseCopy();
-      } else {
-        console.error("Error adding the pre-order bonus:", error);
-        toast.error(t("games.addonLinks.claimError"), TOAST_OPTIONS);
-      }
-    }
-  };
-
-  return (
-    <>
-      <Button
-        size="small"
-        variant="outlined"
-        disabled={claim.isPending}
-        onClick={(event) =>
-          games.length === 1 ? void handleClaim(games[0].id) : setAnchor(event.currentTarget)
-        }
-        sx={{ flexShrink: 0 }}
-      >
-        {t("games.addonLinks.claimButton")}
-      </Button>
-      <Menu anchorEl={anchor} open={anchor !== null} onClose={() => setAnchor(null)}>
-        {games.map((other) => (
-          <MenuItem key={other.id} onClick={() => void handleClaim(other.id)}>
-            {t("games.addonLinks.claimFrom", { name: other.name })}
-          </MenuItem>
-        ))}
-      </Menu>
-    </>
-  );
-};
 
 const GameLibrarySection = ({
   gameId,
@@ -182,8 +104,6 @@ const GameLibrarySection = ({
   gameCategory,
   ownedVia = [],
   wishlistedVia = [],
-  preorderBonusFor = [],
-  owned = false,
 }: GameLibrarySectionProps) => {
   const { t } = useTranslation();
   const { data: integrations } = useIntegrationsStatus();
@@ -465,22 +385,6 @@ const GameLibrarySection = ({
         </Menu>
         <ViaLine label={t("games.addonLinks.ownedVia")} games={ownedVia} spaced={visibleItems.length > 0} />
         <ViaLine label={t("games.addonLinks.wishlistedVia")} games={wishlistedVia} spaced={visibleItems.length > 0} />
-        <ViaLine
-          label={t("games.addonLinks.preorderBonusFor")}
-          games={preorderBonusFor}
-          spaced={visibleItems.length > 0}
-          icon={<RedeemIcon fontSize="small" color="primary" />}
-          action={
-            owned ? undefined : (
-              <ClaimBonusButton
-                addonId={gameId}
-                addonName={gameName}
-                games={preorderBonusFor}
-                onChooseCopy={() => handleAddClick("owned")}
-              />
-            )
-          }
-        />
         {visibleItems.length === 0 ? (
           ownedVia.length > 0 || wishlistedVia.length > 0 ? null : (
             <EmptyLine>{t("games.library.empty")}</EmptyLine>

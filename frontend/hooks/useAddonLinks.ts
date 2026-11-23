@@ -2,7 +2,6 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   addAddonLinks,
   addPackLinks,
-  claimPreorderBonus,
   getBaseGameAddons,
   getRemovalPreview,
   linkBaseGameAddons,
@@ -137,22 +136,6 @@ export function useSetAddonRelationPair() {
     mutationFn: ({ addonId, gameId, relation }: { addonId: number; gameId: number; relation: AddonRelation }) =>
       setAddonRelation(addonId, gameId, relation),
     onSuccess: invalidate,
-  });
-}
-
-// "I got it" on a pre-order bonus: adds an owned copy of the add-on.
-export function useClaimPreorderBonus(addonId: number) {
-  const invalidate = useInvalidateGames();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (gameId: number) => claimPreorderBonus(addonId, gameId),
-    onSuccess: () => {
-      invalidate();
-      // The add-on's own copies, like any added copy.
-      void queryClient.invalidateQueries({ queryKey: ["library", addonId] });
-      void queryClient.invalidateQueries({ queryKey: ["insights"] });
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    },
   });
 }
 

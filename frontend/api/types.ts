@@ -373,8 +373,6 @@ export interface GameDetail extends GameSummary {
   ownedVia?: GameRef[];
   // An add-on inside wishlisted packs (and not owned): wishlisted through them.
   wishlistedVia?: GameRef[];
-  // The games this add-on is a pre-order bonus for.
-  preorderBonusFor?: GameRef[];
   progress: GameProgress;
   tags: Tag[];
   genres: CatalogRef[];

@@ -13,10 +13,9 @@ from typing import Any, Literal
 from sqlalchemy.orm import Session
 
 from app.models.catalog import Game, GameCategory
-from app.models.library import LibraryItem, LibraryStatus
 from app.repositories import game_repository, toys_to_life_repository
 from app.repositories.game_repository import AddonRelation, GameWithStatus
-from app.services import game_service, library_service
+from app.services import game_service
 from app.services.exceptions import ConflictError, NotFoundError
 from app.services.game_service import HIERARCHICAL_ADDON_CATEGORIES
 from app.services.igdb_client import IGDBClient
@@ -134,38 +133,6 @@ def set_relation(db: Session, game_id: int, other_id: int, relation: AddonRelati
         raise NotFoundError(f"{addon.name} isn't linked to {target.name}")
     game_repository.set_addon_relation(db, addon.id, target.id, relation, keep_row=not is_parent)
     db.commit()
-
-
-def preorder_bonus_for(db: Session, game_id: int) -> list[Game]:
-    """The games this add-on is a pre-order bonus for (empty with the lab off)."""
-    return game_repository.preorder_bonus_for(db, game_id)
-
-
-# The 409 detail when "I got it" can't tell which copy of the game the bonus came with.
-CHOOSE_COPY = "choose_copy"
-
-
-def claim_preorder_bonus(db: Session, addon_id: int, game_id: int) -> LibraryItem:
-    """I got it: adds an owned copy of a pre-order bonus, on the platform, region and format of
-    your one owned copy of the game it's a bonus for. With no copy or several, CHOOSE_COPY: the
-    page opens the usual add-copy dialog instead."""
-    addon = _game(db, addon_id)
-    game = _game(db, game_id)
-    if game_repository.relation_map(db, addon.id, addon_side=True).get(game.id) != "preorder_bonus":
-        raise NotFoundError(f"{addon.name} isn't a pre-order bonus for {game.name}")
-    copies = library_service.list_library_items(db, game.id, LibraryStatus.OWNED)
-    if len(copies) != 1:
-        raise ConflictError(CHOOSE_COPY)
-    [copy] = copies
-    return library_service.add_library_item(
-        db,
-        addon.id,
-        status=LibraryStatus.OWNED,
-        platform_id=copy.platform_id,
-        region_id=copy.region_id,
-        format=copy.format,
-        digital_storefront=copy.digital_storefront,
-    )
 
 
 def owned_via(db: Session, game_id: int) -> list[Game]:

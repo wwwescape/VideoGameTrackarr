@@ -155,7 +155,11 @@ describe("LinkedAddonsSection", () => {
   it("lists the IGDB parent with a relation button but no unlink", () => {
     renderSection([STANDARD, PREMIUM]);
 
-    expect(screen.getByText("From IGDB")).toBeInTheDocument();
+    expect(screen.getByText("From IGDB · Works with")).toBeInTheDocument();
+    // A greyed-out unlink icon stands in for the button, so the rows line up.
+    expect(
+      screen.getByRole("button", { name: "Linked by IGDB, so it can't be unlinked" })
+    ).toBeDisabled();
     expect(
       screen.getByRole("button", {
         name: "How Car Collection goes with Forza Horizon 5: Works with",
@@ -167,5 +171,50 @@ describe("LinkedAddonsSection", () => {
     expect(
       screen.getByRole("button", { name: "Unlink Forza Horizon 5: Premium Edition" })
     ).toBeInTheDocument();
+  });
+
+  it("on a game, lists manual links, then marked IGDB add-ons, then the rest, five at first", async () => {
+    const addon = (id: number, name: string, extra: Partial<GameSummary> = {}) =>
+      ({
+        id,
+        uuid: `u${id}`,
+        slug: null,
+        name,
+        coverUrl: null,
+        manualLink: false,
+        ...extra,
+      }) as GameSummary;
+    const links = [
+      addon(11, "A plain"),
+      addon(12, "B plain"),
+      addon(13, "C plain"),
+      addon(14, "D plain"),
+      addon(15, "E bonus", { preorderBonus: true }),
+      addon(16, "F manual", { manualLink: true }),
+      addon(17, "G included", { included: true }),
+    ];
+    render(
+      <MemoryRouter>
+        <LinkedAddonsSection
+          gameId={1}
+          gameName="Forza Horizon 5"
+          isAddon={false}
+          links={links}
+          onCurrentGameDeleted={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+    const user = userEvent.setup();
+    const names = () => screen.getAllByRole("link").map((link) => link.textContent);
+
+    expect(names()).toEqual(["F manual", "E bonus", "G included", "A plain", "B plain"]);
+    // IGDB's own add-ons can't be unlinked, but their relation can change.
+    expect(screen.queryByRole("button", { name: "Unlink E bonus" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Unlink F manual" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show 2 more" }));
+    expect(names()).toHaveLength(7);
+    await user.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(names()).toHaveLength(5);
   });
 });

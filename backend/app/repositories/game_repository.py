@@ -267,21 +267,6 @@ def _relation_map(db: Session, *, addon_id: int | None = None, game_id: int | No
     return {row[0]: relation_of(row[1], row[2]) for row in db.execute(stmt)}
 
 
-def preorder_bonus_for(db: Session, addon_id: int) -> list[Game]:
-    """The games an add-on is a pre-order bonus for, by name — its page's "Pre-order bonus for"."""
-    stmt = (
-        select(Game)
-        .join(GameAddonLink, GameAddonLink.game_id == Game.id)
-        .where(
-            GameAddonLink.addon_game_id == addon_id,
-            GameAddonLink.preorder_bonus.is_(True),
-            _linked_addons_lab_on(),
-        )
-        .order_by(Game.name)
-    )
-    return list(db.scalars(stmt))
-
-
 def _row_to_game_with_status(row: Any) -> GameWithStatus:
     return GameWithStatus(
         game=row[0],

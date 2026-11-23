@@ -68,14 +68,6 @@ export async function setAddonRelation(gameId: number, otherId: number, relation
   await apiClient.put(`/api/games/${gameId}/addon-links/${otherId}/relation`, { relation });
 }
 
-// "I got it": an owned copy of a pre-order bonus, like your one copy of the game it came with.
-// 409 CHOOSE_COPY when there's no copy of that game or several.
-export const CHOOSE_COPY = "choose_copy";
-
-export async function claimPreorderBonus(addonId: number, gameId: number): Promise<void> {
-  await apiClient.post(`/api/games/${addonId}/preorder-bonus/${gameId}/claim`);
-}
-
 export async function removeAddonLink(gameId: number, otherId: number): Promise<void> {
   await apiClient.delete(`/api/games/${gameId}/addon-links/${otherId}`);
 }

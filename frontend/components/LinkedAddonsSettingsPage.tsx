@@ -18,7 +18,7 @@ import {
 } from "../hooks/useAddonLinks";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import { RelationButton, relationLabelKey } from "./AddonRelationControls";
+import { LockedUnlinkButton, RelationButton, relationLabelKey } from "./AddonRelationControls";
 import { withLab } from "./LabGate";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -181,7 +181,7 @@ const LinkedAddonsSettingsPage = () => {
                             </IconButton>
                           </Tooltip>
                         ) : (
-                          <Box sx={{ width: 34, flexShrink: 0 }} />
+                          <LockedUnlinkButton />
                         )}
                       </Box>
                     );

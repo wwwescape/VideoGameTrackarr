@@ -129,8 +129,13 @@ const GameDetails = () => {
   const handleWorksWithClick = (other: GameSummary) => {
     navigate(`/game/${gameIdentifier(other)}`);
   };
-  // Below Notes: the manual links only (IGDB's own aren't unlinkable).
+  // The manual links alone: the base-game hint only shows while there are none.
   const manualLinks = (isAddon ? worksWith : addons)?.filter((other) => other.manualLink);
+  // Below Notes on a game: all its add-ons, IGDB's too (not unlinkable, but any relation can be
+  // set), except ones only there because they sit inside a pack Included in the game.
+  const gameLinks = addons?.filter(
+    (other) => ADDON_DISPLAY_CATEGORIES.has(other.category) && (other.manualLink || !other.includedVia)
+  );
   // An IGDB game (not an add-on) can take add-ons from its base game, e.g. FH5 Premium.
   const offerBaseGameAddons = linkedAddonsLab && !isAddon && game.igdbId !== null && !isAutoDiscovered;
   // With the lab on, every add-on shows Works with instead of Add-ons; with it off, as before.
@@ -291,8 +296,6 @@ const GameDetails = () => {
                 gameCategory={game.category}
                 ownedVia={game.ownedVia}
                 wishlistedVia={game.wishlistedVia}
-                preorderBonusFor={game.preorderBonusFor}
-                owned={game.owned}
               />
               {!hasParentGame ? (
                 <GameProgressSection
@@ -320,7 +323,7 @@ const GameDetails = () => {
                 gameName={game.name}
                 isAddon={isAddon}
                 // On an add-on: its IGDB parent too, which can be marked Included there.
-                links={isAddon ? worksWith : manualLinks}
+                links={isAddon ? worksWith : gameLinks}
                 onCurrentGameDeleted={() => navigate("/games", { replace: true })}
                 offerBaseGameAddons={offerBaseGameAddons}
                 pickerOpen={linkPickerOpen}

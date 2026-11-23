@@ -130,8 +130,6 @@ class GameDetailResponse(GameSummaryResponse):
     owned_via: list[GameRefResponse] = []
     # An add-on inside wishlisted packs (and not owned): wishlisted through them.
     wishlisted_via: list[GameRefResponse] = []
-    # The games this add-on is a pre-order bonus for.
-    preorder_bonus_for: list[GameRefResponse] = []
     progress: GameProgressResponse
     tags: list[TagResponse]
     genres: list[CatalogRefResponse]
@@ -200,7 +198,6 @@ def game_detail_from_orm(
     on_sale_game_ids: frozenset[int] = frozenset(),
     owned_via: list[Game] | None = None,
     wishlisted_via: list[Game] | None = None,
-    preorder_bonus_for: list[Game] | None = None,
 ) -> GameDetailResponse:
     game = status.game
     # parent_game_name comes from the `parent_game` relationship, not a plain column, so
@@ -230,7 +227,6 @@ def game_detail_from_orm(
         linked_from_custom=game.linked_from_custom,
         owned_via=[game_ref_from_orm(other) for other in owned_via or []],
         wishlisted_via=[game_ref_from_orm(other) for other in wishlisted_via or []],
-        preorder_bonus_for=[game_ref_from_orm(other) for other in preorder_bonus_for or []],
         progress=game_progress_from_orm(game.id, progress),
         tags=[tag_from_orm(tag) for tag in tags],
         genres=[genre_ref_from_orm(gg.genre) for gg in game.genres],

@@ -3,6 +3,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
 import RedeemIcon from "@mui/icons-material/Redeem";
 import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
 import Box from "@mui/material/Box";
@@ -166,5 +167,22 @@ export const RelationButton = ({
         ))}
       </Menu>
     </>
+  );
+};
+
+// Where a manual link's unlink button sits, on a row IGDB linked: the same icon, greyed out, so
+// the rows line up and it's clear why there's nothing to remove.
+export const LockedUnlinkButton = () => {
+  const { t } = useTranslation();
+  const label = t("games.addonLinks.igdbLinkLocked");
+  return (
+    <Tooltip title={label}>
+      {/* A disabled button fires no events, so the span carries the tooltip. */}
+      <span>
+        <IconButton size="small" disabled aria-label={label}>
+          <LinkOffIcon fontSize="small" />
+        </IconButton>
+      </span>
+    </Tooltip>
   );
 };

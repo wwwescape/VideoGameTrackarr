@@ -3,8 +3,11 @@ import { Link as RouterLink } from "react-router-dom";
 import { isAxiosError } from "axios";
 import AddLinkIcon from "@mui/icons-material/AddLink";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Tooltip from "@mui/material/Tooltip";
@@ -18,7 +21,7 @@ import { useAddAddonLinks, useRemoveAddonLink, useSetAddonRelation } from "../ho
 import { useDeleteGame } from "../hooks/useGames";
 import { gameIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
-import { RelationButton, relationLabelKey } from "./AddonRelationControls";
+import { LockedUnlinkButton, RelationButton, relationLabelKey } from "./AddonRelationControls";
 import ConfirmDialog from "./ConfirmDialog";
 import { Section, SectionAction } from "./Detail";
 import LinkAddonsDialog from "./LinkAddonsDialog";
@@ -29,8 +32,8 @@ interface LinkedAddonsSectionProps {
   gameName: string;
   // On an add-on this lists and links games; on a game it lists and links add-ons.
   isAddon: boolean;
-  // The manual links (manualLink), plus on an add-on its IGDB parent (not unlinkable, but it can
-  // be marked Included). Each carries its Included mark.
+  // Everything this side goes with: the manual links (manualLink) and IGDB's own (an add-on's
+  // parent, a game's IGDB add-ons), which can't be unlinked but can take any relation.
   links: GameSummary[] | undefined;
   // Deleting this page's own add-on (offered when its last link can't be removed).
   onCurrentGameDeleted: () => void;
@@ -41,6 +44,14 @@ interface LinkedAddonsSectionProps {
   pickerOpen?: boolean;
   onPickerOpenChange?: (open: boolean) => void;
 }
+
+// Rows shown before "Show N more": long add-on lists (The Sims 4 has 115) stay short.
+const COLLAPSED_ROWS = 5;
+
+// Manual links first, then IGDB ones marked Included or as a pre-order bonus, then the rest;
+// by name within each.
+const rowRank = (link: GameSummary, relation: AddonRelation) =>
+  link.manualLink ? 0 : relation === "works_with" ? 2 : 1;
 
 // The relation ids for re-linking one row as it was (Undo).
 const relationIdsFor = (id: number, relation: AddonRelation) => ({
@@ -123,7 +134,15 @@ const LinkedAddonsSection = ({
     }
   };
 
-  const relationFor = (other: GameSummary) => relationOverrides.get(other.id) ?? relationOf(other);
+  // A row's own relation to this game. On a game's list, an add-on inside an Included pack is
+  // flagged Included (includedVia) without being Included itself.
+  const relationFor = (other: GameSummary) =>
+    relationOverrides.get(other.id) ??
+    (other.includedVia
+      ? other.preorderBonus
+        ? "preorder_bonus"
+        : "works_with"
+      : relationOf(other));
 
   const handleRelation = async (other: GameSummary, relation: AddonRelation) => {
     setRelationOverrides((previous) => new Map(previous).set(other.id, relation));
@@ -164,7 +183,15 @@ const LinkedAddonsSection = ({
     }
   };
 
-  const visible = (links ?? []).filter((link) => !hiddenIds.has(link.id));
+  const [expanded, setExpanded] = useState(false);
+  const visible = (links ?? [])
+    .filter((link) => !hiddenIds.has(link.id))
+    .sort(
+      (a, b) =>
+        rowRank(a, relationFor(a)) - rowRank(b, relationFor(b)) || a.name.localeCompare(b.name)
+    );
+  const shown = expanded ? visible : visible.slice(0, COLLAPSED_ROWS);
+  const moreCount = visible.length - COLLAPSED_ROWS;
 
   return (
     <Section
@@ -189,7 +216,7 @@ const LinkedAddonsSection = ({
           component="ul"
           sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexDirection: "column", gap: 1 }}
         >
-          {visible.map((link) => {
+          {shown.map((link) => {
             const relation = relationFor(link);
             const fromIgdb = !link.manualLink;
             // The add-on and the game it goes with, whichever side this page is.
@@ -227,8 +254,7 @@ const LinkedAddonsSection = ({
                   <Typography variant="caption" color="text.secondary" component="div">
                     {[
                       fromIgdb ? t("games.addonLinks.fromIgdb") : null,
-                      // IGDB's own add-on plainly works with its game; say so only when marked.
-                      fromIgdb && relation === "works_with" ? null : t(relationLabelKey(relation)),
+                      t(relationLabelKey(relation)),
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -242,8 +268,8 @@ const LinkedAddonsSection = ({
                   onChange={(next) => void handleRelation(link, next)}
                 />
                 {fromIgdb ? (
-                  // Keeps the relation buttons lined up: IGDB's own link can't be unlinked.
-                  <Box sx={{ width: 34, flexShrink: 0 }} />
+                  // IGDB's own link can't be unlinked.
+                  <LockedUnlinkButton />
                 ) : (
                   <Tooltip title={t("games.addonLinks.unlink")}>
                     <IconButton
@@ -260,6 +286,18 @@ const LinkedAddonsSection = ({
           })}
         </Box>
       )}
+      {moreCount > 0 ? (
+        <Button
+          size="small"
+          onClick={() => setExpanded((previous) => !previous)}
+          startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          sx={{ mt: 1 }}
+        >
+          {expanded
+            ? t("games.addonLinks.showFewer")
+            : t("games.addonLinks.showMore", { count: moreCount })}
+        </Button>
+      ) : null}
 
       <LinkAddonsDialog
         open={pickerOpen}

@@ -36,7 +36,6 @@ from app.schemas.game import (
     game_detail_from_orm,
     game_summary_from_orm,
 )
-from app.schemas.library import LibraryItemResponse, library_item_from_orm
 from app.schemas.manual_game import ManualGameCreateRequest, ManualGameUpdateRequest
 from app.schemas.screensaver import (
     ScreensaverBulkRequest,
@@ -79,7 +78,6 @@ def _game_detail_response(db: Session, game: GameWithStatus) -> GameDetailRespon
         on_sale_game_ids=on_sale_game_ids,
         owned_via=addon_link_service.owned_via(db, game.game.id),
         wishlisted_via=addon_link_service.wishlisted_via(db, game.game.id),
-        preorder_bonus_for=addon_link_service.preorder_bonus_for(db, game.game.id),
     )
 
 
@@ -285,18 +283,6 @@ def set_addon_relation(game_id: int, other_id: int, body: AddonRelationRequest, 
     or a pre-order bonus for it. Also works for an add-on's own IGDB parent; 404 when the two
     aren't linked."""
     addon_link_service.set_relation(db, game_id, other_id, body.relation)
-
-
-@router.post(
-    "/{game_id}/preorder-bonus/{bonus_game_id}/claim",
-    response_model=LibraryItemResponse,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=_linked_addons_lab,
-)
-def claim_preorder_bonus(game_id: int, bonus_game_id: int, db: Session = Depends(get_db)) -> LibraryItemResponse:
-    """I got it: an owned copy of this pre-order bonus, on the platform and format of your one
-    copy of the game bonus_game_id. 409 choose_copy when there's no copy or several."""
-    return library_item_from_orm(addon_link_service.claim_preorder_bonus(db, game_id, bonus_game_id))
 
 
 @router.get("/{game_id}/pack-contents", response_model=list[GameSummaryResponse], dependencies=_linked_addons_lab)
