@@ -4,6 +4,7 @@ export type DangerZoneAction =
   | "clear_progress"
   | "clear_ratings"
   | "clear_notes"
+  | "clear_guides"
   | "clear_tags"
   | "clear_sync_caches"
   | "reset_library"

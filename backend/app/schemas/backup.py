@@ -135,6 +135,23 @@ class BackupNote(_BackupRow):
     body: str
 
 
+class BackupGuide(_BackupRow):
+    """A Guides & Cheats entry. A file entry's file is in a .zip backup made with guides on
+    (files/guides/<stored_filename>); its rendered copy never is — a restore rebuilds it."""
+
+    id: int
+    game_id: int
+    name: str
+    kind: str
+    platform_id: int | None = None
+    source: str
+    url: str | None = None
+    original_filename: str | None = None
+    stored_filename: str | None = None
+    media_format: str | None = None
+    size_bytes: int | None = None
+
+
 class BackupGameTag(_BackupRow):
     game_id: int
     tag_id: int
@@ -329,6 +346,7 @@ class BackupIncludedFiles(_BackupRow):
     roms: bool = False
     bios: bool = False
     images: bool = False
+    guides: bool = False
 
 
 class BackupPayload(_BackupRow):
@@ -343,6 +361,8 @@ class BackupPayload(_BackupRow):
     play_sessions: list[BackupPlaySession] = []
     notes: list[BackupNote] = []
     game_tags: list[BackupGameTag] = []
+    # Guides & Cheats entries, links and files alike (files only in a .zip made with guides).
+    guides: list[BackupGuide] = []
     # Version 10+.
     addon_links: list[BackupAddonLink] = []
     manufacturers: list[BackupManufacturer] = []
@@ -380,6 +400,7 @@ class BackupRestoreResult(CamelModel):
     restored_roms: int = 0
     restored_bios_files: int = 0
     restored_images: int = 0
+    restored_guide_files: int = 0
 
 
 class FullBackupLinkRequest(CamelModel):
@@ -388,6 +409,7 @@ class FullBackupLinkRequest(CamelModel):
     roms: bool = False
     bios: bool = False
     images: bool = False
+    guides: bool = False
 
 
 class FullBackupLinkResponse(CamelModel):

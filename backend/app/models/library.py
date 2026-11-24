@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Date, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -235,6 +235,58 @@ class Note(TimestampMixin, Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
     game: Mapped["Game"] = relationship()  # noqa: F821
+
+
+class GuideKind(enum.Enum):
+    GUIDE = "guide"
+    CHEAT = "cheat"
+
+
+class GuideSource(enum.Enum):
+    FILE = "file"
+    LINK = "link"
+
+
+class GuideFormat(enum.Enum):
+    PDF = "pdf"
+    DOCX = "docx"
+    MD = "md"
+    TXT = "txt"
+
+
+class GameGuide(TimestampMixin, Base):
+    """A guide or cheat sheet kept with a game: an uploaded file (stored privately under
+    guide_service.get_guide_dir(), served only through signed links) or a saved link. Never
+    shown on share pages. Deleted with its game in game_repository._delete_games."""
+
+    __tablename__ = "game_guides"
+    __table_args__ = (
+        CheckConstraint(
+            "(source = 'link' AND url IS NOT NULL AND stored_filename IS NULL)"
+            " OR (source = 'file' AND url IS NULL AND stored_filename IS NOT NULL)",
+            name="source",  # → ck_game_guides_source via the naming convention
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    kind: Mapped[GuideKind] = mapped_column(enum_column(GuideKind), nullable=False)
+    platform_id: Mapped[int | None] = mapped_column(ForeignKey("platforms.id"))
+    source: Mapped[GuideSource] = mapped_column(enum_column(GuideSource), nullable=False)
+    url: Mapped[str | None] = mapped_column(String(2048))
+    original_filename: Mapped[str | None] = mapped_column(String(255))
+    stored_filename: Mapped[str | None] = mapped_column(
+        String(64), comment="uuid-based name on disk — never derived from user input"
+    )
+    rendered_filename: Mapped[str | None] = mapped_column(
+        String(64), comment="sanitised HTML (docx/md) or UTF-8 copy (non-UTF-8 txt), rebuilt on restore"
+    )
+    media_format: Mapped[GuideFormat | None] = mapped_column(enum_column(GuideFormat))
+    size_bytes: Mapped[int | None] = mapped_column(Integer)
+
+    game: Mapped["Game"] = relationship()  # noqa: F821
+    platform: Mapped["Platform | None"] = relationship()  # noqa: F821
 
 
 class Tag(Base):

@@ -49,6 +49,7 @@ from app.models.jobs import JobRunLog, JobSchedule  # noqa: F401
 from app.models.labs import LabFeature  # noqa: F401
 from app.models.library import (  # noqa: F401
     BiosFile,
+    GameGuide,
     GameProgress,
     GameTag,
     LibraryItem,

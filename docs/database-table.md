@@ -2,7 +2,7 @@
 
 Companion to [developer-guide.md](developer-guide.md) and [diagrams.md](diagrams.md). Every
 table below is a SQLAlchemy model in `backend/app/models/` (`catalog.py`, `hardware.py`,
-`library.py`, `system.py`, `toys_to_life.py`, `game_cases.py`, `labs.py`) — schema changes always go through an Alembic migration in
+`library.py` (including `game_guides`), `system.py`, `toys_to_life.py`, `game_cases.py`, `labs.py`) — schema changes always go through an Alembic migration in
 `backend/alembic/versions/`, never a hand edit to the running DB.
 
 **Conventions used throughout:**
@@ -210,6 +210,30 @@ Free-text notes attached to a game (mirrors `device_notes`/`accessory_notes`).
 | id | int PK | |
 | game_id | FK → games.id | |
 | body | text | |
+| created_at, updated_at | timestamp | |
+
+### `game_guides`
+
+Guides & Cheats entries on a game (see [guides.md](guides.md)): an uploaded file or a saved
+link. A `CHECK` constraint (`ck_game_guides_source`) ties `source` to its columns: a link has a
+`url` and no `stored_filename`, and a file has the reverse. Rows are removed with their game in
+`game_repository._delete_games`, and their files once that transaction commits
+(`guide_service.delete_files_after_commit`); `merge_game` moves them to the target game.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | int PK | |
+| game_id | FK → games.id | indexed |
+| name | varchar(200) | |
+| kind | enum | `guide` / `cheat` |
+| platform_id | FK → platforms.id, nullable | optional |
+| source | enum | `file` / `link` |
+| url | varchar(2048), nullable | links only; `http`/`https` |
+| original_filename | varchar(255), nullable | files only; the uploaded name |
+| stored_filename | varchar(64), nullable | files only; UUID name in `uploads/guides/`, never from user input |
+| rendered_filename | varchar(64), nullable | sanitised HTML (`.docx`/`.md`) or UTF-8 copy (non-UTF-8 `.txt`); rebuilt on restore, never in backups |
+| media_format | enum, nullable | `pdf` / `docx` / `md` / `txt` |
+| size_bytes | int, nullable | the original's size |
 | created_at, updated_at | timestamp | |
 
 ### `tags`

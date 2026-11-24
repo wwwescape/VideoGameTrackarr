@@ -44,6 +44,16 @@ keep updated everywhere that table changes.
 (e.g. `app/api/routes/dashboard.py` end-to-end) before starting — the pattern is consistent
 enough that copying its shape and adjusting is usually faster than working from scratch.
 
+**Files that go with rows** (ROMs, BIOS files, Guides & Cheats files) live in private
+folders under `backend/uploads/` that the public `/uploads` mount refuses to serve
+(`UploadsStaticFiles` in `app/main.py`), and are only reachable through short-lived signed
+links (`create_rom_token`, `create_guide_token` in `app/core/security.py`). A file is removed
+only after the transaction that removed its row commits: services delete it after their own
+`db.commit()`, and bulk deletes of guide rows (`_delete_games`, Danger Zone) queue their files
+on the session with `guide_service.delete_files_after_commit`, which a session `after_commit`
+listener deletes and `after_rollback` forgets. Tests point every such folder at `tmp_path`
+(the autouse fixtures in `tests/conftest.py`).
+
 **Migrations**: `alembic revision --autogenerate -m "describe the change"` after editing a
 model in `app/models/`, then read the generated migration before trusting it — autogenerate
 gets simple column changes right but not everything (enum/constraint changes in particular
@@ -61,6 +71,15 @@ call `frontend/api/*` functions directly. **One typed API function per backend e
 deferred-commit-with-undo hook) and `showUndoToast`. This is the established pattern for
 anything destructive (bulk delete, etc.); reach for it before adding a `window.confirm` or a
 new modal.
+
+**Vendored third-party files** are copied from `node_modules` by scripts that run before
+`npm start` and `npm run build` (`prestart`/`prebuild`), into gitignored folders under
+`frontend/public/`: `scripts/vendor-emulatorjs.mjs` (the in-browser player) and
+`scripts/vendor-pdfjs.mjs` (pdf.js's fonts, CMaps, WASM decoders and colour profiles for the
+Guides & Cheats reader). Big libraries that only one feature needs are lazy-loaded and kept out
+of the service worker's precache: the reader (`components/guideReader/`) is a `lazy()` import,
+pdf.js inside it is another (its own `pdfjs` chunk in `vite.config.ts`), and Workbox's
+`globIgnores` leaves both out.
 
 **Large lists are virtualized** — `VirtualGameGrid` (windowed via
 `@tanstack/react-virtual`'s `useWindowVirtualizer`) is reused everywhere a grid of

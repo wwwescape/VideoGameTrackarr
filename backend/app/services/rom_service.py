@@ -19,13 +19,12 @@ from sqlalchemy.orm import Session
 from app.core.config import UPLOADS_DIR, get_settings
 from app.models.library import LibraryItem, LibraryStatus, MediaFormat, RomFile, RomSaveState
 from app.repositories import library_item_repository
-from app.services import emulation_cores
+from app.services import emulation_cores, file_storage
 from app.services.exceptions import NotFoundError
 
 ROMS_SUBDIR = "roms"
 STATES_SUBDIR = "states"
 SAVES_SUBDIR = "saves"
-_CHUNK_SIZE = 1024 * 1024
 MAX_STATE_BYTES = 64 * 1024 * 1024
 MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024
 MAX_SRAM_BYTES = 16 * 1024 * 1024
@@ -78,24 +77,13 @@ def _delete_file(stored_filename: str) -> None:
 def _stream_to_file(source: BinaryIO, relative_path: str, max_bytes: int, too_large_message: str) -> int:
     """Streams `source` to <rom dir>/<relative_path> via a .part file, enforcing max_bytes.
     Returns the size written; leaves nothing behind on failure."""
-    final_path = _safe_path(relative_path)
-    final_path.parent.mkdir(parents=True, exist_ok=True)
-    part_path = final_path.with_name(final_path.name + ".part")
-    size = 0
-    try:
-        with part_path.open("wb") as out:
-            while chunk := source.read(_CHUNK_SIZE):
-                size += len(chunk)
-                if size > max_bytes:
-                    raise RomTooLargeError(too_large_message)
-                out.write(chunk)
-        if size == 0:
-            raise RomValidationError("File is empty")
-        part_path.replace(final_path)
-    except BaseException:
-        part_path.unlink(missing_ok=True)
-        raise
-    return size
+    return file_storage.stream_to_path(
+        source,
+        _safe_path(relative_path),
+        max_bytes,
+        too_large=lambda: RomTooLargeError(too_large_message),
+        empty=lambda: RomValidationError("File is empty"),
+    )
 
 
 def stream_to_rom_dir(source: BinaryIO, relative_path: str, max_bytes: int, too_large_message: str) -> int:

@@ -57,7 +57,17 @@ export default defineConfig({
         //
         // And never for the API: a .zip backup downloads by opening its signed /api link, which
         // must reach the server, not be answered with the app.
-        globIgnores: ["**/emulatorjs/**", "player-isolated.html"],
+        //
+        // pdf.js (the Guides & Cheats reader) is only loaded when a PDF is opened: its chunks,
+        // worker and data files (public/pdfjs/, see scripts/vendor-pdfjs.mjs) stay out of the
+        // precache so the app doesn't grow by ~3 MB for people who never open one.
+        globIgnores: [
+          "**/emulatorjs/**",
+          "player-isolated.html",
+          "**/pdfjs/**",
+          "**/pdfjs-*",
+          "**/pdf.worker*",
+        ],
         navigateFallbackDenylist: [/^\/emulatorjs\//, /^\/player-isolated\.html/, /^\/api\//],
         // The API itself is NOT runtime-cached here — TanStack Query's own persisted
         // query cache (see offline/) already covers offline data availability at the
@@ -108,6 +118,9 @@ export default defineConfig({
               name: "data",
               test: /[\\/]node_modules[\\/](@tanstack|axios|i18next|react-i18next)[\\/]/,
             },
+            // Only ever imported lazily (components/guideReader/PdfView.tsx), and kept out
+            // of the service worker's precache by name (globIgnores above).
+            { name: "pdfjs", test: /[\\/]node_modules[\\/]pdfjs-dist[\\/]/ },
           ],
         },
       },

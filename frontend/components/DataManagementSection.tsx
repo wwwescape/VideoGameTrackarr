@@ -21,6 +21,7 @@ const FILE_OPTIONS: { key: keyof BackupFileOptions; labelKey: string }[] = [
   { key: "roms", labelKey: "settings.dataManagement.includeRomsLabel" },
   { key: "bios", labelKey: "settings.dataManagement.includeBiosLabel" },
   { key: "images", labelKey: "settings.dataManagement.includeImagesLabel" },
+  { key: "guides", labelKey: "settings.dataManagement.includeGuidesLabel" },
 ];
 
 // Settings → General → Data: one Backup (a .json, or a .zip when files are picked to go
@@ -33,8 +34,13 @@ const DataManagementSection = () => {
   const restoreInProgress = restoreBackup.isPending || restoreStatus.data?.status === "running";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [files, setFiles] = useState<BackupFileOptions>({ roms: false, bios: false, images: false });
-  const asZip = files.roms || files.bios || files.images;
+  const [files, setFiles] = useState<BackupFileOptions>({
+    roms: false,
+    bios: false,
+    images: false,
+    guides: false,
+  });
+  const asZip = files.roms || files.bios || files.images || files.guides;
 
   const handleExportBackup = async () => {
     try {

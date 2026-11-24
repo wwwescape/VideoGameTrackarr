@@ -27,6 +27,7 @@ import GameLibrarySection from "./GameLibrarySection";
 import GameProgressSection from "./GameProgressSection";
 import LinkedAddonsSection from "./LinkedAddonsSection";
 import PackLinksSection from "./PackLinksSection";
+import GuidesCheatsSection from "./GuidesCheatsSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
@@ -314,6 +315,7 @@ const GameDetails = () => {
                 onAttach={(tagId) => attachTag.mutateAsync(tagId)}
                 onDetach={(tagId) => detachTag.mutateAsync(tagId)}
               />
+              <GuidesCheatsSection gameId={gameId} libraryItems={libraryItems} gamePlatforms={game.platforms} />
               <NotesSection
                 notes={notes}
                 isCreating={createNote.isPending}

@@ -48,6 +48,7 @@ describe("RestoreGuard", () => {
         restoredRoms: 4,
         restoredBiosFiles: 0,
         restoredImages: 5,
+        restoredGuideFiles: 2,
       },
     };
     rerender(
@@ -61,6 +62,7 @@ describe("RestoreGuard", () => {
     expect(dialog).toHaveTextContent("2 devices and 3 accessories");
     expect(dialog).toHaveTextContent("4 ROMs, with their saves");
     expect(dialog).toHaveTextContent("5 images");
+    expect(dialog).toHaveTextContent("2 guide files");
     expect(dialog).not.toHaveTextContent("BIOS");
 
     await user.click(screen.getByRole("button", { name: "Resync now" }));

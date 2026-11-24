@@ -62,6 +62,7 @@ const RestoreGuard = () => {
       finished.restoredRoms ? t("restore.summaryRoms", { count: finished.restoredRoms }) : null,
       finished.restoredBiosFiles ? t("restore.summaryBios", { count: finished.restoredBiosFiles }) : null,
       finished.restoredImages ? t("restore.summaryImages", { count: finished.restoredImages }) : null,
+      finished.restoredGuideFiles ? t("restore.summaryGuides", { count: finished.restoredGuideFiles }) : null,
     ].filter((line): line is string => line !== null);
     return (
       <Dialog open onClose={() => setFinished(null)} maxWidth="xs" fullWidth>

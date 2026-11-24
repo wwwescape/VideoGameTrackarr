@@ -11,6 +11,8 @@ export interface BackupFileOptions {
   roms: boolean;
   bios: boolean;
   images: boolean;
+  // Guides & Cheats' uploaded files (their entries are always in a backup).
+  guides: boolean;
 }
 
 // A backup with files can be many GB, so it isn't fetched into a Blob: the server hands out
