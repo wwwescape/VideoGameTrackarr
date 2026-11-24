@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     rom_storage_dir: str | None = None
     rom_max_upload_mb: int = 2048
 
+    # Guides & Cheats files (see app/services/guide_service.py) live in a guides/ subfolder of
+    # UPLOADS_DIR, which the public /uploads mount refuses to serve, like roms/. The override
+    # exists for the same reason as rom_storage_dir.
+    guide_storage_dir: str | None = None
+    guide_max_upload_mb: int = 50
+
 
 @lru_cache
 def get_settings() -> Settings:

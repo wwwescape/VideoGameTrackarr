@@ -235,6 +235,8 @@
     "summaryBios_other": "{{count}} archivos BIOS",
     "summaryImages_one": "{{count}} imagen",
     "summaryImages_other": "{{count}} imágenes",
+    "summaryGuides_one": "{{count}} archivo de guía",
+    "summaryGuides_other": "{{count}} archivos de guías",
     "resyncPrompt": "Una copia no incluye los datos de IGDB (géneros, multimedia, fechas de lanzamiento, Colecciones, Series). La tarea Resincronizar juegos, colecciones y sagas los vuelve a obtener para cada juego; también puedes ejecutarla más tarde desde Ajustes → Tareas.",
     "resyncNow": "Resincronizar ahora",
     "resyncLater": "Más tarde",
@@ -360,6 +362,12 @@
           "removes": "Elimina todas las notas de tus juegos, dispositivos y accesorios.",
           "keeps": "Conserva todo lo demás."
         },
+        "clearGuides": {
+          "name": "Borrar las guías y trucos",
+          "button": "Borrar",
+          "removes": "Elimina todas las guías y trucos de todos los juegos: archivos subidos y enlaces guardados.",
+          "keeps": "Conserva tus juegos, notas y todo lo demás."
+        },
         "clearTags": {
           "name": "Borrar las etiquetas",
           "button": "Borrar",
@@ -375,7 +383,7 @@
         "resetLibrary": {
           "name": "Restablecer la biblioteca de juegos",
           "button": "Restablecer",
-          "removes": "Elimina todos los juegos y todo lo que tienen: copias, ROMs y partidas, progreso, sesiones, valoraciones, notas, Colecciones y Series.",
+          "removes": "Elimina todos los juegos y todo lo que tienen: copias, ROMs y partidas, progreso, sesiones, valoraciones, notas, guías y trucos, Colecciones y Series.",
           "keeps": "Conserva tu hardware, etiquetas, cuenta y ajustes."
         },
         "resetHardware": {
@@ -394,11 +402,12 @@
     },
     "dataManagement": {
       "backupHeading": "Copia de seguridad",
-      "backupDescription": "Guarda tus juegos y copias, progreso, valoraciones, notas, etiquetas, hardware, precios objetivo y ajustes de la cuenta. Los datos de IGDB (géneros, multimedia, fechas de lanzamiento, Colecciones, Series) no se incluyen: la tarea Resincronizar juegos, colecciones y sagas los recupera tras restaurar.",
+      "backupDescription": "Guarda tus juegos y copias, progreso, valoraciones, notas, guías y trucos, etiquetas, hardware, precios objetivo y ajustes de la cuenta. Los datos de IGDB (géneros, multimedia, fechas de lanzamiento, Colecciones, Series) no se incluyen: la tarea Resincronizar juegos, colecciones y sagas los recupera tras restaurar.",
       "includeFilesHeading": "Incluir también",
       "includeRomsLabel": "ROMs y partidas guardadas",
       "includeBiosLabel": "Archivos BIOS",
       "includeImagesLabel": "Imágenes (portadas de juegos personalizados y fotos de accesorios)",
+      "includeGuidesLabel": "Guías y trucos (archivos subidos)",
       "downloadBackupJson": "Descargar copia (.json)",
       "downloadBackupZip": "Descargar copia (.zip)",
       "restoreHeading": "Restaurar",
@@ -1932,6 +1941,97 @@
     "updateError": "Error al actualizar la nota. Inténtalo de nuevo.",
     "deleteError": "Error al eliminar la nota. Inténtalo de nuevo.",
     "addAction": "Añadir nota"
+  },
+  "guides": {
+    "title": "Guías y trucos",
+    "addAction": "Añadir",
+    "empty": "Aún no hay guías ni trucos.",
+    "kind": {
+      "guide": "Guía",
+      "cheat": "Truco"
+    },
+    "source": {
+      "file": "Archivo",
+      "link": "Enlace"
+    },
+    "format": {
+      "pdf": "PDF",
+      "docx": "Word",
+      "md": "Markdown",
+      "txt": "Texto"
+    },
+    "fileMissing": "Falta el archivo",
+    "open": "Abrir {{name}}",
+    "openLink": "Abrir {{name}} en una pestaña nueva",
+    "openInNewTab": "Abrir en una pestaña nueva",
+    "download": "Descargar",
+    "deleteTitle": "¿Eliminar «{{name}}»?",
+    "deleteFileNote": "También se elimina el archivo.",
+    "deleteLinkNote": "Solo se quita el enlace guardado.",
+    "addedGuide": "Guía añadida",
+    "addedCheat": "Truco añadido",
+    "saved": "Guardado",
+    "dialog": {
+      "addTitle": "Añadir una guía o un truco",
+      "editTitle": "Editar guía o truco",
+      "kindLabel": "Tipo",
+      "sourceLabel": "Origen",
+      "dropHere": "Suelta un archivo aquí, o",
+      "chooseFile": "Elegir archivo",
+      "replace": "Sustituir",
+      "removeFile": "Quitar archivo",
+      "fileMissingHint": "Este archivo ya no está en el servidor. Elígelo de nuevo para recuperarlo.",
+      "uploading": "Subiendo",
+      "acceptedTypes": "PDF, Word (.docx), Markdown o texto, hasta {{max}} MB",
+      "acceptedTypesNoLimit": "PDF, Word (.docx), Markdown o texto",
+      "linkLabel": "Enlace",
+      "nameLabel": "Nombre",
+      "nameHelperFile": "Déjalo vacío para usar el nombre del archivo",
+      "nameHelperLink": "Déjalo vacío para usar el nombre del sitio",
+      "platformLabel": "Plataforma",
+      "otherPlatforms": "Otras plataformas",
+      "switchToLinkTitle": "¿Cambiar a un enlace?",
+      "switchToLinkNote": "El archivo subido se elimina al guardar.",
+      "switchToLinkConfirm": "Cambiar a enlace"
+    },
+    "errors": {
+      "html": "Los archivos HTML no son compatibles. Guárdalo como PDF o añádelo como enlace.",
+      "doc": "Los archivos de Word antiguos (.doc) no son compatibles. Guárdalo como .docx o PDF.",
+      "unsupported": "Usa PDF, Word (.docx), Markdown o texto.",
+      "tooLarge": "Este archivo ocupa más de {{max}} MB.",
+      "badLink": "Escribe un enlace completo http o https.",
+      "saveError": "No se pudo guardar. Inténtalo de nuevo.",
+      "loadError": "No se pudieron cargar las guías y los trucos.",
+      "deleteError": "No se pudo eliminar. Inténtalo de nuevo.",
+      "openError": "No se pudo abrir el archivo. Inténtalo de nuevo.",
+      "downloadError": "No se pudo descargar el archivo. Inténtalo de nuevo."
+    },
+    "reader": {
+      "close": "Cerrar",
+      "find": "Buscar",
+      "findPlaceholder": "Buscar en esta guía",
+      "closeFind": "Cerrar la búsqueda",
+      "matchCount": "{{current}} de {{total}}",
+      "matchCountMany": "{{current}} de {{total}}+",
+      "noMatches": "Sin resultados",
+      "previousMatch": "Resultado anterior",
+      "nextMatch": "Resultado siguiente",
+      "page": "Página",
+      "pageOf": "de {{total}}",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "fitWidth": "Ajustar al ancho",
+      "fitPage": "Ajustar a la página",
+      "wrapLines": "Ajustar líneas",
+      "textSmaller": "Texto más pequeño",
+      "textLarger": "Texto más grande",
+      "moreActions": "Más acciones",
+      "loading": "Cargando la guía",
+      "openError": "No se pudo abrir esta guía.",
+      "tryAgain": "Reintentar",
+      "fileMissing": "Este archivo ya no está en el servidor.",
+      "replace": "Sustituir el archivo"
+    }
   },
   "igdbImport": {
     "description": "Tus juegos personalizados (añadidos a mano), emparejados con IGDB por nombre. Buscar coincidencias busca cada uno en IGDB; vincúlalos uno a uno o selecciona varios y usa Vincular seleccionados. Un juego que coincide con uno de tu biblioteca se fusiona con él.",

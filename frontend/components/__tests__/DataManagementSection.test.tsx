@@ -28,12 +28,18 @@ describe("DataManagementSection", () => {
     // The CSV exports are gone: JSON is the one format, and it restores.
     expect(screen.queryByRole("button", { name: /CSV/ })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Download backup (.json)" }));
-    expect(exportBackup).toHaveBeenLastCalledWith({ roms: false, bios: false, images: false });
+    expect(exportBackup).toHaveBeenLastCalledWith({ roms: false, bios: false, images: false, guides: false });
 
     await user.click(screen.getByRole("checkbox", { name: "ROMs and saves" }));
     await user.click(screen.getByRole("checkbox", { name: /Images/ }));
     await user.click(screen.getByRole("button", { name: "Download backup (.zip)" }));
-    expect(exportBackup).toHaveBeenLastCalledWith({ roms: true, bios: false, images: true });
+    expect(exportBackup).toHaveBeenLastCalledWith({ roms: true, bios: false, images: true, guides: false });
+
+    await user.click(screen.getByRole("checkbox", { name: "ROMs and saves" }));
+    await user.click(screen.getByRole("checkbox", { name: /Images/ }));
+    await user.click(screen.getByRole("checkbox", { name: /Guides & cheats/ }));
+    await user.click(screen.getByRole("button", { name: "Download backup (.zip)" }));
+    expect(exportBackup).toHaveBeenLastCalledWith({ roms: false, bios: false, images: false, guides: true });
   });
 
   it("restores from a .zip full backup as well as .json", async () => {

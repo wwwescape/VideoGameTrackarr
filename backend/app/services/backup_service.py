@@ -48,8 +48,12 @@ from app.models.itad import ItadPriceCache
 from app.models.labs import LabFeature
 from app.models.library import (
     BiosFile,
+    GameGuide,
     GameProgress,
     GameTag,
+    GuideFormat,
+    GuideKind,
+    GuideSource,
     LibraryItem,
     LibraryStatus,
     MediaFormat,
@@ -78,6 +82,7 @@ from app.schemas.backup import (
     BackupGameProgress,
     BackupGameTag,
     BackupGameVideo,
+    BackupGuide,
     BackupHardware,
     BackupHardwarePlatform,
     BackupHardwareType,
@@ -102,7 +107,7 @@ from app.schemas.backup import (
     BackupUserAccessory,
     BackupUserHardware,
 )
-from app.services import gog_download_service, rom_service, toys_to_life_adoption
+from app.services import gog_download_service, guide_service, rom_service, toys_to_life_adoption
 from app.services.upload_service import (
     ACCESSORY_IMAGES_DIR,
     ACCESSORY_IMAGES_URL_PREFIX,
@@ -224,6 +229,22 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
             for ps in db.scalars(select(PlaySession))
         ],
         notes=[BackupNote(id=n.id, game_id=n.game_id, body=n.body) for n in db.scalars(select(Note))],
+        guides=[
+            BackupGuide(
+                id=g.id,
+                game_id=g.game_id,
+                name=g.name,
+                kind=g.kind.value,
+                platform_id=g.platform_id,
+                source=g.source.value,
+                url=g.url,
+                original_filename=g.original_filename,
+                stored_filename=g.stored_filename,
+                media_format=g.media_format.value if g.media_format else None,
+                size_bytes=g.size_bytes,
+            )
+            for g in db.scalars(select(GameGuide).order_by(GameGuide.id))
+        ],
         game_tags=[BackupGameTag(game_id=gt.game_id, tag_id=gt.tag_id) for gt in db.scalars(select(GameTag))],
         addon_links=[
             BackupAddonLink(
@@ -450,6 +471,7 @@ FULL_BACKUP_FILES_PREFIX = "files/"
 
 
 FULL_BACKUP_IMAGES_PREFIX = FULL_BACKUP_FILES_PREFIX + "images/"
+FULL_BACKUP_GUIDES_PREFIX = FULL_BACKUP_FILES_PREFIX + "guides/"
 # Uploaded images by the address prefix they're served under, with the folder they live in.
 _IMAGE_FOLDERS = (
     (COVERS_URL_PREFIX, "covers", COVERS_DIR),
@@ -495,14 +517,26 @@ def _uploaded_images(payload: BackupPayload) -> list[tuple[str, Path]]:
     return list(images.items())
 
 
-def export_full_backup_zip(db: Session, *, roms: bool = True, bios: bool = True, images: bool = False) -> Path:
+def _plain_name(name: str | None) -> bool:
+    return bool(name) and Path(name).name == name and name not in (".", "..")
+
+
+def _guide_file_names(payload: BackupPayload) -> list[str]:
+    """Stored names of the payload's guide files — plain file names only (a hand-edited
+    backup's anything-else is never followed)."""
+    return [g.stored_filename for g in payload.guides if g.source == "file" and _plain_name(g.stored_filename)]
+
+
+def export_full_backup_zip(
+    db: Session, *, roms: bool = True, bios: bool = True, images: bool = False, guides: bool = True
+) -> Path:
     """A .zip backup: backup.json plus the files picked — ROMs (with their save states,
     screenshots and in-game saves) and BIOS files under files/<stored path>, uploaded images
     under files/images/<folder>/<name>. Written to a temp file (the caller streams it out and
     deletes it) so memory stays flat however many GB of ROMs there are. Stored, not
     re-compressed: ROMs and images are mostly compressed already, and deflating GBs is slow."""
     payload = build_backup_payload(db, roms=roms, bios=bios)
-    payload.included_files = BackupIncludedFiles(roms=roms, bios=bios, images=images)
+    payload.included_files = BackupIncludedFiles(roms=roms, bios=bios, images=images, guides=guides)
     handle, name = tempfile.mkstemp(prefix="vgt-full-backup-", suffix=".zip")
     os.close(handle)
     path = Path(name)
@@ -519,6 +553,11 @@ def export_full_backup_zip(db: Session, *, roms: bool = True, bios: bool = True,
                 for member, source in _uploaded_images(payload):
                     if source.is_file():
                         archive.write(source, member)
+            if guides:
+                for name in _guide_file_names(payload):
+                    source = guide_service.file_path(name)
+                    if source.is_file():
+                        archive.write(source, FULL_BACKUP_GUIDES_PREFIX + name)
     except BaseException:
         path.unlink(missing_ok=True)
         raise
@@ -629,6 +668,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     db.execute(delete(GameTag))
     db.execute(delete(GameAddonLink))
     db.execute(delete(Note))
+    db.execute(delete(GameGuide))
     # Toys-to-Life: only your state on the packs goes — the packs are reference data.
     db.execute(delete(ToysToLifeTag))
     db.execute(delete(ToysToLifeNote))
@@ -780,6 +820,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     for gt in payload.game_tags:
         db.add(GameTag(game_id=gt.game_id, tag_id=gt.tag_id))
     restored_ids = {g.id for g in payload.games}
+    restored_guides = _restore_guide_rows(db, payload, restored_ids)
     seen_links: set[tuple[int, int]] = set()
     for link in payload.addon_links:
         pair = (link.addon_game_id, link.game_id)
@@ -902,6 +943,11 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     if included.roms or included.bios:
         _check_files_present(files_zip, payload, included)
     restored_images = _extract_images(files_zip, payload) if included.images else 0
+    restored_guide_files = _extract_guide_files(files_zip, restored_guides) if included.guides else 0
+    # Rendered copies are never taken from a backup: rebuild each from its original, whether
+    # it just came out of the zip or was already here (a same-instance restore).
+    for guide in restored_guides:
+        guide_service.rebuild_rendered(guide)
     if included.bios:
         # The .zip's BIOS files replace the current ones outright.
         orphaned_rom_files += [b.stored_filename for b in db.scalars(select(BiosFile))]
@@ -989,6 +1035,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     rom_service.delete_files(orphaned_rom_files)
     # Installer rows don't survive a restore (game ids change), so neither do their files.
     gog_download_service.prune_orphan_files(db)
+    # Guide files no restored row uses (replaced by the zip's, or their entry is gone).
+    guide_service.clear_folder(keep={name for g in restored_guides for name in guide_service.filenames_of(g)})
 
     return BackupRestoreResult(
         restored_games=len(payload.games),
@@ -999,6 +1047,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         restored_roms=len(payload.rom_files) if included.roms else 0,
         restored_bios_files=len(payload.bios_files) if included.bios else 0,
         restored_images=restored_images,
+        restored_guide_files=restored_guide_files,
     )
 
 
@@ -1035,6 +1084,59 @@ def _extract_files(files_zip: Path | None, relatives: list[str]) -> None:
             destination.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(FULL_BACKUP_FILES_PREFIX + relative) as source, destination.open("wb") as out:
                 shutil.copyfileobj(source, out, 1024 * 1024)
+
+
+def _restore_guide_rows(db: Session, payload: BackupPayload, restored_game_ids: set[int]) -> list[GameGuide]:
+    """Adds the backup's Guides & Cheats rows (ids kept), skipping any whose game isn't in
+    the backup or whose file name isn't a plain one we could have written. A platform the
+    backup doesn't have is cleared rather than failing the restore."""
+    platform_ids = {p.id for p in payload.platforms}
+    guides: list[GameGuide] = []
+    for row in payload.guides:
+        if row.game_id not in restored_game_ids:
+            continue
+        source = GuideSource(row.source)
+        if source is GuideSource.FILE and not _plain_name(row.stored_filename):
+            continue
+        if source is GuideSource.LINK and not row.url:
+            continue
+        guide = GameGuide(
+            id=row.id,
+            game_id=row.game_id,
+            name=row.name[: guide_service.MAX_NAME_LENGTH] or "Untitled",
+            kind=GuideKind(row.kind),
+            platform_id=row.platform_id if row.platform_id in platform_ids else None,
+            source=source,
+            url=row.url if source is GuideSource.LINK else None,
+            original_filename=row.original_filename if source is GuideSource.FILE else None,
+            stored_filename=row.stored_filename if source is GuideSource.FILE else None,
+            media_format=GuideFormat(row.media_format) if source is GuideSource.FILE and row.media_format else None,
+            size_bytes=row.size_bytes if source is GuideSource.FILE else None,
+        )
+        db.add(guide)
+        guides.append(guide)
+    return guides
+
+
+def _extract_guide_files(files_zip: Path | None, guides: list[GameGuide]) -> int:
+    """Puts back the restored file entries' originals from files/guides/ in the zip. One the
+    zip doesn't have is left as it is (its entry shows as file missing if it isn't here)."""
+    assert files_zip is not None
+    restored = 0
+    with zipfile.ZipFile(files_zip) as archive:
+        present = set(archive.namelist())
+        for guide in guides:
+            if guide.source is not GuideSource.FILE or not guide.stored_filename:
+                continue
+            member = FULL_BACKUP_GUIDES_PREFIX + guide.stored_filename
+            if member not in present:
+                continue
+            destination = guide_service.file_path(guide.stored_filename)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(member) as source, destination.open("wb") as out:
+                shutil.copyfileobj(source, out, 1024 * 1024)
+            restored += 1
+    return restored
 
 
 def _extract_images(files_zip: Path | None, payload: BackupPayload) -> int:

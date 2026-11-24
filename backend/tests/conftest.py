@@ -95,6 +95,16 @@ def _isolate_rom_storage(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_guide_storage(tmp_path, monkeypatch):
+    # Guides & Cheats files must never land in the real backend/uploads directory either.
+    from app.services import guide_service
+
+    guide_dir = tmp_path / "guides"
+    monkeypatch.setattr(guide_service, "get_guide_dir", lambda: guide_dir)
+    yield guide_dir
+
+
+@pytest.fixture(autouse=True)
 def _isolate_backups_and_uploads(tmp_path, monkeypatch):
     # Safety snapshots (restore, Danger Zone resets) and uploaded images must never land in, or
     # be deleted from, the real backend/db/backups and backend/uploads directories.

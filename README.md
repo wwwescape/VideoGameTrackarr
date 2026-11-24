@@ -37,6 +37,10 @@
 - **Personal tracking** — progress, play sessions and a review per platform you own a game on,
   your own 1–10 star rating per game (shown beside IGDB's member and critic ratings), notes, and
   colored tags (with a Tag Manager and bulk tagging).
+- **Guides & Cheats** — keep guides and cheat sheets with each game: upload a PDF, Word
+  (.docx), Markdown, or text file, or save a link, optionally for one platform. Files open in a
+  built-in reader with find on page, and it remembers where you left off. See
+  [docs/guides.md](docs/guides.md).
 - **Views, filters & sort** — Covers, Table, or Overview views with an adjustable card size;
   filter by platform, format, storefront, tag, ownership, play status, game type, source,
   steelbook, collection, or series (each with an Exclude option), or, with the Screensaver lab
@@ -82,8 +86,8 @@
 - **Jobs** — scheduled catalog resyncs, Steam and GOG imports, sale refreshes, and event syncs, with live
   progress, a log of each run, and catch-up of runs missed while the app was down.
 - **Backup & restore** — one JSON backup of your library, hardware, target prices and settings,
-  or a `.zip` that also carries your pick of ROMs and saves, BIOS files and uploaded images,
-  with an automatic safety snapshot before every restore.
+  or a `.zip` that also carries your pick of ROMs and saves, BIOS files, uploaded images and
+  guide files, with an automatic safety snapshot before every restore.
 - **PWA** — installable (see [Installing the app](#installing-the-app)), works offline for
   anything you've already viewed, and syncs offline edits when you reconnect.
 - **Design** — light, dark, and high-contrast modes with your choice of accent color (Material 3
@@ -175,8 +179,8 @@ Optional integrations — add a key to `.env`, then run `docker compose up -d` (
 | IsThereAnyDeal | `ITAD_API_KEY`       | [isthereanydeal.com/apps/my](https://isthereanydeal.com/apps/my/) | PC, Mac, Linux, and Android prices. `ITAD_COUNTRY` (two-letter code, default `US`) sets the store country.                                |
 | PlatPrices     | `PLATPRICES_API_KEY` | [platprices.com/api-request](https://platprices.com/api-request) | PlayStation prices. The free tier tracks any 2 PS Store regions, chosen on your PlatPrices dashboard. `PLATPRICES_REGION` (two-letter code such as `GB` or `IN`, default `US`) must be one of them. |
 
-Other options: `ROM_MAX_UPLOAD_MB` (default `2048`) caps ROM uploads — raise your reverse
-proxy's upload limit to match. Behind a reverse proxy, set `FORWARDED_ALLOW_IPS` to the proxy's
+Other options: `ROM_MAX_UPLOAD_MB` (default `2048`) caps ROM uploads and `GUIDE_MAX_UPLOAD_MB`
+(default `50`) caps Guides & Cheats files — raise your reverse proxy's upload limit to match. Behind a reverse proxy, set `FORWARDED_ALLOW_IPS` to the proxy's
 address (or its Docker network, such as `172.16.0.0/12`) so login rate limits count each visitor
 rather than the proxy. Set `TZ` (such as `Europe/Lisbon`) so job schedules run in your
 timezone; Docker containers otherwise use UTC. `REFRESH_TOKEN_EXPIRE_DAYS` (default `90`) is how
@@ -239,7 +243,7 @@ and `DOCKERHUB_TOKEN` repository secrets.
 frontend/   TypeScript, Vite, MUI, TanStack Query, React Router — own package.json
 backend/    FastAPI, SQLAlchemy, Alembic (SQLite by default) — own requirements.txt
 e2e/        Playwright end-to-end suite (manual pre-release check)
-docs/       Developer guide, diagrams, emulation guide, and deployment examples
+docs/       Developer guide, diagrams, emulation and guides docs, and deployment examples
 ```
 
 See [docs/developer-guide.md](docs/developer-guide.md) for conventions, and

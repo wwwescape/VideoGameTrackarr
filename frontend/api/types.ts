@@ -227,6 +227,43 @@ export interface Note {
   updatedAt: string;
 }
 
+// Guides & Cheats (backend/app/schemas/guide.py): an uploaded file or a saved link.
+export type GuideKind = "guide" | "cheat";
+export type GuideSource = "file" | "link";
+export type GuideFormat = "pdf" | "docx" | "md" | "txt";
+
+export interface Guide {
+  id: number;
+  gameId: number;
+  name: string;
+  kind: GuideKind;
+  source: GuideSource;
+  platformId: number | null;
+  platformName: string | null;
+  url: string | null;
+  // The link's host without "www.", for the row's subtitle.
+  domain: string | null;
+  originalFilename: string | null;
+  mediaFormat: GuideFormat | null;
+  sizeBytes: number | null;
+  // A file entry whose file isn't on the server (restored from a backup without files).
+  fileMissing: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GuideChanges {
+  name?: string | null;
+  kind?: GuideKind;
+  platformId?: number | null;
+  url?: string;
+}
+
+export interface GuideUploadOptions {
+  maxUploadMb: number;
+  extensions: string[];
+}
+
 export interface DeviceNote {
   id: number;
   deviceId: number;
@@ -537,6 +574,7 @@ export interface BackupRestoreResult {
   restoredRoms: number;
   restoredBiosFiles: number;
   restoredImages: number;
+  restoredGuideFiles: number;
 }
 
 export type RestoreJobStatus = "idle" | "running" | "completed" | "failed";

@@ -27,12 +27,12 @@ from app.models.hardware import (
 )
 from app.models.igdb_import import IgdbImportEntry
 from app.models.itad import ItadPriceCache
-from app.models.library import GameProgress, GameTag, Note, PlaySession, Tag
+from app.models.library import GameGuide, GameProgress, GameTag, Note, PlaySession, Tag
 from app.models.platprices import PlatPricesCache
 from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
 from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote, ToysToLifeTag
 from app.repositories import game_repository
-from app.services import backup_service, gog_download_service, rom_service, upload_service
+from app.services import backup_service, gog_download_service, guide_service, rom_service, upload_service
 from app.services.exceptions import ConflictError
 
 
@@ -40,6 +40,7 @@ class DangerZoneAction(enum.Enum):
     CLEAR_PROGRESS = "clear_progress"
     CLEAR_RATINGS = "clear_ratings"
     CLEAR_NOTES = "clear_notes"
+    CLEAR_GUIDES = "clear_guides"
     CLEAR_TAGS = "clear_tags"
     CLEAR_SYNC_CACHES = "clear_sync_caches"
     RESET_LIBRARY = "reset_library"
@@ -74,6 +75,8 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
         _clear_ratings(db, result)
     elif action is DangerZoneAction.CLEAR_NOTES:
         _clear_notes(db, result)
+    elif action is DangerZoneAction.CLEAR_GUIDES:
+        _clear_guides(db, result)
     elif action is DangerZoneAction.CLEAR_TAGS:
         _clear_tags(db, result)
     elif action is DangerZoneAction.CLEAR_SYNC_CACHES:
@@ -95,6 +98,9 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
     for url in uploads:
         upload_service.delete_if_local_upload(url)
     gog_download_service.prune_orphan_files(db)
+    if action in (DangerZoneAction.CLEAR_GUIDES, DangerZoneAction.RESET_LIBRARY, DangerZoneAction.RESET_EVERYTHING):
+        # Every guide row is gone, so nothing in the folder is still wanted.
+        guide_service.clear_folder()
     return result
 
 
@@ -125,6 +131,11 @@ def _clear_notes(db: Session, result: DangerZoneResult) -> None:
         + _count(db, delete(AccessoryNote))
         + _count(db, delete(ToysToLifeNote))
     )
+
+
+def _clear_guides(db: Session, result: DangerZoneResult) -> None:
+    """Every guide and cheat on every game, files and links alike."""
+    result.removed["guides"] = _count(db, delete(GameGuide))
 
 
 def _clear_tags(db: Session, result: DangerZoneResult) -> None:

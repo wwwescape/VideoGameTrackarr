@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import { progressHandler } from "./uploadProgress";
 import type {
   BiosSystem,
   EmulationConfig,
@@ -31,16 +32,6 @@ export async function updateLibraryItem(
 
 export async function deleteLibraryItem(itemId: number): Promise<void> {
   await apiClient.delete(`/api/library/${itemId}`);
-}
-
-function progressHandler(onProgress?: (fraction: number) => void) {
-  return {
-    onUploadProgress: (event: { loaded: number; total?: number }) => {
-      if (onProgress && event.total) {
-        onProgress(event.loaded / event.total);
-      }
-    },
-  };
 }
 
 // Adds one more ROM to a copy (a copy can hold several, e.g. regions or revisions).

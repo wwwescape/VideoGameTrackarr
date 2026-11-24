@@ -15,6 +15,7 @@ class TokenType(StrEnum):
     BIOS = "bios"
     BACKUP_DOWNLOAD = "backup_download"
     GOG_INSTALLER = "gog_installer"
+    GUIDE = "guide"
 
 
 class TokenError(Exception):
@@ -147,6 +148,31 @@ def create_gog_installer_token(user_id: int, download_id: int, expires_minutes: 
         "download": download_id,
         "iat": now,
         "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
+
+GUIDE_VIEW_TOKEN_MINUTES = 60
+GUIDE_DOWNLOAD_TOKEN_MINUTES = 10
+
+
+def create_guide_token(user_id: int, guide_id: int, mode: str) -> str:
+    """A short-lived link to one Guides & Cheats file. The reader's PDF viewer, a new tab and
+    a download can't send an Authorization header, so the token travels in the path, scoped
+    to one guide and one `mode`: "view" (served inline: the rendered copy if there is one) or
+    "download" (the original, as an attachment). View links last longer, because the reader
+    keeps one open while you read; both are only checked when the request starts."""
+    if mode not in ("view", "download"):
+        raise ValueError(f"Unknown guide link mode: {mode}")
+    settings = get_settings()
+    now = datetime.now(UTC)
+    minutes = GUIDE_VIEW_TOKEN_MINUTES if mode == "view" else GUIDE_DOWNLOAD_TOKEN_MINUTES
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.GUIDE.value,
+        "guide": guide_id,
+        "mode": mode,
+        "iat": now,
+        "exp": now + timedelta(minutes=minutes),
     }
     return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
 

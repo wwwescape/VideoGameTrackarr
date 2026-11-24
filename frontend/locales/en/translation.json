@@ -235,6 +235,8 @@
     "summaryBios_other": "{{count}} BIOS files",
     "summaryImages_one": "{{count}} image",
     "summaryImages_other": "{{count}} images",
+    "summaryGuides_one": "{{count}} guide file",
+    "summaryGuides_other": "{{count}} guide files",
     "resyncPrompt": "A backup doesn't carry IGDB details (genres, media, release dates, Collections, Series). The Resync Games, Collections & Series job fetches them again for every game; you can also run it later from Settings → Jobs.",
     "resyncNow": "Resync now",
     "resyncLater": "Later",
@@ -360,6 +362,12 @@
           "removes": "Removes every note on your games, devices and accessories.",
           "keeps": "Keeps everything else."
         },
+        "clearGuides": {
+          "name": "Clear guides & cheats",
+          "button": "Clear",
+          "removes": "Removes every guide and cheat on every game: uploaded files and saved links.",
+          "keeps": "Keeps your games, notes and everything else."
+        },
         "clearTags": {
           "name": "Clear tags",
           "button": "Clear",
@@ -375,7 +383,7 @@
         "resetLibrary": {
           "name": "Reset game library",
           "button": "Reset",
-          "removes": "Removes every game and everything on it: copies, ROMs and saves, progress, play sessions, ratings, notes, Collections and Series.",
+          "removes": "Removes every game and everything on it: copies, ROMs and saves, progress, play sessions, ratings, notes, guides & cheats, Collections and Series.",
           "keeps": "Keeps your hardware, tags, account and settings."
         },
         "resetHardware": {
@@ -394,11 +402,12 @@
     },
     "dataManagement": {
       "backupHeading": "Backup",
-      "backupDescription": "Saves your games and copies, progress, ratings, notes, tags, hardware, target prices and account settings. IGDB details (genres, media, release dates, Collections, Series) aren't included: the Resync Games, Collections & Series job brings them back after a restore.",
+      "backupDescription": "Saves your games and copies, progress, ratings, notes, guides & cheats, tags, hardware, target prices and account settings. IGDB details (genres, media, release dates, Collections, Series) aren't included: the Resync Games, Collections & Series job brings them back after a restore.",
       "includeFilesHeading": "Also include",
       "includeRomsLabel": "ROMs and saves",
       "includeBiosLabel": "BIOS files",
       "includeImagesLabel": "Images (custom game covers and accessory photos)",
+      "includeGuidesLabel": "Guides & cheats (uploaded files)",
       "downloadBackupJson": "Download backup (.json)",
       "downloadBackupZip": "Download backup (.zip)",
       "restoreHeading": "Restore",
@@ -1932,6 +1941,97 @@
     "updateError": "Error updating note. Please try again.",
     "deleteError": "Error deleting note. Please try again.",
     "addAction": "Add note"
+  },
+  "guides": {
+    "title": "Guides & Cheats",
+    "addAction": "Add",
+    "empty": "No guides or cheats yet.",
+    "kind": {
+      "guide": "Guide",
+      "cheat": "Cheat"
+    },
+    "source": {
+      "file": "File",
+      "link": "Link"
+    },
+    "format": {
+      "pdf": "PDF",
+      "docx": "Word",
+      "md": "Markdown",
+      "txt": "Text"
+    },
+    "fileMissing": "File missing",
+    "open": "Open {{name}}",
+    "openLink": "Open {{name}} in a new tab",
+    "openInNewTab": "Open in new tab",
+    "download": "Download",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteFileNote": "The file is deleted too.",
+    "deleteLinkNote": "Only the saved link is removed.",
+    "addedGuide": "Guide added",
+    "addedCheat": "Cheat added",
+    "saved": "Saved",
+    "dialog": {
+      "addTitle": "Add a guide or cheat",
+      "editTitle": "Edit guide or cheat",
+      "kindLabel": "Type",
+      "sourceLabel": "Source",
+      "dropHere": "Drop a file here, or",
+      "chooseFile": "Choose file",
+      "replace": "Replace",
+      "removeFile": "Remove file",
+      "fileMissingHint": "This file isn't on the server any more. Choose it again to put it back.",
+      "uploading": "Uploading",
+      "acceptedTypes": "PDF, Word (.docx), Markdown or text, up to {{max}} MB",
+      "acceptedTypesNoLimit": "PDF, Word (.docx), Markdown or text",
+      "linkLabel": "Link",
+      "nameLabel": "Name",
+      "nameHelperFile": "Leave empty to use the file name",
+      "nameHelperLink": "Leave empty to use the site's name",
+      "platformLabel": "Platform",
+      "otherPlatforms": "Other platforms",
+      "switchToLinkTitle": "Switch to a link?",
+      "switchToLinkNote": "The uploaded file is deleted when you save.",
+      "switchToLinkConfirm": "Switch to link"
+    },
+    "errors": {
+      "html": "HTML files aren't supported. Save it as PDF, or add it as a link.",
+      "doc": "Old Word (.doc) files aren't supported. Save it as .docx or PDF.",
+      "unsupported": "Use PDF, Word (.docx), Markdown or text.",
+      "tooLarge": "This file is larger than {{max}} MB.",
+      "badLink": "Enter a full http or https link.",
+      "saveError": "Couldn't save. Please try again.",
+      "loadError": "Couldn't load guides and cheats.",
+      "deleteError": "Couldn't delete. Please try again.",
+      "openError": "Couldn't open the file. Please try again.",
+      "downloadError": "Couldn't download the file. Please try again."
+    },
+    "reader": {
+      "close": "Close",
+      "find": "Find",
+      "findPlaceholder": "Find in this guide",
+      "closeFind": "Close find",
+      "matchCount": "{{current}} of {{total}}",
+      "matchCountMany": "{{current}} of {{total}}+",
+      "noMatches": "No matches",
+      "previousMatch": "Previous match",
+      "nextMatch": "Next match",
+      "page": "Page",
+      "pageOf": "of {{total}}",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fitWidth": "Fit width",
+      "fitPage": "Fit page",
+      "wrapLines": "Wrap lines",
+      "textSmaller": "Smaller text",
+      "textLarger": "Larger text",
+      "moreActions": "More actions",
+      "loading": "Loading guide",
+      "openError": "Couldn't open this guide.",
+      "tryAgain": "Try again",
+      "fileMissing": "This file isn't on the server any more.",
+      "replace": "Replace file"
+    }
   },
   "igdbImport": {
     "description": "Your custom games (added by hand), matched to IGDB by name. Find matches searches IGDB for each one; link them one by one or select several and Link selected. A game matching one already in your library merges into it.",
