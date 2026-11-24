@@ -193,6 +193,8 @@ const GameDetails = () => {
             copyPlatforms,
           }}
           crumbs={routeCrumbs.slice(0, -1)}
+          // The "Pack for …" pill falls back to these when the IGDB parent isn't in the library.
+          linkedGames={(worksWith ?? []).filter((other) => other.manualLink)}
           corner={
             screensaverLab && canBeInScreensaver(game, screensaverShows) ? (
               <ScreensaverToggle gameId={game.id} excluded={game.screensaverExcluded} />

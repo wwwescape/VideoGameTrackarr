@@ -75,9 +75,20 @@ interface GameHeroProps {
   publicToken?: string;
   // The game page's own control in the hero's corner (its Screensaver toggle).
   corner?: ReactNode;
+  // An add-on's manually linked games (Linked Add-ons lab): named by the "Pack for …" pill when
+  // its IGDB parent isn't in the library, e.g. FH5 Premium for a pack IGDB lists under FH5.
+  linkedGames?: { id: number; slug: string | null; uuid: string; name: string }[];
 }
 
-export const GameHero = ({ game, status, crumbs, preview = false, publicToken, corner }: GameHeroProps) => {
+export const GameHero = ({
+  game,
+  status,
+  crumbs,
+  preview = false,
+  publicToken,
+  corner,
+  linkedGames = [],
+}: GameHeroProps) => {
   const { t, i18n } = useTranslation();
   const greyscale = !preview && !status.owned && !status.wishlisted;
   const missing = greyscale && status.autoDiscovered;
@@ -101,9 +112,17 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken, c
             name: game.displayParentGameName,
             to: gameLink(game.displayParentGameId, game.displayParentGameSlug, game.displayParentGameUuid!, game.displayParentGameName!),
           }
-        : game.externalParentName
-          ? { name: game.externalParentName, href: game.externalParentIgdbUrl ?? undefined }
-          : null;
+        : linkedGames.length > 0
+          ? // The IGDB parent isn't in the library, but games it's linked to are: name those,
+            // the first as the link, any others in the tooltip ("FH5 Premium +1").
+            {
+              name: linkedGames.length > 1 ? `${linkedGames[0].name} +${linkedGames.length - 1}` : linkedGames[0].name,
+              to: gameLink(linkedGames[0].id, linkedGames[0].slug, linkedGames[0].uuid, linkedGames[0].name),
+              title: linkedGames.length > 1 ? linkedGames.map((linked) => linked.name).join(", ") : undefined,
+            }
+          : game.externalParentName
+            ? { name: game.externalParentName, href: game.externalParentIgdbUrl ?? undefined }
+            : null;
 
   const playStatus = status.playStatus && status.playStatus !== "none" ? status.playStatus : null;
   const cover = resolveAssetUrl(status.coverUrl);
@@ -177,7 +196,13 @@ export const GameHero = ({ game, status, crumbs, preview = false, publicToken, c
   );
   if (isAddon(game) && parentLink) {
     pills.push(
-      <Pill key="parent" icon={<ExtensionIcon />} to={!preview ? parentLink.to : undefined} href={parentLink.href}>
+      <Pill
+        key="parent"
+        icon={<ExtensionIcon />}
+        to={!preview ? parentLink.to : undefined}
+        href={parentLink.href}
+        title={"title" in parentLink ? parentLink.title : undefined}
+      >
         {getAddonType(game)}
         {t("games.about.forConnector")}
         {parentLink.name}

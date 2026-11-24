@@ -98,6 +98,54 @@ describe("game hero", () => {
     expect(screen.getByRole("link", { name: "Games" })).toHaveAttribute("href", "/games");
   });
 
+  it("names an add-on's linked games when its IGDB parent isn't in the library", () => {
+    const pack = about({
+      name: "FH5 Car Pack",
+      category: "pack",
+      externalParentName: "Forza Horizon 5",
+      externalParentIgdbUrl: "https://www.igdb.com/games/forza-horizon-5",
+    });
+    const premium = { id: 7, slug: "fh5-premium", uuid: "u7", name: "Forza Horizon 5: Premium Edition" };
+    const deluxe = { id: 8, slug: "fh5-deluxe", uuid: "u8", name: "Forza Horizon 5: Deluxe Edition" };
+
+    const { unmount } = renderHero(
+      <GameHero game={pack} status={{ coverUrl: null }} crumbs={[]} linkedGames={[premium, deluxe]} />
+    );
+    const pill = screen.getByRole("link", { name: /Pack for Forza Horizon 5: Premium Edition \+1/ });
+    expect(pill).toHaveAttribute("href", "/game/fh5-premium");
+    expect(pill).toHaveAttribute("title", "Forza Horizon 5: Premium Edition, Forza Horizon 5: Deluxe Edition");
+    unmount();
+
+    // With no linked games, IGDB's name for the parent, linking out to IGDB, as before.
+    renderHero(<GameHero game={pack} status={{ coverUrl: null }} crumbs={[]} />);
+    expect(screen.getByRole("link", { name: /Pack for Forza Horizon 5$/ })).toHaveAttribute(
+      "href",
+      "https://www.igdb.com/games/forza-horizon-5"
+    );
+  });
+
+  it("keeps the IGDB parent when it's in the library, over linked games", () => {
+    renderHero(
+      <GameHero
+        game={about({
+          name: "FH5 Car Pack",
+          category: "pack",
+          parentGameId: 3,
+          parentGameName: "Forza Horizon 5",
+          parentGameSlug: "forza-horizon-5",
+          parentGameUuid: "u3",
+        })}
+        status={{ coverUrl: null }}
+        crumbs={[]}
+        linkedGames={[{ id: 7, slug: "fh5-premium", uuid: "u7", name: "Forza Horizon 5: Premium Edition" }]}
+      />
+    );
+    expect(screen.getByRole("link", { name: /Pack for Forza Horizon 5$/ })).toHaveAttribute(
+      "href",
+      "/game/forza-horizon-5"
+    );
+  });
+
   it("marks custom games, and doesn't link series pages from an IGDB preview", () => {
     renderHero(<GameHero game={about({ igdbId: null })} status={{ coverUrl: null }} crumbs={[]} preview />);
 
