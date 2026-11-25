@@ -306,7 +306,7 @@ def test_links_round_trip_through_a_backup(auth_client, db_session, fh5):
     _link(auth_client, fh5["orphan"].id, [fh5["premium"].id])
     _link(auth_client, fh5["car_pack"].id, [fh5["premium"].id])
     body = auth_client.get("/api/export/backup").json()
-    assert body["version"] == 12
+    assert body["version"] == 13
     assert len(body["addon_links"]) == 2
 
     db_session.query(GameAddonLink).delete()
