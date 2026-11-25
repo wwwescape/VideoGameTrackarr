@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "./ConfirmDialog";
+import DocumentsSection from "./DocumentsSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
@@ -25,6 +26,7 @@ import { useAttachAccessoryTag, useDetachAccessoryTag } from "../hooks/useTags";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { formatCurrency } from "../utils/currency";
 import { useUserAccessoryList } from "../hooks/useUserAccessories";
+import { copyOptions } from "../utils/guides";
 import { CONDITION_LABELS, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -215,6 +217,14 @@ const AccessoryDetails = () => {
               tags={accessory.tags}
               onAttach={(tagId) => attachTag.mutateAsync(tagId)}
               onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+            />
+            <DocumentsSection
+              owner={{ type: "accessory", id: accessory.id }}
+              sectionId="documents"
+              title={t("documents.title")}
+              emptyText={t("documents.empty")}
+              copies={copyOptions(t, ownershipRows ?? [])}
+              officialManualUrl={accessory.hardwareReference?.manualUrl}
             />
             <NotesSection
               notes={accessoryNotes}

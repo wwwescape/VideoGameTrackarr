@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.hardware import Device, UserDevice
 from app.models.library import LibraryStatus
+from app.services import hardware_document_service
 
 
 def list_all_user_devices(db: Session) -> list[UserDevice]:
@@ -52,5 +53,7 @@ def update_user_device(db: Session, item: UserDevice, **fields: Any) -> UserDevi
 
 
 def delete_user_device(db: Session, item: UserDevice) -> None:
+    # Its receipts and warranties stay with the device.
+    hardware_document_service.clear_copies(db, user_device_ids=[item.id])
     db.delete(item)
     db.flush()

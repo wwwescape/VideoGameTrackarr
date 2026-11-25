@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.catalog import Platform
 from app.models.library import LibraryItem, LibraryStatus
 from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote
+from app.services import toys_to_life_document_service
 
 # Repositories only add/flush — they never commit.
 
@@ -133,6 +134,8 @@ def update_copy(db: Session, copy: ToysToLifeCopy, **fields: object) -> ToysToLi
 
 
 def delete_copy(db: Session, copy: ToysToLifeCopy) -> None:
+    # Its documents stay with the pack.
+    toys_to_life_document_service.clear_copy(db, copy.id)
     db.delete(copy)
     db.flush()
 

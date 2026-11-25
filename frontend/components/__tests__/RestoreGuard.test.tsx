@@ -49,6 +49,7 @@ describe("RestoreGuard", () => {
         restoredBiosFiles: 0,
         restoredImages: 5,
         restoredGuideFiles: 2,
+        restoredDocumentFiles: 0,
       },
     };
     rerender(

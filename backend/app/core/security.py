@@ -16,6 +16,7 @@ class TokenType(StrEnum):
     BACKUP_DOWNLOAD = "backup_download"
     GOG_INSTALLER = "gog_installer"
     GUIDE = "guide"
+    DOCUMENT = "document"
 
 
 class TokenError(Exception):
@@ -170,6 +171,32 @@ def create_guide_token(user_id: int, guide_id: int, mode: str) -> str:
         "sub": str(user_id),
         "type": TokenType.GUIDE.value,
         "guide": guide_id,
+        "mode": mode,
+        "iat": now,
+        "exp": now + timedelta(minutes=minutes),
+    }
+    return jwt.encode(payload, _require_secret(), algorithm=settings.jwt_algorithm)
+
+
+DOCUMENT_SCOPES = ("hardware", "toys_to_life")
+
+
+def create_document_token(user_id: int, scope: str, document_id: int, mode: str) -> str:
+    """The same as create_guide_token, for one hardware or Toys-to-Life document. `scope`
+    says which table the id belongs to ("hardware" or "toys_to_life"), so a link to one can
+    never open a row of the other with the same id."""
+    if scope not in DOCUMENT_SCOPES:
+        raise ValueError(f"Unknown document scope: {scope}")
+    if mode not in ("view", "download"):
+        raise ValueError(f"Unknown document link mode: {mode}")
+    settings = get_settings()
+    now = datetime.now(UTC)
+    minutes = GUIDE_VIEW_TOKEN_MINUTES if mode == "view" else GUIDE_DOWNLOAD_TOKEN_MINUTES
+    payload = {
+        "sub": str(user_id),
+        "type": TokenType.DOCUMENT.value,
+        "scope": scope,
+        "document": document_id,
         "mode": mode,
         "iat": now,
         "exp": now + timedelta(minutes=minutes),

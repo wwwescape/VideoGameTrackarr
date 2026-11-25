@@ -27,12 +27,20 @@ from app.models.hardware import (
 )
 from app.models.igdb_import import IgdbImportEntry
 from app.models.itad import ItadPriceCache
-from app.models.library import GameGuide, GameProgress, GameTag, Note, PlaySession, Tag
+from app.models.library import GameDocument, GameProgress, GameTag, Note, PlaySession, Tag
 from app.models.platprices import PlatPricesCache
 from app.models.steam import SteamLibraryEntry, SteamWishlistEntry
 from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote, ToysToLifeTag
 from app.repositories import game_repository
-from app.services import backup_service, gog_download_service, guide_service, rom_service, upload_service
+from app.services import (
+    backup_service,
+    gog_download_service,
+    hardware_document_service,
+    rom_service,
+    toys_to_life_document_service,
+    upload_service,
+)
+from app.services.document_files import GUIDE_STORE, HARDWARE_STORE
 from app.services.exceptions import ConflictError
 
 
@@ -41,6 +49,7 @@ class DangerZoneAction(enum.Enum):
     CLEAR_RATINGS = "clear_ratings"
     CLEAR_NOTES = "clear_notes"
     CLEAR_GUIDES = "clear_guides"
+    CLEAR_DOCUMENTS = "clear_documents"
     CLEAR_TAGS = "clear_tags"
     CLEAR_SYNC_CACHES = "clear_sync_caches"
     RESET_LIBRARY = "reset_library"
@@ -77,6 +86,8 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
         _clear_notes(db, result)
     elif action is DangerZoneAction.CLEAR_GUIDES:
         _clear_guides(db, result)
+    elif action is DangerZoneAction.CLEAR_DOCUMENTS:
+        _clear_documents(db, result)
     elif action is DangerZoneAction.CLEAR_TAGS:
         _clear_tags(db, result)
     elif action is DangerZoneAction.CLEAR_SYNC_CACHES:
@@ -100,7 +111,10 @@ def run(db: Session, action: DangerZoneAction, confirmation: str | None = None) 
     gog_download_service.prune_orphan_files(db)
     if action in (DangerZoneAction.CLEAR_GUIDES, DangerZoneAction.RESET_LIBRARY, DangerZoneAction.RESET_EVERYTHING):
         # Every guide row is gone, so nothing in the folder is still wanted.
-        guide_service.clear_folder()
+        GUIDE_STORE.clear_folder()
+    if action in (DangerZoneAction.CLEAR_DOCUMENTS, DangerZoneAction.RESET_EVERYTHING):
+        # Every device, accessory and Toys-to-Life document is gone too.
+        HARDWARE_STORE.clear_folder()
     return result
 
 
@@ -134,8 +148,16 @@ def _clear_notes(db: Session, result: DangerZoneResult) -> None:
 
 
 def _clear_guides(db: Session, result: DangerZoneResult) -> None:
-    """Every guide and cheat on every game, files and links alike."""
-    result.removed["guides"] = _count(db, delete(GameGuide))
+    """Every guide, cheat, manual, receipt and other document on every game, files and links
+    alike."""
+    result.removed["guides"] = _count(db, delete(GameDocument))
+
+
+def _clear_documents(db: Session, result: DangerZoneResult) -> None:
+    """Every manual, receipt and other document on every device, accessory and Toys-to-Life
+    pack, files and links alike (a game's documents go with Clear guides & cheats)."""
+    hardware = hardware_document_service.delete_all(db)
+    result.removed["documents"] = hardware + toys_to_life_document_service.delete_all(db)
 
 
 def _clear_tags(db: Session, result: DangerZoneResult) -> None:
@@ -189,17 +211,20 @@ def _reset_library(db: Session, result: DangerZoneResult) -> tuple[list[str], li
 
 
 def _reset_toys_to_life(db: Session, result: DangerZoneResult) -> None:
-    """Your copies, ratings and notes on every Toys-to-Life pack (tags go with
+    """Your copies, ratings, notes and documents on every Toys-to-Life pack (tags go with
     _clear_tags). The packs themselves are reference data and stay."""
+    toys_to_life_document_service.delete_all(db)
     result.removed["toysToLife"] = _count(db, delete(ToysToLifeCopy))
     db.execute(delete(ToysToLifeNote))
     db.execute(update(ToysToLifeItem).values(user_rating=None))
 
 
 def _reset_hardware(db: Session, result: DangerZoneResult) -> list[str | None]:
-    """Every device and accessory, with their units, notes, tags and links. The hardware
+    """Every device and accessory, with their units, notes, documents, tags and links. The hardware
     reference list and its lookups stay. Returns the uploaded accessory photos to delete."""
     photos = list(db.scalars(select(Accessory.image_url)))
+    # Their documents go too; the files once this commits.
+    hardware_document_service.delete_all(db)
     devices = _count(db, delete(UserDevice))
     accessories = _count(db, delete(UserAccessory))
     for model in (DeviceTag, DeviceNote, AccessoryTag, AccessoryNote, AccessoryDeviceLink, AccessoryAccessoryLink):

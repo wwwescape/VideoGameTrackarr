@@ -23,7 +23,7 @@ const wrapsByDefault = () => window.innerWidth < 900;
 // A .txt guide (the classic GameFAQs format): monospace, spacing kept, wrap on or off, text
 // size. The text goes into the <pre> directly (not through React), because find on page
 // splits its text into <mark>s.
-const TextView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) => {
+const TextView = ({ guide, positionKey, url, find, onFindResult, onError }: GuideViewProps) => {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -49,7 +49,7 @@ const TextView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) =
   }, [url, onError]);
 
   const ready = loadedUrl === url;
-  useSavedScroll(scrollRef, guide, ready);
+  useSavedScroll(scrollRef, positionKey, guide.updatedAt, ready);
   const textFind = useTextFind(preRef, ready ? find.query : "", loadedUrl);
   useFindBridge(textFind, find, onFindResult);
 

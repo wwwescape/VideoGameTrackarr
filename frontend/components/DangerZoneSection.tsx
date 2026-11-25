@@ -22,6 +22,7 @@ const ACTIONS: { action: DangerZoneAction; key: string; reset?: boolean }[] = [
   { action: "clear_ratings", key: "clearRatings" },
   { action: "clear_notes", key: "clearNotes" },
   { action: "clear_guides", key: "clearGuides" },
+  { action: "clear_documents", key: "clearDocuments" },
   { action: "clear_tags", key: "clearTags" },
   { action: "clear_sync_caches", key: "clearSyncCaches" },
   { action: "reset_library", key: "resetLibrary", reset: true },

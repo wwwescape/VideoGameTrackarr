@@ -15,6 +15,7 @@ from app.models.hardware import (
     UserAccessory,
 )
 from app.models.library import LibraryStatus
+from app.services import hardware_document_service
 
 # Repositories only add/flush/delete — they never commit. Mirrors device_repository.py.
 
@@ -169,6 +170,7 @@ def update_accessory(db: Session, accessory: Accessory, **fields: Any) -> Access
 def delete_accessory(db: Session, accessory: Accessory) -> None:
     db.execute(delete(AccessoryTag).where(AccessoryTag.accessory_id == accessory.id))
     db.execute(delete(AccessoryNote).where(AccessoryNote.accessory_id == accessory.id))
+    hardware_document_service.delete_for_owners(db, accessory_ids=[accessory.id])
     # Only the incoming side needs explicit cleanup — the outgoing side is already covered
     # by the `linked_accessories` relationship's own cascade="all, delete-orphan".
     db.execute(delete(AccessoryAccessoryLink).where(AccessoryAccessoryLink.linked_accessory_id == accessory.id))

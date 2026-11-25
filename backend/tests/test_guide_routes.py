@@ -11,9 +11,10 @@ from app.core.config import get_settings
 from app.core.security import create_guide_token, create_rom_token
 from app.main import security_headers_for
 from app.models.catalog import Game, GameCategory, Platform
-from app.models.library import GameGuide, GuideSource
+from app.models.documents import DocumentSource
+from app.models.library import GameDocument
 from app.repositories import game_repository
-from app.services import guide_service
+from app.services import document_files
 
 PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
 
@@ -86,7 +87,7 @@ def test_upload_options(auth_client):
 
     assert body == {
         "maxUploadMb": get_settings().guide_max_upload_mb,
-        "extensions": ["pdf", "docx", "md", "markdown", "txt"],
+        "extensions": ["pdf", "docx", "md", "markdown", "txt", "jpg", "jpeg", "png", "webp"],
     }
 
 
@@ -268,7 +269,7 @@ def test_a_docx_missing_its_document_is_refused(auth_client, seed_game, _isolate
 
 
 def test_a_docx_that_unpacks_too_large_is_refused(auth_client, seed_game, monkeypatch, _isolate_guide_storage):
-    monkeypatch.setattr(guide_service, "max_upload_bytes", lambda: 4096)
+    monkeypatch.setattr(document_files, "max_upload_bytes", lambda: 4096)
     bomb = _docx("<w:p/>", extra={"word/media/big.bin": b"\x00" * (64 * 1024)})
 
     response = _upload(auth_client, seed_game.id, "guide.docx", bomb)
@@ -279,7 +280,7 @@ def test_a_docx_that_unpacks_too_large_is_refused(auth_client, seed_game, monkey
 
 
 def test_an_upload_over_the_limit_is_413(auth_client, seed_game, monkeypatch, _isolate_guide_storage):
-    monkeypatch.setattr(guide_service, "max_upload_bytes", lambda: 64)
+    monkeypatch.setattr(document_files, "max_upload_bytes", lambda: 64)
 
     response = _upload(auth_client, seed_game.id, "guide.pdf", PDF + b"\x00" * 100)
 
@@ -300,7 +301,7 @@ def test_the_sanitiser_strips_everything_active():
         "<table><tr><td colspan='2' class='c'>cell</td></tr></table><!-- comment -->"
     )
 
-    clean = guide_service.sanitize_html(dirty)
+    clean = document_files.sanitize_html(dirty)
 
     for banned in (
         "script",
@@ -326,7 +327,9 @@ def test_the_sanitiser_strips_everything_active():
 
 
 def test_markdown_headings_get_ids_that_in_page_links_reach():
-    html = guide_service.render_markdown("[Go to the castle](#castle)\n\n## Castle\n\n## Boss: *Ganon*!\n\n## Castle\n")
+    html = document_files.render_markdown(
+        "[Go to the castle](#castle)\n\n## Castle\n\n## Boss: *Ganon*!\n\n## Castle\n"
+    )
 
     assert 'href="#guide-castle"' in html
     assert '<h2 id="guide-castle">Castle</h2>' in html
@@ -335,7 +338,7 @@ def test_markdown_headings_get_ids_that_in_page_links_reach():
 
 
 def test_markdown_raw_html_becomes_visible_text():
-    html = guide_service.render_markdown("Hello <script>alert(1)</script> **bold**\n\n<img src=x onerror=y>")
+    html = document_files.render_markdown("Hello <script>alert(1)</script> **bold**\n\n<img src=x onerror=y>")
 
     assert "<script>" not in html and "<img" not in html
     assert "&lt;script&gt;" in html
@@ -485,7 +488,7 @@ def test_deleting_a_game_removes_its_guides_and_files(auth_client, db_session, s
     _link(auth_client, seed_game.id, "https://example.com")
 
     assert auth_client.delete(f"/api/games/{seed_game.id}").status_code == 204
-    assert db_session.query(GameGuide).count() == 0
+    assert db_session.query(GameDocument).count() == 0
     assert _files(_isolate_guide_storage) == []
 
 
@@ -497,7 +500,7 @@ def test_files_stay_when_the_game_delete_rolls_back(auth_client, db_session, see
     db_session.rollback()
     db_session.commit()  # a later commit mustn't delete them either
 
-    assert db_session.query(GameGuide).count() == 1
+    assert db_session.query(GameDocument).count() == 1
     assert len(_files(_isolate_guide_storage)) == 1
 
 
@@ -510,7 +513,7 @@ def test_merging_a_game_moves_its_guides(auth_client, db_session, seed_game):
     game_repository.merge_game(db_session, source=db_session.get(Game, seed_game.id), target=target)
     db_session.commit()
 
-    assert [g.game_id for g in db_session.query(GameGuide)] == [target.id]
+    assert [g.game_id for g in db_session.query(GameDocument)] == [target.id]
 
 
 def test_danger_zone_clear_guides(auth_client, db_session, seed_game, _isolate_guide_storage):
@@ -522,7 +525,7 @@ def test_danger_zone_clear_guides(auth_client, db_session, seed_game, _isolate_g
 
     assert response.status_code == 200
     assert response.json()["removed"] == {"guides": 2}
-    assert db_session.query(GameGuide).count() == 0
+    assert db_session.query(GameDocument).count() == 0
     assert _files(_isolate_guide_storage) == []
     # The game itself stays.
     assert db_session.get(Game, seed_game.id) is not None
@@ -534,7 +537,7 @@ def test_danger_zone_reset_library_removes_guide_files(auth_client, db_session, 
     response = auth_client.post("/api/danger-zone/reset_library", json={"confirmation": "RESET"})
 
     assert response.status_code == 200
-    assert db_session.query(GameGuide).count() == 0
+    assert db_session.query(GameDocument).count() == 0
     assert _files(_isolate_guide_storage) == []
 
 
@@ -640,7 +643,7 @@ def test_an_older_backup_without_guides_still_restores(auth_client, db_session, 
     status = _restore(auth_client, json.dumps(data).encode(), "old-backup.json")
 
     assert status["status"] == "completed"
-    assert db_session.query(GameGuide).count() == 0
+    assert db_session.query(GameDocument).count() == 0
 
 
 def test_a_hand_edited_backup_cannot_point_outside_the_guide_folder(auth_client, db_session, seed_game):
@@ -651,4 +654,4 @@ def test_a_hand_edited_backup_cannot_point_outside_the_guide_folder(auth_client,
     status = _restore(auth_client, json.dumps(data).encode(), "edited.json")
 
     assert status["status"] == "completed"
-    assert db_session.query(GameGuide).filter(GameGuide.source == GuideSource.FILE).count() == 0
+    assert db_session.query(GameDocument).filter(GameDocument.source == DocumentSource.FILE).count() == 0

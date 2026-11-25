@@ -3,8 +3,8 @@ import type { Guide } from "../../api/types";
 import { openGuideInNewTab, serverDetail } from "../guideLinks";
 
 const createGuideViewLink = vi.fn();
-vi.mock("../../api/guides", () => ({
-  createGuideViewLink: (...args: unknown[]) => createGuideViewLink(...args),
+vi.mock("../../api/documents", () => ({
+  createDocumentViewLink: (...args: unknown[]) => createGuideViewLink(...args),
 }));
 
 const GUIDE = { id: 1, name: "Walkthrough" } as Guide;
@@ -22,7 +22,7 @@ describe("openGuideInNewTab", () => {
     openSpy.mockReturnValue(tab);
     createGuideViewLink.mockResolvedValue("/api/guides/1/content/tok/walkthrough.pdf");
 
-    await openGuideInNewTab(GUIDE, vi.fn());
+    await openGuideInNewTab({ type: "game", id: 5 }, GUIDE, vi.fn());
 
     expect(openSpy).toHaveBeenCalledWith("", "_blank");
     expect(tab.opener).toBeNull();
@@ -36,7 +36,7 @@ describe("openGuideInNewTab", () => {
     createGuideViewLink.mockRejectedValue(failure);
     const onError = vi.fn();
 
-    await openGuideInNewTab(GUIDE, onError);
+    await openGuideInNewTab({ type: "game", id: 5 }, GUIDE, onError);
 
     expect(tab.close).toHaveBeenCalled();
     expect(onError).toHaveBeenCalledWith(failure);

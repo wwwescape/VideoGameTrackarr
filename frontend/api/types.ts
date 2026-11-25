@@ -227,37 +227,59 @@ export interface Note {
   updatedAt: string;
 }
 
-// Guides & Cheats (backend/app/schemas/guide.py): an uploaded file or a saved link.
-export type GuideKind = "guide" | "cheat";
-export type GuideSource = "file" | "link";
-export type GuideFormat = "pdf" | "docx" | "md" | "txt";
+// Documents: Guides & Cheats on a game (backend/app/schemas/guide.py) and Manuals & Documents
+// on a device, accessory or Toys-to-Life pack (backend/app/schemas/hardware_document.py).
+// Each is an uploaded file or a saved link.
+export type GuideKind = "guide" | "cheat" | "manual" | "receipt" | "other";
+export type HardwareDocumentKind = "manual" | "quick_start" | "receipt" | "warranty" | "repair" | "other";
+export type DocumentKind = GuideKind | HardwareDocumentKind;
+export type DocumentSource = "file" | "link";
+export type DocumentFormat = "pdf" | "docx" | "md" | "txt" | "jpg" | "png" | "webp";
+// Kept for the Guides & Cheats code that names them.
+export type GuideSource = DocumentSource;
+export type GuideFormat = DocumentFormat;
 
-export interface Guide {
+export interface DocumentEntry {
   id: number;
-  gameId: number;
   name: string;
-  kind: GuideKind;
-  source: GuideSource;
-  platformId: number | null;
-  platformName: string | null;
+  kind: DocumentKind;
+  source: DocumentSource;
   url: string | null;
   // The link's host without "www.", for the row's subtitle.
   domain: string | null;
   originalFilename: string | null;
-  mediaFormat: GuideFormat | null;
+  mediaFormat: DocumentFormat | null;
   sizeBytes: number | null;
   // A file entry whose file isn't on the server (restored from a backup without files).
   fileMissing: boolean;
+  // The owned copy it's for, and its position among the owner's copies ("Copy 2").
+  copyId: number | null;
+  copyNumber: number | null;
   createdAt: string;
   updatedAt: string;
+  // Games only.
+  platformId?: number | null;
+  platformName?: string | null;
+  copyPlatformName?: string | null;
+  copyFormat?: MediaFormat | null;
+  // Devices and accessories only.
+  copySerialNumber?: string | null;
+  copyCondition?: HardwareCondition | null;
 }
 
-export interface GuideChanges {
+export interface Guide extends DocumentEntry {
+  gameId: number;
+  kind: GuideKind;
+}
+
+export interface DocumentChanges {
   name?: string | null;
-  kind?: GuideKind;
+  kind?: DocumentKind;
   platformId?: number | null;
+  copyId?: number | null;
   url?: string;
 }
+export type GuideChanges = DocumentChanges;
 
 export interface GuideUploadOptions {
   maxUploadMb: number;
@@ -575,6 +597,7 @@ export interface BackupRestoreResult {
   restoredBiosFiles: number;
   restoredImages: number;
   restoredGuideFiles: number;
+  restoredDocumentFiles: number;
 }
 
 export type RestoreJobStatus = "idle" | "running" | "completed" | "failed";
@@ -1105,6 +1128,8 @@ export interface HardwareReferenceSummary {
   compatibility: string | null;
   summary: string | null;
   imageUrl: string | null;
+  // The manufacturer's own manual page, offered as a one-click Manual link.
+  manualUrl: string | null;
 }
 
 export interface DeviceSummary {
@@ -1398,6 +1423,8 @@ export interface ToysToLifeItemDetail extends ToysToLifeItemSummary {
   copies: ToysToLifeCopy[];
   summary: string | null;
   igdbUrl: string | null;
+  // The official building instructions, offered as a one-click Manual link.
+  manualUrl: string | null;
   releaseDates: ToysToLifeReleaseDate[];
   lineName: string;
   parentGame: ToysToLifeParentGame;

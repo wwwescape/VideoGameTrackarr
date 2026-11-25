@@ -18,6 +18,8 @@ class HardwareReferenceEntryResponse(CamelModel):
     compatibility: str | None
     summary: str | None
     image_url: str | None
+    # The manufacturer's own manual, offered as a one-click Manual link.
+    manual_url: str | None
 
 
 def hardware_reference_entry_from_orm(entry: HardwareReferenceEntry) -> HardwareReferenceEntryResponse:
@@ -36,6 +38,7 @@ def hardware_reference_entry_from_orm(entry: HardwareReferenceEntry) -> Hardware
         compatibility=entry.compatibility,
         summary=entry.summary,
         image_url=resolve_image_url(entry.official_name),
+        manual_url=entry.manual_url,
     )
 
 
@@ -52,6 +55,7 @@ class HardwareReferenceSummary(CamelModel):
     compatibility: str | None
     summary: str | None
     image_url: str | None
+    manual_url: str | None
 
 
 def hardware_reference_summary_from_orm(entry: HardwareReferenceEntry) -> HardwareReferenceSummary:
@@ -64,4 +68,5 @@ def hardware_reference_summary_from_orm(entry: HardwareReferenceEntry) -> Hardwa
         compatibility=entry.compatibility,
         summary=entry.summary,
         image_url=resolve_image_url(entry.official_name),
+        manual_url=entry.manual_url,
     )

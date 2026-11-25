@@ -97,6 +97,10 @@ class Settings(BaseSettings):
     # exists for the same reason as rom_storage_dir.
     guide_storage_dir: str | None = None
     guide_max_upload_mb: int = 50
+    # Device, accessory and Toys-to-Life documents (see app/services/document_files.py) live in
+    # a documents/ subfolder of UPLOADS_DIR, also refused by the public mount. They share
+    # guide_max_upload_mb; the override exists for the same reason as rom_storage_dir.
+    document_storage_dir: str | None = None
 
 
 @lru_cache

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import Game, Platform
 from app.models.library import LibraryItem, LibraryStatus, RomFile
+from app.services import guide_service
 
 
 def list_distinct_storefronts(db: Session) -> list[str]:
@@ -91,6 +92,8 @@ def update_library_item(db: Session, item: LibraryItem, **fields: Any) -> Librar
 
 
 def delete_library_item(db: Session, item: LibraryItem) -> None:
+    # Its receipts and other documents stay with the game.
+    guide_service.clear_copy(db, item.id)
     db.delete(item)
     db.flush()
 

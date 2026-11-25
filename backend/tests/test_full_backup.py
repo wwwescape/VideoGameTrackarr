@@ -84,7 +84,7 @@ def test_plain_export_leaves_files_out(auth_client, nes_item):
 
     body = auth_client.get("/api/export/backup").json()
 
-    assert body["version"] == 12
+    assert body["version"] == 13
     assert body["included_files"] is None
     assert body["rom_files"] == [] and body["rom_save_states"] == [] and body["bios_files"] == []
 
@@ -103,7 +103,13 @@ def test_full_backup_round_trip(auth_client, db_session, nes_item, _isolate_rom_
         manifest = json.loads(archive.read("backup.json"))
     assert names == {"backup.json", *(f"files/{name}" for name in before)}
     assert [r["label"] for r in manifest["rom_files"]] == ["USA"]
-    assert manifest["included_files"] == {"roms": True, "bios": True, "images": False, "guides": False}
+    assert manifest["included_files"] == {
+        "roms": True,
+        "bios": True,
+        "images": False,
+        "guides": False,
+        "documents": False,
+    }
 
     # Lose everything: the copy (with its ROM + saves) and the BIOS.
     auth_client.delete(f"/api/library/{nes_item.id}")
@@ -207,7 +213,7 @@ def test_full_backup_download_link(client, auth_client, test_user, nes_item):
     from app.core.security import create_access_token
 
     url = auth_client.post("/api/export/backup/full-link", json={"roms": True}).json()["url"]
-    assert url.endswith("?roms=true&bios=false&images=false&guides=false")
+    assert url.endswith("?roms=true&bios=false&images=false&guides=false&documents=false")
     client.headers.pop("Authorization", None)
     assert client.post("/api/export/backup/full-link", json={"roms": True}).status_code == 401
 

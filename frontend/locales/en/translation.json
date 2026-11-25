@@ -237,6 +237,8 @@
     "summaryImages_other": "{{count}} images",
     "summaryGuides_one": "{{count}} guide file",
     "summaryGuides_other": "{{count}} guide files",
+    "summaryDocuments_one": "{{count}} document file",
+    "summaryDocuments_other": "{{count}} document files",
     "resyncPrompt": "A backup doesn't carry IGDB details (genres, media, release dates, Collections, Series). The Resync Games, Collections & Series job fetches them again for every game; you can also run it later from Settings → Jobs.",
     "resyncNow": "Resync now",
     "resyncLater": "Later",
@@ -365,8 +367,14 @@
         "clearGuides": {
           "name": "Clear guides & cheats",
           "button": "Clear",
-          "removes": "Removes every guide and cheat on every game: uploaded files and saved links.",
+          "removes": "Removes every guide, cheat, manual, receipt and other document on every game: uploaded files and saved links.",
           "keeps": "Keeps your games, notes and everything else."
+        },
+        "clearDocuments": {
+          "name": "Clear manuals & documents",
+          "button": "Clear",
+          "removes": "Removes every manual, receipt and other document on every device, accessory and Toys to Life pack: uploaded files and saved links.",
+          "keeps": "Keeps your hardware, packs, notes and everything else."
         },
         "clearTags": {
           "name": "Clear tags",
@@ -408,6 +416,7 @@
       "includeBiosLabel": "BIOS files",
       "includeImagesLabel": "Images (custom game covers and accessory photos)",
       "includeGuidesLabel": "Guides & cheats (uploaded files)",
+      "includeDocumentsLabel": "Manuals & documents (uploaded files)",
       "downloadBackupJson": "Download backup (.json)",
       "downloadBackupZip": "Download backup (.zip)",
       "restoreHeading": "Restore",
@@ -1945,10 +1954,16 @@
   "guides": {
     "title": "Guides & Cheats",
     "addAction": "Add",
-    "empty": "No guides or cheats yet.",
+    "empty": "No guides, cheats or manuals yet.",
     "kind": {
       "guide": "Guide",
-      "cheat": "Cheat"
+      "cheat": "Cheat",
+      "manual": "Manual",
+      "quick_start": "Quick start",
+      "receipt": "Receipt",
+      "warranty": "Warranty",
+      "repair": "Repair & mods",
+      "other": "Other"
     },
     "source": {
       "file": "File",
@@ -1958,7 +1973,10 @@
       "pdf": "PDF",
       "docx": "Word",
       "md": "Markdown",
-      "txt": "Text"
+      "txt": "Text",
+      "jpg": "JPG",
+      "png": "PNG",
+      "webp": "WebP"
     },
     "fileMissing": "File missing",
     "open": "Open {{name}}",
@@ -1968,12 +1986,11 @@
     "deleteTitle": "Delete “{{name}}”?",
     "deleteFileNote": "The file is deleted too.",
     "deleteLinkNote": "Only the saved link is removed.",
-    "addedGuide": "Guide added",
-    "addedCheat": "Cheat added",
+    "added": "Added",
     "saved": "Saved",
     "dialog": {
-      "addTitle": "Add a guide or cheat",
-      "editTitle": "Edit guide or cheat",
+      "addTitle": "Add a document",
+      "editTitle": "Edit document",
       "kindLabel": "Type",
       "sourceLabel": "Source",
       "dropHere": "Drop a file here, or",
@@ -1982,8 +1999,8 @@
       "removeFile": "Remove file",
       "fileMissingHint": "This file isn't on the server any more. Choose it again to put it back.",
       "uploading": "Uploading",
-      "acceptedTypes": "PDF, Word (.docx), Markdown or text, up to {{max}} MB",
-      "acceptedTypesNoLimit": "PDF, Word (.docx), Markdown or text",
+      "acceptedTypes": "PDF, Word (.docx), Markdown, text or an image (JPG, PNG, WebP), up to {{max}} MB",
+      "acceptedTypesNoLimit": "PDF, Word (.docx), Markdown, text or an image (JPG, PNG, WebP)",
       "linkLabel": "Link",
       "nameLabel": "Name",
       "nameHelperFile": "Leave empty to use the file name",
@@ -1997,11 +2014,13 @@
     "errors": {
       "html": "HTML files aren't supported. Save it as PDF, or add it as a link.",
       "doc": "Old Word (.doc) files aren't supported. Save it as .docx or PDF.",
-      "unsupported": "Use PDF, Word (.docx), Markdown or text.",
+      "svg": "SVG images aren't supported. Export it as PNG.",
+      "heic": "HEIC photos aren't supported. Export it as JPG.",
+      "unsupported": "Use PDF, Word (.docx), Markdown, text or an image (JPG, PNG, WebP).",
       "tooLarge": "This file is larger than {{max}} MB.",
       "badLink": "Enter a full http or https link.",
       "saveError": "Couldn't save. Please try again.",
-      "loadError": "Couldn't load guides and cheats.",
+      "loadError": "Couldn't load these documents.",
       "deleteError": "Couldn't delete. Please try again.",
       "openError": "Couldn't open the file. Please try again.",
       "downloadError": "Couldn't download the file. Please try again."
@@ -2009,7 +2028,7 @@
     "reader": {
       "close": "Close",
       "find": "Find",
-      "findPlaceholder": "Find in this guide",
+      "findPlaceholder": "Find in this document",
       "closeFind": "Close find",
       "matchCount": "{{current}} of {{total}}",
       "matchCountMany": "{{current}} of {{total}}+",
@@ -2022,16 +2041,27 @@
       "zoomOut": "Zoom out",
       "fitWidth": "Fit width",
       "fitPage": "Fit page",
+      "actualSize": "Actual size",
       "wrapLines": "Wrap lines",
       "textSmaller": "Smaller text",
       "textLarger": "Larger text",
       "moreActions": "More actions",
-      "loading": "Loading guide",
-      "openError": "Couldn't open this guide.",
+      "loading": "Loading document",
+      "openError": "Couldn't open this document.",
       "tryAgain": "Try again",
       "fileMissing": "This file isn't on the server any more.",
       "replace": "Replace file"
     }
+  },
+  "documents": {
+    "title": "Manuals & Documents",
+    "empty": "No manuals or documents yet.",
+    "copyLabel": "Copy",
+    "copyHelper": "Optional: the copy it's for, like the one a receipt is from",
+    "copySerial": "SN {{serial}}",
+    "copyNumber": "Copy {{number}}",
+    "addOfficialManual": "Add official manual",
+    "officialManualName": "Official manual"
   },
   "igdbImport": {
     "description": "Your custom games (added by hand), matched to IGDB by name. Find matches searches IGDB for each one; link them one by one or select several and Link selected. A game matching one already in your library merges into it.",

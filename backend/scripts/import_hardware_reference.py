@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.core.config import REPO_ROOT
 from app.db.session import session_scope
 from app.repositories import hardware_reference_repository
+from app.services import document_files
 
 DEFAULT_DIR = REPO_ROOT / "docs" / "data" / "hardware"
 
@@ -62,6 +63,7 @@ def import_from_csv(session: Session, path: Path) -> int:
                 discontinued=row["Discontinued"].strip().lower() == "yes",
                 compatibility=row["Compatibility"] or None,
                 summary=row["Summary"] or None,
+                manual_url=document_files.reference_manual_url(row.get("Manual URL"), official_name),
             )
             count += 1
 

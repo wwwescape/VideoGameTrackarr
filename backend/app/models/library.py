@@ -5,6 +5,7 @@ from sqlalchemy import Boolean, CheckConstraint, Date, ForeignKey, Integer, Stri
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.documents import SOURCE_CHECK, DocumentColumnsMixin
 from app.models.mixins import TimestampMixin, UTCDateTime, enum_column
 
 
@@ -238,55 +239,36 @@ class Note(TimestampMixin, Base):
 
 
 class GuideKind(enum.Enum):
+    """A game document's type, in the order they're listed."""
+
     GUIDE = "guide"
     CHEAT = "cheat"
+    MANUAL = "manual"
+    RECEIPT = "receipt"
+    OTHER = "other"
 
 
-class GuideSource(enum.Enum):
-    FILE = "file"
-    LINK = "link"
+class GameDocument(DocumentColumnsMixin, TimestampMixin, Base):
+    """A guide, cheat sheet, manual, receipt or other document kept with a game (Guides &
+    Cheats): an uploaded file
+    (stored privately in document_files.GUIDE_STORE, served only through signed links) or a
+    saved link. Never shown on share pages. Deleted with its game in
+    game_repository._delete_games."""
 
-
-class GuideFormat(enum.Enum):
-    PDF = "pdf"
-    DOCX = "docx"
-    MD = "md"
-    TXT = "txt"
-
-
-class GameGuide(TimestampMixin, Base):
-    """A guide or cheat sheet kept with a game: an uploaded file (stored privately under
-    guide_service.get_guide_dir(), served only through signed links) or a saved link. Never
-    shown on share pages. Deleted with its game in game_repository._delete_games."""
-
-    __tablename__ = "game_guides"
-    __table_args__ = (
-        CheckConstraint(
-            "(source = 'link' AND url IS NOT NULL AND stored_filename IS NULL)"
-            " OR (source = 'file' AND url IS NULL AND stored_filename IS NOT NULL)",
-            name="source",  # → ck_game_guides_source via the naming convention
-        ),
-    )
+    __tablename__ = "game_documents"
+    __table_args__ = (CheckConstraint(SOURCE_CHECK, name="source"),)  # → ck_game_documents_source
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
     kind: Mapped[GuideKind] = mapped_column(enum_column(GuideKind), nullable=False)
     platform_id: Mapped[int | None] = mapped_column(ForeignKey("platforms.id"))
-    source: Mapped[GuideSource] = mapped_column(enum_column(GuideSource), nullable=False)
-    url: Mapped[str | None] = mapped_column(String(2048))
-    original_filename: Mapped[str | None] = mapped_column(String(255))
-    stored_filename: Mapped[str | None] = mapped_column(
-        String(64), comment="uuid-based name on disk — never derived from user input"
-    )
-    rendered_filename: Mapped[str | None] = mapped_column(
-        String(64), comment="sanitised HTML (docx/md) or UTF-8 copy (non-UTF-8 txt), rebuilt on restore"
-    )
-    media_format: Mapped[GuideFormat | None] = mapped_column(enum_column(GuideFormat))
-    size_bytes: Mapped[int | None] = mapped_column(Integer)
+    # The copy a receipt (or anything else) is for, one of this game's library items. Deleting
+    # the copy only clears it.
+    library_item_id: Mapped[int | None] = mapped_column(ForeignKey("library_items.id"))
 
     game: Mapped["Game"] = relationship()  # noqa: F821
     platform: Mapped["Platform | None"] = relationship()  # noqa: F821
+    library_item: Mapped["LibraryItem | None"] = relationship()
 
 
 class Tag(Base):

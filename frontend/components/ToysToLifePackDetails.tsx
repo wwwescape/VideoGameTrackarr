@@ -20,11 +20,13 @@ import {
   useToysToLifeNotes,
   useUpdateToysToLifeNote,
 } from "../hooks/useToysToLife";
+import { copyOptions } from "../utils/guides";
 import { useCanonicalAddress, useDetailBack } from "../utils/navState";
 import { packTypeLabel, parentGamePath, setNumberFromIdentifier, toyPath } from "../utils/toysToLife";
 import { DetailColumns, EmptyLine, Facts, Pill, Section } from "./Detail";
 import ExpandableText from "./ExpandableText";
 import { HardwareHero } from "./HardwareDetailParts";
+import DocumentsSection from "./DocumentsSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import Page, { ToolbarButton, useRouteCrumbs } from "./Page";
@@ -214,6 +216,14 @@ const ToysToLifePackDetails = () => {
               tags={item.tags}
               onAttach={(tagId) => attachTag.mutateAsync(tagId)}
               onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+            />
+            <DocumentsSection
+              owner={{ type: "toysToLife", id: item.id }}
+              sectionId="documents"
+              title={t("documents.title")}
+              emptyText={t("documents.empty")}
+              copies={copyOptions(t, item.copies)}
+              officialManualUrl={item.manualUrl}
             />
             <NotesSection
               notes={notes}

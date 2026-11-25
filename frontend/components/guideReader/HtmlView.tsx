@@ -40,7 +40,7 @@ export function cleanGuideHtml(html: string): DocumentFragment {
 // A Word or Markdown guide, as the page the server converted and sanitised it into: shown in a
 // reading column with the app's own typography and colours (so it follows light and dark), not
 // in a frame. Links: within the document they scroll here; anything else opens a new tab.
-const HtmlView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) => {
+const HtmlView = ({ guide, positionKey, url, find, onFindResult, onError }: GuideViewProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
@@ -65,7 +65,7 @@ const HtmlView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) =
   }, [url, onError]);
 
   const ready = loadedUrl === url;
-  useSavedScroll(scrollRef, guide, ready);
+  useSavedScroll(scrollRef, positionKey, guide.updatedAt, ready);
   const textFind = useTextFind(contentRef, ready ? find.query : "", loadedUrl);
   useFindBridge(textFind, find, onFindResult);
 

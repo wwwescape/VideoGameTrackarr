@@ -27,7 +27,7 @@ const SAVE_EVERY_MS = 1000;
 // in-document links (a table of contents jumps within the file; other links open a new tab),
 // a page box, zoom and fit. The whole file is fetched in one request, so the hour-long view
 // link expiring never interrupts a long read. Pages stay white in dark mode.
-const PdfView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) => {
+const PdfView = ({ guide, positionKey, url, find, onFindResult, onError }: GuideViewProps) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +71,7 @@ const PdfView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) =>
       let saveTimer: number | null = null;
       const save = () => {
         if (!instance.pdfDocument) return;
-        saveGuidePosition(guide.id, guide.updatedAt, {
+        saveGuidePosition(positionKey, guide.updatedAt, {
           kind: "pdf",
           page: instance.currentPageNumber,
           scale: instance.currentScaleValue || String(instance.currentScale),
@@ -86,7 +86,7 @@ const PdfView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) =>
       };
 
       bus.on("pagesinit", () => {
-        const saved = loadGuidePosition(guide.id, guide.updatedAt);
+        const saved = loadGuidePosition(positionKey, guide.updatedAt);
         instance.currentScaleValue = saved?.kind === "pdf" ? saved.scale : "page-width";
         if (saved?.kind === "pdf" && saved.page <= instance.pagesCount)
           instance.currentPageNumber = saved.page;
@@ -139,7 +139,7 @@ const PdfView = ({ guide, url, find, onFindResult, onError }: GuideViewProps) =>
     };
     // Reopened only for a different link or guide.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, guide.id, guide.updatedAt]);
+  }, [url, positionKey, guide.updatedAt]);
 
   // Find on page, through pdf.js's own find controller.
   const lastQuery = useRef("");

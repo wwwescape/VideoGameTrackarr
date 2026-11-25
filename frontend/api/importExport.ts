@@ -13,6 +13,8 @@ export interface BackupFileOptions {
   images: boolean;
   // Guides & Cheats' uploaded files (their entries are always in a backup).
   guides: boolean;
+  // Device, accessory and Toys-to-Life document files (their entries are always in a backup).
+  documents: boolean;
 }
 
 // A backup with files can be many GB, so it isn't fetched into a Blob: the server hands out

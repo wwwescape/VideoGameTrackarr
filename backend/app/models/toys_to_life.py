@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import BigInteger, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.documents import SOURCE_CHECK, DocumentColumnsMixin, HardwareDocumentKind
 from app.models.library import LibraryStatus, Tag
 from app.models.mixins import TimestampMixin, enum_column
 
@@ -42,6 +43,9 @@ class ToysToLifeItem(TimestampMixin, Base):
     igdb_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
     igdb_url: Mapped[str | None] = mapped_column(String(1024))
     summary: Mapped[str | None] = mapped_column(Text)
+    # The official building instructions, from the CSV's "Manual URL" column; offered as a
+    # one-click Manual link on the detail page.
+    manual_url: Mapped[str | None] = mapped_column(String(2048))
 
     # Your rating, 1-10 stars (null = not rated).
     user_rating: Mapped[int | None] = mapped_column(Integer)
@@ -103,3 +107,18 @@ class ToysToLifeNote(TimestampMixin, Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
     item: Mapped["ToysToLifeItem"] = relationship()
+
+
+class ToysToLifeDocument(DocumentColumnsMixin, TimestampMixin, Base):
+    """A manual (building instructions), receipt or other document kept with a Toys-to-Life
+    pack: an uploaded file (stored privately in document_files.HARDWARE_STORE, served only
+    through signed links) or a saved link. It can name the copy it's for; deleting that copy
+    only clears it. Never shown on share pages."""
+
+    __tablename__ = "toys_to_life_documents"
+    __table_args__ = (CheckConstraint(SOURCE_CHECK, name="source"),)  # → ck_toys_to_life_documents_source
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("toys_to_life_items.id"), index=True, nullable=False)
+    copy_id: Mapped[int | None] = mapped_column(ForeignKey("toys_to_life_copies.id"))
+    kind: Mapped[HardwareDocumentKind] = mapped_column(enum_column(HardwareDocumentKind), nullable=False)

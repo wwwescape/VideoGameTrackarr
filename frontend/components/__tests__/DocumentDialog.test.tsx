@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { AxiosError, AxiosHeaders, CanceledError } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Guide, LibraryItem, PlatformResponse } from "../../api/types";
-import GuideDialog from "../GuideDialog";
+import DocumentDialog from "../DocumentDialog";
 
 vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn(), dismiss: vi.fn() },
@@ -13,14 +13,14 @@ const createFile = vi.fn();
 const createLink = vi.fn();
 const updateGuide = vi.fn();
 const replaceFile = vi.fn();
-vi.mock("../../hooks/useGuides", () => ({
-  useGuideUploadOptions: () => ({
+vi.mock("../../hooks/useDocuments", () => ({
+  useDocumentUploadOptions: () => ({
     data: { maxUploadMb: 1, extensions: ["pdf", "docx", "md", "markdown", "txt"] },
   }),
-  useCreateGuideFile: () => ({ mutateAsync: createFile }),
-  useCreateGuideLink: () => ({ mutateAsync: createLink }),
-  useUpdateGuide: () => ({ mutateAsync: updateGuide }),
-  useReplaceGuideFile: () => ({ mutateAsync: replaceFile }),
+  useCreateDocumentFile: () => ({ mutateAsync: createFile }),
+  useCreateDocumentLink: () => ({ mutateAsync: createLink }),
+  useUpdateDocument: () => ({ mutateAsync: updateGuide }),
+  useReplaceDocumentFile: () => ({ mutateAsync: replaceFile }),
 }));
 
 const LIBRARY = [{ platformId: 8, platformName: "PlayStation 2" }] as LibraryItem[];
@@ -37,6 +37,8 @@ const FILE_GUIDE: Guide = {
   source: "file",
   platformId: 8,
   platformName: "PlayStation 2",
+  copyId: null,
+  copyNumber: null,
   url: null,
   domain: null,
   originalFilename: "walkthrough.pdf",
@@ -61,10 +63,11 @@ const LINK_GUIDE: Guide = {
 function renderDialog(guide?: Guide) {
   const onClose = vi.fn();
   render(
-    <GuideDialog
+    <DocumentDialog
       open
-      gameId={5}
-      guide={guide}
+      owner={{ type: "game", id: 5 }}
+      entry={guide}
+      copies={[]}
       libraryItems={LIBRARY}
       gamePlatforms={GAME_PLATFORMS}
       onClose={onClose}
@@ -89,7 +92,7 @@ function serverError(status: number, detail: string) {
   });
 }
 
-describe("GuideDialog", () => {
+describe("DocumentDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     createFile.mockResolvedValue({});
@@ -101,7 +104,7 @@ describe("GuideDialog", () => {
   it("adds a file, naming it after the file and sending type and platform", async () => {
     const { user, onClose } = renderDialog();
     expect(saveButton("Add")).toBeDisabled();
-    expect(screen.getByText("PDF, Word (.docx), Markdown or text, up to 1 MB")).toBeInTheDocument();
+    expect(screen.getByText("PDF, Word (.docx), Markdown, text or an image (JPG, PNG, WebP), up to 1 MB")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cheat" }));
     await user.upload(fileInput(), pdf());
@@ -113,7 +116,9 @@ describe("GuideDialog", () => {
     await user.click(saveButton("Add"));
 
     expect(createFile).toHaveBeenCalledWith(
-      expect.objectContaining({ fields: { kind: "cheat", name: "Boss Guide", platformId: 8 } })
+      expect.objectContaining({
+        fields: { kind: "cheat", name: "Boss Guide", platformId: 8, copyId: null },
+      })
     );
     expect(createFile.mock.calls[0][0].file.name).toBe("Boss Guide.pdf");
     expect(onClose).toHaveBeenCalled();
@@ -131,7 +136,7 @@ describe("GuideDialog", () => {
   it.each([
     ["page.html", "HTML files aren't supported. Save it as PDF, or add it as a link."],
     ["old.doc", "Old Word (.doc) files aren't supported. Save it as .docx or PDF."],
-    ["game.exe", "Use PDF, Word (.docx), Markdown or text."],
+    ["game.exe", "Use PDF, Word (.docx), Markdown, text or an image (JPG, PNG, WebP)."],
   ])("refuses %s before uploading it", async (name, message) => {
     const { user } = renderDialog();
 
@@ -167,7 +172,7 @@ describe("GuideDialog", () => {
 
     expect(createLink).toHaveBeenCalledWith({
       url: "https://www.gamefaqs.gamespot.com/ps2/faqs",
-      fields: { kind: "guide", name: "gamefaqs.gamespot.com", platformId: null },
+      fields: { kind: "guide", name: "gamefaqs.gamespot.com", platformId: null, copyId: null },
     });
   });
 
@@ -181,7 +186,10 @@ describe("GuideDialog", () => {
     await user.type(name, "Full walkthrough");
     await user.click(saveButton("Save"));
 
-    expect(updateGuide).toHaveBeenCalledWith({ guideId: 4, changes: { name: "Full walkthrough" } });
+    expect(updateGuide).toHaveBeenCalledWith({
+      documentId: 4,
+      changes: { name: "Full walkthrough" },
+    });
     expect(replaceFile).not.toHaveBeenCalled();
   });
 
@@ -192,7 +200,7 @@ describe("GuideDialog", () => {
     await user.click(saveButton("Save"));
 
     expect(updateGuide).not.toHaveBeenCalled();
-    expect(replaceFile).toHaveBeenCalledWith(expect.objectContaining({ guideId: 4 }));
+    expect(replaceFile).toHaveBeenCalledWith(expect.objectContaining({ documentId: 4 }));
     expect(replaceFile.mock.calls[0][0].file.name).toBe("v2.pdf");
   });
 
@@ -208,7 +216,7 @@ describe("GuideDialog", () => {
     await user.click(screen.getByRole("button", { name: "Switch to link" }));
     await waitFor(() =>
       expect(updateGuide).toHaveBeenCalledWith({
-        guideId: 4,
+        documentId: 4,
         changes: { url: "https://example.com/guide" },
       })
     );
@@ -223,7 +231,7 @@ describe("GuideDialog", () => {
     await user.upload(fileInput(), pdf("wiki.pdf"));
     await user.click(saveButton("Save"));
 
-    expect(replaceFile).toHaveBeenCalledWith(expect.objectContaining({ guideId: 6 }));
+    expect(replaceFile).toHaveBeenCalledWith(expect.objectContaining({ documentId: 6 }));
   });
 
   it("shows the server's message on the field it's about", async () => {
@@ -254,5 +262,47 @@ describe("GuideDialog", () => {
 
     expect(signal?.aborted).toBe(true);
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe("DocumentDialog on a device", () => {
+  beforeEach(() => {
+    createLink.mockResolvedValue({});
+  });
+
+  it("offers the hardware types and the copy, not a platform", async () => {
+    const user = userEvent.setup();
+    render(
+      <DocumentDialog
+        open
+        owner={{ type: "device", id: 3 }}
+        copies={[{ id: 11, label: "SN 4H12" }]}
+        onClose={vi.fn()}
+      />
+    );
+    for (const label of [
+      "Manual",
+      "Quick start",
+      "Receipt",
+      "Warranty",
+      "Repair & mods",
+      "Other",
+    ]) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "Guide" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Platform" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Receipt" }));
+    await user.click(screen.getByRole("radio", { name: "Link" }));
+    await user.type(screen.getByRole("textbox", { name: "Link" }), "https://shop.example/receipt");
+    await user.click(screen.getByRole("combobox", { name: "Copy" }));
+    await user.click(screen.getByRole("option", { name: "SN 4H12" }));
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(createLink).toHaveBeenCalledWith({
+      url: "https://shop.example/receipt",
+      fields: { kind: "receipt", name: "shop.example", platformId: null, copyId: 11 },
+    });
   });
 });

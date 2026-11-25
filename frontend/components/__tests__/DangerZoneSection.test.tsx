@@ -24,8 +24,8 @@ describe("DangerZoneSection", () => {
 
     expect(screen.getByText("Danger Zone")).toBeInTheDocument();
     expect(screen.getByText(/Removes your rating from every game\. Keeps everything else\./)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Clear" })).toHaveLength(6);
-    expect(screen.getByText(/Removes every guide and cheat on every game/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Clear" })).toHaveLength(7);
+    expect(screen.getByText(/Removes every guide, cheat, manual, receipt and other document on every game/)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Reset" })).toHaveLength(3);
   });
 

@@ -22,6 +22,7 @@ const FILE_OPTIONS: { key: keyof BackupFileOptions; labelKey: string }[] = [
   { key: "bios", labelKey: "settings.dataManagement.includeBiosLabel" },
   { key: "images", labelKey: "settings.dataManagement.includeImagesLabel" },
   { key: "guides", labelKey: "settings.dataManagement.includeGuidesLabel" },
+  { key: "documents", labelKey: "settings.dataManagement.includeDocumentsLabel" },
 ];
 
 // Settings → General → Data: one Backup (a .json, or a .zip when files are picked to go
@@ -39,8 +40,9 @@ const DataManagementSection = () => {
     bios: false,
     images: false,
     guides: false,
+    documents: false,
   });
-  const asZip = files.roms || files.bios || files.images || files.guides;
+  const asZip = files.roms || files.bios || files.images || files.guides || files.documents;
 
   const handleExportBackup = async () => {
     try {

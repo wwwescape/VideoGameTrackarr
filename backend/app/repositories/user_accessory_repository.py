@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.hardware import Accessory, AccessoryCompatibility, UserAccessory
 from app.models.library import LibraryStatus
+from app.services import hardware_document_service
 
 
 def list_all_user_accessories(db: Session) -> list[UserAccessory]:
@@ -54,5 +55,7 @@ def update_user_accessory(db: Session, item: UserAccessory, **fields: Any) -> Us
 
 
 def delete_user_accessory(db: Session, item: UserAccessory) -> None:
+    # Its receipts and warranties stay with the accessory.
+    hardware_document_service.clear_copies(db, user_accessory_ids=[item.id])
     db.delete(item)
     db.flush()

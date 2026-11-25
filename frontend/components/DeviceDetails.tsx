@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "./ConfirmDialog";
+import DocumentsSection from "./DocumentsSection";
 import NotesSection from "./NotesSection";
 import NotFoundPage from "./NotFoundPage";
 import TagsSection from "./TagsSection";
@@ -25,6 +26,7 @@ import { useAttachDeviceTag, useDetachDeviceTag } from "../hooks/useTags";
 import { useCurrency } from "../theme/CurrencyProvider";
 import { formatCurrency } from "../utils/currency";
 import { useUserDeviceList } from "../hooks/useUserDevice";
+import { copyOptions } from "../utils/guides";
 import { CONDITION_LABELS, RATING_BOARD_LABELS } from "../utils/hardwareLabels";
 import { hardwareIdentifier } from "../utils/identifiers";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
@@ -209,6 +211,14 @@ const DeviceDetails = () => {
               tags={device.tags}
               onAttach={(tagId) => attachTag.mutateAsync(tagId)}
               onDetach={(tagId) => detachTag.mutateAsync(tagId)}
+            />
+            <DocumentsSection
+              owner={{ type: "device", id: device.id }}
+              sectionId="documents"
+              title={t("documents.title")}
+              emptyText={t("documents.empty")}
+              copies={copyOptions(t, ownershipRows ?? [])}
+              officialManualUrl={device.hardwareReference?.manualUrl}
             />
             <NotesSection
               notes={deviceNotes}

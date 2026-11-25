@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.hardware import AccessoryDeviceLink, Device, DeviceNote, DeviceTag, HardwareReferenceEntry, UserDevice
 from app.models.library import LibraryStatus
+from app.services import hardware_document_service
 
 # Repositories only add/flush/delete — they never commit. The service that calls them owns
 # the transaction boundary. Mirrors game_repository.py's shape exactly.
@@ -151,5 +152,6 @@ def update_device(db: Session, device: Device, **fields: Any) -> Device:
 def delete_device(db: Session, device: Device) -> None:
     db.execute(delete(DeviceTag).where(DeviceTag.device_id == device.id))
     db.execute(delete(DeviceNote).where(DeviceNote.device_id == device.id))
+    hardware_document_service.delete_for_owners(db, device_ids=[device.id])
     db.delete(device)
     db.flush()

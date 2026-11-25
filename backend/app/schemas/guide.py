@@ -2,9 +2,10 @@ from datetime import datetime
 
 from pydantic import Field
 
-from app.models.library import GameGuide, GuideFormat, GuideKind, GuideSource
+from app.models.documents import DocumentFormat, DocumentSource
+from app.models.library import GameDocument, GuideKind, MediaFormat
 from app.schemas.base import CamelModel
-from app.services import guide_service
+from app.services import document_files, guide_service
 
 
 class GuideResponse(CamelModel):
@@ -12,14 +13,20 @@ class GuideResponse(CamelModel):
     game_id: int
     name: str
     kind: GuideKind
-    source: GuideSource
+    source: DocumentSource
     platform_id: int | None
     platform_name: str | None
+    # The library copy it's for, if any. The frontend words it from the copy's platform and
+    # format, else "Copy N".
+    copy_id: int | None
+    copy_number: int | None
+    copy_platform_name: str | None
+    copy_format: MediaFormat | None
     url: str | None
     # The link's host without "www." (e.g. gamefaqs.gamespot.com), for the row's subtitle.
     domain: str | None
     original_filename: str | None
-    media_format: GuideFormat | None
+    media_format: DocumentFormat | None
     size_bytes: int | None
     # A file entry whose file isn't on disk (restored from a backup without files).
     file_missing: bool
@@ -27,7 +34,8 @@ class GuideResponse(CamelModel):
     updated_at: datetime
 
 
-def guide_from_orm(guide: GameGuide) -> GuideResponse:
+def guide_from_orm(guide: GameDocument, copy_numbers: dict[int, int] | None = None) -> GuideResponse:
+    item = guide.library_item
     return GuideResponse(
         id=guide.id,
         game_id=guide.game_id,
@@ -36,8 +44,12 @@ def guide_from_orm(guide: GameGuide) -> GuideResponse:
         source=guide.source,
         platform_id=guide.platform_id,
         platform_name=guide.platform.name if guide.platform else None,
+        copy_id=guide.library_item_id,
+        copy_number=(copy_numbers or {}).get(guide.library_item_id) if item else None,
+        copy_platform_name=item.platform.name if item and item.platform else None,
+        copy_format=item.format if item else None,
         url=guide.url,
-        domain=guide_service.domain_of(guide.url),
+        domain=document_files.domain_of(guide.url),
         original_filename=guide.original_filename,
         media_format=guide.media_format,
         size_bytes=guide.size_bytes,
@@ -48,20 +60,22 @@ def guide_from_orm(guide: GameGuide) -> GuideResponse:
 
 
 class GuideLinkCreateRequest(CamelModel):
-    name: str | None = Field(default=None, max_length=guide_service.MAX_NAME_LENGTH)
+    name: str | None = Field(default=None, max_length=document_files.MAX_NAME_LENGTH)
     kind: GuideKind = GuideKind.GUIDE
     platform_id: int | None = None
-    url: str = Field(max_length=guide_service.MAX_URL_LENGTH)
+    copy_id: int | None = None
+    url: str = Field(max_length=document_files.MAX_URL_LENGTH)
 
 
 class GuideUpdateRequest(CamelModel):
     """Only the fields sent change; `platformId: null` clears the platform. Sending `url` on a
     file entry turns it into a link (its file is deleted)."""
 
-    name: str | None = Field(default=None, max_length=guide_service.MAX_NAME_LENGTH)
+    name: str | None = Field(default=None, max_length=document_files.MAX_NAME_LENGTH)
     kind: GuideKind | None = None
     platform_id: int | None = None
-    url: str | None = Field(default=None, max_length=guide_service.MAX_URL_LENGTH)
+    copy_id: int | None = None
+    url: str | None = Field(default=None, max_length=document_files.MAX_URL_LENGTH)
 
 
 class GuideLinkResponse(CamelModel):

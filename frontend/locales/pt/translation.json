@@ -237,6 +237,8 @@
     "summaryImages_other": "{{count}} imagens",
     "summaryGuides_one": "{{count}} arquivo de guia",
     "summaryGuides_other": "{{count}} arquivos de guias",
+    "summaryDocuments_one": "{{count}} ficheiro de documento",
+    "summaryDocuments_other": "{{count}} ficheiros de documentos",
     "resyncPrompt": "Um backup não inclui os dados do IGDB (gêneros, mídia, datas de lançamento, Coleções, Séries). A tarefa Ressincronizar jogos, coleções e séries os busca de novo para cada jogo; você também pode executá-la depois em Configurações → Tarefas.",
     "resyncNow": "Ressincronizar agora",
     "resyncLater": "Depois",
@@ -365,8 +367,14 @@
         "clearGuides": {
           "name": "Limpar os guias e truques",
           "button": "Limpar",
-          "removes": "Remove todos os guias e truques de todos os jogos: arquivos enviados e links salvos.",
+          "removes": "Remove todos os guias, truques, manuais, recibos e outros documentos de todos os jogos: ficheiros carregados e links guardados.",
           "keeps": "Mantém seus jogos, notas e todo o resto."
+        },
+        "clearDocuments": {
+          "name": "Limpar manuais e documentos",
+          "button": "Limpar",
+          "removes": "Remove todos os manuais, recibos e outros documentos de todos os dispositivos, acessórios e packs de Toys to Life: ficheiros carregados e links guardados.",
+          "keeps": "Mantém o teu hardware, os teus packs, as tuas notas e tudo o resto."
         },
         "clearTags": {
           "name": "Limpar as tags",
@@ -408,6 +416,7 @@
       "includeBiosLabel": "Arquivos de BIOS",
       "includeImagesLabel": "Imagens (capas de jogos personalizados e fotos de acessórios)",
       "includeGuidesLabel": "Guias e truques (arquivos enviados)",
+      "includeDocumentsLabel": "Manuais e documentos (ficheiros carregados)",
       "downloadBackupJson": "Baixar backup (.json)",
       "downloadBackupZip": "Baixar backup (.zip)",
       "restoreHeading": "Restaurar",
@@ -1945,10 +1954,16 @@
   "guides": {
     "title": "Guias e truques",
     "addAction": "Adicionar",
-    "empty": "Nenhum guia ou truque ainda.",
+    "empty": "Ainda não há guias, truques nem manuais.",
     "kind": {
       "guide": "Guia",
-      "cheat": "Truque"
+      "cheat": "Truque",
+      "manual": "Manual",
+      "quick_start": "Início rápido",
+      "receipt": "Recibo",
+      "warranty": "Garantia",
+      "repair": "Reparação e mods",
+      "other": "Outro"
     },
     "source": {
       "file": "Arquivo",
@@ -1958,7 +1973,10 @@
       "pdf": "PDF",
       "docx": "Word",
       "md": "Markdown",
-      "txt": "Texto"
+      "txt": "Texto",
+      "jpg": "JPG",
+      "png": "PNG",
+      "webp": "WebP"
     },
     "fileMissing": "Arquivo ausente",
     "open": "Abrir {{name}}",
@@ -1968,12 +1986,11 @@
     "deleteTitle": "Excluir “{{name}}”?",
     "deleteFileNote": "O arquivo também é excluído.",
     "deleteLinkNote": "Só o link salvo é removido.",
-    "addedGuide": "Guia adicionado",
-    "addedCheat": "Truque adicionado",
+    "added": "Adicionado",
     "saved": "Salvo",
     "dialog": {
-      "addTitle": "Adicionar um guia ou truque",
-      "editTitle": "Editar guia ou truque",
+      "addTitle": "Adicionar um documento",
+      "editTitle": "Editar documento",
       "kindLabel": "Tipo",
       "sourceLabel": "Origem",
       "dropHere": "Solte um arquivo aqui, ou",
@@ -1982,8 +1999,8 @@
       "removeFile": "Remover arquivo",
       "fileMissingHint": "Este arquivo não está mais no servidor. Escolha-o de novo para recuperá-lo.",
       "uploading": "Enviando",
-      "acceptedTypes": "PDF, Word (.docx), Markdown ou texto, até {{max}} MB",
-      "acceptedTypesNoLimit": "PDF, Word (.docx), Markdown ou texto",
+      "acceptedTypes": "PDF, Word (.docx), Markdown, texto ou uma imagem (JPG, PNG, WebP), até {{max}} MB",
+      "acceptedTypesNoLimit": "PDF, Word (.docx), Markdown, texto ou uma imagem (JPG, PNG, WebP)",
       "linkLabel": "Link",
       "nameLabel": "Nome",
       "nameHelperFile": "Deixe vazio para usar o nome do arquivo",
@@ -1997,11 +2014,13 @@
     "errors": {
       "html": "Arquivos HTML não são compatíveis. Salve como PDF ou adicione como link.",
       "doc": "Arquivos antigos do Word (.doc) não são compatíveis. Salve como .docx ou PDF.",
-      "unsupported": "Use PDF, Word (.docx), Markdown ou texto.",
+      "svg": "Imagens SVG não são suportadas. Exporte-a como PNG.",
+      "heic": "Fotos HEIC não são suportadas. Exporte-a como JPG.",
+      "unsupported": "Use PDF, Word (.docx), Markdown, texto ou uma imagem (JPG, PNG, WebP).",
       "tooLarge": "Este arquivo tem mais de {{max}} MB.",
       "badLink": "Digite um link http ou https completo.",
       "saveError": "Não foi possível salvar. Tente de novo.",
-      "loadError": "Não foi possível carregar os guias e truques.",
+      "loadError": "Não foi possível carregar estes documentos.",
       "deleteError": "Não foi possível excluir. Tente de novo.",
       "openError": "Não foi possível abrir o arquivo. Tente de novo.",
       "downloadError": "Não foi possível baixar o arquivo. Tente de novo."
@@ -2009,7 +2028,7 @@
     "reader": {
       "close": "Fechar",
       "find": "Buscar",
-      "findPlaceholder": "Buscar neste guia",
+      "findPlaceholder": "Procurar neste documento",
       "closeFind": "Fechar a busca",
       "matchCount": "{{current}} de {{total}}",
       "matchCountMany": "{{current}} de {{total}}+",
@@ -2022,16 +2041,27 @@
       "zoomOut": "Reduzir",
       "fitWidth": "Ajustar à largura",
       "fitPage": "Ajustar à página",
+      "actualSize": "Tamanho real",
       "wrapLines": "Quebrar linhas",
       "textSmaller": "Texto menor",
       "textLarger": "Texto maior",
       "moreActions": "Mais ações",
-      "loading": "Carregando o guia",
-      "openError": "Não foi possível abrir este guia.",
+      "loading": "A carregar documento",
+      "openError": "Não foi possível abrir este documento.",
       "tryAgain": "Tentar de novo",
       "fileMissing": "Este arquivo não está mais no servidor.",
       "replace": "Substituir o arquivo"
     }
+  },
+  "documents": {
+    "title": "Manuais e documentos",
+    "empty": "Ainda não há manuais nem documentos.",
+    "copyLabel": "Cópia",
+    "copyHelper": "Opcional: a cópia a que se refere, como a de um recibo",
+    "copySerial": "N.º de série {{serial}}",
+    "copyNumber": "Cópia {{number}}",
+    "addOfficialManual": "Adicionar o manual oficial",
+    "officialManualName": "Manual oficial"
   },
   "igdbImport": {
     "description": "Seus jogos personalizados (adicionados manualmente), associados ao IGDB pelo nome. Encontrar correspondências pesquisa cada um no IGDB; vincule-os um a um ou selecione vários e use Vincular selecionados. Um jogo que corresponde a um já na sua biblioteca é mesclado com ele.",

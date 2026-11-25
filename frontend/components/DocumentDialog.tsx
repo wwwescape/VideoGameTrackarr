@@ -27,25 +27,25 @@ import { useTheme } from "@mui/material/styles";
 import { isAxiosError, isCancel } from "axios";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import type { DocumentOwner } from "../api/documents";
 import type {
-  Guide,
-  GuideChanges,
-  GuideKind,
-  GuideSource,
+  DocumentChanges,
+  DocumentEntry,
+  DocumentKind,
+  DocumentSource,
   LibraryItem,
   PlatformResponse,
 } from "../api/types";
 import {
-  useCreateGuideFile,
-  useCreateGuideLink,
-  useGuideUploadOptions,
-  useReplaceGuideFile,
-  useUpdateGuide,
-} from "../hooks/useGuides";
-import CheatIcon from "../icons/CheatIcon";
-import GuideIcon from "../icons/GuideIcon";
+  useCreateDocumentFile,
+  useCreateDocumentLink,
+  useDocumentUploadOptions,
+  useReplaceDocumentFile,
+  useUpdateDocument,
+} from "../hooks/useDocuments";
 import { formatFileSize } from "../utils/fileSize";
 import {
+  DOCUMENT_KINDS,
   FALLBACK_EXTENSIONS,
   domainOf,
   guideFileError,
@@ -55,18 +55,27 @@ import {
 } from "../utils/guides";
 import { TOAST_OPTIONS } from "../utils/toastOptions";
 import ConfirmDialog from "./ConfirmDialog";
+import { DOCUMENT_KIND_ICONS } from "./documentKinds";
 
 const MAX_NAME_LENGTH = 200;
 
-interface GuideDialogProps {
+// One of your copies of the owner, as the Copy picker lists it.
+export interface CopyOption {
+  id: number;
+  label: string;
+}
+
+interface DocumentDialogProps {
   open: boolean;
-  gameId: number;
+  owner: DocumentOwner;
   // Edit this entry; Add a new one when absent.
-  guide?: Guide;
+  entry?: DocumentEntry;
   // Opened from a row whose file is missing: point at Replace.
   highlightReplace?: boolean;
-  libraryItems: LibraryItem[] | undefined;
-  gamePlatforms: PlatformResponse[] | undefined;
+  copies: CopyOption[];
+  // Games only: the Platform picker.
+  libraryItems?: LibraryItem[];
+  gamePlatforms?: PlatformResponse[];
   onClose: () => void;
 }
 
@@ -74,37 +83,43 @@ function isCancelled(error: unknown): boolean {
   return isCancel(error) || (isAxiosError(error) && error.code === "ERR_CANCELED");
 }
 
-// Add or edit a Guides & Cheats entry: its type (Guide / Cheat), where it comes from (an
-// uploaded file or a link), a name and an optional platform. Files are checked here first
-// (type, size) so a refused one isn't uploaded; the server still has the final say.
-const GuideDialog = ({
+// Add or edit a document: its type (the owner's list: Guide / Cheat / Manual / … on a game,
+// Manual / Quick start / Receipt / … on hardware), where it comes from (an uploaded file or a
+// link), a name, and optionally the copy it's for (and, on a game, a platform). Files are
+// checked here first (type, size) so a refused one isn't uploaded; the server still has the
+// final say.
+const DocumentDialog = ({
   open,
-  gameId,
-  guide,
+  owner,
+  entry,
   highlightReplace,
+  copies,
   libraryItems,
   gamePlatforms,
   onClose,
-}: GuideDialogProps) => {
+}: DocumentDialogProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const isEdit = guide !== undefined;
-  const { data: uploadOptions } = useGuideUploadOptions();
-  const createFile = useCreateGuideFile(gameId);
-  const createLink = useCreateGuideLink(gameId);
-  const updateGuide = useUpdateGuide(gameId);
-  const replaceFile = useReplaceGuideFile(gameId);
+  const isEdit = entry !== undefined;
+  const isGame = owner.type === "game";
+  const kinds = DOCUMENT_KINDS[owner.type];
+  const { data: uploadOptions } = useDocumentUploadOptions();
+  const createFile = useCreateDocumentFile(owner);
+  const createLink = useCreateDocumentLink(owner);
+  const updateEntry = useUpdateDocument(owner);
+  const replaceFile = useReplaceDocumentFile(owner);
 
-  const [kind, setKind] = useState<GuideKind>(guide?.kind ?? "guide");
-  const [source, setSource] = useState<GuideSource>(guide?.source ?? "file");
+  const [kind, setKind] = useState<DocumentKind>(entry?.kind ?? kinds[0]);
+  const [source, setSource] = useState<DocumentSource>(entry?.source ?? "file");
   const [file, setFile] = useState<File | null>(null);
-  const [link, setLink] = useState(guide?.url ?? "");
+  const [link, setLink] = useState(entry?.url ?? "");
   const [linkTouched, setLinkTouched] = useState(false);
-  const [name, setName] = useState(guide?.name ?? "");
+  const [name, setName] = useState(entry?.name ?? "");
   // Once you've typed a name (or are editing one), it's no longer filled in for you.
   const [nameTouched, setNameTouched] = useState(isEdit);
-  const [platformId, setPlatformId] = useState<number | "">(guide?.platformId ?? "");
+  const [platformId, setPlatformId] = useState<number | "">(entry?.platformId ?? "");
+  const [copyId, setCopyId] = useState<number | "">(entry?.copyId ?? "");
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
@@ -122,9 +137,9 @@ const GuideDialog = ({
 
   const fileError = file ? guideFileError(file, uploadOptions) : null;
   const parsedLink = parseGuideLink(link);
-  const hasCurrentFile = guide?.source === "file" && !guide.fileMissing;
+  const hasCurrentFile = entry?.source === "file" && !entry.fileMissing;
   // A new file is needed when adding one, or turning a link into a file.
-  const fileRequired = source === "file" && (!guide || guide.source === "link");
+  const fileRequired = source === "file" && (!entry || entry.source === "link");
 
   const canSave =
     !saving &&
@@ -168,7 +183,7 @@ const GuideDialog = ({
       setServerError(detail);
       return;
     }
-    console.error("Error saving guide:", error);
+    console.error("Error saving document:", error);
     toast.error(t("guides.errors.saveError"), TOAST_OPTIONS);
   };
 
@@ -180,31 +195,35 @@ const GuideDialog = ({
     const onProgress = (fraction: number) => setProgress(fraction);
     const trimmedName = name.trim();
     const platform = platformId === "" ? null : platformId;
+    const copy = copyId === "" ? null : copyId;
     try {
-      if (!guide) {
-        const fields = { kind, name: trimmedName || null, platformId: platform };
+      if (!entry) {
+        const fields = {
+          kind,
+          name: trimmedName || null,
+          platformId: isGame ? platform : null,
+          copyId: copy,
+        };
         if (source === "file" && file) {
           await createFile.mutateAsync({ file, fields, onProgress, signal: controller.signal });
         } else {
           await createLink.mutateAsync({ url: link.trim(), fields });
         }
-        toast.success(
-          t(kind === "cheat" ? "guides.addedCheat" : "guides.addedGuide"),
-          TOAST_OPTIONS
-        );
+        toast.success(t("guides.added"), TOAST_OPTIONS);
       } else {
-        const changes: GuideChanges = {};
-        if (trimmedName !== guide.name) changes.name = trimmedName;
-        if (kind !== guide.kind) changes.kind = kind;
-        if (platform !== guide.platformId) changes.platformId = platform;
-        if (source === "link" && (guide.source === "file" || link.trim() !== guide.url))
+        const changes: DocumentChanges = {};
+        if (trimmedName !== entry.name) changes.name = trimmedName;
+        if (kind !== entry.kind) changes.kind = kind;
+        if (isGame && platform !== (entry.platformId ?? null)) changes.platformId = platform;
+        if (copy !== entry.copyId) changes.copyId = copy;
+        if (source === "link" && (entry.source === "file" || link.trim() !== entry.url))
           changes.url = link.trim();
         if (Object.keys(changes).length) {
-          await updateGuide.mutateAsync({ guideId: guide.id, changes });
+          await updateEntry.mutateAsync({ documentId: entry.id, changes });
         }
         if (source === "file" && file) {
           await replaceFile.mutateAsync({
-            guideId: guide.id,
+            documentId: entry.id,
             file,
             onProgress,
             signal: controller.signal,
@@ -223,7 +242,7 @@ const GuideDialog = ({
   };
 
   const handleSave = () => {
-    if (guide?.source === "file" && source === "link") {
+    if (entry?.source === "file" && source === "link") {
       setConfirmSwitch(true);
       return;
     }
@@ -245,9 +264,9 @@ const GuideDialog = ({
         fullScreen={fullScreen}
         fullWidth
         maxWidth="sm"
-        aria-labelledby="guide-dialog-title"
+        aria-labelledby="document-dialog-title"
       >
-        <DialogTitle id="guide-dialog-title">
+        <DialogTitle id="document-dialog-title">
           {isEdit ? t("guides.dialog.editTitle") : t("guides.dialog.addTitle")}
         </DialogTitle>
         <DialogContent>
@@ -259,32 +278,34 @@ const GuideDialog = ({
               <ToggleButtonGroup
                 exclusive
                 value={kind}
-                onChange={(_event, value: GuideKind | null) => value && setKind(value)}
+                onChange={(_event, value: DocumentKind | null) => value && setKind(value)}
                 disabled={saving}
                 aria-label={t("guides.dialog.kindLabel")}
                 size="small"
+                sx={{ flexWrap: "wrap" }}
               >
-                <ToggleButton value="guide" sx={{ gap: 1, px: 2 }}>
-                  <GuideIcon fontSize="small" />
-                  {t("guides.kind.guide")}
-                </ToggleButton>
-                <ToggleButton value="cheat" sx={{ gap: 1, px: 2 }}>
-                  <CheatIcon fontSize="small" />
-                  {t("guides.kind.cheat")}
-                </ToggleButton>
+                {kinds.map((value) => {
+                  const Icon = DOCUMENT_KIND_ICONS[value];
+                  return (
+                    <ToggleButton key={value} value={value} sx={{ gap: 1, px: 1.5 }}>
+                      <Icon fontSize="small" />
+                      {t(`guides.kind.${value}`)}
+                    </ToggleButton>
+                  );
+                })}
               </ToggleButtonGroup>
             </Box>
 
             <Box>
-              <FormLabel id="guide-source-label" sx={{ fontSize: 13 }}>
+              <FormLabel id="document-source-label" sx={{ fontSize: 13 }}>
                 {t("guides.dialog.sourceLabel")}
               </FormLabel>
               <RadioGroup
                 row
-                aria-labelledby="guide-source-label"
+                aria-labelledby="document-source-label"
                 value={source}
                 onChange={(event) => {
-                  setSource(event.target.value as GuideSource);
+                  setSource(event.target.value as DocumentSource);
                   setServerError(null);
                 }}
               >
@@ -344,10 +365,10 @@ const GuideDialog = ({
                           variant="body2"
                           sx={{ fontWeight: 600, overflowWrap: "anywhere" }}
                         >
-                          {file ? file.name : guide?.originalFilename}
+                          {file ? file.name : entry?.originalFilename}
                         </Typography>
                         <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                          {formatFileSize(file ? file.size : (guide?.sizeBytes ?? 0))}
+                          {formatFileSize(file ? file.size : (entry?.sizeBytes ?? 0))}
                         </Typography>
                       </Box>
                       {file ? (
@@ -376,7 +397,7 @@ const GuideDialog = ({
                   ) : (
                     <>
                       <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                        {guide?.fileMissing
+                        {entry?.fileMissing
                           ? t("guides.dialog.fileMissingHint")
                           : t("guides.dialog.dropHere")}
                       </Typography>
@@ -386,7 +407,7 @@ const GuideDialog = ({
                         disabled={saving}
                         onClick={() => inputRef.current?.click()}
                       >
-                        {guide?.source === "file"
+                        {entry?.source === "file"
                           ? t("guides.dialog.replace")
                           : t("guides.dialog.chooseFile")}
                       </Button>
@@ -441,33 +462,58 @@ const GuideDialog = ({
               fullWidth
             />
 
-            <TextField
-              select
-              label={t("guides.dialog.platformLabel")}
-              value={platformId}
-              disabled={saving}
-              onChange={(event) =>
-                setPlatformId(event.target.value === "" ? "" : Number(event.target.value))
-              }
-              fullWidth
-            >
-              <MenuItem value="">
-                <em>{t("common.none")}</em>
-              </MenuItem>
-              {platforms.owned.map((platform) => (
-                <MenuItem key={platform.id} value={platform.id}>
-                  {platform.name}
+            {isGame ? (
+              <TextField
+                select
+                label={t("guides.dialog.platformLabel")}
+                value={platformId}
+                disabled={saving}
+                onChange={(event) =>
+                  setPlatformId(event.target.value === "" ? "" : Number(event.target.value))
+                }
+                fullWidth
+              >
+                <MenuItem value="">
+                  <em>{t("common.none")}</em>
                 </MenuItem>
-              ))}
-              {platforms.other.length ? (
-                <ListSubheader>{t("guides.dialog.otherPlatforms")}</ListSubheader>
-              ) : null}
-              {platforms.other.map((platform) => (
-                <MenuItem key={platform.id} value={platform.id}>
-                  {platform.name}
+                {platforms.owned.map((platform) => (
+                  <MenuItem key={platform.id} value={platform.id}>
+                    {platform.name}
+                  </MenuItem>
+                ))}
+                {platforms.other.length ? (
+                  <ListSubheader>{t("guides.dialog.otherPlatforms")}</ListSubheader>
+                ) : null}
+                {platforms.other.map((platform) => (
+                  <MenuItem key={platform.id} value={platform.id}>
+                    {platform.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : null}
+
+            {copies.length || copyId !== "" ? (
+              <TextField
+                select
+                label={t("documents.copyLabel")}
+                value={copyId}
+                disabled={saving}
+                onChange={(event) =>
+                  setCopyId(event.target.value === "" ? "" : Number(event.target.value))
+                }
+                helperText={t("documents.copyHelper")}
+                fullWidth
+              >
+                <MenuItem value="">
+                  <em>{t("common.none")}</em>
                 </MenuItem>
-              ))}
-            </TextField>
+                {copies.map((copy) => (
+                  <MenuItem key={copy.id} value={copy.id}>
+                    {copy.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : null}
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -499,4 +545,4 @@ const GuideDialog = ({
   );
 };
 
-export default GuideDialog;
+export default DocumentDialog;

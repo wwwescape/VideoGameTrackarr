@@ -70,6 +70,7 @@ describe("HtmlView", () => {
     render(
       <HtmlView
         guide={GUIDE}
+        positionKey="3"
         url="https://app.test/view"
         find={FIND}
         onFindResult={vi.fn()}
@@ -96,6 +97,7 @@ describe("HtmlView", () => {
     render(
       <HtmlView
         guide={GUIDE}
+        positionKey="3"
         url="https://app.test/view"
         find={FIND}
         onFindResult={vi.fn()}

@@ -10,9 +10,10 @@ from app.schemas.base import CamelModel
 # 5 added Toys-to-Life ownership, ratings, notes and tags; 7 added a game's screensaver opt-out;
 # 8 added the screensaver's What to show settings; 9 added a copy's Steelbook flag, physical
 # contents (e.g. code in the box, number of discs) and custom Other format text; 10 added manual
-# add-on links; 11 added a link's Included mark; 12 its pre-order bonus mark. Older files still
-# restore — the new parts default to empty.
-BACKUP_FORMAT_VERSION = 12
+# add-on links; 11 added a link's Included mark; 12 its pre-order bonus mark; 13 Manuals &
+# Documents on devices, accessories and Toys-to-Life packs, and the copy a game document is for.
+# Older files still restore — the new parts default to empty.
+BACKUP_FORMAT_VERSION = 13
 
 
 class _BackupRow(BaseModel):
@@ -144,12 +145,46 @@ class BackupGuide(_BackupRow):
     name: str
     kind: str
     platform_id: int | None = None
+    # The library copy it's for (its id, kept by a restore).
+    copy_id: int | None = None
     source: str
     url: str | None = None
     original_filename: str | None = None
     stored_filename: str | None = None
     media_format: str | None = None
     size_bytes: int | None = None
+
+
+class _BackupDocumentFile(_BackupRow):
+    """The parts every document shares. A file entry's file is in a .zip backup made with
+    documents on (files/documents/<stored_filename>); its rendered copy never is."""
+
+    name: str
+    kind: str
+    source: str
+    url: str | None = None
+    original_filename: str | None = None
+    stored_filename: str | None = None
+    media_format: str | None = None
+    size_bytes: int | None = None
+
+
+class BackupHardwareDocument(_BackupDocumentFile):
+    """A device's or accessory's document (version 13+). Devices, accessories and their
+    copies keep their ids in a backup, so it names them directly."""
+
+    id: int
+    device_id: int | None = None
+    accessory_id: int | None = None
+    user_device_id: int | None = None
+    user_accessory_id: int | None = None
+
+
+class BackupToysToLifeDocument(_BackupDocumentFile):
+    """A Toys-to-Life pack's document (version 13+), inside its pack's row. Copies have no
+    ids in a backup, so the copy it's for is its position in the pack's `copies`."""
+
+    copy_index: int | None = None
 
 
 class BackupGameTag(_BackupRow):
@@ -185,6 +220,7 @@ class BackupToysToLifeItem(_BackupRow):
     rating: int | None = None
     notes: list[str] = []
     tag_ids: list[int] = []
+    documents: list[BackupToysToLifeDocument] = []
 
 
 class BackupManufacturer(_BackupRow):
@@ -347,6 +383,8 @@ class BackupIncludedFiles(_BackupRow):
     bios: bool = False
     images: bool = False
     guides: bool = False
+    # Device, accessory and Toys-to-Life document files.
+    documents: bool = False
 
 
 class BackupPayload(_BackupRow):
@@ -378,6 +416,9 @@ class BackupPayload(_BackupRow):
     user_accessories: list[BackupUserAccessory] = []
     sales_ignored: list[BackupSalesIgnored] = []
     toys_to_life: list[BackupToysToLifeItem] = []
+    # Device and accessory documents, links and files alike (files only in a .zip made with
+    # documents).
+    hardware_documents: list[BackupHardwareDocument] = []
     # Version 6+. Restoring an older backup leaves Labs and the shelf's cases as they are.
     lab_features: list[BackupLabFeature] = []
     game_cases: list[BackupGameCaseChoice] = []
@@ -401,6 +442,7 @@ class BackupRestoreResult(CamelModel):
     restored_bios_files: int = 0
     restored_images: int = 0
     restored_guide_files: int = 0
+    restored_document_files: int = 0
 
 
 class FullBackupLinkRequest(CamelModel):
@@ -410,6 +452,7 @@ class FullBackupLinkRequest(CamelModel):
     bios: bool = False
     images: bool = False
     guides: bool = False
+    documents: bool = False
 
 
 class FullBackupLinkResponse(CamelModel):

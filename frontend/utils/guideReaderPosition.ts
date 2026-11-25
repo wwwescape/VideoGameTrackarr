@@ -1,5 +1,5 @@
-// Where you were in each guide, so the reader opens it there again. Kept in this browser only
-// (localStorage), one small entry per guide id; storage can throw (private window, blocked
+// Where you were in each document, so the reader opens it there again. Kept in this browser only
+// (localStorage), one small entry per document key (see utils/guides.documentPositionKey); storage can throw (private window, blocked
 // site data), and then the reader simply starts at the top. An entry remembers the guide's
 // updatedAt: once the file is replaced or the entry edited, the old place no longer applies.
 
@@ -30,7 +30,10 @@ function isPosition(value: unknown): value is GuidePosition {
   return false;
 }
 
-export function loadGuidePosition(guideId: number, updatedAt: string): GuidePosition | null {
+export function loadGuidePosition(
+  guideId: string | number,
+  updatedAt: string
+): GuidePosition | null {
   try {
     const raw = window.localStorage.getItem(PREFIX + guideId);
     if (!raw) return null;
@@ -43,7 +46,7 @@ export function loadGuidePosition(guideId: number, updatedAt: string): GuidePosi
 }
 
 export function saveGuidePosition(
-  guideId: number,
+  guideId: string | number,
   updatedAt: string,
   position: GuidePosition
 ): void {
@@ -55,7 +58,7 @@ export function saveGuidePosition(
   }
 }
 
-export function forgetGuidePosition(guideId: number): void {
+export function forgetGuidePosition(guideId: string | number): void {
   try {
     window.localStorage.removeItem(PREFIX + guideId);
   } catch {

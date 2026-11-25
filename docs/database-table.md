@@ -2,7 +2,7 @@
 
 Companion to [developer-guide.md](developer-guide.md) and [diagrams.md](diagrams.md). Every
 table below is a SQLAlchemy model in `backend/app/models/` (`catalog.py`, `hardware.py`,
-`library.py` (including `game_guides`), `system.py`, `toys_to_life.py`, `game_cases.py`, `labs.py`) — schema changes always go through an Alembic migration in
+`library.py` (including `game_documents`), `documents.py` (what the three document tables share), `system.py`, `toys_to_life.py`, `game_cases.py`, `labs.py`) — schema changes always go through an Alembic migration in
 `backend/alembic/versions/`, never a hand edit to the running DB.
 
 **Conventions used throughout:**
@@ -212,28 +212,32 @@ Free-text notes attached to a game (mirrors `device_notes`/`accessory_notes`).
 | body | text | |
 | created_at, updated_at | timestamp | |
 
-### `game_guides`
+### `game_documents`
 
 Guides & Cheats entries on a game (see [guides.md](guides.md)): an uploaded file or a saved
-link. A `CHECK` constraint (`ck_game_guides_source`) ties `source` to its columns: a link has a
-`url` and no `stored_filename`, and a file has the reverse. Rows are removed with their game in
-`game_repository._delete_games`, and their files once that transaction commits
-(`guide_service.delete_files_after_commit`); `merge_game` moves them to the target game.
+link. Was `game_guides` until migration `b8d0f2a4c6e1`, which kept every row and id. The file
+columns come from `models/documents.DocumentColumnsMixin`, shared with `hardware_documents` and
+`toys_to_life_documents`. A `CHECK` constraint (`ck_game_documents_source`) ties `source` to its
+columns: a link has a `url` and no `stored_filename`, and a file has the reverse. Rows are
+removed with their game in `game_repository._delete_games`, and their files once that
+transaction commits (`document_files.GUIDE_STORE.delete_files_after_commit`); `merge_game`
+moves them to the target game. Deleting a library copy clears `library_item_id`.
 
 | Column | Type | Notes |
 |---|---|---|
 | id | int PK | |
 | game_id | FK → games.id | indexed |
 | name | varchar(200) | |
-| kind | enum | `guide` / `cheat` |
+| kind | enum | `guide` / `cheat` / `manual` / `receipt` / `other` |
 | platform_id | FK → platforms.id, nullable | optional |
+| library_item_id | FK → library_items.id, nullable | the copy it's for (one of this game's) |
 | source | enum | `file` / `link` |
 | url | varchar(2048), nullable | links only; `http`/`https` |
 | original_filename | varchar(255), nullable | files only; the uploaded name |
 | stored_filename | varchar(64), nullable | files only; UUID name in `uploads/guides/`, never from user input |
 | rendered_filename | varchar(64), nullable | sanitised HTML (`.docx`/`.md`) or UTF-8 copy (non-UTF-8 `.txt`); rebuilt on restore, never in backups |
-| media_format | enum, nullable | `pdf` / `docx` / `md` / `txt` |
-| size_bytes | int, nullable | the original's size |
+| media_format | enum, nullable | `pdf` / `docx` / `md` / `txt` / `jpg` / `png` / `webp` (images are stored re-encoded, without metadata) |
+| size_bytes | int, nullable | the stored original's size |
 | created_at, updated_at | timestamp | |
 
 ### `tags`
@@ -283,6 +287,7 @@ owns directly — `devices`/`accessories` link to this via `hardware_reference_e
 | discontinued | bool | |
 | compatibility | string(255), nullable | |
 | summary | text, nullable | |
+| manual_url | varchar(2048), nullable | The manufacturer's own manual page, from the CSVs' `Manual URL` column; offered as **Add official manual** |
 | created_at, updated_at | timestamp | |
 
 Note: no `image_url` column here — curated images are resolved at read time from
@@ -358,6 +363,17 @@ Junction tables, composite PK, no timestamps:
 
 Same shape as `device_tags`/`device_notes` above, scoped to `accessory_id`.
 
+### `hardware_documents`
+
+Manuals & Documents on a device or accessory (see [guides.md](guides.md)): exactly one of
+`device_id` / `accessory_id` (both FK, indexed; `CHECK ck_hardware_documents_owner`), an optional
+copy of that owner (`user_device_id` / `user_accessory_id`; `CHECK ck_hardware_documents_copy`
+allows each only with its owner, the service checks it's that owner's), `kind` (`manual` /
+`quick_start` / `receipt` / `warranty` / `repair` / `other`), plus the same file and link
+columns as `game_documents`, files stored in `uploads/documents/`. Deleted with their device or
+accessory (`hardware_document_service.delete_for_owners`), files once that commits; deleting a
+copy clears its link.
+
 ### `user_devices`, `user_accessories`
 
 One row per owned/wishlisted copy — mirrors `library_items`'s role for games. A second copy
@@ -402,6 +418,7 @@ resolved at read time from `backend/static/toys-to-life/<line>/<set_number>-<nam
 | igdb_id | bigint, nullable | Not unique — every starter kit is the base game on IGDB |
 | igdb_url | string(1024), nullable | |
 | summary | text, nullable | |
+| manual_url | varchar(2048), nullable | LEGO's building instructions, from the CSV's `Manual URL` column |
 | user_rating | int, nullable | Your 1-10 stars; never written by an import |
 | created_at, updated_at | timestamp | |
 
@@ -425,6 +442,15 @@ wishlisted with any wishlisted one.
 ### `toys_to_life_tags`, `toys_to_life_notes`
 
 Same shape as `accessory_tags`/`accessory_notes`, scoped to `item_id`.
+
+### `toys_to_life_documents`
+
+Manuals & Documents on a pack (see [guides.md](guides.md)): `item_id` (FK →
+toys_to_life_items.id, indexed), an optional `copy_id` (FK → toys_to_life_copies.id; deleting
+the copy clears it), `kind` (`manual` / `receipt` / `other`, a subset of
+`hardwaredocumentkind`), plus the same file and link columns as `game_documents`, files stored
+in `uploads/documents/`. Packs are never deleted, so rows only go one at a time, with Clear
+manuals & documents, or with Reset everything.
 
 ---
 

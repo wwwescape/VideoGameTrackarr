@@ -27,7 +27,7 @@ from app.models.gog import GogDownload, GogLibraryEntry, GogWishlistEntry
 from app.models.igdb_import import IgdbImportEntry
 from app.models.labs import LAB_LINKED_ADDONS, LabFeature
 from app.models.library import (
-    GameGuide,
+    GameDocument,
     GameProgress,
     GameTag,
     LibraryItem,
@@ -41,7 +41,7 @@ from app.models.library import (
     RomSaveState,
 )
 from app.repositories import toys_to_life_repository
-from app.services import guide_service
+from app.services.document_files import GUIDE_STORE
 
 # Repositories only add/flush/delete — they never commit. The service (or script) that
 # calls them owns the transaction boundary, so a multi-step use case (e.g. importing a
@@ -1476,7 +1476,7 @@ def merge_game(db: Session, source: Game, target: Game) -> None:
     db.execute(update(GameProgress).where(GameProgress.game_id == source.id).values(game_id=target.id))
     db.execute(update(PlaySession).where(PlaySession.game_id == source.id).values(game_id=target.id))
     db.execute(update(Note).where(Note.game_id == source.id).values(game_id=target.id))
-    db.execute(update(GameGuide).where(GameGuide.game_id == source.id).values(game_id=target.id))
+    db.execute(update(GameDocument).where(GameDocument.game_id == source.id).values(game_id=target.id))
     db.execute(update(GameTag).where(GameTag.game_id == source.id).values(game_id=target.id))
     db.execute(update(Game).where(Game.parent_game_id == source.id).values(parent_game_id=target.id))
     _merge_addon_links(db, source.id, target.id)
@@ -1652,13 +1652,15 @@ def _delete_games(db: Session, game_ids: list[int]) -> list[str]:
     guide_files = [
         name
         for stored, rendered in db.execute(
-            select(GameGuide.stored_filename, GameGuide.rendered_filename).where(GameGuide.game_id.in_(game_ids))
+            select(GameDocument.stored_filename, GameDocument.rendered_filename).where(
+                GameDocument.game_id.in_(game_ids)
+            )
         )
         for name in (stored, rendered)
         if name
     ]
-    guide_service.delete_files_after_commit(db, guide_files)
-    db.execute(delete(GameGuide).where(GameGuide.game_id.in_(game_ids)))
+    GUIDE_STORE.delete_files_after_commit(db, guide_files)
+    db.execute(delete(GameDocument).where(GameDocument.game_id.in_(game_ids)))
     db.execute(delete(GameTag).where(GameTag.game_id.in_(game_ids)))
     db.execute(delete(GameGenre).where(GameGenre.game_id.in_(game_ids)))
     db.execute(delete(GamePlatform).where(GamePlatform.game_id.in_(game_ids)))

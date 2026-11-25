@@ -14,6 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import DEFAULT_EXCLUDED_CONTENT_TYPES, GZipMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from app.api import document_content
 from app.api.routes import (
     accessories,
     addon_links,
@@ -29,6 +30,7 @@ from app.api.routes import (
     game_cases,
     games,
     guides,
+    hardware_documents,
     hardware_lookups,
     hardware_stats,
     health,
@@ -50,6 +52,7 @@ from app.api.routes import (
     share,
     tags,
     toys_to_life,
+    toys_to_life_documents,
     uploads,
     version,
 )
@@ -66,8 +69,8 @@ from app.core.security import weak_secret_warning
 from app.db.session import SessionLocal
 from app.services import (
     auth_service,
+    document_files,
     gog_download_service,
-    guide_service,
     job_definitions,
     job_scheduler,
     platprices_service,
@@ -80,8 +83,9 @@ FRONTEND_BUILD_DIR = REPO_ROOT / "build"
 
 
 class UploadsStaticFiles(StaticFiles):
-    """The public /uploads mount, minus the roms/, gog-installers/ and guides/ subfolders
-    (guides are only served through the signed links in app/api/routes/guides.py). Covers and
+    """The public /uploads mount, minus the roms/, gog-installers/, guides/ and documents/
+    subfolders (guides and hardware/Toys-to-Life documents are only served through the signed
+    links in app/api/routes/guides.py, hardware_documents.py and toys_to_life_documents.py). Covers and
     accessory images are fine to serve unauthenticated (they're shown on public share pages
     too), but uploaded ROMs live under the same directory (see rom_service.get_rom_dir) and
     must only ever be reachable through the signed-URL route in app/api/routes/roms.py, and
@@ -93,7 +97,8 @@ class UploadsStaticFiles(StaticFiles):
         if first_segment.lower() in (
             rom_service.ROMS_SUBDIR,
             gog_download_service.GOG_DOWNLOADS_SUBDIR,
-            guide_service.GUIDES_SUBDIR,
+            document_files.GUIDE_STORE.subdir,
+            document_files.HARDWARE_STORE.subdir,
         ):
             raise StarletteHTTPException(status_code=404)
         return path
@@ -181,20 +186,23 @@ SECURITY_HEADERS = {
 PUBLIC_REFERRER_POLICY = "no-referrer"
 
 
-def _is_guide_content_path(path: str) -> bool:
-    # /api/guides/{id}/content/{token}/{filename}
+_DOCUMENT_CONTENT_PREFIXES = ("guides", "hardware-documents", "toys-to-life-documents")
+
+
+def _is_document_content_path(path: str) -> bool:
+    # /api/{guides|hardware-documents|toys-to-life-documents}/{id}/content/{token}/{filename}
     parts = path.split("/")
-    return len(parts) >= 5 and parts[1:3] == ["api", "guides"] and parts[4] == "content"
+    return len(parts) >= 5 and parts[1] == "api" and parts[2] in _DOCUMENT_CONTENT_PREFIXES and parts[4] == "content"
 
 
 def security_headers_for(path: str) -> dict[str, str]:
     headers = dict(SECURITY_HEADERS)
     if path.startswith("/emulatorjs/"):
         headers["Content-Security-Policy"] = EMULATOR_CONTENT_SECURITY_POLICY
-    elif _is_guide_content_path(path):
-        # A PDF response sets its own (unsandboxed) policy, which wins: the middleware only
-        # fills in headers a response doesn't already have.
-        headers["Content-Security-Policy"] = guides.GUIDE_CONTENT_SECURITY_POLICY
+    elif _is_document_content_path(path):
+        # A PDF or image response sets its own (unsandboxed) policy, which wins: the
+        # middleware only fills in headers a response doesn't already have.
+        headers["Content-Security-Policy"] = document_content.CONTENT_SECURITY_POLICY
     else:
         headers["Content-Security-Policy"] = APP_CONTENT_SECURITY_POLICY
     if path.startswith("/public/") or path.startswith("/api/public/"):
@@ -374,6 +382,10 @@ app.include_router(roms.router)
 app.include_router(roms.content_router)
 app.include_router(guides.router)
 app.include_router(guides.content_router)
+app.include_router(hardware_documents.router)
+app.include_router(hardware_documents.content_router)
+app.include_router(toys_to_life_documents.router)
+app.include_router(toys_to_life_documents.content_router)
 app.include_router(public.router)
 
 # Uploaded cover images (see app/services/upload_service.py) — created on first use rather

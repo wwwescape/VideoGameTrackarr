@@ -1,10 +1,11 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.documents import SOURCE_CHECK, DocumentColumnsMixin, HardwareDocumentKind
 from app.models.library import LibraryStatus, RatingBoard, Tag
 from app.models.mixins import TimestampMixin, enum_column
 
@@ -94,6 +95,9 @@ class HardwareReferenceEntry(TimestampMixin, Base):
     discontinued: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     compatibility: Mapped[str | None] = mapped_column(String(255))
     summary: Mapped[str | None] = mapped_column(Text)
+    # The manufacturer's own manual page or PDF, from the CSV's "Manual URL" column; offered
+    # as a one-click Manual link on the detail page.
+    manual_url: Mapped[str | None] = mapped_column(String(2048))
 
 
 class Device(TimestampMixin, Base):
@@ -312,3 +316,29 @@ class UserAccessory(TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
     accessory: Mapped["Accessory"] = relationship()
+
+
+class HardwareDocument(DocumentColumnsMixin, TimestampMixin, Base):
+    """A manual, receipt, warranty card or other document kept with a device or accessory:
+    an uploaded file (stored privately in document_files.HARDWARE_STORE, served only through
+    signed links) or a saved link. Exactly one of device_id/accessory_id is set. A receipt or
+    warranty can also name the owned copy it's for (user_device_id/user_accessory_id, matching
+    the owner); deleting that copy only clears it. Never shown on share pages."""
+
+    __tablename__ = "hardware_documents"
+    __table_args__ = (
+        CheckConstraint(SOURCE_CHECK, name="source"),
+        CheckConstraint("(device_id IS NULL) <> (accessory_id IS NULL)", name="owner"),
+        CheckConstraint(
+            "(user_device_id IS NULL OR device_id IS NOT NULL)"
+            " AND (user_accessory_id IS NULL OR accessory_id IS NOT NULL)",
+            name="copy",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_id: Mapped[int | None] = mapped_column(ForeignKey("devices.id"), index=True)
+    accessory_id: Mapped[int | None] = mapped_column(ForeignKey("accessories.id"), index=True)
+    user_device_id: Mapped[int | None] = mapped_column(ForeignKey("user_devices.id"))
+    user_accessory_id: Mapped[int | None] = mapped_column(ForeignKey("user_accessories.id"))
+    kind: Mapped[HardwareDocumentKind] = mapped_column(enum_column(HardwareDocumentKind), nullable=False)

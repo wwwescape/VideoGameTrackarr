@@ -96,11 +96,13 @@ def _isolate_rom_storage(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _isolate_guide_storage(tmp_path, monkeypatch):
-    # Guides & Cheats files must never land in the real backend/uploads directory either.
-    from app.services import guide_service
+    # Guides & Cheats and hardware document files must never land in the real
+    # backend/uploads directory either.
+    from app.services.document_files import GUIDE_STORE, HARDWARE_STORE
 
     guide_dir = tmp_path / "guides"
-    monkeypatch.setattr(guide_service, "get_guide_dir", lambda: guide_dir)
+    monkeypatch.setattr(GUIDE_STORE, "directory", lambda: guide_dir)
+    monkeypatch.setattr(HARDWARE_STORE, "directory", lambda: tmp_path / "documents")
     yield guide_dir
 
 

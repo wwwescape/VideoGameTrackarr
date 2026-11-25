@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.config import REPO_ROOT
 from app.db.session import session_scope
 from app.repositories import toys_to_life_repository
+from app.services import document_files
 from app.services.toys_to_life_lines import LINES, ToysToLifeLine
 
 DATA_DIR = REPO_ROOT / "docs" / "data" / "toys_to_life"
@@ -53,6 +54,7 @@ def parse_csv(path: Path) -> list[dict]:
                 "igdb_id": _int(row["IGDB ID"]),
                 "igdb_url": _text(row["IGDB URL"]),
                 "summary": _text(row["Summary"]),
+                "manual_url": document_files.reference_manual_url(row.get("Manual URL"), row["Set Number"].strip()),
             }
             for row in csv.DictReader(csv_file)
             if (row.get("Set Number") or "").strip()

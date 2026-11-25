@@ -46,9 +46,13 @@ def export_backup(db: Session = Depends(get_db)) -> Response:
     )
 
 
-def _full_backup_response(db: Session, roms: bool, bios: bool, images: bool, guides: bool) -> FileResponse:
+def _full_backup_response(
+    db: Session, roms: bool, bios: bool, images: bool, guides: bool, documents: bool
+) -> FileResponse:
     """The .zip backup with the files picked, built in a temp file that's deleted once sent."""
-    path = backup_service.export_full_backup_zip(db, roms=roms, bios=bios, images=images, guides=guides)
+    path = backup_service.export_full_backup_zip(
+        db, roms=roms, bios=bios, images=images, guides=guides, documents=documents
+    )
     return FileResponse(
         path,
         media_type="application/zip",
@@ -66,7 +70,13 @@ def create_full_backup_link(
     token = create_backup_download_token(current_user.id)
     flags = "&".join(
         f"{name}={str(value).lower()}"
-        for name, value in (("roms", body.roms), ("bios", body.bios), ("images", body.images), ("guides", body.guides))
+        for name, value in (
+            ("roms", body.roms),
+            ("bios", body.bios),
+            ("images", body.images),
+            ("guides", body.guides),
+            ("documents", body.documents),
+        )
     )
     return FullBackupLinkResponse(url=f"/api/export/backup/full/{token}/videogametrackarr-backup.zip?{flags}")
 
@@ -79,6 +89,7 @@ def download_full_backup(
     bios: bool = Query(default=True),
     images: bool = Query(default=False),
     guides: bool = Query(default=True),
+    documents: bool = Query(default=True),
     db: Session = Depends(get_db),
 ) -> FileResponse:
     try:
@@ -87,7 +98,7 @@ def download_full_backup(
         raise HTTPException(status_code=401, detail="Invalid or expired download link") from exc
     if db.get(User, int(payload["sub"])) is None:
         raise HTTPException(status_code=401, detail="Invalid or expired download link")
-    return _full_backup_response(db, roms=roms, bios=bios, images=images, guides=guides)
+    return _full_backup_response(db, roms=roms, bios=bios, images=images, guides=guides, documents=documents)
 
 
 @router.post("/api/import/backup", response_model=RestoreStatusResponse, status_code=status.HTTP_202_ACCEPTED)

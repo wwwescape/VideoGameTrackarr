@@ -1,4 +1,4 @@
-import type { Guide } from "../../api/types";
+import type { DocumentEntry } from "../../api/types";
 
 // What the reader tells a view about find on page, and what the view reports back.
 export interface FindRequest {
@@ -15,7 +15,9 @@ export interface FindResult {
 }
 
 export interface GuideViewProps {
-  guide: Guide;
+  guide: DocumentEntry;
+  // What the place you left it is remembered under (see utils/guides.documentPositionKey).
+  positionKey: string;
   // A signed view link (already resolved to a full address).
   url: string;
   find: FindRequest;

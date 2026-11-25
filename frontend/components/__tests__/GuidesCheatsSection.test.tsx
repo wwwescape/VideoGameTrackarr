@@ -11,9 +11,9 @@ vi.mock("react-toastify", () => ({
 
 const createGuideViewLink = vi.fn();
 const createGuideDownloadLink = vi.fn();
-vi.mock("../../api/guides", () => ({
-  createGuideViewLink: (...args: unknown[]) => createGuideViewLink(...args),
-  createGuideDownloadLink: (...args: unknown[]) => createGuideDownloadLink(...args),
+vi.mock("../../api/documents", () => ({
+  createDocumentViewLink: (...args: unknown[]) => createGuideViewLink(...args),
+  createDocumentDownloadLink: (...args: unknown[]) => createGuideDownloadLink(...args),
 }));
 
 const downloadFromUrl = vi.fn();
@@ -32,10 +32,10 @@ vi.mock("../guideReader/GuideReader", () => ({
 }));
 
 // The dialog has its own tests.
-vi.mock("../GuideDialog", () => ({
-  default: ({ guide, highlightReplace }: { guide?: Guide; highlightReplace?: boolean }) => (
+vi.mock("../DocumentDialog", () => ({
+  default: ({ entry, highlightReplace }: { entry?: Guide; highlightReplace?: boolean }) => (
     <div role="dialog">
-      {guide ? `Editing ${guide.name}` : "Adding"}
+      {entry ? `Editing ${entry.name}` : "Adding"}
       {highlightReplace ? " (replace)" : ""}
     </div>
   ),
@@ -43,9 +43,10 @@ vi.mock("../GuideDialog", () => ({
 
 let guides: Guide[] = [];
 const deleteGuide = vi.fn();
-vi.mock("../../hooks/useGuides", () => ({
-  useGuides: () => ({ data: guides, isError: false }),
-  useDeleteGuide: () => ({ mutateAsync: deleteGuide, isPending: false }),
+vi.mock("../../hooks/useDocuments", () => ({
+  useDocuments: () => ({ data: guides, isError: false }),
+  useDeleteDocument: () => ({ mutateAsync: deleteGuide, isPending: false }),
+  useCreateDocumentLink: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 function guide(overrides: Partial<Guide>): Guide {
@@ -57,6 +58,8 @@ function guide(overrides: Partial<Guide>): Guide {
     source: "file",
     platformId: null,
     platformName: null,
+    copyId: null,
+    copyNumber: null,
     url: null,
     domain: null,
     originalFilename: "walkthrough.pdf",
@@ -118,7 +121,7 @@ describe("GuidesCheatsSection", () => {
     renderSection([]);
 
     expect(screen.getByText("Guides & Cheats")).toBeInTheDocument();
-    expect(screen.getByText("No guides or cheats yet.")).toBeInTheDocument();
+    expect(screen.getByText("No guides, cheats or manuals yet.")).toBeInTheDocument();
   });
 
   it("shows file, link and missing-file rows with their own details and actions", () => {
@@ -200,7 +203,7 @@ describe("GuidesCheatsSection", () => {
     await user.click(within(row("Walkthrough")).getByRole("button", { name: "Download" }));
 
     await waitFor(() => expect(downloadFromUrl).toHaveBeenCalled());
-    expect(createGuideDownloadLink).toHaveBeenCalledWith(1);
+    expect(createGuideDownloadLink).toHaveBeenCalledWith({ type: "game", id: 5 }, 1);
   });
 
   it("asks before deleting, and says what goes", async () => {

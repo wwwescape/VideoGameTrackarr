@@ -27,6 +27,7 @@ from app.models.catalog import (
     ReleaseDate,
     Screenshot,
 )
+from app.models.documents import TOYS_TO_LIFE_KINDS, DocumentFormat, DocumentSource, HardwareDocumentKind
 from app.models.game_cases import GameCase
 from app.models.gog import GogDownload, GogLibraryEntry, GogWishlistEntry
 from app.models.hardware import (
@@ -37,6 +38,7 @@ from app.models.hardware import (
     Device,
     DeviceType,
     HardwareCondition,
+    HardwareDocument,
     HardwarePlatform,
     Manufacturer,
     StorageVariant,
@@ -48,12 +50,10 @@ from app.models.itad import ItadPriceCache
 from app.models.labs import LabFeature
 from app.models.library import (
     BiosFile,
-    GameGuide,
+    GameDocument,
     GameProgress,
     GameTag,
-    GuideFormat,
     GuideKind,
-    GuideSource,
     LibraryItem,
     LibraryStatus,
     MediaFormat,
@@ -68,7 +68,13 @@ from app.models.library import (
 )
 from app.models.platprices import PlatPricesCache
 from app.models.system import User
-from app.models.toys_to_life import ToysToLifeCopy, ToysToLifeItem, ToysToLifeNote, ToysToLifeTag
+from app.models.toys_to_life import (
+    ToysToLifeCopy,
+    ToysToLifeDocument,
+    ToysToLifeItem,
+    ToysToLifeNote,
+    ToysToLifeTag,
+)
 from app.schemas.backup import (
     BACKUP_FORMAT_VERSION,
     BackupAccessory,
@@ -84,6 +90,7 @@ from app.schemas.backup import (
     BackupGameVideo,
     BackupGuide,
     BackupHardware,
+    BackupHardwareDocument,
     BackupHardwarePlatform,
     BackupHardwareType,
     BackupIncludedFiles,
@@ -103,11 +110,18 @@ from app.schemas.backup import (
     BackupStorageVariant,
     BackupTag,
     BackupToysToLifeCopy,
+    BackupToysToLifeDocument,
     BackupToysToLifeItem,
     BackupUserAccessory,
     BackupUserHardware,
 )
-from app.services import gog_download_service, guide_service, rom_service, toys_to_life_adoption
+from app.services import (
+    document_files,
+    gog_download_service,
+    rom_service,
+    toys_to_life_adoption,
+)
+from app.services.document_files import GUIDE_STORE, HARDWARE_STORE
 from app.services.upload_service import (
     ACCESSORY_IMAGES_DIR,
     ACCESSORY_IMAGES_URL_PREFIX,
@@ -236,6 +250,7 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 name=g.name,
                 kind=g.kind.value,
                 platform_id=g.platform_id,
+                copy_id=g.library_item_id,
                 source=g.source.value,
                 url=g.url,
                 original_filename=g.original_filename,
@@ -243,9 +258,20 @@ def build_backup_payload(db: Session, *, roms: bool = False, bios: bool = False)
                 media_format=g.media_format.value if g.media_format else None,
                 size_bytes=g.size_bytes,
             )
-            for g in db.scalars(select(GameGuide).order_by(GameGuide.id))
+            for g in db.scalars(select(GameDocument).order_by(GameDocument.id))
         ],
         game_tags=[BackupGameTag(game_id=gt.game_id, tag_id=gt.tag_id) for gt in db.scalars(select(GameTag))],
+        hardware_documents=[
+            BackupHardwareDocument(
+                id=d.id,
+                device_id=d.device_id,
+                accessory_id=d.accessory_id,
+                user_device_id=d.user_device_id,
+                user_accessory_id=d.user_accessory_id,
+                **_document_file_fields(d),
+            )
+            for d in db.scalars(select(HardwareDocument).order_by(HardwareDocument.id))
+        ],
         addon_links=[
             BackupAddonLink(
                 addon_game_id=link.addon_game_id,
@@ -423,9 +449,19 @@ def _toys_to_life_rows(db: Session) -> list[BackupToysToLifeItem]:
     for link in db.scalars(select(ToysToLifeTag)):
         tag_ids.setdefault(link.item_id, []).append(link.tag_id)
     copies: dict[int, list[BackupToysToLifeCopy]] = {}
+    # A copy's position in its pack's list, which is how a document names it.
+    copy_index: dict[int, int] = {}
     for copy in db.scalars(select(ToysToLifeCopy).order_by(ToysToLifeCopy.id)):
-        copies.setdefault(copy.item_id, []).append(
-            BackupToysToLifeCopy(status=copy.status.value, price=copy.price, notes=copy.notes)
+        item_copies = copies.setdefault(copy.item_id, [])
+        copy_index[copy.id] = len(item_copies)
+        item_copies.append(BackupToysToLifeCopy(status=copy.status.value, price=copy.price, notes=copy.notes))
+    documents: dict[int, list[BackupToysToLifeDocument]] = {}
+    for document in db.scalars(select(ToysToLifeDocument).order_by(ToysToLifeDocument.id)):
+        documents.setdefault(document.item_id, []).append(
+            BackupToysToLifeDocument(
+                copy_index=copy_index.get(document.copy_id) if document.copy_id is not None else None,
+                **_document_file_fields(document),
+            )
         )
     return [
         BackupToysToLifeItem(
@@ -435,31 +471,98 @@ def _toys_to_life_rows(db: Session) -> list[BackupToysToLifeItem]:
             rating=item.user_rating,
             notes=notes.get(item.id, []),
             tag_ids=sorted(tag_ids.get(item.id, [])),
+            documents=documents.get(item.id, []),
         )
         for item in db.scalars(select(ToysToLifeItem).order_by(ToysToLifeItem.line, ToysToLifeItem.set_number))
-        if item.id in copies or item.user_rating is not None or item.id in notes or item.id in tag_ids
+        if item.id in copies
+        or item.user_rating is not None
+        or item.id in notes
+        or item.id in tag_ids
+        or item.id in documents
     ]
 
 
-def _restore_toys_to_life(db: Session, rows: list[BackupToysToLifeItem]) -> None:
+def _document_file_fields(document) -> dict:
+    """The columns every document table shares, as a backup row's fields."""
+    return {
+        "name": document.name,
+        "kind": document.kind.value,
+        "source": document.source.value,
+        "url": document.url,
+        "original_filename": document.original_filename,
+        "stored_filename": document.stored_filename,
+        "media_format": document.media_format.value if document.media_format else None,
+        "size_bytes": document.size_bytes,
+    }
+
+
+def _document_file_columns(row) -> dict | None:
+    """A backup document row's shared columns, or None for one that can't be restored (a
+    file whose name isn't a plain one we could have written, a link without a URL, an unknown
+    source or format). Never takes a rendered copy: a restore rebuilds it."""
+    try:
+        source = DocumentSource(row.source)
+        media_format = DocumentFormat(row.media_format) if source is DocumentSource.FILE and row.media_format else None
+    except ValueError:
+        return None
+    if source is DocumentSource.FILE and not _plain_name(row.stored_filename):
+        return None
+    if source is DocumentSource.LINK and not row.url:
+        return None
+    is_file = source is DocumentSource.FILE
+    return {
+        "name": row.name[: document_files.MAX_NAME_LENGTH] or "Untitled",
+        "source": source,
+        "url": None if is_file else row.url,
+        "original_filename": row.original_filename if is_file else None,
+        "stored_filename": row.stored_filename if is_file else None,
+        "media_format": media_format,
+        "size_bytes": row.size_bytes if is_file else None,
+    }
+
+
+def _restore_toys_to_life(db: Session, rows: list[BackupToysToLifeItem]) -> list[ToysToLifeDocument]:
     """Re-applies your state to the packs by (line, set_number). A pack this install doesn't
-    have (a line added after this one was set up) is skipped, as is a tag the backup lacks."""
+    have (a line added after this one was set up) is skipped, as is a tag the backup lacks.
+    Returns the restored documents (their files are put back by the caller)."""
     items = {(item.line, item.set_number): item.id for item in db.scalars(select(ToysToLifeItem))}
     tag_ids = set(db.scalars(select(Tag.id)))
+    restored_documents: list[ToysToLifeDocument] = []
     for row in rows:
         item_id = items.get((row.line, row.set_number))
         if item_id is None:
             continue
-        for copy in row.copies:
-            db.add(
-                ToysToLifeCopy(item_id=item_id, status=LibraryStatus(copy.status), price=copy.price, notes=copy.notes)
+        new_copies = [
+            ToysToLifeCopy(item_id=item_id, status=LibraryStatus(copy.status), price=copy.price, notes=copy.notes)
+            for copy in row.copies
+        ]
+        db.add_all(new_copies)
+        if row.documents:
+            db.flush()  # the copies' new ids, for the documents that name them
+        for document_row in row.documents:
+            columns = _document_file_columns(document_row)
+            try:
+                kind = HardwareDocumentKind(document_row.kind)
+            except ValueError:
+                kind = HardwareDocumentKind.OTHER
+            if columns is None:
+                continue
+            index = document_row.copy_index
+            document = ToysToLifeDocument(
+                item_id=item_id,
+                copy_id=new_copies[index].id if index is not None and 0 <= index < len(new_copies) else None,
+                kind=kind if kind in TOYS_TO_LIFE_KINDS else HardwareDocumentKind.OTHER,
+                **columns,
             )
+            db.add(document)
+            restored_documents.append(document)
         if row.rating is not None:
             db.execute(update(ToysToLifeItem).where(ToysToLifeItem.id == item_id).values(user_rating=row.rating))
         for body in row.notes:
             db.add(ToysToLifeNote(item_id=item_id, body=body))
         for tag_id in sorted(set(row.tag_ids) & tag_ids):
             db.add(ToysToLifeTag(item_id=item_id, tag_id=tag_id))
+    return restored_documents
 
 
 def export_backup_json(db: Session) -> str:
@@ -472,6 +575,7 @@ FULL_BACKUP_FILES_PREFIX = "files/"
 
 FULL_BACKUP_IMAGES_PREFIX = FULL_BACKUP_FILES_PREFIX + "images/"
 FULL_BACKUP_GUIDES_PREFIX = FULL_BACKUP_FILES_PREFIX + "guides/"
+FULL_BACKUP_DOCUMENTS_PREFIX = FULL_BACKUP_FILES_PREFIX + "documents/"
 # Uploaded images by the address prefix they're served under, with the folder they live in.
 _IMAGE_FOLDERS = (
     (COVERS_URL_PREFIX, "covers", COVERS_DIR),
@@ -521,6 +625,12 @@ def _plain_name(name: str | None) -> bool:
     return bool(name) and Path(name).name == name and name not in (".", "..")
 
 
+def _document_file_names(payload: BackupPayload) -> list[str]:
+    """Stored names of the payload's device, accessory and Toys-to-Life document files."""
+    rows = [*payload.hardware_documents, *(d for item in payload.toys_to_life for d in item.documents)]
+    return [d.stored_filename for d in rows if d.source == "file" and _plain_name(d.stored_filename)]
+
+
 def _guide_file_names(payload: BackupPayload) -> list[str]:
     """Stored names of the payload's guide files — plain file names only (a hand-edited
     backup's anything-else is never followed)."""
@@ -528,7 +638,13 @@ def _guide_file_names(payload: BackupPayload) -> list[str]:
 
 
 def export_full_backup_zip(
-    db: Session, *, roms: bool = True, bios: bool = True, images: bool = False, guides: bool = True
+    db: Session,
+    *,
+    roms: bool = True,
+    bios: bool = True,
+    images: bool = False,
+    guides: bool = True,
+    documents: bool = True,
 ) -> Path:
     """A .zip backup: backup.json plus the files picked — ROMs (with their save states,
     screenshots and in-game saves) and BIOS files under files/<stored path>, uploaded images
@@ -536,7 +652,9 @@ def export_full_backup_zip(
     deletes it) so memory stays flat however many GB of ROMs there are. Stored, not
     re-compressed: ROMs and images are mostly compressed already, and deflating GBs is slow."""
     payload = build_backup_payload(db, roms=roms, bios=bios)
-    payload.included_files = BackupIncludedFiles(roms=roms, bios=bios, images=images, guides=guides)
+    payload.included_files = BackupIncludedFiles(
+        roms=roms, bios=bios, images=images, guides=guides, documents=documents
+    )
     handle, name = tempfile.mkstemp(prefix="vgt-full-backup-", suffix=".zip")
     os.close(handle)
     path = Path(name)
@@ -555,9 +673,14 @@ def export_full_backup_zip(
                         archive.write(source, member)
             if guides:
                 for name in _guide_file_names(payload):
-                    source = guide_service.file_path(name)
+                    source = GUIDE_STORE.safe_path(name)
                     if source.is_file():
                         archive.write(source, FULL_BACKUP_GUIDES_PREFIX + name)
+            if documents:
+                for name in _document_file_names(payload):
+                    source = HARDWARE_STORE.safe_path(name)
+                    if source.is_file():
+                        archive.write(source, FULL_BACKUP_DOCUMENTS_PREFIX + name)
     except BaseException:
         path.unlink(missing_ok=True)
         raise
@@ -652,7 +775,9 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     db.execute(delete(RomFile))
 
     # Hardware side, deepest-children-first — independent of the games tables above, but
-    # wiped/restored in the same pass so one backup file covers the whole app.
+    # wiped/restored in the same pass so one backup file covers the whole app. Document rows go
+    # now; their files once the restore commits, unless a restored row still uses them.
+    db.execute(delete(HardwareDocument))
     db.execute(delete(UserDevice))
     db.execute(delete(UserAccessory))
     db.execute(delete(AccessoryCompatibility))
@@ -668,10 +793,11 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     db.execute(delete(GameTag))
     db.execute(delete(GameAddonLink))
     db.execute(delete(Note))
-    db.execute(delete(GameGuide))
+    db.execute(delete(GameDocument))
     # Toys-to-Life: only your state on the packs goes — the packs are reference data.
     db.execute(delete(ToysToLifeTag))
     db.execute(delete(ToysToLifeNote))
+    db.execute(delete(ToysToLifeDocument))
     db.execute(delete(ToysToLifeCopy))
     db.execute(update(ToysToLifeItem).values(user_rating=None))
     # Caches keyed on game ids, which the backup's ids may now point elsewhere: they refetch
@@ -838,7 +964,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
             )
         )
     db.flush()
-    _restore_toys_to_life(db, payload.toys_to_life)
+    restored_toy_documents = _restore_toys_to_life(db, payload.toys_to_life)
     _restore_labs_and_game_cases(db, payload)
 
     for m in payload.manufacturers:
@@ -919,6 +1045,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
             )
         )
 
+    restored_documents = [*_restore_hardware_documents(db, payload), *restored_toy_documents]
+
     restored_game_ids = {g.id for g in payload.games}
     for ignored in payload.sales_ignored:
         if ignored.game_id in restored_game_ids:
@@ -947,7 +1075,14 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     # Rendered copies are never taken from a backup: rebuild each from its original, whether
     # it just came out of the zip or was already here (a same-instance restore).
     for guide in restored_guides:
-        guide_service.rebuild_rendered(guide)
+        GUIDE_STORE.rebuild_rendered(guide)
+    restored_document_files = (
+        _extract_document_files(files_zip, restored_documents, HARDWARE_STORE, FULL_BACKUP_DOCUMENTS_PREFIX)
+        if included.documents
+        else 0
+    )
+    for document in restored_documents:
+        HARDWARE_STORE.rebuild_rendered(document)
     if included.bios:
         # The .zip's BIOS files replace the current ones outright.
         orphaned_rom_files += [b.stored_filename for b in db.scalars(select(BiosFile))]
@@ -1036,7 +1171,8 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
     # Installer rows don't survive a restore (game ids change), so neither do their files.
     gog_download_service.prune_orphan_files(db)
     # Guide files no restored row uses (replaced by the zip's, or their entry is gone).
-    guide_service.clear_folder(keep={name for g in restored_guides for name in guide_service.filenames_of(g)})
+    GUIDE_STORE.clear_folder(keep={name for g in restored_guides for name in document_files.filenames_of(g)})
+    HARDWARE_STORE.clear_folder(keep={name for d in restored_documents for name in document_files.filenames_of(d)})
 
     return BackupRestoreResult(
         restored_games=len(payload.games),
@@ -1048,6 +1184,7 @@ def restore_backup(db: Session, payload: BackupPayload, files_zip: Path | None =
         restored_bios_files=len(payload.bios_files) if included.bios else 0,
         restored_images=restored_images,
         restored_guide_files=restored_guide_files,
+        restored_document_files=restored_document_files,
     )
 
 
@@ -1086,57 +1223,107 @@ def _extract_files(files_zip: Path | None, relatives: list[str]) -> None:
                 shutil.copyfileobj(source, out, 1024 * 1024)
 
 
-def _restore_guide_rows(db: Session, payload: BackupPayload, restored_game_ids: set[int]) -> list[GameGuide]:
+def _restore_guide_rows(db: Session, payload: BackupPayload, restored_game_ids: set[int]) -> list[GameDocument]:
     """Adds the backup's Guides & Cheats rows (ids kept), skipping any whose game isn't in
     the backup or whose file name isn't a plain one we could have written. A platform the
     backup doesn't have is cleared rather than failing the restore."""
     platform_ids = {p.id for p in payload.platforms}
-    guides: list[GameGuide] = []
+    copies = {li.id: li.game_id for li in payload.library_items}
+    guides: list[GameDocument] = []
     for row in payload.guides:
         if row.game_id not in restored_game_ids:
             continue
-        source = GuideSource(row.source)
-        if source is GuideSource.FILE and not _plain_name(row.stored_filename):
+        source = DocumentSource(row.source)
+        if source is DocumentSource.FILE and not _plain_name(row.stored_filename):
             continue
-        if source is GuideSource.LINK and not row.url:
+        if source is DocumentSource.LINK and not row.url:
             continue
-        guide = GameGuide(
+        guide = GameDocument(
             id=row.id,
             game_id=row.game_id,
-            name=row.name[: guide_service.MAX_NAME_LENGTH] or "Untitled",
+            name=row.name[: document_files.MAX_NAME_LENGTH] or "Untitled",
             kind=GuideKind(row.kind),
             platform_id=row.platform_id if row.platform_id in platform_ids else None,
+            library_item_id=row.copy_id if row.copy_id is not None and copies.get(row.copy_id) == row.game_id else None,
             source=source,
-            url=row.url if source is GuideSource.LINK else None,
-            original_filename=row.original_filename if source is GuideSource.FILE else None,
-            stored_filename=row.stored_filename if source is GuideSource.FILE else None,
-            media_format=GuideFormat(row.media_format) if source is GuideSource.FILE and row.media_format else None,
-            size_bytes=row.size_bytes if source is GuideSource.FILE else None,
+            url=row.url if source is DocumentSource.LINK else None,
+            original_filename=row.original_filename if source is DocumentSource.FILE else None,
+            stored_filename=row.stored_filename if source is DocumentSource.FILE else None,
+            media_format=DocumentFormat(row.media_format)
+            if source is DocumentSource.FILE and row.media_format
+            else None,
+            size_bytes=row.size_bytes if source is DocumentSource.FILE else None,
         )
         db.add(guide)
         guides.append(guide)
     return guides
 
 
-def _extract_guide_files(files_zip: Path | None, guides: list[GameGuide]) -> int:
-    """Puts back the restored file entries' originals from files/guides/ in the zip. One the
-    zip doesn't have is left as it is (its entry shows as file missing if it isn't here)."""
+def _restore_hardware_documents(db: Session, payload: BackupPayload) -> list[HardwareDocument]:
+    """Adds the backup's device and accessory documents (ids kept), skipping any whose owner
+    isn't in the backup; a copy that isn't that owner's is cleared rather than failing."""
+    devices = {d.id for d in payload.hardware}
+    accessories = {a.id for a in payload.accessories}
+    device_copies = {u.id: u.hardware_id for u in payload.user_hardware}
+    accessory_copies = {u.id: u.accessory_id for u in payload.user_accessories}
+    restored: list[HardwareDocument] = []
+    for row in payload.hardware_documents:
+        columns = _document_file_columns(row)
+        if columns is None:
+            continue
+        try:
+            kind = HardwareDocumentKind(row.kind)
+        except ValueError:
+            kind = HardwareDocumentKind.OTHER
+        if row.device_id is not None and row.device_id in devices:
+            owner = {
+                "device_id": row.device_id,
+                "user_device_id": row.user_device_id
+                if device_copies.get(row.user_device_id) == row.device_id
+                else None,
+            }
+        elif row.accessory_id is not None and row.accessory_id in accessories:
+            owner = {
+                "accessory_id": row.accessory_id,
+                "user_accessory_id": row.user_accessory_id
+                if accessory_copies.get(row.user_accessory_id) == row.accessory_id
+                else None,
+            }
+        else:
+            continue
+        document = HardwareDocument(id=row.id, kind=kind, **owner, **columns)
+        db.add(document)
+        restored.append(document)
+    return restored
+
+
+def _extract_document_files(
+    files_zip: Path | None, documents: list, store: document_files.DocumentStore, prefix: str
+) -> int:
+    """Puts back the restored file entries' originals from `prefix` in the zip (files/guides/
+    or files/documents/). One the zip doesn't have is left as it is (its entry shows as file
+    missing if it isn't here)."""
     assert files_zip is not None
     restored = 0
     with zipfile.ZipFile(files_zip) as archive:
         present = set(archive.namelist())
-        for guide in guides:
-            if guide.source is not GuideSource.FILE or not guide.stored_filename:
+        for document in documents:
+            if document.source is not DocumentSource.FILE or not document.stored_filename:
                 continue
-            member = FULL_BACKUP_GUIDES_PREFIX + guide.stored_filename
+            member = prefix + document.stored_filename
             if member not in present:
                 continue
-            destination = guide_service.file_path(guide.stored_filename)
+            destination = store.safe_path(document.stored_filename)
             destination.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(member) as source, destination.open("wb") as out:
                 shutil.copyfileobj(source, out, 1024 * 1024)
             restored += 1
     return restored
+
+
+def _extract_guide_files(files_zip: Path | None, guides: list[GameDocument]) -> int:
+    """Puts back the restored Guides & Cheats files from files/guides/ in the zip."""
+    return _extract_document_files(files_zip, guides, GUIDE_STORE, FULL_BACKUP_GUIDES_PREFIX)
 
 
 def _extract_images(files_zip: Path | None, payload: BackupPayload) -> int:

@@ -10,9 +10,9 @@ vi.mock("react-toastify", () => ({
 
 const createGuideViewLink = vi.fn();
 const createGuideDownloadLink = vi.fn();
-vi.mock("../../../api/guides", () => ({
-  createGuideViewLink: (...args: unknown[]) => createGuideViewLink(...args),
-  createGuideDownloadLink: (...args: unknown[]) => createGuideDownloadLink(...args),
+vi.mock("../../../api/documents", () => ({
+  createDocumentViewLink: (...args: unknown[]) => createGuideViewLink(...args),
+  createDocumentDownloadLink: (...args: unknown[]) => createGuideDownloadLink(...args),
 }));
 
 const downloadFromUrl = vi.fn();
@@ -40,6 +40,9 @@ vi.mock("../HtmlView", () => ({
 vi.mock("../TextView", () => ({
   default: ({ url }: { url: string }) => <div>Text view of {url}</div>,
 }));
+vi.mock("../ImageView", () => ({
+  default: ({ url }: { url: string }) => <div>Image view of {url}</div>,
+}));
 
 function guide(overrides: Partial<Guide> = {}): Guide {
   return {
@@ -50,6 +53,8 @@ function guide(overrides: Partial<Guide> = {}): Guide {
     source: "file",
     platformId: null,
     platformName: null,
+    copyId: null,
+    copyNumber: null,
     url: null,
     domain: null,
     originalFilename: "walkthrough.pdf",
@@ -65,7 +70,14 @@ function guide(overrides: Partial<Guide> = {}): Guide {
 function renderReader(value: Guide) {
   const onClose = vi.fn();
   const onReplace = vi.fn();
-  render(<GuideReader guide={value} onClose={onClose} onReplace={onReplace} />);
+  render(
+    <GuideReader
+      owner={{ type: "game", id: 5 }}
+      guide={value}
+      onClose={onClose}
+      onReplace={onReplace}
+    />
+  );
   return { user: userEvent.setup(), onClose, onReplace };
 }
 
@@ -86,7 +98,7 @@ describe("GuideReader", () => {
     expect(
       await screen.findByText(new RegExp(`${view} https://app.test/api/guides/1/content/tok/f`))
     ).toBeInTheDocument();
-    expect(createGuideViewLink).toHaveBeenCalledWith(1);
+    expect(createGuideViewLink).toHaveBeenCalledWith({ type: "game", id: 5 }, 1);
     expect(screen.getByRole("heading", { name: "Walkthrough" })).toBeInTheDocument();
   });
 
@@ -94,7 +106,7 @@ describe("GuideReader", () => {
     createGuideViewLink.mockRejectedValueOnce(new Error("offline"));
     const { user } = renderReader(guide({ mediaFormat: "txt" }));
 
-    expect(await screen.findByText("Couldn't open this guide.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't open this document.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Try again" }));
 
     expect(await screen.findByText(/Text view of/)).toBeInTheDocument();
@@ -135,6 +147,7 @@ describe("GuideReader", () => {
 
     await user.click(screen.getByRole("button", { name: "Open in new tab" }));
     expect(openGuideInNewTab).toHaveBeenCalledWith(
+      { type: "game", id: 5 },
       expect.objectContaining({ id: 1 }),
       expect.any(Function)
     );
@@ -149,5 +162,32 @@ describe("GuideReader", () => {
     await user.click(screen.getByRole("button", { name: "Close" }));
 
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe("GuideReader with an image", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createGuideViewLink.mockResolvedValue(
+      "https://app.test/api/hardware-documents/7/content/tok/r.jpg"
+    );
+  });
+
+  it("shows a hardware document's photo, with find off", async () => {
+    render(
+      <GuideReader
+        owner={{ type: "device", id: 3 }}
+        guide={guide({ id: 7, kind: "receipt", mediaFormat: "jpg", originalFilename: "r.jpg" })}
+        onClose={vi.fn()}
+        onReplace={vi.fn()}
+      />
+    );
+    expect(
+      await screen.findByText(
+        "Image view of https://app.test/api/hardware-documents/7/content/tok/r.jpg"
+      )
+    ).toBeInTheDocument();
+    expect(createGuideViewLink).toHaveBeenCalledWith({ type: "device", id: 3 }, 7);
+    expect(screen.getByRole("button", { name: "Find" })).toBeDisabled();
   });
 });

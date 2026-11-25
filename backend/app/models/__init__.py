@@ -25,6 +25,7 @@ from app.models.catalog import (  # noqa: F401
     ReleaseDate,
     Screenshot,
 )
+from app.models.documents import DocumentFormat, DocumentSource, HardwareDocumentKind  # noqa: F401
 from app.models.events import Event, EventGame, EventNetwork, EventVideo  # noqa: F401
 from app.models.game_cases import GameCase  # noqa: F401
 from app.models.gog import GogDownload, GogLibraryEntry, GogWishlistEntry  # noqa: F401
@@ -37,6 +38,7 @@ from app.models.hardware import (  # noqa: F401
     Device,
     DeviceType,
     HardwareCondition,
+    HardwareDocument,
     HardwarePlatform,
     Manufacturer,
     StorageVariant,
@@ -49,7 +51,7 @@ from app.models.jobs import JobRunLog, JobSchedule  # noqa: F401
 from app.models.labs import LabFeature  # noqa: F401
 from app.models.library import (  # noqa: F401
     BiosFile,
-    GameGuide,
+    GameDocument,
     GameProgress,
     GameTag,
     LibraryItem,
@@ -67,6 +69,7 @@ from app.models.steam import SteamLibraryEntry  # noqa: F401
 from app.models.system import RefreshToken, User  # noqa: F401
 from app.models.toys_to_life import (  # noqa: F401
     ToysToLifeCopy,
+    ToysToLifeDocument,
     ToysToLifeItem,
     ToysToLifeNote,
     ToysToLifeTag,

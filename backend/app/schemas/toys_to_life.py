@@ -81,6 +81,8 @@ class ToysToLifeItemDetail(ToysToLifeItemSummary):
     copies: list[ToysToLifeCopyResponse]
     summary: str | None
     igdb_url: str | None
+    # The official building instructions, offered as a one-click Manual link.
+    manual_url: str | None
     release_dates: list[ToysToLifeReleaseDate]
     line_name: str
     parent_game: ToysToLifeParentGame
@@ -138,6 +140,7 @@ def item_detail_from_orm(
         copies=[copy_from_orm(copy) for copy in item.copies],
         summary=item.summary,
         igdb_url=item.igdb_url,
+        manual_url=item.manual_url,
         release_dates=release_dates,
         line_name=line.name,
         parent_game=parent_game_from(line, parent),

@@ -47,11 +47,14 @@ enough that copying its shape and adjusting is usually faster than working from 
 **Files that go with rows** (ROMs, BIOS files, Guides & Cheats files) live in private
 folders under `backend/uploads/` that the public `/uploads` mount refuses to serve
 (`UploadsStaticFiles` in `app/main.py`), and are only reachable through short-lived signed
-links (`create_rom_token`, `create_guide_token` in `app/core/security.py`). A file is removed
-only after the transaction that removed its row commits: services delete it after their own
-`db.commit()`, and bulk deletes of guide rows (`_delete_games`, Danger Zone) queue their files
-on the session with `guide_service.delete_files_after_commit`, which a session `after_commit`
-listener deletes and `after_rollback` forgets. Tests point every such folder at `tmp_path`
+links (`create_rom_token`, `create_guide_token`, `create_document_token` in
+`app/core/security.py`). Document files (Guides & Cheats, Manuals & Documents) all go through
+one pipeline, `app/services/document_files.py`, with a `DocumentStore` per folder (`GUIDE_STORE`,
+`HARDWARE_STORE`). A file is removed only after the transaction that removed its row commits:
+services delete it after their own `db.commit()`, and bulk deletes of document rows
+(`_delete_games`, deleting hardware, Danger Zone) queue their files on the session with
+`<store>.delete_files_after_commit`, which a session `after_commit` listener deletes and
+`after_rollback` forgets. Tests point every such folder at `tmp_path`
 (the autouse fixtures in `tests/conftest.py`).
 
 **Migrations**: `alembic revision --autogenerate -m "describe the change"` after editing a
