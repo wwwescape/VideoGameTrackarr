@@ -344,6 +344,8 @@ def _mock_igdb(version_parent: dict | None, addons: list[dict]) -> None:
         return httpx.Response(200, json=addons)
 
     respx.post(f"{IGDB_API_BASE}/games").mock(side_effect=games)
+    # Importing a picked add-on also reads its time to beat.
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
 
 
 def _addon_payload(igdb_id: int, name: str, parent_igdb_id: int = 100, game_type: int = 13) -> dict:
