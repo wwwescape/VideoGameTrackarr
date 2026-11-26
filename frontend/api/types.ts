@@ -72,6 +72,9 @@ export interface ShelfCaseEntry {
   gameId: number;
   name: string;
   platformId: number;
+  // Drawn as a Steelbook: the platform's case in a steel case. A standard copy and a Steelbook
+  // of the same game on the same platform are two cases.
+  steelbook: boolean;
 }
 
 // One case on the Game Shelf: a game on one platform you own a physical copy on.

@@ -88,6 +88,15 @@ describe("Settings → Game Cases", () => {
     expect(within(ps5Spine).getByTestId("logo-band")).toHaveTextContent("PS5");
   });
 
+  it("shows each platform's case as a Steelbook beside it", () => {
+    renderPage();
+    const steelbooks = screen.getAllByTestId("steelbook-spine");
+    expect(steelbooks).toHaveLength(2);
+    // As tall as the 7×97px case at the preview scale, a 1px rim wider on each side.
+    expect(steelbooks[0]).toHaveStyle({ width: "9px", height: "97px" });
+    expect(within(steelbooks[0]).getByTestId("logo-band")).toHaveTextContent("PS5");
+  });
+
   it("shows each platform's Show on shelf switch, and flips it", async () => {
     renderPage();
     expect(screen.getByRole("switch", { name: "Show PlayStation 5 on the shelf" })).toBeChecked();
@@ -100,10 +109,16 @@ describe("Settings → Game Cases", () => {
 
   it("opens a preview large in the lightbox, with a sample title on the spine", async () => {
     renderPage();
-    await userEvent.click(screen.getByRole("button", { name: "View the Nintendo Switch case larger" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "View the Nintendo Switch case and Steelbook larger" })
+    );
 
-    const large = await screen.findByRole("img", { name: "Nintendo Switch case, seen from its spine" });
-    expect(within(large).getByTestId("case-spine")).toHaveTextContent("Game Title");
+    const large = await screen.findByRole("img", {
+      name: "Nintendo Switch case and Steelbook, seen from their spines",
+    });
+    // The case, and the same case inside the Steelbook.
+    expect(within(large).getAllByTestId("case-spine")).toHaveLength(2);
+    expect(within(large).getByTestId("steelbook-spine")).toHaveTextContent("Game Title");
     expect(screen.getByText("Nintendo Switch case · 170 × 10.5 mm")).toBeInTheDocument();
   });
 

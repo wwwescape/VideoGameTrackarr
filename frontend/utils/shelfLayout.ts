@@ -1,5 +1,5 @@
 import type { ShelfCaseEntry, ShelfPlatform } from "../api/types";
-import { caseSizeToPixels, type PixelSize } from "./caseSpine";
+import { caseSizeToPixels, steelbookSize, type PixelSize } from "./caseSpine";
 
 // How the Game Shelf lays out its cases: one continuous run in the requested sort (platforms
 // mixed, like a real shelf), each case sized from its platform's case at the chosen scale,
@@ -23,8 +23,14 @@ export interface ShelfRow<C extends ShelfCaseEntry = ShelfCaseEntry> {
   height: number;
 }
 
-export function platformCaseSize(platform: ShelfPlatform, scale: number): PixelSize {
-  return caseSizeToPixels(platform.case.heightMm, platform.case.spineMm, scale);
+// A Steelbook is the platform's case in a steel case: as tall, a little wider.
+export function platformCaseSize(
+  platform: ShelfPlatform,
+  scale: number,
+  steelbook = false
+): PixelSize {
+  const size = caseSizeToPixels(platform.case.heightMm, platform.case.spineMm, scale);
+  return steelbook ? steelbookSize(size, platform.case.heightMm) : size;
 }
 
 // The shelf's cases in the requested order; a case whose platform isn't in the payload is
@@ -36,17 +42,25 @@ export function buildShelfItems<C extends ShelfCaseEntry>(
 ): ShelfItem<C>[] {
   const platformsById = new Map(platforms.map((platform) => [platform.id, platform]));
   const sizes = new Map(
-    platforms.map((platform) => [platform.id, platformCaseSize(platform, scale)])
+    platforms.map((platform) => [
+      platform.id,
+      {
+        case: platformCaseSize(platform, scale),
+        steelbook: platformCaseSize(platform, scale, true),
+      },
+    ])
   );
   return cases.flatMap((shelfCase) => {
     const platform = platformsById.get(shelfCase.platformId);
     if (!platform) return [];
+    const size = sizes.get(platform.id)!;
     return [
       {
-        key: `${shelfCase.gameId}:${shelfCase.platformId}`,
+        // A game's standard case and its Steelbook on the same platform are two cases.
+        key: `${shelfCase.gameId}:${shelfCase.platformId}:${shelfCase.steelbook ? "s" : "c"}`,
         case: shelfCase,
         platform,
-        ...sizes.get(platform.id)!,
+        ...(shelfCase.steelbook ? size.steelbook : size.case),
       },
     ];
   });

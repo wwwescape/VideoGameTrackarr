@@ -10,6 +10,9 @@ interface CaseSpineProps {
   fallbackLabel: string;
   // The game's name, down the title band; omitted for a blank spine (previews).
   title?: string;
+  // Leaves the case itself (its edges, top and foot) unpainted, so whatever is behind shows
+  // through: a Steelbook's steel. The logo band, its line and the title band stay.
+  hideCase?: boolean;
 }
 
 // The line under the logo band, in mm (scaled with the case; at least 1px).
@@ -19,7 +22,14 @@ const LOGO_LINE_MM = 1.5;
 // as a thin edge, a top (e.g. a PS3 case's clear top) and a foot, a logo band with the
 // platform's spine logo and an optional line under it, and the title band with the game's
 // name. Purely visual: the shelf wraps it in its own button.
-const CaseSpine = ({ width, height, look, fallbackLabel, title }: CaseSpineProps) => {
+const CaseSpine = ({
+  width,
+  height,
+  look,
+  fallbackLabel,
+  title,
+  hideCase = false,
+}: CaseSpineProps) => {
   const pxPerMm = height / look.heightMm;
   const edge = Math.max(1, Math.round(width * 0.08));
   const top = Math.max(edge, Math.round(look.caseTopMm * pxPerMm));
@@ -45,8 +55,10 @@ const CaseSpine = ({ width, height, look, fallbackLabel, title }: CaseSpineProps
         px: `${edge}px`,
         pb: `${foot}px`,
         borderRadius: "2px 2px 0 0",
-        backgroundColor: look.caseColor,
-        boxShadow: "inset -2px 0 3px rgba(0,0,0,0.3), inset 1px 0 2px rgba(255,255,255,0.15)",
+        backgroundColor: hideCase ? "transparent" : look.caseColor,
+        boxShadow: hideCase
+          ? "none"
+          : "inset -2px 0 3px rgba(0,0,0,0.3), inset 1px 0 2px rgba(255,255,255,0.15)",
         overflow: "hidden",
       }}
     >

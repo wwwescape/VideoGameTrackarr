@@ -1,6 +1,7 @@
 """The Game Shelf: one case per (game x platform) you own a physical copy on, like a real
-shelf. Only platforms with a shown standard case (game_cases, Settings > Game Cases) are on it:
-no digital copies, nothing wishlisted, no cartridge-only systems.
+shelf, and a second one when some of those copies are Steelbooks and some aren't. Only
+platforms with a shown standard case (game_cases, Settings > Game Cases) are on it: no digital
+copies, nothing wishlisted, no cartridge-only systems.
 
 Game-level filters (search, tags, collections, series, type, play status, source) pick the
 games exactly as on the Games list. The platform, Steelbook and Contents filters also pick which of
@@ -33,6 +34,8 @@ class ShelfCase:
     slug: str | None
     name: str
     platform_id: int
+    # Drawn as a Steelbook, at the platform's Steelbook size.
+    steelbook: bool = False
 
 
 @dataclass
@@ -100,21 +103,30 @@ def build_shelf(db: Session, **filters: Any) -> Shelf:
     copies = game_repository.list_owned_copies(db, [game.id for game in games])
     cases_by_platform = game_case_service.shown_cases_by_platform(db, sorted({copy.platform_id for copy in copies}))
 
-    # Each game's shelved platforms, in the order their copies were added.
-    by_game: dict[int, list[int]] = {}
+    # Each game's shelved (platform, steelbook) pairs, in the order their copies were added: a
+    # standard copy and a Steelbook on the same platform are two cases, as on a real shelf.
+    by_game: dict[int, list[tuple[int, bool]]] = {}
     for copy in copies:
         if copy.platform_id not in cases_by_platform:
             continue
         if not _copy_matches(copy, platform_ids, platform_exclude, steelbook_only, contents, contents_exclude):
             continue
-        platforms = by_game.setdefault(copy.game_id, [])
-        if copy.platform_id not in platforms:
-            platforms.append(copy.platform_id)
+        kinds = by_game.setdefault(copy.game_id, [])
+        kind = (copy.platform_id, bool(copy.steelbook))
+        if kind not in kinds:
+            kinds.append(kind)
 
     cases = [
-        ShelfCase(game_id=game.id, uuid=game.uuid, slug=game.slug, name=game.name, platform_id=platform_id)
+        ShelfCase(
+            game_id=game.id,
+            uuid=game.uuid,
+            slug=game.slug,
+            name=game.name,
+            platform_id=platform_id,
+            steelbook=steelbook,
+        )
         for game in games
-        for platform_id in by_game.get(game.id, [])
+        for platform_id, steelbook in by_game.get(game.id, [])
     ]
     present = sorted({case.platform_id for case in cases})
     platforms = [

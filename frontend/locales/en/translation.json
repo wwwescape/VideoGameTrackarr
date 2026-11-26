@@ -544,15 +544,15 @@
       }
     },
     "gameCases": {
-      "description": "How each platform's games look on the Game Shelf: its standard retail case, at the real size and in its spine colours and logo. Turn a platform off to keep its games off the shelf. Cartridge-only systems have no standard case, so they're never shelved.",
+      "description": "How each platform's games look on the Game Shelf: its standard retail case, at the real size and in its spine colours and logo. Turn a platform off to keep its games off the shelf. Cartridge-only systems have no standard case, so they're never shelved. Copies marked Steelbook are drawn as Steelbooks: the same case in steel, as shown beside each one.",
       "heading": "Platforms",
       "lead_one": "{{count}} platform",
       "lead_other": "{{count}} platforms",
       "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} physical game",
       "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} physical games",
       "showOnShelf": "Show {{platform}} on the shelf",
-      "openPreview": "View the {{platform}} case larger",
-      "previewAlt": "{{platform}} case, seen from its spine",
+      "openPreview": "View the {{platform}} case and Steelbook larger",
+      "previewAlt": "{{platform}} case and Steelbook, seen from their spines",
       "caseSize": "{{label}} · {{height}} × {{spine}} mm",
       "sampleTitle": "Game Title",
       "loadFailed": "Couldn't load the game cases.",
@@ -1328,7 +1328,9 @@
       "caseCount_other": "{{count}} cases",
       "empty": "No games on your shelf yet. Physical games you own show up here as cases, one for each platform you own them on.",
       "noMatches": "No cases match.",
-      "caseLabel": "{{name}} on {{platform}}"
+      "caseLabel": "{{name}} on {{platform}}",
+      "caseLabelSteelbook": "{{name}} on {{platform}}, Steelbook",
+      "steelbook": "Steelbook"
     },
     "gogInstallers": {
       "openButton": "Offline installers",

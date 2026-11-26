@@ -544,15 +544,15 @@
       }
     },
     "gameCases": {
-      "description": "L'apparence des jeux de chaque plateforme sur l'étagère : son boîtier standard du commerce, à la taille réelle, avec les couleurs et le logo de sa tranche. Désactivez une plateforme pour garder ses jeux hors de l'étagère. Les systèmes à cartouches n'ont pas de boîtier standard, ils n'y apparaissent jamais.",
+      "description": "L'apparence des jeux de chaque plateforme sur l'étagère : son boîtier standard du commerce, à la taille réelle, avec les couleurs et le logo de sa tranche. Désactivez une plateforme pour garder ses jeux hors de l'étagère. Les systèmes à cartouches n'ont pas de boîtier standard, ils n'y apparaissent jamais. Les copies marquées Steelbook sont affichées en Steelbook : le même boîtier en métal, comme à côté de chacun.",
       "heading": "Plateformes",
       "lead_one": "{{count}} plateforme",
       "lead_other": "{{count}} plateformes",
       "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} jeu physique",
       "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} jeux physiques",
       "showOnShelf": "Afficher {{platform}} sur l'étagère",
-      "openPreview": "Voir le boîtier {{platform}} en grand",
-      "previewAlt": "Boîtier {{platform}}, vu de sa tranche",
+      "openPreview": "Voir le boîtier et le Steelbook {{platform}} en grand",
+      "previewAlt": "Boîtier et Steelbook {{platform}}, vus de leur tranche",
       "caseSize": "{{label}} · {{height}} × {{spine}} mm",
       "sampleTitle": "Titre du jeu",
       "loadFailed": "Impossible de charger les boîtiers de jeux.",
@@ -1328,7 +1328,9 @@
       "caseCount_other": "{{count}} boîtiers",
       "empty": "Votre étagère est encore vide. Les jeux physiques que vous possédez apparaissent ici sous forme de boîtiers, un par plateforme sur laquelle vous les possédez.",
       "noMatches": "Aucun boîtier ne correspond.",
-      "caseLabel": "{{name}} sur {{platform}}"
+      "caseLabel": "{{name}} sur {{platform}}",
+      "caseLabelSteelbook": "{{name}} sur {{platform}}, Steelbook",
+      "steelbook": "Steelbook"
     },
     "gogInstallers": {
       "openButton": "Installateurs hors ligne",

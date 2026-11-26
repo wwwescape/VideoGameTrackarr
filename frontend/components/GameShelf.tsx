@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { ShelfCaseEntry } from "../api/types";
 import { packRows, SHELF_GAP, type ShelfItem } from "../utils/shelfLayout";
 import CaseSpine from "./CaseSpine";
+import SteelbookSpine from "./SteelbookSpine";
 import VirtualList from "./VirtualList";
 
 const BOARD_HEIGHT = 12;
@@ -38,13 +39,18 @@ function CaseButton<C extends ShelfCaseEntry>({
   onOpen: (shelfCase: C) => void;
 }) {
   const { t } = useTranslation();
-  const label = t("games.shelf.caseLabel", { name: item.case.name, platform: item.platform.name });
+  const steelbook = item.case.steelbook;
+  const label = t(steelbook ? "games.shelf.caseLabelSteelbook" : "games.shelf.caseLabel", {
+    name: item.case.name,
+    platform: item.platform.name,
+  });
   return (
     <Tooltip
       title={
         <>
           <Box sx={{ fontWeight: 600 }}>{item.case.name}</Box>
           <Box>{item.platform.name}</Box>
+          {steelbook ? <Box>{t("games.shelf.steelbook")}</Box> : null}
         </>
       }
       placement="top"
@@ -55,7 +61,7 @@ function CaseButton<C extends ShelfCaseEntry>({
         onClick={() => onOpen(item.case)}
         sx={{
           flexShrink: 0,
-          borderRadius: "2px 2px 0 0",
+          borderRadius: steelbook ? "2px" : "2px 2px 0 0",
           transition: "transform 120ms ease",
           "&:hover, &.Mui-focusVisible": { transform: "translateY(-6px)" },
           "&.Mui-focusVisible": {
@@ -65,13 +71,23 @@ function CaseButton<C extends ShelfCaseEntry>({
           },
         }}
       >
-        <CaseSpine
-          width={item.width}
-          height={item.height}
-          look={item.platform.case}
-          fallbackLabel={item.platform.abbreviation ?? item.platform.name}
-          title={item.case.name}
-        />
+        {steelbook ? (
+          <SteelbookSpine
+            width={item.width}
+            height={item.height}
+            look={item.platform.case}
+            fallbackLabel={item.platform.abbreviation ?? item.platform.name}
+            title={item.case.name}
+          />
+        ) : (
+          <CaseSpine
+            width={item.width}
+            height={item.height}
+            look={item.platform.case}
+            fallbackLabel={item.platform.abbreviation ?? item.platform.name}
+            title={item.case.name}
+          />
+        )}
       </ButtonBase>
     </Tooltip>
   );

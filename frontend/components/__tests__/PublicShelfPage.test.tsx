@@ -66,8 +66,8 @@ describe("Public Game Shelf", () => {
     });
     shelf = {
       cases: [
-        { gameId: 7, name: "Astro Bot", platformId: 1 },
-        { gameId: 8, name: "Bayonetta 3", platformId: 2 },
+        { gameId: 7, name: "Astro Bot", platformId: 1, steelbook: false },
+        { gameId: 8, name: "Bayonetta 3", platformId: 2, steelbook: true },
       ],
       platforms: [
         shelfPlatform(1, "PlayStation 5", 171, 12),
@@ -86,9 +86,11 @@ describe("Public Game Shelf", () => {
 
     expect(screen.getByRole("heading", { name: "Game Shelf" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Astro Bot on PlayStation 5" })).toBeInTheDocument();
+    // A Steelbook is drawn as one on the share page too.
     expect(
-      screen.getByRole("button", { name: "Bayonetta 3 on Nintendo Switch" })
+      screen.getByRole("button", { name: "Bayonetta 3 on Nintendo Switch, Steelbook" })
     ).toBeInTheDocument();
+    expect(screen.getAllByTestId("steelbook-spine")).toHaveLength(1);
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     expect(usePublicShelfMock).toHaveBeenCalledWith("tok", undefined, "name_asc");
   });
