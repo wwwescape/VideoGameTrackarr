@@ -9,9 +9,10 @@ import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import type { GameCase } from "../api/types";
 import { useGameCases, useSetGameCaseShown } from "../hooks/useGameCases";
-import { caseSizeToPixels, platformLogoSrc } from "../utils/caseSpine";
+import { caseSizeToPixels, platformLogoSrc, steelbookSize } from "../utils/caseSpine";
 import CaseSpine from "./CaseSpine";
 import CaseSpineLightbox from "./CaseSpineLightbox";
+import SteelbookSpine from "./SteelbookSpine";
 import { withLab } from "./LabGate";
 import SettingsFrame from "./SettingsFrame";
 import { SettingRow, SettingsColumn, SettingsGroup } from "./SettingsLayout";
@@ -33,6 +34,7 @@ const CaseRow = ({
   const mode = useTheme().palette.mode;
   const logo = platformLogoSrc({ slug: gameCase.platformSlug, logoUrl: gameCase.logoUrl }, mode);
   const size = caseSizeToPixels(gameCase.heightMm, gameCase.spineMm, PREVIEW_SCALE);
+  const fallbackLabel = gameCase.abbreviation ?? gameCase.platformName;
   return (
     <SettingRow
       name={
@@ -66,6 +68,7 @@ const CaseRow = ({
             opacity: gameCase.shown ? 1 : 0.35,
             display: "flex",
             alignItems: "flex-end",
+            gap: 0.75,
             borderRadius: 0.5,
             cursor: "zoom-in",
             transition: "transform 150ms ease",
@@ -73,10 +76,12 @@ const CaseRow = ({
             "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: 3 },
           }}
         >
-          <CaseSpine
-            {...size}
+          <CaseSpine {...size} look={gameCase} fallbackLabel={fallbackLabel} />
+          {/* The same case as a Steelbook, beside it at the same scale. */}
+          <SteelbookSpine
+            {...steelbookSize(size, gameCase.heightMm)}
             look={gameCase}
-            fallbackLabel={gameCase.abbreviation ?? gameCase.platformName}
+            fallbackLabel={fallbackLabel}
           />
         </ButtonBase>
         <Switch

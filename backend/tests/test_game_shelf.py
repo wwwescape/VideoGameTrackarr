@@ -1,5 +1,6 @@
-"""Game Shelf: GET /api/games/shelf, one case per (game x platform) you own a physical copy on,
-for platforms with a shown standard case."""
+"""Game Shelf: GET /api/games/shelf, one case per (game x platform) you own a physical copy on
+(two when some of those copies are Steelbooks and some aren't), for platforms with a shown
+standard case."""
 
 import pytest
 
@@ -57,15 +58,43 @@ def test_one_case_per_platform_you_own_a_physical_copy_on(auth_client, db_sessio
     game = _game(db_session, "Elden Ring", slug="elden-ring")
     _copy(db_session, game, platforms["ps4"])
     _copy(db_session, game, platforms["ps5"])
-    # A second physical copy on PS5 (another edition) is still one case.
-    _copy(db_session, game, platforms["ps5"], steelbook=True)
+    # A second standard physical copy on PS5 (another edition) is still one case.
+    _copy(db_session, game, platforms["ps5"])
 
     body = auth_client.get("/api/games/shelf").json()
 
     assert body["cases"] == [
-        {"gameId": game.id, "uuid": game.uuid, "slug": "elden-ring", "name": "Elden Ring", "platformId": pid}
+        {
+            "gameId": game.id,
+            "uuid": game.uuid,
+            "slug": "elden-ring",
+            "name": "Elden Ring",
+            "platformId": pid,
+            "steelbook": False,
+        }
         for pid in (platforms["ps4"].id, platforms["ps5"].id)
     ]
+
+
+def test_a_steelbook_and_a_standard_copy_are_two_cases(auth_client, db_session, platforms):
+    game = _game(db_session, "Elden Ring")
+    _copy(db_session, game, platforms["ps5"], steelbook=True)
+    _copy(db_session, game, platforms["ps5"])
+    # A second Steelbook on PS5 is still one Steelbook case.
+    _copy(db_session, game, platforms["ps5"], steelbook=True)
+    _copy(db_session, game, platforms["ps4"])
+
+    body = auth_client.get("/api/games/shelf").json()
+
+    # In the order the copies were added.
+    assert [(case["platformId"], case["steelbook"]) for case in body["cases"]] == [
+        (platforms["ps5"].id, True),
+        (platforms["ps5"].id, False),
+        (platforms["ps4"].id, False),
+    ]
+    # The Steelbook filter keeps only the Steelbook case.
+    only = auth_client.get("/api/games/shelf", params={"steelbookOnly": "true"}).json()["cases"]
+    assert [(case["platformId"], case["steelbook"]) for case in only] == [(platforms["ps5"].id, True)]
 
 
 def test_only_physical_owned_copies_on_case_platforms(auth_client, db_session, platforms):

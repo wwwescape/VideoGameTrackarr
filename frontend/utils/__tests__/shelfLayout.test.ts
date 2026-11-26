@@ -6,15 +6,27 @@ import { buildShelfItems, packRows, platformCaseSize, type ShelfItem } from "../
 const PS5 = shelfPlatform(1, "PlayStation 5", 171, 12);
 const SWITCH = shelfPlatform(2, "Nintendo Switch", 170, 10.5);
 
-const shelfCase = (gameId: number, name: string, platformId: number): ShelfCaseEntry => ({
+const shelfCase = (
+  gameId: number,
+  name: string,
+  platformId: number,
+  steelbook = false
+): ShelfCaseEntry => ({
   gameId,
   name,
   platformId,
+  steelbook,
 });
 
 describe("platformCaseSize", () => {
   it("draws a platform's case at the scale", () => {
     expect(platformCaseSize(PS5, 0.4)).toEqual({ width: 18, height: 259 });
+  });
+
+  it("draws a Steelbook as tall as the case, a steel rim wider on each side", () => {
+    // 1.5mm rims at 259px for 171mm: 2px each side.
+    expect(platformCaseSize(PS5, 0.4, true)).toEqual({ width: 22, height: 259 });
+    expect(platformCaseSize(SWITCH, 0.4, true)).toEqual({ width: 20, height: 257 });
   });
 });
 
@@ -37,6 +49,17 @@ describe("buildShelfItems", () => {
     const [astro, bayonetta] = buildShelfItems(cases, [PS5, SWITCH], 0.4);
     expect([astro.width, astro.height]).toEqual([18, 259]);
     expect([bayonetta.width, bayonetta.height]).toEqual([16, 257]);
+  });
+
+  it("keeps a game's case and Steelbook on one platform apart, each at its own size", () => {
+    const [standard, steel] = buildShelfItems(
+      [shelfCase(1, "Astro Bot", 1), shelfCase(1, "Astro Bot", 1, true)],
+      [PS5],
+      0.4
+    );
+    expect([standard.key, steel.key]).toEqual(["1:1:c", "1:1:s"]);
+    expect([standard.width, standard.height]).toEqual([18, 259]);
+    expect([steel.width, steel.height]).toEqual([22, 259]);
   });
 
   it("skips a case whose platform isn't in the payload", () => {

@@ -47,15 +47,16 @@ def test_public_shelf_shares_only_the_public_shape(auth_client, client, db_sessi
 
     body = client.get(f"/api/public/{token}/shelf").json()
 
+    # Steelbooks are drawn as Steelbooks on the share page too.
     assert body["cases"] == [
-        {"gameId": games["Alpha"].id, "name": "Alpha", "platformId": ps5.id},
-        {"gameId": games["Bravo"].id, "name": "Bravo", "platformId": ps5.id},
+        {"gameId": games["Alpha"].id, "name": "Alpha", "platformId": ps5.id, "steelbook": True},
+        {"gameId": games["Bravo"].id, "name": "Bravo", "platformId": ps5.id, "steelbook": True},
     ]
     assert [platform["name"] for platform in body["platforms"]] == ["PlayStation 5"]
     assert body["platforms"][0]["case"]["caseLabel"] == "Blu-ray case"
     # Nothing else about your copies leaks.
     text = str(body)
-    for private in ("uuid", "slug': 'alpha", "steelbook", "PlayStation Store", "Digital", "shown", "physicalGames"):
+    for private in ("uuid", "slug': 'alpha", "PlayStation Store", "Digital", "shown", "physicalGames"):
         assert private not in text
 
 

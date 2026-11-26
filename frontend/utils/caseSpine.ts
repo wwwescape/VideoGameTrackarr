@@ -29,6 +29,19 @@ export function caseSizeToPixels(
   };
 }
 
+// A Steelbook is drawn as its platform's case, spine art and all, in a steel case: just as tall,
+// with a thin rim of steel down each side. The rim in mm, scaled with the case (at least 1px).
+export const STEELBOOK_RIM_MM = 1.5;
+
+export function steelbookRimPx(heightPx: number, heightMm: number): number {
+  return Math.max(1, Math.round((STEELBOOK_RIM_MM * heightPx) / heightMm));
+}
+
+// A case's size drawn as a Steelbook: as tall, a rim wider on each side.
+export function steelbookSize(size: PixelSize, heightMm: number): PixelSize {
+  return { width: size.width + 2 * steelbookRimPx(size.height, heightMm), height: size.height };
+}
+
 // The spine logos, dropped into assets/game-cases/ and named in the CSV's Logo column. Vite
 // picks every file up at build time, so a new logo needs no code change.
 const caseLogoModules = import.meta.glob<string>("../assets/game-cases/*.{svg,png,webp}", {

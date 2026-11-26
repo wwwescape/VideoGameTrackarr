@@ -17,13 +17,15 @@ class ShelfPlatformResponse(CamelModel):
 
 
 class ShelfCaseResponse(CamelModel):
-    """One case on the Game Shelf: a game on one platform you own a physical copy on."""
+    """One case on the Game Shelf: a game on one platform you own a physical copy on (two when
+    some of those copies are Steelbooks and some aren't)."""
 
     game_id: int
     uuid: str
     slug: str | None
     name: str
     platform_id: int
+    steelbook: bool
 
 
 class GameShelfResponse(CamelModel):
@@ -32,11 +34,13 @@ class GameShelfResponse(CamelModel):
     platforms: list[ShelfPlatformResponse]
 
 
-# The share page's shelf: which platform each game is on, nothing else about your copies.
+# The share page's shelf: which platform each game is on and whether it's a Steelbook, so the
+# case is drawn as it stands on your shelf; nothing else about your copies.
 class PublicShelfCaseResponse(CamelModel):
     game_id: int
     name: str
     platform_id: int
+    steelbook: bool
 
 
 class PublicGameShelfResponse(CamelModel):
@@ -68,7 +72,9 @@ def game_shelf_response(shelf: Shelf) -> GameShelfResponse:
 def public_game_shelf_response(shelf: Shelf) -> PublicGameShelfResponse:
     return PublicGameShelfResponse(
         cases=[
-            PublicShelfCaseResponse(game_id=case.game_id, name=case.name, platform_id=case.platform_id)
+            PublicShelfCaseResponse(
+                game_id=case.game_id, name=case.name, platform_id=case.platform_id, steelbook=case.steelbook
+            )
             for case in shelf.cases
         ],
         platforms=_platforms(shelf),

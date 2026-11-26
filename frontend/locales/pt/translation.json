@@ -544,15 +544,15 @@
       }
     },
     "gameCases": {
-      "description": "Como os jogos de cada plataforma aparecem na estante: a sua caixa comercial padrão, em tamanho real e com as cores e o logótipo da lombada. Desligue uma plataforma para deixar os seus jogos fora da estante. Os sistemas de cartuchos não têm caixa padrão, por isso nunca aparecem.",
+      "description": "Como os jogos de cada plataforma aparecem na estante: a sua caixa comercial padrão, em tamanho real e com as cores e o logótipo da lombada. Desligue uma plataforma para deixar os seus jogos fora da estante. Os sistemas de cartuchos não têm caixa padrão, por isso nunca aparecem. Cópias marcadas como Steelbook aparecem como Steelbooks: a mesma caixa em metal, como mostrado ao lado de cada uma.",
       "heading": "Plataformas",
       "lead_one": "{{count}} plataforma",
       "lead_other": "{{count}} plataformas",
       "caseSummary_one": "{{label}} · {{height}} × {{spine}} mm · {{count}} jogo físico",
       "caseSummary_other": "{{label}} · {{height}} × {{spine}} mm · {{count}} jogos físicos",
       "showOnShelf": "Mostrar {{platform}} na estante",
-      "openPreview": "Ver a caixa de {{platform}} em tamanho maior",
-      "previewAlt": "Caixa de {{platform}}, vista pela lombada",
+      "openPreview": "Ver a caixa e o Steelbook de {{platform}} em tamanho maior",
+      "previewAlt": "Caixa e Steelbook de {{platform}}, vistos pela lombada",
       "caseSize": "{{label}} · {{height}} × {{spine}} mm",
       "sampleTitle": "Título do jogo",
       "loadFailed": "Não foi possível carregar as caixas de jogos.",
@@ -1328,7 +1328,9 @@
       "caseCount_other": "{{count}} caixas",
       "empty": "Ainda não há jogos na sua estante. Os jogos físicos que tem aparecem aqui como caixas, uma por cada plataforma em que os tem.",
       "noMatches": "Nenhuma caixa corresponde.",
-      "caseLabel": "{{name}} em {{platform}}"
+      "caseLabel": "{{name}} em {{platform}}",
+      "caseLabelSteelbook": "{{name}} em {{platform}}, Steelbook",
+      "steelbook": "Steelbook"
     },
     "gogInstallers": {
       "openButton": "Instaladores offline",

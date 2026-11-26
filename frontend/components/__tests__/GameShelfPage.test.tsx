@@ -28,12 +28,18 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
-const shelfCase = (gameId: number, name: string, platformId: number): ShelfCase => ({
+const shelfCase = (
+  gameId: number,
+  name: string,
+  platformId: number,
+  steelbook = false
+): ShelfCase => ({
   gameId,
   uuid: `uuid-${gameId}`,
   slug: name.toLowerCase().replace(/ /g, "-"),
   name,
   platformId,
+  steelbook,
 });
 
 let shelf: GameShelf;
@@ -138,6 +144,23 @@ describe("Game Shelf page", () => {
     // No logo file yet: the platform's name in the logo band.
     expect(within(spine).getByTestId("logo-band")).toHaveTextContent("PlayStation 5");
     expect(within(spine).getByTestId("title-band")).toHaveTextContent("Astro Bot");
+  });
+
+  it("draws a Steelbook as a Steelbook, next to the same game's standard case", () => {
+    shelf.cases = [shelfCase(1, "Astro Bot", 1), shelfCase(1, "Astro Bot", 1, true)];
+    renderShelf();
+
+    expect(screen.getByText("2 cases")).toBeInTheDocument();
+    expect(caseButtons().map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Astro Bot on PlayStation 5",
+      "Astro Bot on PlayStation 5, Steelbook",
+    ]);
+    const steelbook = screen.getByTestId("steelbook-spine");
+    // The same spine art as the standard case, printed on steel: no plastic case colour.
+    const art = within(steelbook).getByTestId("case-spine");
+    expect(art).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
+    expect(within(art).getByTestId("logo-band")).toHaveTextContent("PlayStation 5");
+    expect(within(art).getByTestId("title-band")).toHaveTextContent("Astro Bot");
   });
 
   it("offers only the scale in Options, Platforms in Sort, and no Ownership or Format filters", async () => {
