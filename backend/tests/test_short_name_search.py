@@ -131,6 +131,7 @@ def test_game_fields_expand_alternative_names():
 @respx.mock
 def test_import_stores_alternative_names_and_the_detail_lists_them(auth_client, db_session, igdb_client):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[httpx.Response(200, json=[_payload(52189, GTA_ALTERNATIVE_NAMES)]), httpx.Response(200, json=[])]
     )
@@ -150,6 +151,7 @@ def test_import_stores_alternative_names_and_the_detail_lists_them(auth_client, 
 async def test_resync_replaces_alternative_names(db_session, igdb_client):
     game = _game(db_session, "Grand Theft Auto VI", 52189, ["Old Name"])
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[
             httpx.Response(200, json=[_payload(52189, [{"name": "GTA 6", "comment": "Acronym"}])]),
@@ -167,6 +169,7 @@ async def test_resync_replaces_alternative_names(db_session, igdb_client):
 async def test_collections_resync_leaves_alternative_names_alone(db_session, igdb_client):
     game = _game(db_session, "Grand Theft Auto VI", 52189, ["GTA 6"])
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         side_effect=[httpx.Response(200, json=[_payload(52189, [])]), httpx.Response(200, json=[])]
     )
@@ -179,6 +182,7 @@ async def test_collections_resync_leaves_alternative_names_alone(db_session, igd
 @respx.mock
 def test_add_game_preview_lists_alternative_names(auth_client, igdb_client):
     respx.post(IGDB_TOKEN_URL).mock(return_value=TOKEN_RESPONSE)
+    respx.post(f"{IGDB_API_BASE}/game_time_to_beats").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{IGDB_API_BASE}/games").mock(
         return_value=httpx.Response(200, json=[_payload(52189, GTA_ALTERNATIVE_NAMES)])
     )

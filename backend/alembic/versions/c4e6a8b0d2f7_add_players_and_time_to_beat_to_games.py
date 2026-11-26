@@ -1,7 +1,7 @@
 """add players and time to beat to games
 
 Revision ID: c4e6a8b0d2f7
-Revises: a8c0e2f4b6d9
+Revises: d0f2b4c6e8a3
 Create Date: 2026-10-27 04:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'c4e6a8b0d2f7'
-down_revision: Union[str, None] = 'a8c0e2f4b6d9'
+down_revision: Union[str, None] = 'd0f2b4c6e8a3'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
