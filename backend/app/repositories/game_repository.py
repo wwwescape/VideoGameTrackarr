@@ -565,7 +565,8 @@ def _play_status_clause(statuses: list[PlayStatus], game: Any = Game) -> ColumnE
     copy" rule the platform/format filters use, not the single priority-picked status a card
     shows (_play_status_subquery). NONE ("Not set") can't be a plain IN value: most games
     without a status have no GameProgress row at all, so it means "no platform has a real
-    status yet" instead. NOT_STARTED is a status the user chose, so it's a plain IN value. `game` is Game itself or an aliased add-on (_GameFilters)."""
+    status yet" instead. NOT_STARTED is a status the user chose, so it's a plain IN value.
+    `game` is Game itself or an aliased add-on (_GameFilters)."""
     clauses = []
     started = [status for status in statuses if status != PlayStatus.NONE]
     if started:

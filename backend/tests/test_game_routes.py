@@ -690,7 +690,9 @@ def test_list_games_play_status_not_started_is_a_real_status(
     not_started = Game(igdb_id=2411, name="Not Started Game", category=GameCategory.MAIN_GAME)
     db_session.add(not_started)
     db_session.flush()
-    db_session.add(GameProgress(game_id=not_started.id, platform_id=seed_platform.id, play_status=PlayStatus.NOT_STARTED))
+    db_session.add(
+        GameProgress(game_id=not_started.id, platform_id=seed_platform.id, play_status=PlayStatus.NOT_STARTED)
+    )
     db_session.commit()
 
     response = auth_client.get("/api/games", params={"playStatus": "not_started"})
