@@ -669,7 +669,7 @@ def test_list_games_filters_by_play_status_on_any_platform(
     assert [g["name"] for g in response.json()] == ["Abandoned Game", "Test Game"]
 
 
-def test_list_games_play_status_none_means_not_started_on_any_platform(
+def test_list_games_play_status_none_means_not_set_on_any_platform(
     auth_client, db_session, seed_game, seed_platform, seed_pc_platform
 ):
     _seed_play_statuses(db_session, seed_game, seed_platform, seed_pc_platform)
@@ -679,6 +679,56 @@ def test_list_games_play_status_none_means_not_started_on_any_platform(
 
     response = auth_client.get("/api/games", params=[("playStatus", "none"), ("playStatus", "abandoned")])
     assert [g["name"] for g in response.json()] == ["Abandoned Game", "Explicit None", "Fresh Game"]
+
+
+def test_list_games_play_status_not_started_is_a_real_status(
+    auth_client, db_session, seed_game, seed_platform, seed_pc_platform
+):
+    """Not started is a status the user chose, unlike none ("Not set"): it matches only games
+    with a not_started row, and a game with one no longer counts as Not set."""
+    _seed_play_statuses(db_session, seed_game, seed_platform, seed_pc_platform)
+    not_started = Game(igdb_id=2411, name="Not Started Game", category=GameCategory.MAIN_GAME)
+    db_session.add(not_started)
+    db_session.flush()
+    db_session.add(GameProgress(game_id=not_started.id, platform_id=seed_platform.id, play_status=PlayStatus.NOT_STARTED))
+    db_session.commit()
+
+    response = auth_client.get("/api/games", params={"playStatus": "not_started"})
+    assert [g["name"] for g in response.json()] == ["Not Started Game"]
+    assert response.json()[0]["playStatus"] == "not_started"
+
+    response = auth_client.get("/api/games", params={"playStatus": "none"})
+    assert [g["name"] for g in response.json()] == ["Explicit None", "Fresh Game"]
+
+
+def test_list_games_card_status_priority_covers_new_statuses(
+    auth_client, db_session, seed_platform, seed_pc_platform
+):
+    """A game with progress on two platforms shows the higher-priority status: Playing,
+    Endless, Completed, On hold, Backlog, Not started, Abandoned, then none."""
+    pairs = {
+        "Endless Over Completed": (PlayStatus.ENDLESS, PlayStatus.COMPLETED, "endless"),
+        "Completed Over On Hold": (PlayStatus.ON_HOLD, PlayStatus.COMPLETED, "completed"),
+        "On Hold Over Backlog": (PlayStatus.BACKLOG, PlayStatus.ON_HOLD, "on_hold"),
+        "Not Started Over Abandoned": (PlayStatus.ABANDONED, PlayStatus.NOT_STARTED, "not_started"),
+    }
+    games = {
+        name: Game(igdb_id=2420 + index, name=name, category=GameCategory.MAIN_GAME)
+        for index, name in enumerate(pairs)
+    }
+    db_session.add_all(games.values())
+    db_session.flush()
+    for name, (first, second, _) in pairs.items():
+        db_session.add_all(
+            [
+                GameProgress(game_id=games[name].id, platform_id=seed_platform.id, play_status=first),
+                GameProgress(game_id=games[name].id, platform_id=seed_pc_platform.id, play_status=second),
+            ]
+        )
+    db_session.commit()
+
+    shown = {g["name"]: g["playStatus"] for g in auth_client.get("/api/games").json()}
+    assert shown == {name: expected for name, (_, _, expected) in pairs.items()}
 
 
 def test_list_games_play_status_match_all_and_exclude(
@@ -826,6 +876,33 @@ def test_list_games_sort_by_play_status_and_rating(auth_client, db_session, seed
     assert _sorted_names(auth_client, "play_status_desc") == ["Completed", "Backlog", "Playing", "Untracked"]
     assert _sorted_names(auth_client, "rating_desc") == ["Completed", "Playing", "Backlog", "Untracked"]
     assert _sorted_names(auth_client, "rating_asc") == ["Playing", "Completed", "Backlog", "Untracked"]
+
+
+def test_list_games_sort_by_play_status_includes_new_statuses(auth_client, db_session, seed_platform):
+    order = [
+        ("Playing", PlayStatus.PLAYING),
+        ("Endless", PlayStatus.ENDLESS),
+        ("On Hold", PlayStatus.ON_HOLD),
+        ("Backlog", PlayStatus.BACKLOG),
+        ("Not Started", PlayStatus.NOT_STARTED),
+        ("Completed", PlayStatus.COMPLETED),
+        ("Abandoned", PlayStatus.ABANDONED),
+    ]
+    games = {
+        name: Game(igdb_id=2430 + index, name=name, category=GameCategory.MAIN_GAME)
+        for index, (name, _) in enumerate([*order, ("Untracked", None)])
+    }
+    db_session.add_all(games.values())
+    db_session.flush()
+    db_session.add_all(
+        GameProgress(game_id=games[name].id, platform_id=seed_platform.id, play_status=status)
+        for name, status in order
+    )
+    db_session.commit()
+
+    names = [name for name, _ in order]
+    assert _sorted_names(auth_client, "play_status_asc") == [*names, "Untracked"]
+    assert _sorted_names(auth_client, "play_status_desc") == [*reversed(names), "Untracked"]
 
 
 def test_list_games_sort_by_library(auth_client, db_session, seed_platform, seed_pc_platform):

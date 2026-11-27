@@ -847,9 +847,12 @@
       "columnHeaderYourRating": "Votre note",
       "owned": "Possédé",
       "wishlisted": "Sur la liste de souhaits",
+      "playStatusNotSet": "Non défini",
       "playStatusNotStarted": "Pas commencé",
       "playStatusBacklog": "À faire",
       "playStatusPlaying": "En cours",
+      "playStatusOnHold": "En pause",
+      "playStatusEndless": "Sans fin",
       "playStatusCompleted": "Terminé",
       "playStatusAbandoned": "Abandonné"
     },
@@ -937,8 +940,11 @@
       "ratingOption": "{{min}}+ / 10"
     },
     "card": {
+      "playStatusNotStarted": "Pas commencé",
       "playStatusBacklog": "À faire",
       "playStatusPlaying": "En cours",
+      "playStatusOnHold": "En pause",
+      "playStatusEndless": "Sans fin",
       "playStatusCompleted": "Terminé",
       "playStatusAbandoned": "Abandonné",
       "noCover": "Pas de jaquette",
@@ -1261,9 +1267,12 @@
       "onSaleLine": "En promo : {{price}} chez {{shop}} (-{{cut}}%)"
     },
     "stats": {
+      "playStatusNotSet": "Non défini",
       "playStatusNotStarted": "Pas commencé",
       "playStatusBacklog": "À faire",
       "playStatusPlaying": "En cours",
+      "playStatusOnHold": "En pause",
+      "playStatusEndless": "Sans fin",
       "playStatusCompleted": "Terminé",
       "playStatusAbandoned": "Abandonné",
       "ownedLabel": "Possédés",
@@ -2326,9 +2335,12 @@
     "removedToast_one": "Progression supprimée",
     "removedToast_other": "Entrées de progression supprimées",
     "statusOptions": {
-      "none": "Pas commencé",
+      "none": "Non défini",
+      "not_started": "Pas commencé",
       "backlog": "À faire",
       "playing": "En cours",
+      "on_hold": "En pause",
+      "endless": "Sans fin",
       "completed": "Terminé",
       "abandoned": "Abandonné"
     },

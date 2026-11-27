@@ -117,7 +117,7 @@ def test_stats_recently_added_leaves_out_missing_games(auth_client, db_session, 
 
 def test_stats_counts_leave_out_missing_games(auth_client, db_session, seed_game):
     """Missing games (discovered by a resync, never added) aren't yours: they don't count as
-    tracked, as Not started, or toward the genre breakdown."""
+    tracked, as Not set, or toward the genre breakdown."""
     missing = Game(
         igdb_id=2004, name="Discovered Game", slug="discovered-2", category=GameCategory.MAIN_GAME, auto_discovered=True
     )

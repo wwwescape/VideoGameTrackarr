@@ -47,9 +47,13 @@ class RatingBoard(enum.Enum):
 
 
 class PlayStatus(enum.Enum):
+    # NONE is the empty value ("Not set"); NOT_STARTED is a status the user chose.
     NONE = "none"
+    NOT_STARTED = "not_started"
     BACKLOG = "backlog"
     PLAYING = "playing"
+    ON_HOLD = "on_hold"
+    ENDLESS = "endless"
     COMPLETED = "completed"
     ABANDONED = "abandoned"
 

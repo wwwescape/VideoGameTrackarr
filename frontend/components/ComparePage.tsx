@@ -31,9 +31,12 @@ function formatPlaytime(minutes: number): string {
 const ComparePage = () => {
   const { t } = useTranslation();
   const PLAY_STATUS_LABEL: Record<string, string> = {
-    none: t("games.compare.playStatusNotStarted"),
+    none: t("games.compare.playStatusNotSet"),
+    not_started: t("games.compare.playStatusNotStarted"),
     backlog: t("games.compare.playStatusBacklog"),
     playing: t("games.compare.playStatusPlaying"),
+    on_hold: t("games.compare.playStatusOnHold"),
+    endless: t("games.compare.playStatusEndless"),
     completed: t("games.compare.playStatusCompleted"),
     abandoned: t("games.compare.playStatusAbandoned"),
   };

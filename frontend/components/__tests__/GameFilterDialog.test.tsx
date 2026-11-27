@@ -124,13 +124,13 @@ describe("GameFilterDialog match mode", () => {
     expect(within(dialog).getAllByRole("group", { name: "Match any or all of the selected values" })).toHaveLength(8);
   });
 
-  it("lists the play statuses, including Not started", async () => {
+  it("lists the play statuses, including Not set", async () => {
     renderToolbar();
     const { user, dialog } = await openFilters();
 
     await user.click(within(dialog).getByRole("combobox", { name: "Play Status" }));
 
-    for (const label of ["Not started", "Backlog", "Playing", "Completed", "Abandoned"]) {
+    for (const label of ["Not set", "Not started", "Backlog", "Playing", "On hold", "Endless", "Completed", "Abandoned"]) {
       expect(await screen.findByRole("option", { name: label })).toBeInTheDocument();
     }
   });

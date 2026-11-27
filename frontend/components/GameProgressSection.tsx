@@ -14,6 +14,7 @@ import type {
   PlatformResponse,
   PlaySession,
   PlayStatus,
+  PlayStatusColor,
 } from "../api/types";
 import {
   useCreateGameProgress,
@@ -58,10 +59,13 @@ function formatDuration(minutes: number | null): string {
   return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
 }
 
-const PLAY_STATUS_CHIP: Record<PlayStatus, "default" | "info" | "success" | "error"> = {
+const PLAY_STATUS_CHIP: Record<PlayStatus, PlayStatusColor> = {
   none: "default",
+  not_started: "default",
   backlog: "default",
   playing: "info",
+  on_hold: "warning",
+  endless: "secondary",
   completed: "success",
   abandoned: "error",
 };
@@ -111,8 +115,11 @@ const GameProgressSection = ({
 
   const statusLabels: Record<PlayStatus, string> = {
     none: t("progress.statusOptions.none"),
+    not_started: t("progress.statusOptions.not_started"),
     backlog: t("progress.statusOptions.backlog"),
     playing: t("progress.statusOptions.playing"),
+    on_hold: t("progress.statusOptions.on_hold"),
+    endless: t("progress.statusOptions.endless"),
     completed: t("progress.statusOptions.completed"),
     abandoned: t("progress.statusOptions.abandoned"),
   };

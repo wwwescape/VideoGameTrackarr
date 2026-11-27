@@ -13,7 +13,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { useTranslation } from "react-i18next";
 import { resolveImageUrl } from "../api/client";
-import type { GameSortOption, GameSummary, PlayStatus } from "../api/types";
+import type { GameSortOption, GameSummary, PlayStatus, PlayStatusColor } from "../api/types";
 import { gameSortDirection, gameSortField, nextGameSort, type GameSortField } from "../utils/gameSortOptions";
 import { getAddonType, getReleaseYear } from "../utils/utils";
 import { GAME_TYPE_OPTIONS } from "./GameFilterDialog";
@@ -36,12 +36,25 @@ const letterOf = (name: string) => {
   return first >= "A" && first <= "Z" ? first : "#";
 };
 
-const PLAY_STATUS_COLORS: Record<PlayStatus, "default" | "info" | "success" | "error"> = {
+const PLAY_STATUS_COLORS: Record<PlayStatus, PlayStatusColor> = {
   none: "default",
+  not_started: "default",
   backlog: "default",
   playing: "info",
+  on_hold: "warning",
+  endless: "secondary",
   completed: "success",
   abandoned: "error",
+};
+
+const PLAY_STATUS_LABEL_KEYS: Record<Exclude<PlayStatus, "none">, string> = {
+  not_started: "games.card.playStatusNotStarted",
+  backlog: "games.card.playStatusBacklog",
+  playing: "games.card.playStatusPlaying",
+  on_hold: "games.card.playStatusOnHold",
+  endless: "games.card.playStatusEndless",
+  completed: "games.card.playStatusCompleted",
+  abandoned: "games.card.playStatusAbandoned",
 };
 
 // "Main Game", "Remaster", "DLC"… — the filter's game-type labels, then the add-on labels.
@@ -261,7 +274,7 @@ const PlayStatusChip = ({ status }: { status: PlayStatus | null }) => {
     <Chip
       size="small"
       color={PLAY_STATUS_COLORS[status]}
-      label={t(`games.card.playStatus${status.charAt(0).toUpperCase()}${status.slice(1)}`)}
+      label={t(PLAY_STATUS_LABEL_KEYS[status])}
     />
   );
 };
