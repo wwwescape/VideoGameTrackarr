@@ -10,10 +10,13 @@ from app.models.library import GameProgress, PlayStatus
 # not a correlated scalar-subquery column.
 _PLAY_STATUS_PRIORITY = case(
     (GameProgress.play_status == PlayStatus.PLAYING, 0),
-    (GameProgress.play_status == PlayStatus.COMPLETED, 1),
-    (GameProgress.play_status == PlayStatus.BACKLOG, 2),
-    (GameProgress.play_status == PlayStatus.ABANDONED, 3),
-    else_=4,
+    (GameProgress.play_status == PlayStatus.ENDLESS, 1),
+    (GameProgress.play_status == PlayStatus.COMPLETED, 2),
+    (GameProgress.play_status == PlayStatus.ON_HOLD, 3),
+    (GameProgress.play_status == PlayStatus.BACKLOG, 4),
+    (GameProgress.play_status == PlayStatus.NOT_STARTED, 5),
+    (GameProgress.play_status == PlayStatus.ABANDONED, 6),
+    else_=7,
 )
 
 

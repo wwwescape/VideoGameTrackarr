@@ -127,7 +127,18 @@ export interface GenreSummary {
   gameCount: number;
 }
 
-export type PlayStatus = "none" | "backlog" | "playing" | "completed" | "abandoned";
+export type PlayStatus =
+  | "none"
+  | "not_started"
+  | "backlog"
+  | "playing"
+  | "on_hold"
+  | "endless"
+  | "completed"
+  | "abandoned";
+
+// The MUI Chip colour each play status is shown in.
+export type PlayStatusColor = "default" | "info" | "success" | "error" | "warning" | "secondary";
 
 export interface GameSummary {
   id: number;

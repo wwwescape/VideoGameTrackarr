@@ -29,9 +29,12 @@ const InsightsPage = () => {
   const { data: onSale } = useOnSale();
 
   const playStatusLabels: Record<PlayStatus, string> = {
-    none: t("games.stats.playStatusNotStarted"),
+    none: t("games.stats.playStatusNotSet"),
+    not_started: t("games.stats.playStatusNotStarted"),
     backlog: t("games.stats.playStatusBacklog"),
     playing: t("games.stats.playStatusPlaying"),
+    on_hold: t("games.stats.playStatusOnHold"),
+    endless: t("games.stats.playStatusEndless"),
     completed: t("games.stats.playStatusCompleted"),
     abandoned: t("games.stats.playStatusAbandoned"),
   };

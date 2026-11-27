@@ -30,8 +30,11 @@ import VideoGallery from "./VideoGallery";
 export const ADDON_DISPLAY_CATEGORIES = new Set<GameSummary["category"]>(["dlc_addon", "expansion", "pack"]);
 
 const PLAY_STATUS_KEYS: Record<Exclude<PlayStatus, "none">, string> = {
+  not_started: "games.card.playStatusNotStarted",
   backlog: "games.card.playStatusBacklog",
   playing: "games.card.playStatusPlaying",
+  on_hold: "games.card.playStatusOnHold",
+  endless: "games.card.playStatusEndless",
   completed: "games.card.playStatusCompleted",
   abandoned: "games.card.playStatusAbandoned",
 };

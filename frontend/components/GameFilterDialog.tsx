@@ -59,12 +59,15 @@ interface PlayStatusOption {
 }
 
 // Same order and labels as the progress dialog's status picker (GameProgressSection.tsx).
-// "Not started" matches a game with no status on any platform (see
+// "Not set" matches a game with no status on any platform (see
 // game_repository._play_status_clause), which includes games with no progress logged at all.
 export const PLAY_STATUS_OPTIONS: PlayStatusOption[] = [
   { value: "none", labelKey: "progress.statusOptions.none" },
+  { value: "not_started", labelKey: "progress.statusOptions.not_started" },
   { value: "backlog", labelKey: "progress.statusOptions.backlog" },
   { value: "playing", labelKey: "progress.statusOptions.playing" },
+  { value: "on_hold", labelKey: "progress.statusOptions.on_hold" },
+  { value: "endless", labelKey: "progress.statusOptions.endless" },
   { value: "completed", labelKey: "progress.statusOptions.completed" },
   { value: "abandoned", labelKey: "progress.statusOptions.abandoned" },
 ];

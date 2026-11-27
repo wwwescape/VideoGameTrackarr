@@ -14,22 +14,28 @@ import LinkIcon from "@mui/icons-material/Link";
 import RedeemIcon from "@mui/icons-material/Redeem";
 import { useTranslation } from "react-i18next";
 import { resolveAssetUrl } from "../api/client";
-import type { GameCategory, PlayStatus } from "../api/types";
+import type { GameCategory, PlayStatus, PlayStatusColor } from "../api/types";
 import { formatReleaseDate, getAddonType, getReleaseYear, isAddon } from "../utils/utils";
 import OwnershipBadges, { InlineBadge } from "./OwnershipBadges";
 
 const PLAY_STATUS_LABEL_KEYS: Record<PlayStatus, string> = {
   none: "",
+  not_started: "games.card.playStatusNotStarted",
   backlog: "games.card.playStatusBacklog",
   playing: "games.card.playStatusPlaying",
+  on_hold: "games.card.playStatusOnHold",
+  endless: "games.card.playStatusEndless",
   completed: "games.card.playStatusCompleted",
   abandoned: "games.card.playStatusAbandoned",
 };
 
-const PLAY_STATUS_COLORS: Record<PlayStatus, "default" | "info" | "success" | "error"> = {
+const PLAY_STATUS_COLORS: Record<PlayStatus, PlayStatusColor> = {
   none: "default",
+  not_started: "default",
   backlog: "default",
   playing: "info",
+  on_hold: "warning",
+  endless: "secondary",
   completed: "success",
   abandoned: "error",
 };

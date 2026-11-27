@@ -84,8 +84,11 @@ const ProgressDialog = ({
   const playStatusOptions: PlayStatusOption[] = useMemo(
     () => [
       { value: "none", label: t("progress.statusOptions.none") },
+      { value: "not_started", label: t("progress.statusOptions.not_started") },
       { value: "backlog", label: t("progress.statusOptions.backlog") },
       { value: "playing", label: t("progress.statusOptions.playing") },
+      { value: "on_hold", label: t("progress.statusOptions.on_hold") },
+      { value: "endless", label: t("progress.statusOptions.endless") },
       { value: "completed", label: t("progress.statusOptions.completed") },
       { value: "abandoned", label: t("progress.statusOptions.abandoned") },
     ],

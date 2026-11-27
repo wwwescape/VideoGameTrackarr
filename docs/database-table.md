@@ -184,7 +184,7 @@ One row per game (unique `game_id`): play status, playtime, personal rating/revi
 |---|---|---|
 | id | int PK | |
 | game_id | FK → games.id, unique | |
-| play_status | enum `PlayStatus` | `none`, `backlog`, `playing`, `completed`, `abandoned` |
+| play_status | enum `PlayStatus` | `none` (Not set), `not_started`, `backlog`, `playing`, `on_hold`, `endless`, `completed`, `abandoned` |
 | playtime_minutes | int | Default 0 |
 | rating | float, nullable | |
 | review | text | |

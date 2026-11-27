@@ -847,9 +847,12 @@
       "columnHeaderYourRating": "Tu valoración",
       "owned": "En propiedad",
       "wishlisted": "En la lista de deseos",
+      "playStatusNotSet": "Sin definir",
       "playStatusNotStarted": "No iniciado",
       "playStatusBacklog": "Pendiente",
       "playStatusPlaying": "Jugando",
+      "playStatusOnHold": "En pausa",
+      "playStatusEndless": "Sin fin",
       "playStatusCompleted": "Completado",
       "playStatusAbandoned": "Abandonado"
     },
@@ -937,8 +940,11 @@
       "ratingOption": "{{min}}+ / 10"
     },
     "card": {
+      "playStatusNotStarted": "No iniciado",
       "playStatusBacklog": "Pendiente",
       "playStatusPlaying": "Jugando",
+      "playStatusOnHold": "En pausa",
+      "playStatusEndless": "Sin fin",
       "playStatusCompleted": "Completado",
       "playStatusAbandoned": "Abandonado",
       "noCover": "Sin portada",
@@ -1261,9 +1267,12 @@
       "onSaleLine": "En oferta: {{price}} en {{shop}} (-{{cut}}%)"
     },
     "stats": {
+      "playStatusNotSet": "Sin definir",
       "playStatusNotStarted": "No iniciado",
       "playStatusBacklog": "Pendiente",
       "playStatusPlaying": "Jugando",
+      "playStatusOnHold": "En pausa",
+      "playStatusEndless": "Sin fin",
       "playStatusCompleted": "Completado",
       "playStatusAbandoned": "Abandonado",
       "ownedLabel": "En propiedad",
@@ -2326,9 +2335,12 @@
     "removedToast_one": "Progreso eliminado",
     "removedToast_other": "Entradas de progreso eliminadas",
     "statusOptions": {
-      "none": "No iniciado",
+      "none": "Sin definir",
+      "not_started": "No iniciado",
       "backlog": "Pendiente",
       "playing": "Jugando",
+      "on_hold": "En pausa",
+      "endless": "Sin fin",
       "completed": "Completado",
       "abandoned": "Abandonado"
     },

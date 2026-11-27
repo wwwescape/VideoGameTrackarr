@@ -81,7 +81,7 @@ describe("InsightsPage", () => {
     const user = renderPage();
 
     const rows = within(panel("By Play Status")).getAllByRole("listitem").map((row) => row.getAttribute("title"));
-    expect(rows).toEqual(["Not started: 9", "Completed: 3", "Playing: 1"]);
+    expect(rows).toEqual(["Not set: 9", "Completed: 3", "Playing: 1"]);
 
     await user.click(within(panel("By Play Status")).getByRole("button", { name: /Completed/ }));
     expect(screen.getByText("Games list")).toBeInTheDocument();
